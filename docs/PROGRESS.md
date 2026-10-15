@@ -8,7 +8,7 @@
 | P0 | Truth reset & professional foundation | SUBMITTED FOR REVIEW | `9ab9c89` | [`docs/progress/PHASE-0-REPORT.md`](progress/PHASE-0-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P2 | Evaluation backbone & classical science core | SUBMITTED FOR REVIEW | `bb6b9bb` | [`docs/progress/PHASE-2-REPORT.md`](progress/PHASE-2-REPORT.md) | Harness + C1–C8 ACCEPTED; benchmark REJECTED (hard-coded metrics, chance-level baselines) — `docs/progress/VERDICT-P2.md` |
-| P3 | Advanced modelling, calibration, uncertainty, abstention | SUBMITTED FOR REVIEW | `099cf39` | [`docs/progress/PHASE-3-REPORT.md`](progress/PHASE-3-REPORT.md) | — |
+| P3 | Advanced modelling, calibration, uncertainty, abstention | SUBMITTED FOR REVIEW | `5ebe182` | [`docs/progress/PHASE-3-REPORT.md`](progress/PHASE-3-REPORT.md) | — |
 | P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
