@@ -35,6 +35,9 @@ target-version = "py312"
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+
 [tool.pytest.ini_options]
 testpaths = [
     "apps/api/tests",

@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|
 | P0 | Truth reset & professional foundation | SUBMITTED FOR REVIEW | `9ab9c89` | [`docs/progress/PHASE-0-REPORT.md`](progress/PHASE-0-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
-| P2 | Evaluation backbone & classical science core | NOT STARTED | — | — | — |
+| P2 | Evaluation backbone & classical science core | SUBMITTED FOR REVIEW | `bb6b9bb` | [`docs/progress/PHASE-2-REPORT.md`](progress/PHASE-2-REPORT.md) | — |
 | P3 | Advanced modelling, calibration, uncertainty, abstention | NOT STARTED | — | — | — |
 | P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
@@ -18,8 +18,8 @@
 
 Allowed statuses: `NOT STARTED` · `IN PROGRESS` · `SUBMITTED FOR REVIEW` · `BLOCKED` (name the blocker). The word "COMPLETE" is reserved for the overseer's verdict.
 
-## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phase 0 and Phase 1 verified)**
-The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
+## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phases 0, 1, and 2 verified)**
+The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Phase 2 delivers the full evaluation backbone (`vigil-eval`), classical baselines B0–B4, K3 Bayesian joint model, Model M1 organ susceptibility model, pre-registered studies S1, S3, S9, and the VigilBench Phase 2 reproducible benchmark. Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
 
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
