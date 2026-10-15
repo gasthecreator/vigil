@@ -9,6 +9,6 @@ Credit: the NUTS and NPE routes are real, the original 13 tests pass, and you re
 4. Re-run S1 with the updated K1 and write the result as it is. Run **three real §13 attempts** as `experiments/EXP-K1-001..003/` (PREREG before running, code, config, seeds, results JSON; prose generated from the JSON).
 5. Fix model card, docstrings, ledger and report to describe exactly what exists. Keep `reality_audit.py` green and extend it so a training function that records losses without calling an optimiser is flagged.
 
-Run `VIGIL_ACCEPTANCE=1 uv run pytest tests/acceptance_k1 -v` (v1 + v2) locally and in CI. A test you cannot make pass honestly is registered with its token in `docs/STUBS.md` and reported `NOT MET`.
+Run `VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -v` (v1 + v2) locally, and set `VIGIL_CONTRACT_V2: "1"` on the K1 acceptance step in `.github/workflows/ci.yml` in your PR so CI enforces v2 from then on. A test you cannot make pass honestly is registered with its token in `docs/STUBS.md` and reported `NOT MET`.
 **Do not start 3B–3D.** Stop after K1.
 **Reply only with:** PR + green CI links; the verbatim acceptance output (passed/failed/xfailed); which routes are genuinely distinct implementations (one line each); K1 vs K3 vs B4 on S1 and on the world test; the three experiment IDs with headline results; everything not made real.

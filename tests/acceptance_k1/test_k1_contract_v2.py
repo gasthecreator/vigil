@@ -10,8 +10,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-if os.environ.get("VIGIL_ACCEPTANCE") != "1":
-    pytest.skip("set VIGIL_ACCEPTANCE=1 to run K1 acceptance tests", allow_module_level=True)
+if os.environ.get("VIGIL_ACCEPTANCE") != "1" or os.environ.get("VIGIL_CONTRACT_V2") != "1":
+    pytest.skip(
+        "set VIGIL_ACCEPTANCE=1 and VIGIL_CONTRACT_V2=1 to run K1 contract v2",
+        allow_module_level=True,
+    )
 
 ROOT = Path(__file__).resolve().parents[2]
 K1 = importlib.import_module(os.environ.get("VIGIL_K1_MODULE", "vigil_ml.k1"))
