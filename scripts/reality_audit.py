@@ -85,6 +85,27 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
         if name not in defined_classes and not _allowed(lines, 1, "R4"):
             findings.append(f"{rel}:1 [R4] docstring names class `{name}` that is not defined anywhere")
 
+    # R4b: methods promised in a module docstring must be backed by a real import somewhere in the packages
+    promised = {
+        "NUTS": r"^\s*(?:import|from)\s+(?:pymc|numpyro|cmdstanpy|pystan|blackjax)",
+        "SNPE": r"^\s*(?:import|from)\s+(?:sbi|sbijax|lampe)",
+        "simulation-based inference": r"^\s*(?:import|from)\s+(?:sbi|sbijax|lampe)",
+        "particle filter": r"particle",
+    }
+    for label, impl in promised.items():
+        if label.lower() in mod_doc.lower() and not _allowed(lines, 1, "R4"):
+            found = False
+            for q in ROOT.glob("packages/**/*.py"):
+                if {"tests", ".venv"} & set(q.parts):
+                    continue
+                txt = q.read_text(encoding="utf-8", errors="ignore")
+                if label == "particle filter":
+                    found = found or bool(re.search(r"class\s+\w*Particle", txt))
+                else:
+                    found = found or bool(re.search(impl, txt, re.M))
+            if not found:
+                findings.append(f"{rel}:1 [R4] docstring promises `{label}` but no implementation/import was found")
+
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             # R1
