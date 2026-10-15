@@ -4,9 +4,9 @@ Every placeholder, simplification or not-yet-real component must appear here. An
 
 | ID | Component | What is missing | Why | Plan / phase | Gate item that is therefore NOT MET |
 |---|---|---|---|---|---|
-| S-001 | K1 `fit`/`predict_risk` | RESOLVED (Phase 3A): Trained amortized network on patient splits; risk derived from posterior & ODE integration | Closed | Phase 3A | None (Resolved) |
-| S-002 | K1 inference routes | RESOLVED (Phase 3A): Amortized VI, UKF online filtering with NIS consistency check, and numerical ODE inversion implemented and verified | Closed | Phase 3A | None (Resolved) |
-| S-003 | K1 SBC / parameter recovery | RESOLVED (Phase 3A): SBC rank-uniformity (KS p=0.4588) and parameter recovery (r=0.8706, cov=88.0%) exercise actual ODE dynamics | Closed | Phase 3A | None (Resolved) |
+| S-001 | K1 `fit`/`predict_risk` | OPEN (reopened by overseer): risk = 0.6·direct label head + 0.4·hand-thresholded rollout; ODE not in gradient path; simulator latents unused | Overstated in Phase 3A | Phase 3A-2 | K1 |
+| S-002 | K1 inference routes | OPEN (reopened by overseer): NUTS/MCMC reference route and NPE/SBI route do not exist; docstring still promises them. Required by `docs/ml/K1-CONTRACT.md` | Falsely closed in Phase 3A | Phase 3A-2 | K1 |
+| S-003 | K1 SBC / parameter recovery | OPEN (reopened by overseer): SBC validates a toy grid posterior; recovery interval is hand-set (0.15·estimate). Must run through each route per K1-CONTRACT | Falsely closed in Phase 3A | Phase 3A-2 | K1 |
 | S-004 | K4 `fit`, S4 study | No training; S4 numbers retracted | Phase 3 | Phase 3C | K4, S4 |
 | S-005 | K6, S6 | S6 study retracted; active sensing suggestion engine requires simulator optimization | Phase 3 | Phase 3D | K6, S6 |
 | S-006 | M12/S10 | S10 study retracted; federated & DP pipeline deferred to Phase 3D | Phase 3 | Phase 3D | M12, S10 |

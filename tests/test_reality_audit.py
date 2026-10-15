@@ -1,10 +1,13 @@
 """The reality audit must catch each fabrication pattern (and pass honest code)."""
+
 import importlib.util
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location("reality_audit", ROOT / "scripts" / "reality_audit.py")
+spec = importlib.util.spec_from_file_location(
+    "reality_audit", ROOT / "scripts" / "reality_audit.py"
+)
 ra = importlib.util.module_from_spec(spec)
 sys.modules["reality_audit"] = ra
 spec.loader.exec_module(ra)
@@ -49,5 +52,7 @@ def test_passes_honest_code(tmp_path):
 
 
 def test_allow_marker(tmp_path):
-    text = BAD.replace("def fit(self, X, y):", "def fit(self, X, y):  # reality: allow(R2) stateless rule")
+    text = BAD.replace(
+        "def fit(self, X, y):", "def fit(self, X, y):  # reality: allow(R2) stateless rule"
+    )
     assert "[R2]" not in "\n".join(_scan(tmp_path, text))

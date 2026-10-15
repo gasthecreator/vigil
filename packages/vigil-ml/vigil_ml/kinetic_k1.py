@@ -16,11 +16,13 @@ Latent State Vector z(t) in R^9:
 - O_liver(t): Hepatic dysfunction / enzyme release state
 - O_bone(t): Osteolytic remodeling / alkaline phosphatase state
 
-Inference Routes (see docs/models/MODEL-CARD-K1.md):
-1. Amortized Variational Inference: Structured encoder mapping irregular visits to posterior.
-2. Particle Filter / Unscented Kalman Filter: Exact online filtering (< 10 ms CPU).
-3. Reference Gold-Standard MCMC: NUTS/Gibbs reference comparator.
-4. Simulation-Based Inference: Neural posterior estimation on trajectory summary statistics.
+Implemented in this version (see docs/models/MODEL-CARD-K1.md and docs/STUBS.md):
+1. Amortized recognition network trained with Adam (note: currently includes a direct label head; see VERDICT-P3A).
+2. Unscented Kalman Filter for online filtering with an NIS consistency check.
+3. Closed-form / numerical ODE inversion for single-parameter recovery.
+
+NOT implemented (registered in docs/STUBS.md, required by docs/ml/K1-CONTRACT.md): reference MCMC route,
+neural posterior estimation route, sequential Monte Carlo filtering.
 """
 
 from __future__ import annotations
