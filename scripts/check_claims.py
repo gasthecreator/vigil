@@ -25,10 +25,12 @@ IGNORE_PATHS = {
     ".next",
     "dist",
     "build",
-    # Master plan, changelog, and historical archives document prior defects or instructions
+    # Master plan, changelog, progress reports, audit reports, and historical archives document prior defects or instructions
     "docs/MASTER_PLAN.md",
     "docs/PLAN-CHANGELOG.md",
     "docs/archive",
+    "docs/audits",
+    "docs/progress",
     "docs/EVIDENCE.md",
     "docs/prompts",
     "docs/adr",

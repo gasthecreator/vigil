@@ -1,0 +1,14 @@
+[project]
+name = "vigil-contracts"
+version = "0.1.0-alpha"
+description = "Vigil Data Ingestion Contracts, Loaders, and OpenAPI Specifications"
+authors = [{ name = "Gideon Sanni", email = "gideonsanni2023@gmail.com" }]
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "pandas>=2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

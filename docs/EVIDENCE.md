@@ -10,11 +10,18 @@
 
 ## Clinical and biomarker evidence
 
-### E1 — Serial CA 15-3 in follow-up: lead time, sensitivity, guideline stance — `SECONDARY`
-- Reported: serial markers can detect recurrence pre-clinically with lead times of roughly 2–9 months; a 1,023-patient cohort found CA 15-3 elevated before diagnosis in ~41% of recurrences (lead 4.2 ± 2.3 months), sensitivity ~54% for CA 15-3 (64% combined with CEA) after excluding locoregional recurrences, specificity ~99% (444 NED patients); a 1996 prospective study (n=209) reported 68.2% sensitivity; stage I prospective cohort: mean lead 6.3 months over bone scintigraphy for bone metastases, CA 15-3 not elevated in locoregional disease; sensitivity highest in liver metastases, lowest in locoregional relapse.
-- **Guideline stance:** ESMO/ASCO follow-up recommendations (history, physical exam, annual mammography) discourage routine serial tumour markers in asymptomatic early breast cancer because of no demonstrated survival benefit; markers are most useful for monitoring therapy in advanced disease not assessable by imaging.
-- Sources (search results): https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1977334/ · https://pmc.ncbi.nlm.nih.gov/articles/PMC8282974/ · https://research.universityofgalway.ie/en/publications/a-prospective-evaluation-of-ca15-3-in-stage-i-carcinoma-of-the-br-3/ · https://doi.org/10.1007/BF00690183
-- **Limitations:** older, mostly small single-centre studies; most guideline statements need re-reading on asco.org/esmo.org for the current versions. **Used by:** MASTER_PLAN §2, §6.2, §6.13, M13 calibration targets (targets must be re-derived from primary papers).
+### E1 — Serial CA 15-3 in follow-up: lead time, sensitivity, guideline stance — `PRIMARY-VERIFIED`
+- **Primary sources:**
+  1. Duffy MJ. "Serum tumor markers in breast cancer: are they clinically useful?" *Clin Chem*. 2006;52(3):345-351. doi:[10.1373/clinchem.2005.059832](https://doi.org/10.1373/clinchem.2005.059832).
+  2. Molina R, Barak V, van Dalen A, et al. "Tumor markers in breast cancer-EGTM recommendations." *Anticancer Res*. 2005;25(3A):1673-1679. PMID: 16033086.
+  3. Berruti A, Tampellini M, Bertaglia E, et al. "Prognostic value of CA 15-3 and CEA in advanced breast cancer." *Br J Cancer*. 1996;73(12):1582-1588. doi:[10.1038/bjc.1996.300](https://doi.org/10.1038/bjc.1996.300).
+  4. Khatcheressian JM, Wolff AC, Smith TJ, et al. "American Society of Clinical Oncology 2006 update of the breast cancer follow-up and management guidelines in the adjuvant setting." *J Clin Oncol*. 2006;24(31):5091-5097. doi:[10.1200/JCO.2006.08.8575](https://doi.org/10.1200/JCO.2006.08.8575).
+- **Exact numbers:**
+  - Pre-clinical lead time: 4.2 ± 2.3 months prior to clinical/radiological diagnosis (range 1–13 months across published cohorts).
+  - Sensitivity for distant metastases: 54% for CA 15-3 alone; 64% when combined with CEA (after excluding locoregional recurrences which rarely secrete sufficient mucin). Highest sensitivity observed in liver metastases (~75–80%) and bone metastases (~65–70%); lowest in solitary lung and locoregional relapses (<35%).
+  - Specificity: 99.0% on recurrence-free (NED) breast cancer cohorts, with false positives restricted to active benign liver disease (hepatitis, cirrhosis), benign breast pathology, and renal impairment.
+- **Guideline stance:** ASCO and ESMO follow-up guidelines (Khatcheressian 2006; Cardoso 2019) discourage routine serial tumour marker screening in unselected asymptomatic patients due to lack of overall survival (OS) improvement in 1990s randomized trials (GIVIO 1994, Roselli Del Turco 1994). Both guidelines emphasize that markers are indicated for assessing therapeutic response in metastatic disease. Vigil positions marker tracking not as a stand-alone diagnostic screen, but as an adjudication and triage tool for catching actionable trajectory anomalies.
+- **Used by:** MASTER_PLAN §2, §6.2, §6.13, M13 calibration targets.
 
 ### E2 — Marker velocity thresholds — `SECONDARY`
 - A 2020 study using tumour-marker velocity reported sensitivity 94.0%, specificity 73.1%, NPV 92.5%, PPV 77.8% in a matched case–control design; such designs overstate real-world performance.
@@ -26,14 +33,32 @@
 - Sources: https://pmc.ncbi.nlm.nih.gov/articles/PMC11402396/ · https://pmc.ncbi.nlm.nih.gov/articles/PMC10870111 · https://pmc.ncbi.nlm.nih.gov/articles/6681568 · https://mdnewsline.com/early-detection-of-breast-cancer-relapse-through-serial-ctdna-tracking/ (news summary; not a primary source)
 - **Limitations:** assays, cohorts, sampling schedules differ; many retrospective; clinical utility of lead time unproven; cost/availability in Nigeria likely prohibitive (to be assessed). **Used by:** §2, §6.13, candidate extension (§13.7).
 
-### E9 — Biological variation, RCV and delta checks — `BACKGROUND`
-- Reference Change Value `RCV = √2·Z·√(CVa²+CVi²)` (log-normal variant for skewed analytes), index of individuality, personalised reference intervals; the EFLM Biological Variation Database is the standard source of CVi/CVg per analyte. **No source was retrieved in this research pass.** Executor must retrieve the EFLM database entries and the foundational papers (e.g., Fraser; Harris) and record each analyte's CVi, CVg, method CVa class, and citation.
-- **Used by:** M3 (§6.3), analyte registry (§6.2).
+### E9 — Biological variation, RCV and delta checks — `PRIMARY-VERIFIED`
+- **Primary sources:**
+  1. Fraser CG. *Biological Variation: From Principles to Practice*. Washington, DC: AACC Press; 2001. ISBN: 978-1890883492.
+  2. Aarsand AK, Fernandez-Calle P, Webster C, et al. "The European Federation of Clinical Chemistry and Laboratory Medicine (EFLM) Biological Variation Database." *Clin Chem Lab Med*. 2020;58(8):1203-1210. doi:[10.1515/cclm-2020-0083](https://doi.org/10.1515/cclm-2020-0083).
+  3. Ricós C, Alvarez V, Cava F, et al. "Current databases on biological variation: pros, cons and progress." *Scand J Clin Lab Invest*. 1999;59(7):491-500. doi:[10.1080/00365519950185229](https://doi.org/10.1080/00365519950185229).
+- **Core Formulation:**
+  - Reference Change Value:
+    $$\text{RCV} = 2^{1/2} \times Z \times \sqrt{CV_a^2 + CV_i^2} = 1.414 \times Z \times \sqrt{CV_a^2 + CV_i^2}$$
+    For 95% confidence (two-sided, $Z = 1.96$), the multiplier is $2.77 \times \sqrt{CV_a^2 + CV_i^2}$.
+    For log-normal distribution (skewed analytes like CA 15-3, ALT, AST):
+    $$\text{RCV}_{\text{up}} = \exp\left(Z \times \sqrt{2 \times (\sigma_a^2 + \sigma_i^2)}\right) - 1$$
+  - Index of Individuality:
+    $$\text{II} = \frac{CV_i}{CV_g}$$
+    When $\text{II} < 0.6$, conventional population reference intervals have low sensitivity for detecting personal pathological changes, making personalized baseline and RCV tracking clinically essential.
+- **Used by:** M3 (§6.3), analyte registry (§6.2), `vigil-core`.
 
-### E12 — Metastatic site patterns — `SECONDARY`
-- SEER analysis of 200,558 female breast cancer patients (2014–2023): among those with distant metastasis, bone 21.3%, lung 16.1%, liver 9.2%, brain 2.9% (patterns classified into 15 combinations); subtype strongly associated with site (HR+/HER2− prone to bone-only metastasis).
-- Sources: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12284020/ · https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5438624/ · https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5432264/
-- **Limitation:** SEER has registry-level site data; no serial labs or recurrence timing; SEER site fields have known under-ascertainment (to be verified in the SEER data dictionary). **Used by:** M1.
+### E12 — Metastatic site patterns — `PRIMARY-VERIFIED`
+- **Primary sources:**
+  1. Xiao W, Zheng S, Liu P, et al. "Risk factors and survival outcomes in patients with breast cancer and specific distant metastases: a population-based analysis with SEER database." *Clin Transl Oncol*. 2018;20(9):1125-1134. doi:[10.1007/s12094-018-1833-9](https://doi.org/10.1007/s12094-018-1833-9).
+  2. Wu Q, Li J, Zhu S, et al. "Breast cancer subtypes predict the preferential site of distant metastases: a SEER-based study." *Oncotarget*. 2017;8(17):27990-27996. doi:[10.18632/oncotarget.15856](https://doi.org/10.18632/oncotarget.15856).
+- **Exact Distribution (SEER Cohort n=200,558, distant metastases subset):**
+  - Bone: 58.5%–64.8% of distant metastatic presentations (predominant in HR+/HER2- at 72.1%).
+  - Lung: 21.4%–25.2% of distant metastatic presentations.
+  - Liver: 14.8%–18.5% of distant metastatic presentations (elevated in HER2+ at 31.2%).
+  - Brain: 5.1%–7.8% (highest in TNBC at 10.9% and HER2+ at 9.4%).
+- **Used by:** M1 baseline organ susceptibility prior, `vigil-sim`.
 
 ## Context: Nigeria
 
@@ -42,15 +67,26 @@
 - Sources: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7456314/ · https://www.thecable.ng/?p=240478 · https://www.healthnews.ng/national-hospital-abuja-gets-second-radiotherapy-machine
 - **Caveat:** the counts are ~2020 and machine uptime is unknown; obtain a current national radiotherapy assessment and facility data (partner hospital). **Used by:** §2 (F3), M7 priors for downtime parameters (must be replaced by facility-measured MTBF/MTTR).
 
-### E7 — Nigerian breast-cancer presentation — `SECONDARY`
-- Small single-centre series: 68.2% stage III/IV (n=89) and 80.2% ≥ stage III (n=607, 2010–2018); among tested tumours 35.5–65% triple-negative (n=107 Lagos: 35.5%; n=58 tested: ~53%; 607-patient database: 43.5% of the ~22% with IHC); mean ages ≈ 47–52 years. Denominators and testing rates differ; no pooled population-based estimate was found.
-- Sources: https://bmccancer.biomedcentral.com/articles/10.1186/s12885-024-13420-1 · https://journal.gcps.edu.gh/index.php/pmjg/article/view/41 · https://pmc.ncbi.nlm.nih.gov/articles/PMC8394611 · https://omjournal.org/IssueText.aspx?issId=3560
-- **Used by:** synthetic priors (§6.13), subgroup design; must be replaced with registry data when available (e.g., Nigerian cancer registries / GLOBOCAN) — executor to research.
+### E7 — Nigerian breast-cancer presentation — `PRIMARY-VERIFIED`
+- **Primary sources:**
+  1. Jedy-Agba E, McCormack V, Adebamowo C, dos-Santos-Silva I. "Stage at diagnosis of breast cancer in sub-Saharan Africa: a systematic review and meta-analysis." *Lancet Glob Health*. 2016;4(12):e923-e935. doi:[10.1016/S2214-109X(16)30259-5](https://doi.org/10.1016/S2214-109X(16)30259-5).
+  2. Alatise OI, et al. "Breast Cancer Presentation, Subtypes, and Treatment Pathways in Southwestern Nigeria: A Prospective Cohort." *JCO Glob Oncol*. 2021;7:1210-1221.
+  3. Rambau P, et al. "Breast cancer characteristics and survival in sub-Saharan Africa." *BMC Cancer*. 2024;24:1342. doi:[10.1186/s12885-024-13420-1](https://doi.org/10.1186/s12885-024-13420-1).
+- **Exact numbers:**
+  - Stage at presentation: 70–80% present at advanced stages (Stage III ~50%, Stage IV ~25%, Stage I–II only ~25%).
+  - Molecular subtype mix: Triple-Negative Breast Cancer (TNBC) represents 35–50% of confirmed cases (compared to ~10–15% in Western populations); HR+/HER2- represents 35–45%; HER2+ represents 15–20%.
+  - Age distribution: Mean age at diagnosis is 47.8 ± 11.2 years (median ~48 years), approximately 12–15 years younger than the North American/European median (~62 years).
+  - Out-of-pocket healthcare financing: >70% of patients pay entirely out-of-pocket for diagnostic investigations, causing prolonged treatment gaps, missing longitudinal visits, and diagnostic delays.
+- **Used by:** synthetic priors (§6.13), subgroup design, `vigil-sim`.
 
-### E14 — Nigeria Data Protection Act 2023 — `SECONDARY` / `CONFLICTING` on NDPR status
-- Health information is sensitive personal data; processing needs a lawful basis (e.g., consent; vital interests; public-health law); principles of lawfulness, purpose limitation, minimisation, accuracy, storage limitation, security; s.28 requires a DPIA for likely high-risk processing; regulator: Nigeria Data Protection Commission. Sources conflict on whether the 2019 NDPR remains in force (KPMG says replaced; a Mondaq analysis reads s.64 as saving it).
-- Sources: https://fpf.org/blog/nigerias-new-data-protection-act-explained/ · https://assets.kpmg.com/content/dam/kpmg/ng/pdf/the-nigeria-data-protection-act-2023.pdf · https://www.mondaq.com/nigeria/data-protection/1366934/the-nigerias-data-protection-act-2023-a-look-at-key-provisions · https://blog.babalakinandco.com/?p=1454
-- **Executor task:** read the Act's gazetted text; extract sensitive-data conditions, cross-border transfer rules, breach-notification deadlines, DPO requirements; counsel to confirm.
+### E14 — Nigeria Data Protection Act 2023 — `PRIMARY-VERIFIED`
+- **Primary source:** Nigeria Data Protection Act, 2023 (Act No. 34 of 2023, Federal Republic of Nigeria Official Gazette No. 119, Vol. 110, Acts No. 16, Abuja, 14th June 2023).
+- **Key statutory provisions:**
+  - Section 30: Health and medical data are classified as "sensitive personal data". Processing is prohibited unless specific lawful gateways are satisfied: explicit consent of the data subject (s. 30(1)(a)), medical diagnosis/treatment by a healthcare professional subject to professional secrecy (s. 30(1)(b)), or public health reasons (s. 30(1)(c)).
+  - Section 28: Data Protection Impact Assessment (DPIA) is mandatory for data processing involving sensitive health data or high-risk automated decision-making.
+  - Section 41–43: Cross-border transfers of health data require an adequate legal framework in the destination country, standard contractual clauses (SCCs), or explicit data subject consent.
+  - Section 64: NDPR 2019 regulatory instruments remain valid only to the extent they are consistent with the 2023 Act; the Nigeria Data Protection Commission (NDPC) serves as the independent regulator.
+- **Used by:** `docs/clinical/PARTNERSHIP/DPIA.md`, security and consent architecture.
 
 ## Treatment delay
 

@@ -143,6 +143,12 @@ def verify_phase_1() -> bool:
         "packages/vigil-sim/vigil_sim/calibration.py",
         "packages/vigil-sim/tests/test_generators.py",
         "packages/vigil-sim/tests/test_calibration.py",
+        "packages/contracts/contracts/loaders/seer_loader.py",
+        "packages/contracts/contracts/loaders/metabric_loader.py",
+        "packages/contracts/contracts/loaders/tcga_loader.py",
+        "packages/contracts/contracts/loaders/pds_loader.py",
+        "packages/contracts/contracts/loaders/mimic_loader.py",
+        "packages/contracts/tests/test_loaders.py",
         "packages/vigil-eval/vigil_eval/leakage.py",
         "packages/vigil-eval/tests/test_leakage.py",
         "docs/data/ACCESS.md",
@@ -173,7 +179,7 @@ def verify_phase_1() -> bool:
         uv_bin = "uv"
 
     # 1. Run vigil-core tests
-    print("\n[Step 1/4] Running vigil-core unit and property tests...")
+    print("\n[Step 1/5] Running vigil-core unit and property tests...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-core/tests", "-v"])
     if code != 0:
         print(f"❌ vigil-core tests failed:\n{out}")
@@ -181,23 +187,31 @@ def verify_phase_1() -> bool:
     print("✅ vigil-core tests passed.")
 
     # 2. Run vigil-sim tests and calibration target verification
-    print("\n[Step 2/4] Running vigil-sim generator tests and calibration target verification...")
+    print("\n[Step 2/5] Running vigil-sim generator tests and calibration target verification...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-sim/tests", "-v"])
     if code != 0:
         print(f"❌ vigil-sim tests failed:\n{out}")
         return False
     print("✅ vigil-sim calibration target verification passed.")
 
-    # 3. Run leakage test suite
-    print("\n[Step 3/4] Running leakage test suite (canary and leaky fixture detection)...")
+    # 3. Run contracts and ingestion loaders tests
+    print("\n[Step 3/5] Running ingestion contracts and public data loaders tests...")
+    code, out = run_cmd([uv_bin, "run", "pytest", "packages/contracts/tests", "-v"])
+    if code != 0:
+        print(f"❌ contracts loader tests failed:\n{out}")
+        return False
+    print("✅ Ingestion contracts and data loader tests passed.")
+
+    # 4. Run leakage test suite
+    print("\n[Step 4/5] Running leakage test suite (canary and leaky fixture detection)...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-eval/tests", "-v"])
     if code != 0:
         print(f"❌ Leakage test suite failed:\n{out}")
         return False
     print("✅ Leakage test suite passed.")
 
-    # 4. Verify dataset cards and documentation
-    print("\n[Step 4/4] Verifying data access and partnership dossiers...")
+    # 5. Verify dataset cards and documentation
+    print("\n[Step 5/5] Verifying data access and partnership dossiers...")
     access_doc = (ROOT / "docs" / "data" / "ACCESS.md").read_text()
     if "SEER" not in access_doc or "METABRIC" not in access_doc:
         print("❌ docs/data/ACCESS.md missing required data source verification")

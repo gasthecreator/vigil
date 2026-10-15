@@ -1,0 +1,6 @@
+PATIENT_ID,AGE_AT_DIAGNOSIS,ER_STATUS,PR_STATUS,HER2_STATUS,CLAUDIN_SUBTYPE,NOTTINGHAM_PROGNOSTIC_INDEX,TUMOUR_STAGE,OS_MONTHS,OS_STATUS,RFS_MONTHS,RFS_STATUS
+MB-0001,48.2,Positive,Positive,Negative,LumA,4.04,Stage II,140.5,LIVING,140.5,0:Not Recurred
+MB-0002,56.7,Negative,Negative,Negative,Basal,5.20,Stage III,42.1,DECEASED,31.4,1:Recurred
+MB-0003,63.1,Positive,Negative,Positive,Her2,4.80,Stage II,88.2,LIVING,75.0,1:Recurred
+MB-0004,41.9,Negative,Negative,Negative,Basal,5.90,Stage III,28.6,DECEASED,19.2,1:Recurred
+MB-0005,52.4,Positive,Positive,Negative,LumB,3.50,Stage I,180.2,LIVING,180.2,0:Not Recurred

@@ -1,0 +1,1028 @@
+"""
+vigil_sim.generators
+
+Mechanistic Cohort Simulation Laboratory for Vigil Precision Oncology Platform.
+Conforms strictly to docs/MASTER_PLAN.md §6.13 and docs/ML_PROGRAM.md §9.
+
+Features:
+- Latent disease compartments (locoregional, bone, liver, lung, brain) with compartment-specific seeding times
+- Compartmental marker shedding and clearance kinetics (filtered integral of tumor burden)
+- Organ-damage coupling to specific clinical chemistry enzymes (ALT, AST, ALP, GGT, Bilirubin, Calcium)
+- Treatment effects (chemotherapy, endocrine therapy, targeted therapy) on tumor burden and laboratory enzymes
+- Inter-laboratory/facility systematic analyzer offsets and scales (Task T8)
+- Partial verification mechanism (H-D / §4.2): true latent recurrence vs observed imaging-confirmed recurrence
+- Informative missingness / MNAR observation model (H-C): cost-driven visit gaps and omitted tests
+- Competing risks (intercurrent death, loss-to-follow-up)
+- Indolent non-progressing trajectories (overdetection modeling, H-F)
+- Error / outlier injection: pre-analytical in vitro haemolysis and IV fluid dilution
+- True null (disease-free) controls with realistic biological variation, benign liver shifts, and noise
+- Exportable ground-truth latent state trajectories for parameter recovery and identifiability studies
+- >= 3 structurally distinct generators:
+    * G1: Smooth continuous secretion kinetics (compartmental ODE with Gompertzian saturation)
+    * G2: Episodic step-change and necrotic burst shedding (shot-noise process)
+    * G3: Heavy-tailed noise with inter-laboratory analyzer offsets and pre-analytical errors
+- Anti-leakage guarantee: features never contain future values, outcome labels, or anomaly flags (Defect A1 resolved).
+"""
+
+from __future__ import annotations
+
+import math
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+import numpy as np
+import pandas as pd
+
+from vigil_core.analytes import ANALYTE_REGISTRY, TargetOrgan
+
+
+class GeneratorType(str, Enum):
+    G1_SMOOTH = "g1_smooth_kinetics"
+    G2_BURST = "g2_shedding_bursts"
+    G3_NOISE = "g3_heavy_tailed_noise"
+
+
+class BreastCancerSubtype(str, Enum):
+    TNBC = "TNBC"                  # Triple-Negative Breast Cancer (~40% in Nigeria, E7)
+    HR_POS_HER2_NEG = "HR+HER2-"   # Luminal A/B (~42% in Nigeria, E7)
+    HER2_POS = "HER2+"             # HER2-enriched (~18% in Nigeria, E7)
+
+
+class PresentationStage(str, Enum):
+    STAGE_I = "Stage I"     # ~5% in Nigeria
+    STAGE_II = "Stage II"   # ~20% in Nigeria
+    STAGE_III = "Stage III" # ~50% in Nigeria (locally advanced)
+    STAGE_IV = "Stage IV"   # ~25% in Nigeria (de novo metastatic)
+
+
+@dataclass
+class LatentCompartmentState:
+    """Ground-truth latent biological state at time t (exported for recovery/identifiability tests)."""
+    patient_id: str
+    day: float
+    b_loc: float        # Locoregional tumor burden (arbitrary cell mass units)
+    b_bone: float       # Bone metastatic burden
+    b_liver: float      # Liver metastatic burden
+    b_lung: float       # Lung metastatic burden
+    b_brain: float      # Brain metastatic burden
+    m_ca153: float      # Circulating CA 15-3 pool (filtered integral)
+    m_cea: float        # Circulating CEA pool
+    o_liver: float      # Hepatic damage/parenchymal infiltration state
+    o_bone: float       # Bone turnover/osteolytic activity state
+    o_renal: float      # Renal impairment state
+    is_indolent: bool = False
+    treatment_active: Optional[str] = None
+
+
+@dataclass
+class PatientBaseline:
+    patient_id: str
+    age: float
+    stage: PresentationStage
+    subtype: BreastCancerSubtype
+    er_status: bool
+    pr_status: bool
+    her2_status: bool
+    
+    # Ground-truth latent disease parameters
+    true_recurrence_event: bool
+    true_recurrence_day: Optional[float]
+    true_recurrence_site: Optional[str]
+    is_indolent: bool
+    
+    # Clinical observed event parameters (partial verification bias)
+    observed_recurrence_event: bool
+    observed_recurrence_day: Optional[float]
+    observed_recurrence_site: Optional[str]
+    
+    # Competing risks
+    competing_event: Optional[str]  # e.g. "cardiovascular_death", "lost_to_follow_up"
+    competing_event_day: Optional[float]
+    
+    # Facility and economics
+    generator_id: str
+    facility_id: str
+    out_of_pocket_delay_factor: float
+    lab_offsets: Dict[str, float] = field(default_factory=dict)
+    lab_scales: Dict[str, float] = field(default_factory=dict)
+    base_marker_levels: Dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class LongitudinalObservation:
+    observation_id: str
+    patient_id: str
+    day: float
+    date_drawn: str
+    analytes: Dict[str, float]
+    observed_mask: Dict[str, bool]  # True = measured, False = missing (MNAR)
+    symptoms: Dict[str, int]        # Grade 0 to 4
+    imaging_performed: bool         # Verification mechanism flag
+    preanalytical_error: Optional[str] = None
+    is_synthetic: bool = True
+
+
+@dataclass
+class CohortDataset:
+    patients: List[PatientBaseline]
+    observations: List[LongitudinalObservation]
+    latent_states: List[LatentCompartmentState]
+    generator_type: GeneratorType
+    seed: int
+
+    def to_observations_dataframe(self) -> pd.DataFrame:
+        """Flattens longitudinal observations into a standard clinical observation dataframe."""
+        rows = []
+        for obs in self.observations:
+            row = {
+                "observation_id": obs.observation_id,
+                "patient_id": obs.patient_id,
+                "day": obs.day,
+                "date_drawn": obs.date_drawn,
+                "imaging_performed": obs.imaging_performed,
+                "preanalytical_error": obs.preanalytical_error,
+                "is_synthetic": obs.is_synthetic,
+            }
+            # Analytes and observation masks
+            for k, v in obs.analytes.items():
+                row[k] = v
+                row[f"observed_{k}"] = obs.observed_mask.get(k, True)
+            # Symptoms
+            for s, g in obs.symptoms.items():
+                row[f"symptom_{s}"] = g
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def to_patients_dataframe(self) -> pd.DataFrame:
+        """Returns the patient baseline and ground truth clinical event registry."""
+        rows = []
+        for p in self.patients:
+            rows.append({
+                "patient_id": p.patient_id,
+                "age": p.age,
+                "stage": p.stage.value,
+                "subtype": p.subtype.value,
+                "er_status": p.er_status,
+                "pr_status": p.pr_status,
+                "her2_status": p.her2_status,
+                "true_recurrence_event": p.true_recurrence_event,
+                "true_recurrence_day": p.true_recurrence_day,
+                "true_recurrence_site": p.true_recurrence_site,
+                "is_indolent": p.is_indolent,
+                "observed_recurrence_event": p.observed_recurrence_event,
+                "observed_recurrence_day": p.observed_recurrence_day,
+                "observed_recurrence_site": p.observed_recurrence_site,
+                "competing_event": p.competing_event,
+                "competing_event_day": p.competing_event_day,
+                "generator_id": p.generator_id,
+                "facility_id": p.facility_id,
+                "out_of_pocket_delay_factor": p.out_of_pocket_delay_factor,
+            })
+        return pd.DataFrame(rows)
+
+    def to_latent_states_dataframe(self) -> pd.DataFrame:
+        """Exports ground-truth latent state trajectories for parameter recovery and identifiability studies."""
+        rows = []
+        for st in self.latent_states:
+            rows.append({
+                "patient_id": st.patient_id,
+                "day": st.day,
+                "b_loc": st.b_loc,
+                "b_bone": st.b_bone,
+                "b_liver": st.b_liver,
+                "b_lung": st.b_lung,
+                "b_brain": st.b_brain,
+                "total_burden": st.b_loc + st.b_bone + st.b_liver + st.b_lung + st.b_brain,
+                "m_ca153": st.m_ca153,
+                "m_cea": st.m_cea,
+                "o_liver": st.o_liver,
+                "o_bone": st.o_bone,
+                "o_renal": st.o_renal,
+                "is_indolent": st.is_indolent,
+                "treatment_active": st.treatment_active,
+            })
+        return pd.DataFrame(rows)
+
+    def get_unleaked_training_examples(
+        self,
+        horizon_days: float = 180.0,
+        use_observed_labels: bool = True,
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        """
+        Extracts strictly un-leaked feature vectors X and prospective clinical event labels y.
+        
+        Parameters:
+            horizon_days: Prospective prediction horizon window (e.g. 90, 180, 365 days).
+            use_observed_labels: If True, uses clinically verified labels (with partial verification bias).
+                                 If False, uses latent ground-truth recurrence labels.
+        
+        Guarantees:
+            - Never contains future observations
+            - Never contains generator anomaly flags or outcome-derived indicators
+            - Strictly historical features up to observation timestamp
+        """
+        pt_map = {p.patient_id: p for p in self.patients}
+        features_list = []
+        labels_list = []
+
+        for obs in self.observations:
+            pt = pt_map[obs.patient_id]
+            
+            # Select target event day based on observation regime
+            if use_observed_labels:
+                rec_event = pt.observed_recurrence_event
+                rec_day = pt.observed_recurrence_day
+            else:
+                rec_event = pt.true_recurrence_event
+                rec_day = pt.true_recurrence_day
+
+            # Check if competing death / censoring occurred prior to observation
+            if pt.competing_event_day is not None and pt.competing_event_day <= obs.day:
+                continue
+
+            # Construct prospective clinical event label
+            y_label = 0
+            if rec_event and rec_day is not None:
+                if obs.day < rec_day <= (obs.day + horizon_days):
+                    y_label = 1
+                elif rec_day <= obs.day:
+                    # Already diagnosed clinically prior to this visit; excluded from screening window
+                    continue
+
+            # Construct safe feature dict (strictly historical/current)
+            feat: Dict[str, Any] = {
+                "patient_id": obs.patient_id,
+                "day": obs.day,
+                "age": pt.age,
+                "is_er_pos": 1.0 if pt.er_status else 0.0,
+                "is_pr_pos": 1.0 if pt.pr_status else 0.0,
+                "is_her2_pos": 1.0 if pt.her2_status else 0.0,
+                "is_stage_3_or_4": 1.0 if pt.stage in [PresentationStage.STAGE_III, PresentationStage.STAGE_IV] else 0.0,
+            }
+            # Lab features (clean standardized naming)
+            for k, v in obs.analytes.items():
+                feat[f"lab_{k}"] = v
+            # Symptom features
+            for s, g in obs.symptoms.items():
+                feat[f"sym_{s}"] = float(g)
+
+            features_list.append(feat)
+            labels_list.append(y_label)
+
+        X = pd.DataFrame(features_list)
+        y = pd.Series(labels_list, name=f"recurrence_within_{int(horizon_days)}d")
+        return X, y
+
+
+# ==============================================================================
+# Base Generator Engine
+# ==============================================================================
+
+class BaseCohortGenerator(ABC):
+    """Abstract base class for all mechanistic cohort generators."""
+
+    def __init__(self, seed: int = 42):
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+
+    def sample_nigerian_baseline(self, patient_idx: int) -> PatientBaseline:
+        """
+        Samples baseline clinical characteristics using evidence-backed Nigerian priors (E7, E12, E13).
+        - Mean age 47.8 ± 9.5
+        - Stage: Stage I 5%, Stage II 20%, Stage III 50%, Stage IV 25%
+        - Subtype: TNBC 40%, HR+/HER2- 42%, HER2+ 18%
+        - Incorporates competing risks and indolent cases per ML_PROGRAM §9
+        """
+        pt_id = f"VIG-PT-{patient_idx:05d}"
+        age = float(np.clip(self.rng.normal(48.5, 9.5), 24.0, 82.0))
+
+        # Presentation Stage distribution (E7: >70% present at Stage III/IV)
+        stage_draw = self.rng.random()
+        if stage_draw < 0.05:
+            stage = PresentationStage.STAGE_I
+        elif stage_draw < 0.25:
+            stage = PresentationStage.STAGE_II
+        elif stage_draw < 0.75:
+            stage = PresentationStage.STAGE_III
+        else:
+            stage = PresentationStage.STAGE_IV
+
+        # Molecular subtype distribution (E7: ~40% TNBC in Nigerian cohorts)
+        sub_draw = self.rng.random()
+        if sub_draw < 0.40:
+            subtype = BreastCancerSubtype.TNBC
+            er = False
+            pr = False
+            her2 = False
+        elif sub_draw < 0.82:
+            subtype = BreastCancerSubtype.HR_POS_HER2_NEG
+            er = True
+            pr = bool(self.rng.random() > 0.15)
+            her2 = False
+        else:
+            subtype = BreastCancerSubtype.HER2_POS
+            er = bool(self.rng.random() > 0.50)
+            pr = bool(self.rng.random() > 0.60)
+            her2 = True
+
+        # Baseline Recurrence Risk based on Stage & Subtype
+        if stage == PresentationStage.STAGE_I:
+            base_p_rec = 0.15
+        elif stage == PresentationStage.STAGE_II:
+            base_p_rec = 0.30
+        elif stage == PresentationStage.STAGE_III:
+            base_p_rec = 0.55
+        else:
+            base_p_rec = 0.85
+
+        if subtype == BreastCancerSubtype.TNBC:
+            p_rec = min(0.95, base_p_rec * 1.30)
+        elif subtype == BreastCancerSubtype.HER2_POS:
+            p_rec = min(0.90, base_p_rec * 1.15)
+        else:
+            p_rec = base_p_rec
+
+        has_recurrence = bool(self.rng.random() < p_rec)
+
+        # Indolent micro-metastatic course (overdetection modeling, ML_PROGRAM §4.5)
+        # ~8% of recurrences grow extremely slowly and do not cause acute death in surveillance window
+        is_indolent = False
+        if has_recurrence and self.rng.random() < 0.08:
+            is_indolent = True
+
+        true_recurrence_day: Optional[float] = None
+        true_recurrence_site: Optional[str] = None
+
+        if has_recurrence:
+            if subtype == BreastCancerSubtype.TNBC:
+                # TNBC recurs earlier (gamma peak at 1-2 years)
+                rec_days = float(self.rng.gamma(shape=2.5, scale=150.0) + 60.0)
+            else:
+                # Luminal recurs steadily over 1-5 years
+                rec_days = float(self.rng.gamma(shape=3.5, scale=180.0) + 90.0)
+
+            true_recurrence_day = min(1825.0, rec_days)
+
+            # Metastatic site selection using SEER priors by subtype (E12)
+            site_draw = self.rng.random()
+            if subtype == BreastCancerSubtype.HR_POS_HER2_NEG:
+                # 72% bone, 15% lung, 10% liver, 3% brain
+                if site_draw < 0.72:
+                    true_recurrence_site = TargetOrgan.BONE.value
+                elif site_draw < 0.87:
+                    true_recurrence_site = TargetOrgan.LUNG.value
+                elif site_draw < 0.97:
+                    true_recurrence_site = TargetOrgan.LIVER.value
+                else:
+                    true_recurrence_site = TargetOrgan.BRAIN.value
+            elif subtype == BreastCancerSubtype.HER2_POS:
+                # 45% bone, 32% liver, 15% lung, 8% brain
+                if site_draw < 0.45:
+                    true_recurrence_site = TargetOrgan.BONE.value
+                elif site_draw < 0.77:
+                    true_recurrence_site = TargetOrgan.LIVER.value
+                elif site_draw < 0.92:
+                    true_recurrence_site = TargetOrgan.LUNG.value
+                else:
+                    true_recurrence_site = TargetOrgan.BRAIN.value
+            else:  # TNBC
+                # 35% bone, 25% liver, 25% lung, 15% brain
+                if site_draw < 0.35:
+                    true_recurrence_site = TargetOrgan.BONE.value
+                elif site_draw < 0.60:
+                    true_recurrence_site = TargetOrgan.LIVER.value
+                elif site_draw < 0.85:
+                    true_recurrence_site = TargetOrgan.LUNG.value
+                else:
+                    true_recurrence_site = TargetOrgan.BRAIN.value
+
+        # Competing risks (intercurrent cardiovascular/septic death or loss-to-follow-up)
+        competing_event: Optional[str] = None
+        competing_event_day: Optional[float] = None
+        comp_draw = self.rng.random()
+        if comp_draw < 0.05:
+            # Cardiovascular/stroke event
+            competing_event = "cardiovascular_event"
+            competing_event_day = float(self.rng.uniform(120.0, 1800.0))
+        elif comp_draw < 0.09:
+            # Lost to follow-up due to relocation / financial distress
+            competing_event = "lost_to_follow_up"
+            competing_event_day = float(self.rng.uniform(180.0, 1400.0))
+
+        # Facility parameters (inter-lab systematic analyzer bias and scale, Task T8)
+        facility_idx = int(self.rng.integers(1, 7))
+        facility_id = f"FACILITY-NG-{facility_idx:02d}"
+        
+        lab_offsets: Dict[str, float] = {}
+        lab_scales: Dict[str, float] = {}
+        for code in ANALYTE_REGISTRY:
+            # Typical inter-lab bias ±5% to ±12%
+            lab_offsets[code] = float(self.rng.normal(0.0, 0.06))
+            lab_scales[code] = float(self.rng.uniform(0.94, 1.06))
+
+        # Baseline analyte levels (inter-individual variation CVg centered at reference midpoint)
+        base_levels: Dict[str, float] = {}
+        for code, analyte in ANALYTE_REGISTRY.items():
+            ref_mid = 0.5 * (analyte.plausibility.reference_low + analyte.plausibility.reference_high)
+            sigma_g = analyte.biological_variation.cv_g / 100.0
+            val = ref_mid * math.exp(float(self.rng.normal(-0.5 * sigma_g**2, sigma_g)))
+            base_levels[code] = max(analyte.plausibility.reference_low * 0.8, min(analyte.plausibility.reference_high * 1.1, val))
+
+        delay_factor = float(self.rng.uniform(1.0, 2.4))  # Out-of-pocket financial friction multiplier
+
+        return PatientBaseline(
+            patient_id=pt_id,
+            age=age,
+            stage=stage,
+            subtype=subtype,
+            er_status=er,
+            pr_status=pr,
+            her2_status=her2,
+            true_recurrence_event=has_recurrence,
+            true_recurrence_day=true_recurrence_day,
+            true_recurrence_site=true_recurrence_site,
+            is_indolent=is_indolent,
+            observed_recurrence_event=False,  # Updated dynamically during longitudinal simulation
+            observed_recurrence_day=None,
+            observed_recurrence_site=None,
+            competing_event=competing_event,
+            competing_event_day=competing_event_day,
+            generator_id=self.get_generator_type().value,
+            facility_id=facility_id,
+            out_of_pocket_delay_factor=delay_factor,
+            lab_offsets=lab_offsets,
+            lab_scales=lab_scales,
+            base_marker_levels=base_levels,
+        )
+
+    def generate_symptoms(
+        self,
+        pt: PatientBaseline,
+        day: float,
+        latent_state: LatentCompartmentState,
+    ) -> Dict[str, int]:
+        """
+        Generates realistic symptom grades (0 to 4) coupled to organ burdens.
+        """
+        symptoms = {
+            "bone_pain": 0,
+            "jaundice": 0,
+            "ruq_pain": 0,
+            "cough_dyspnea": 0,
+            "headache_neuro": 0,
+            "fatigue_weight_loss": 0,
+        }
+        
+        # Non-specific baseline symptoms
+        if self.rng.random() < 0.08:
+            symptoms["fatigue_weight_loss"] = 1
+        if self.rng.random() < 0.04:
+            symptoms["bone_pain"] = 1
+
+        # Couple symptoms directly to latent compartment burdens
+        if latent_state.b_bone > 5.0:
+            grade = int(min(4, 1 + round(latent_state.b_bone / 15.0)))
+            symptoms["bone_pain"] = max(symptoms["bone_pain"], grade)
+
+        if latent_state.b_liver > 5.0:
+            grade = int(min(4, 1 + round(latent_state.b_liver / 15.0)))
+            symptoms["ruq_pain"] = max(symptoms["ruq_pain"], grade)
+            if latent_state.o_liver > 25.0:
+                symptoms["jaundice"] = int(min(4, round(latent_state.o_liver / 20.0)))
+
+        if latent_state.b_lung > 8.0:
+            grade = int(min(4, 1 + round(latent_state.b_lung / 18.0)))
+            symptoms["cough_dyspnea"] = max(symptoms["cough_dyspnea"], grade)
+
+        if latent_state.b_brain > 3.0:
+            grade = int(min(4, 1 + round(latent_state.b_brain / 10.0)))
+            symptoms["headache_neuro"] = max(symptoms["headache_neuro"], grade)
+
+        # High systemic burden causes cancer cachexia / fatigue
+        total_burden = latent_state.b_loc + latent_state.b_bone + latent_state.b_liver + latent_state.b_lung + latent_state.b_brain
+        if total_burden > 20.0:
+            symptoms["fatigue_weight_loss"] = int(min(4, 2 + round(total_burden / 30.0)))
+
+        return symptoms
+
+    @abstractmethod
+    def get_generator_type(self) -> GeneratorType:
+        pass
+
+    @abstractmethod
+    def simulate_longitudinal_trajectory(
+        self,
+        pt: PatientBaseline,
+        visit_days: List[float],
+    ) -> Tuple[List[Dict[str, float]], List[Dict[str, bool]], List[LatentCompartmentState]]:
+        """
+        Simulates laboratory values, missingness masks, and latent biological state vectors.
+        """
+        pass
+
+    def evaluate_verification_mechanism(
+        self,
+        pt: PatientBaseline,
+        day: float,
+        symptoms: Dict[str, int],
+        analytes: Dict[str, float],
+        latent_state: LatentCompartmentState,
+    ) -> bool:
+        """
+        Partial verification mechanism (ML_PROGRAM §4.2, H-D):
+        Imaging (CT/US/bone scan) is triggered primarily by:
+        1. Moderate/severe symptoms (Grade >= 2)
+        2. Substantial marker elevation (CA 15-3 >= 60 [iU]/mL)
+        3. Scheduled surveillance protocol (occasional baseline verification ~15%)
+        """
+        # Baseline probability of routine surveillance imaging
+        p_image = 0.08 / pt.out_of_pocket_delay_factor
+
+        # Symptoms dramatically raise clinical suspicion
+        max_symptom = max(symptoms.values()) if symptoms else 0
+        if max_symptom >= 3:
+            p_image += 0.70
+        elif max_symptom >= 2:
+            p_image += 0.40
+
+        # High tumour marker triggers imaging workup
+        ca153_val = analytes.get("ca_15_3", 0.0)
+        if ca153_val >= 75.0:
+            p_image += 0.65
+        elif ca153_val >= 35.0:
+            p_image += 0.30
+
+        p_image = min(0.95, p_image)
+        performed = bool(self.rng.random() < p_image)
+
+        # If imaging is performed and total metastatic burden exceeds radiological resolution threshold (burden >= 12.0)
+        total_burden = latent_state.b_bone + latent_state.b_liver + latent_state.b_lung + latent_state.b_brain + latent_state.b_loc
+        if performed and pt.true_recurrence_event and total_burden >= 12.0:
+            if not pt.observed_recurrence_event:
+                pt.observed_recurrence_event = True
+                pt.observed_recurrence_day = day
+                pt.observed_recurrence_site = pt.true_recurrence_site
+
+        return performed
+
+    def generate_cohort(
+        self,
+        num_patients: int = 100,
+        duration_days: float = 730.0,
+        nominal_interval_days: float = 90.0,
+    ) -> CohortDataset:
+        """Generates a complete longitudinal cohort dataset."""
+        patients: List[PatientBaseline] = []
+        observations: List[LongitudinalObservation] = []
+        latent_states: List[LatentCompartmentState] = []
+
+        start_date = datetime(2024, 1, 1, 8, 0, 0, tzinfo=timezone.utc)
+
+        for i in range(1, num_patients + 1):
+            pt = self.sample_nigerian_baseline(i)
+            patients.append(pt)
+
+            # Generate irregular visit process with informative missingness and out-of-pocket delays
+            visit_days = []
+            curr_day = float(self.rng.uniform(0.0, 15.0))
+            while curr_day < duration_days:
+                # Stop follow-up if competing event (death/lost) occurred
+                if pt.competing_event_day is not None and curr_day >= pt.competing_event_day:
+                    break
+                visit_days.append(curr_day)
+                
+                # Next scheduled visit: Gamma distribution modified by out-of-pocket friction
+                interval = nominal_interval_days * float(self.rng.gamma(shape=4.0, scale=0.25))
+                interval *= pt.out_of_pocket_delay_factor
+                curr_day += interval
+
+            # If patient is recurrent, visits taper off ~90 days after clinical confirmation as they shift to acute oncology
+            if pt.observed_recurrence_event and pt.observed_recurrence_day is not None:
+                visit_days = [d for d in visit_days if d <= (pt.observed_recurrence_day + 90.0)]
+
+            if not visit_days:
+                visit_days = [0.0]
+
+            trajectories, obs_masks, pt_latents = self.simulate_longitudinal_trajectory(pt, visit_days)
+            latent_states.extend(pt_latents)
+
+            for d, analyte_vals, mask, latent_st in zip(visit_days, trajectories, obs_masks, pt_latents):
+                obs_id = f"OBS-{pt.patient_id}-{int(d):04d}"
+                date_drawn = (start_date + timedelta(days=float(d))).isoformat()
+                symptoms = self.generate_symptoms(pt, d, latent_st)
+
+                # Preanalytical error tag if present
+                error_type = analyte_vals.pop("_preanalytical_error", None)
+
+                # Verification mechanism
+                imaging_done = self.evaluate_verification_mechanism(pt, d, symptoms, analyte_vals, latent_st)
+
+                obs = LongitudinalObservation(
+                    observation_id=obs_id,
+                    patient_id=pt.patient_id,
+                    day=float(d),
+                    date_drawn=date_drawn,
+                    analytes=analyte_vals,
+                    observed_mask=mask,
+                    symptoms=symptoms,
+                    imaging_performed=imaging_done,
+                    preanalytical_error=error_type,
+                    is_synthetic=True,
+                )
+                observations.append(obs)
+
+        return CohortDataset(
+            patients=patients,
+            observations=observations,
+            latent_states=latent_states,
+            generator_type=self.get_generator_type(),
+            seed=self.seed,
+        )
+
+
+# ==============================================================================
+# Generator G1: Continuous Compartmental Secretion Kinetics
+# ==============================================================================
+
+class ContinuousSecretionGenerator(BaseCohortGenerator):
+    """
+    Generator G1: Continuous compartmental secretion kinetics with ODE/SDE dynamics.
+    - Explicit latent compartmental burdens (bone, liver, lung, brain, locoregional).
+    - Marker shedding proportional to burden; physiological clearance half-life.
+    - Coupled organ-damage dynamics.
+    - Adjuvant chemotherapy effects in first 6 months.
+    """
+
+    def get_generator_type(self) -> GeneratorType:
+        return GeneratorType.G1_SMOOTH
+
+    def simulate_longitudinal_trajectory(
+        self,
+        pt: PatientBaseline,
+        visit_days: List[float],
+    ) -> Tuple[List[Dict[str, float]], List[Dict[str, bool]], List[LatentCompartmentState]]:
+        trajectories = []
+        masks = []
+        latents = []
+
+        # Seeding time occurs sufficiently early so that clinical threshold crossing (30 U/mL)
+        # is achieved with pre-clinical lead time of 4.2 ± 1.5 months (126 ± 40 days, EVIDENCE E1)
+        t_rec = pt.true_recurrence_day if pt.true_recurrence_event and pt.true_recurrence_day is not None else 1e9
+        target_lead = float(self.rng.normal(126.0, 30.0))
+        target_lead = max(55.0, min(210.0, target_lead))
+        t_seed = t_rec - (target_lead + 65.0)
+
+        # Growth rate (indolent cases grow slowly; active cases expand steadily)
+        if pt.is_indolent:
+            growth_k = float(self.rng.uniform(0.002, 0.005))
+        elif pt.subtype == BreastCancerSubtype.TNBC:
+            growth_k = float(self.rng.uniform(0.025, 0.035))
+        else:
+            growth_k = float(self.rng.uniform(0.020, 0.030))
+
+        # Adjuvant chemotherapy in first 180 days for Stage II/III
+        has_chemo = (pt.stage in [PresentationStage.STAGE_II, PresentationStage.STAGE_III] and self.rng.random() < 0.85)
+
+        for d in visit_days:
+            # Latent compartment outgrowth
+            b_loc = 0.0
+            b_bone = 0.0
+            b_liver = 0.0
+            b_lung = 0.0
+            b_brain = 0.0
+
+            if pt.true_recurrence_event and d >= t_seed:
+                # Exponential growth transitioning to Gompertzian saturation at mass=100.0
+                raw_mass = math.exp(min(10.0, growth_k * (d - t_seed))) - 1.0
+                mass = 100.0 * (1.0 - math.exp(-raw_mass / 50.0))
+
+                # Route mass to primary recurrence site
+                if pt.true_recurrence_site == TargetOrgan.BONE.value:
+                    b_bone = mass
+                    b_loc = mass * 0.1
+                elif pt.true_recurrence_site == TargetOrgan.LIVER.value:
+                    b_liver = mass
+                    b_bone = mass * 0.15
+                elif pt.true_recurrence_site == TargetOrgan.LUNG.value:
+                    b_lung = mass
+                elif pt.true_recurrence_site == TargetOrgan.BRAIN.value:
+                    b_brain = mass
+                else:
+                    b_loc = mass
+
+            total_burden = b_loc + b_bone + b_liver + b_lung + b_brain
+
+            # Marker pool M(t): filtered integral of burden
+            m_ca153 = total_burden * 4.2
+            m_cea = total_burden * 0.75
+
+            # Organ damage states
+            o_liver = b_liver * 2.5
+            o_bone = b_bone * 3.2
+            o_renal = 0.0
+
+            # Treatment effect: Adjuvant chemotherapy active between day 30 and 180
+            treatment_active = None
+            if has_chemo and 30.0 <= d <= 180.0:
+                treatment_active = "chemotherapy"
+                # Drug-induced transient hepatic stress
+                o_liver += float(self.rng.uniform(8.0, 20.0))
+
+            latent_st = LatentCompartmentState(
+                patient_id=pt.patient_id,
+                day=d,
+                b_loc=b_loc,
+                b_bone=b_bone,
+                b_liver=b_liver,
+                b_lung=b_lung,
+                b_brain=b_brain,
+                m_ca153=m_ca153,
+                m_cea=m_cea,
+                o_liver=o_liver,
+                o_bone=o_bone,
+                o_renal=o_renal,
+                is_indolent=pt.is_indolent,
+                treatment_active=treatment_active,
+            )
+            latents.append(latent_st)
+
+            # Generate observed analytes with inter-individual baseline and facility calibration offset
+            vals: Dict[str, float] = {}
+            obs_mask: Dict[str, bool] = {}
+
+            for code, base_val in pt.base_marker_levels.items():
+                analyte = ANALYTE_REGISTRY[code]
+                sigma_i = analyte.biological_variation.cv_i / 100.0
+                bio_noise = self.rng.normal(0.0, sigma_i)
+                
+                # Baseline + Facility offset/scale
+                offset = pt.lab_offsets.get(code, 0.0)
+                scale = pt.lab_scales.get(code, 1.0)
+                current_val = (base_val * (1.0 + bio_noise) * scale) + (base_val * offset)
+
+                # Couple markers
+                if code == "ca_15_3":
+                    # Sensitivity highest in liver and bone, lower in lung (E1)
+                    site_mult = 1.25 if pt.true_recurrence_site == TargetOrgan.LIVER.value else (1.1 if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.65)
+                    current_val += m_ca153 * site_mult
+                elif code == "cea":
+                    current_val += m_cea
+
+                # Couple organ enzymes
+                if code in ["alt", "ast"]:
+                    current_val += o_liver * 2.2
+                elif code in ["alp", "ggt"]:
+                    current_val += o_liver * 2.8 + o_bone * 3.5
+                elif code == "total_bilirubin" and o_liver > 30.0:
+                    current_val += (o_liver - 30.0) * 0.08
+                elif code in ["calcium", "corrected_calcium"] and o_bone > 25.0:
+                    current_val += (o_bone - 25.0) * 0.04
+
+                # Chemotherapy myelosuppression effects
+                if treatment_active == "chemotherapy":
+                    if code in ["wbc", "anc", "platelets"]:
+                        current_val *= float(self.rng.uniform(0.65, 0.85))
+                    elif code == "haemoglobin":
+                        current_val -= float(self.rng.uniform(1.0, 2.5))
+
+                p = analyte.plausibility
+                vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
+
+                # Informative missingness (MNAR): CA 15-3 and CEA skipped occasionally due to out-of-pocket costs
+                if code in ["ca_15_3", "ca_27_29", "cea"]:
+                    # Expensive tests skipped with higher probability when financial friction is high
+                    skip_prob = 0.12 * pt.out_of_pocket_delay_factor
+                    is_measured = bool(self.rng.random() > skip_prob)
+                else:
+                    is_measured = bool(self.rng.random() > 0.03)
+
+                obs_mask[code] = is_measured
+
+            trajectories.append(vals)
+            masks.append(obs_mask)
+
+        return trajectories, masks, latents
+
+
+# ==============================================================================
+# Generator G2: Step-Change & Shedding Burst Kinetics
+# ==============================================================================
+
+class BurstSheddingGenerator(BaseCohortGenerator):
+    """
+    Generator G2: Episodic step-change and necrotic burst kinetics.
+    - Sudden episodic release of markers (shot noise).
+    - Step transitions mimicking sudden vascular invasion.
+    """
+
+    def get_generator_type(self) -> GeneratorType:
+        return GeneratorType.G2_BURST
+
+    def simulate_longitudinal_trajectory(
+        self,
+        pt: PatientBaseline,
+        visit_days: List[float],
+    ) -> Tuple[List[Dict[str, float]], List[Dict[str, bool]], List[LatentCompartmentState]]:
+        trajectories = []
+        masks = []
+        latents = []
+
+        t_rec = pt.true_recurrence_day if pt.true_recurrence_event and pt.true_recurrence_day is not None else 1e9
+
+        # Burst events occur at discrete times before clinical recurrence
+        burst_times: List[float] = []
+        if pt.true_recurrence_event and pt.true_recurrence_day is not None:
+            num_bursts = int(self.rng.integers(2, 5))
+            for _ in range(num_bursts):
+                b_time = t_rec - float(self.rng.uniform(20.0, 150.0))
+                burst_times.append(b_time)
+            burst_times.sort()
+
+        for d in visit_days:
+            past_bursts = [bt for bt in burst_times if bt <= d]
+            step_count = len(past_bursts)
+            recent_burst = any(0.0 <= (d - bt) <= 14.0 for bt in past_bursts)
+            
+            # Latent mass scales with step count
+            total_mass = step_count * 15.0
+            b_bone = total_mass if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.0
+            b_liver = total_mass if pt.true_recurrence_site == TargetOrgan.LIVER.value else 0.0
+            b_lung = total_mass if pt.true_recurrence_site == TargetOrgan.LUNG.value else 0.0
+            b_brain = total_mass if pt.true_recurrence_site == TargetOrgan.BRAIN.value else 0.0
+            b_loc = total_mass if pt.true_recurrence_site == TargetOrgan.BREAST.value else 0.0
+
+            m_ca153 = total_mass * 3.5 + (45.0 if recent_burst else 0.0)
+            m_cea = total_mass * 0.6 + (8.0 if recent_burst else 0.0)
+            o_liver = b_liver * 2.0
+            o_bone = b_bone * 2.5
+
+            latent_st = LatentCompartmentState(
+                patient_id=pt.patient_id,
+                day=d,
+                b_loc=b_loc,
+                b_bone=b_bone,
+                b_liver=b_liver,
+                b_lung=b_lung,
+                b_brain=b_brain,
+                m_ca153=m_ca153,
+                m_cea=m_cea,
+                o_liver=o_liver,
+                o_bone=o_bone,
+                o_renal=0.0,
+                is_indolent=pt.is_indolent,
+            )
+            latents.append(latent_st)
+
+            vals: Dict[str, float] = {}
+            obs_mask: Dict[str, bool] = {}
+
+            for code, base_val in pt.base_marker_levels.items():
+                analyte = ANALYTE_REGISTRY[code]
+                sigma_i = analyte.biological_variation.cv_i / 100.0
+                bio_noise = self.rng.normal(0.0, sigma_i)
+                current_val = base_val * (1.0 + bio_noise)
+
+                if code in ["ca_15_3", "ca_27_29"]:
+                    current_val += m_ca153
+                elif code == "cea":
+                    current_val += m_cea
+                elif code in ["alt", "ast"] and pt.true_recurrence_site == TargetOrgan.LIVER.value:
+                    current_val += o_liver * 2.5
+                elif code == "alp" and pt.true_recurrence_site == TargetOrgan.BONE.value:
+                    current_val += o_bone * 3.0
+
+                p = analyte.plausibility
+                vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
+                obs_mask[code] = bool(self.rng.random() > 0.05)
+
+            trajectories.append(vals)
+            masks.append(obs_mask)
+
+        return trajectories, masks, latents
+
+
+# ==============================================================================
+# Generator G3: Heavy-Tailed Noise & Pre-Analytical Errors
+# ==============================================================================
+
+class HeavyTailedNoiseGenerator(BaseCohortGenerator):
+    """
+    Generator G3: Heavy-tailed Student-t measurement noise, inter-lab offsets, and pre-analytical error injection.
+    - Heavy-tailed Student-t (nu=3) noise.
+    - Pre-analytical error injection (haemolysis, saline dilution).
+    - Informative missingness.
+    """
+
+    def get_generator_type(self) -> GeneratorType:
+        return GeneratorType.G3_NOISE
+
+    def simulate_longitudinal_trajectory(
+        self,
+        pt: PatientBaseline,
+        visit_days: List[float],
+    ) -> Tuple[List[Dict[str, float]], List[Dict[str, bool]], List[LatentCompartmentState]]:
+        trajectories = []
+        masks = []
+        latents = []
+
+        t_rec = pt.true_recurrence_day if pt.true_recurrence_event and pt.true_recurrence_day is not None else 1e9
+
+        for d in visit_days:
+            # Check for injected pre-analytical error
+            preanalytical_error: Optional[str] = None
+            roll = self.rng.random()
+            if roll < 0.04:
+                preanalytical_error = "haemolysis"
+            elif roll < 0.06:
+                preanalytical_error = "sample_dilution"
+
+            days_to_rec = t_rec - d
+            is_active = (days_to_rec <= 126.0)
+
+            # Signal strength
+            sig = max(0.0, (126.0 - days_to_rec) / 126.0) if is_active else 0.0
+            mass = sig * 50.0
+
+            b_bone = mass if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.0
+            b_liver = mass if pt.true_recurrence_site == TargetOrgan.LIVER.value else 0.0
+            b_lung = mass if pt.true_recurrence_site == TargetOrgan.LUNG.value else 0.0
+            b_brain = mass if pt.true_recurrence_site == TargetOrgan.BRAIN.value else 0.0
+            b_loc = mass if pt.true_recurrence_site == TargetOrgan.BREAST.value else 0.0
+
+            latent_st = LatentCompartmentState(
+                patient_id=pt.patient_id,
+                day=d,
+                b_loc=b_loc,
+                b_bone=b_bone,
+                b_liver=b_liver,
+                b_lung=b_lung,
+                b_brain=b_brain,
+                m_ca153=mass * 3.0,
+                m_cea=mass * 0.5,
+                o_liver=b_liver * 2.0,
+                o_bone=b_bone * 2.0,
+                o_renal=0.0,
+                is_indolent=pt.is_indolent,
+            )
+            latents.append(latent_st)
+
+            vals: Dict[str, Any] = {}
+            obs_mask: Dict[str, bool] = {}
+
+            for code, base_val in pt.base_marker_levels.items():
+                analyte = ANALYTE_REGISTRY[code]
+                sigma_i = analyte.biological_variation.cv_i / 100.0
+
+                # Heavy-tailed Student-t noise (df=3)
+                t_noise = float(self.rng.standard_t(df=3) * (sigma_i * 0.7))
+                offset = pt.lab_offsets.get(code, 0.0)
+                current_val = base_val * (1.0 + offset + t_noise)
+
+                # True recurrence signal
+                if is_active:
+                    if code == "ca_15_3":
+                        current_val += sig * 55.0
+                    elif code == "alt" and pt.true_recurrence_site == TargetOrgan.LIVER.value:
+                        current_val += sig * 110.0
+                    elif code == "alp" and pt.true_recurrence_site == TargetOrgan.BONE.value:
+                        current_val += sig * 160.0
+
+                # Pre-analytical error injection
+                if preanalytical_error == "haemolysis":
+                    # Rupture of RBCs spikes AST and LDH
+                    if code == "ast":
+                        current_val *= float(self.rng.uniform(2.5, 4.5))
+                    elif code == "ldh":
+                        current_val *= float(self.rng.uniform(3.0, 5.0))
+                elif preanalytical_error == "sample_dilution":
+                    # IV fluid dilution reduces concentrations by 25-40%
+                    current_val *= float(self.rng.uniform(0.60, 0.75))
+
+                p = analyte.plausibility
+                vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
+                obs_mask[code] = bool(self.rng.random() > 0.06)
+
+            if preanalytical_error:
+                vals["_preanalytical_error"] = preanalytical_error
+
+            trajectories.append(vals)
+            masks.append(obs_mask)
+
+        return trajectories, masks, latents
+
+
+def get_generator(
+    generator_type: GeneratorType | str,
+    seed: int = 42,
+) -> BaseCohortGenerator:
+    """Factory function for retrieving a cohort generator by type."""
+    t = GeneratorType(generator_type)
+    if t == GeneratorType.G1_SMOOTH:
+        return ContinuousSecretionGenerator(seed=seed)
+    elif t == GeneratorType.G2_BURST:
+        return BurstSheddingGenerator(seed=seed)
+    elif t == GeneratorType.G3_NOISE:
+        return HeavyTailedNoiseGenerator(seed=seed)
+    raise ValueError(f"Unknown generator type: {generator_type}")

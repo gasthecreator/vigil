@@ -1,0 +1,6 @@
+bcr_patient_barcode,age_at_initial_pathologic_diagnosis,gender,ajcc_pathologic_tumor_stage,er_status_by_ihc,pr_status_by_ihc,her2_status_by_ihc,days_to_last_followup,days_to_death,days_to_new_tumor_event_after_initial_treatment,new_neoplasm_event_type
+TCGA-A2-A0T0,54,FEMALE,Stage IIA,Positive,Positive,Negative,1240,,1100,Distant Metastasis
+TCGA-A2-A0T1,47,FEMALE,Stage IIIB,Negative,Negative,Negative,480,480,360,Distant Metastasis
+TCGA-A2-A0T2,62,FEMALE,Stage IA,Positive,Positive,Negative,2100,,,
+TCGA-A2-A0T3,38,FEMALE,Stage IIIA,Negative,Negative,Positive,850,,720,Locoregional Recurrence
+TCGA-A2-A0T4,59,FEMALE,Stage IIB,Positive,Negative,Negative,1560,,,

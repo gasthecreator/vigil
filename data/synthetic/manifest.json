@@ -1,0 +1,32 @@
+{
+  "g1_smooth_kinetics": {
+    "num_patients": 500,
+    "num_observations": 2799,
+    "sha256_observations": "8884de4d0e7bd91bbb9313c63e257506d50618c703de4a632067b1acb1fd3941",
+    "observations_file": "g1_smooth_kinetics_observations.csv.gz",
+    "patients_file": "g1_smooth_kinetics_patients.csv.gz",
+    "latent_states_file": "g1_smooth_kinetics_latent_states.csv.gz",
+    "generator_type": "g1_smooth_kinetics",
+    "seed": 42
+  },
+  "g2_shedding_bursts": {
+    "num_patients": 500,
+    "num_observations": 2868,
+    "sha256_observations": "2bbbcdb05c347f808ef9535b6b5d7d512e880a309dda686bec1531394c4a12e5",
+    "observations_file": "g2_shedding_bursts_observations.csv.gz",
+    "patients_file": "g2_shedding_bursts_patients.csv.gz",
+    "latent_states_file": "g2_shedding_bursts_latent_states.csv.gz",
+    "generator_type": "g2_shedding_bursts",
+    "seed": 42
+  },
+  "g3_heavy_tailed_noise": {
+    "num_patients": 500,
+    "num_observations": 2778,
+    "sha256_observations": "c83c1a4568da1cb33de0d0479812ed5f3538c2ccc95d8b68f89649cd85c2af1f",
+    "observations_file": "g3_heavy_tailed_noise_observations.csv.gz",
+    "patients_file": "g3_heavy_tailed_noise_patients.csv.gz",
+    "latent_states_file": "g3_heavy_tailed_noise_latent_states.csv.gz",
+    "generator_type": "g3_heavy_tailed_noise",
+    "seed": 42
+  }
+}
