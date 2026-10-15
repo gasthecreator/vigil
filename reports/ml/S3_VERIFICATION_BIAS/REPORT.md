@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S3_VERIFICATION_BIAS  
-**Date Executed:** 2026-10-15 19:18:10 UTC  
+**Date Executed:** 2026-10-15 19:45:48 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Findings

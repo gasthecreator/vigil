@@ -78,5 +78,53 @@
       "delta_auc": -0.1553,
       "delta_ece": -0.1725
     }
+  },
+  "K1_Kinetic": {
+    "in_distribution": {
+      "auc": 0.6025,
+      "brier": 0.1977,
+      "ece": 0.1412
+    },
+    "g3_stress": {
+      "auc": 0.6705,
+      "brier": 0.2094,
+      "ece": 0.0908
+    },
+    "degradation": {
+      "delta_auc": -0.068,
+      "delta_ece": -0.0504
+    }
+  },
+  "K4_DeepZoo": {
+    "in_distribution": {
+      "auc": 0.601,
+      "brier": 0.2022,
+      "ece": 0.1544
+    },
+    "g3_stress": {
+      "auc": 0.6689,
+      "brier": 0.216,
+      "ece": 0.1056
+    },
+    "degradation": {
+      "delta_auc": -0.0679,
+      "delta_ece": -0.0489
+    }
+  },
+  "K8_ProductionEnsemble": {
+    "in_distribution": {
+      "auc": 0.6066,
+      "brier": 0.1988,
+      "ece": 0.1514
+    },
+    "g3_stress": {
+      "auc": 0.6645,
+      "brier": 0.22,
+      "ece": 0.117
+    },
+    "degradation": {
+      "delta_auc": -0.058,
+      "delta_ece": -0.0344
+    }
   }
 }

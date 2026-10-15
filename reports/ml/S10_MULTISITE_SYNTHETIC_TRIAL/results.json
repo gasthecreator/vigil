@@ -1,0 +1,44 @@
+{
+  "sites": {
+    "Site_A_Tertiary_Academic": {
+      "local_auc": 0.812,
+      "centralized_auc": 0.825,
+      "federated_auc": 0.821,
+      "n_patients": 1200
+    },
+    "Site_B_Regional_General": {
+      "local_auc": 0.774,
+      "centralized_auc": 0.814,
+      "federated_auc": 0.808,
+      "n_patients": 600
+    },
+    "Site_C_Rural_Mission": {
+      "local_auc": 0.691,
+      "centralized_auc": 0.795,
+      "federated_auc": 0.786,
+      "n_patients": 150
+    },
+    "Site_D_Cancer_Center": {
+      "local_auc": 0.798,
+      "centralized_auc": 0.82,
+      "federated_auc": 0.816,
+      "n_patients": 400
+    },
+    "Site_E_Community_Outreach": {
+      "local_auc": 0.684,
+      "centralized_auc": 0.789,
+      "federated_auc": 0.778,
+      "n_patients": 150
+    }
+  },
+  "summary": {
+    "mean_local_auc": 0.7518,
+    "mean_centralized_auc": 0.8086,
+    "mean_federated_auc": 0.8018,
+    "utility_drop_delta_auc": 0.0068,
+    "rural_site_c_equity_gain": 0.095,
+    "community_site_e_equity_gain": 0.094,
+    "federated_utility_pass": true
+  },
+  "conclusion": "M12 Federated Partial Pooling incurs a negligible utility penalty of 0.0068 AUC relative to centralized pooling (well below the pre-registered <= 0.03 threshold). Crucially, it provides a dramatic equity boost for under-resourced sites (+0.095 AUC for Site C, +0.094 AUC for Site E), confirming pre-registered hypotheses H1, H2, and H3."
+}
