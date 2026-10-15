@@ -10,6 +10,7 @@ Rules (see docs/REALITY_RULES.md):
 
 Exit code 1 if any finding. Allow-list line: `# reality: allow(<rule>) <reason>` on the flagged line.
 """
+
 from __future__ import annotations
 
 import ast
@@ -29,7 +30,9 @@ def _allowed(lines: list[str], lineno: int, rule: str) -> bool:
 
 
 def _is_float(n: ast.AST) -> bool:
-    return isinstance(n, ast.Constant) and isinstance(n.value, float) and not isinstance(n.value, bool)
+    return (
+        isinstance(n, ast.Constant) and isinstance(n.value, float) and not isinstance(n.value, bool)
+    )
 
 
 def _numeric_literals(node: ast.AST) -> int:
@@ -45,7 +48,11 @@ def _numeric_literals(node: ast.AST) -> int:
 
 def _body_without_doc(fn: ast.FunctionDef) -> list[ast.stmt]:
     body = list(fn.body)
-    if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant):
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(getattr(body[0], "value", None), ast.Constant)
+    ):
         body = body[1:]
     return body
 
@@ -58,7 +65,9 @@ def _flag_only_fit(fn: ast.FunctionDef) -> bool:
         if isinstance(stmt, ast.Pass):
             continue
         if isinstance(stmt, ast.Assign) and all(
-            isinstance(t, ast.Attribute) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, bool)
+            isinstance(t, ast.Attribute)
+            and isinstance(stmt.value, ast.Constant)
+            and isinstance(stmt.value.value, bool)
             for t in stmt.targets
         ):
             continue
@@ -81,9 +90,14 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
 
     # R4: parenthesised identifiers in module docstring must exist somewhere in the package set
     mod_doc = ast.get_docstring(tree) or ""
-    for name in re.findall(r"\(([A-Z][A-Za-z0-9_]*(?:K\d+|Model|Engine|Filter|Detector|Controller|Estimator|Network))\)", mod_doc):
+    for name in re.findall(
+        r"\(([A-Z][A-Za-z0-9_]*(?:K\d+|Model|Engine|Filter|Detector|Controller|Estimator|Network))\)",
+        mod_doc,
+    ):
         if name not in defined_classes and not _allowed(lines, 1, "R4"):
-            findings.append(f"{rel}:1 [R4] docstring names class `{name}` that is not defined anywhere")
+            findings.append(
+                f"{rel}:1 [R4] docstring names class `{name}` that is not defined anywhere"
+            )
 
     # R4b: methods promised in a module docstring must be backed by a real import somewhere in the packages
     promised = {
@@ -104,12 +118,18 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
                 else:
                     found = found or bool(re.search(impl, txt, re.M))
             if not found:
-                findings.append(f"{rel}:1 [R4] docstring promises `{label}` but no implementation/import was found")
+                findings.append(
+                    f"{rel}:1 [R4] docstring promises `{label}` but no implementation/import was found"
+                )
 
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             # R1
-            if STUDY_FN.search(node.name) and _numeric_literals(node) >= 3 and not _allowed(lines, node.lineno, "R1"):
+            if (
+                STUDY_FN.search(node.name)
+                and _numeric_literals(node) >= 3
+                and not _allowed(lines, node.lineno, "R1")
+            ):
                 findings.append(
                     f"{rel}:{node.lineno} [R1] `{node.name}` contains >=3 hard-coded float results; "
                     "results must be computed from data/models"
@@ -118,15 +138,27 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
             if node.name == "fit" and _flag_only_fit(node):
                 window = "\n".join(lines[node.lineno - 1 : node.lineno + 1])
                 if "reality: stateless" not in window and not _allowed(lines, node.lineno, "R2"):
-                    findings.append(f"{rel}:{node.lineno} [R2] `fit` does not learn anything (sets flags only)")
+                    findings.append(
+                        f"{rel}:{node.lineno} [R2] `fit` does not learn anything (sets flags only)"
+                    )
             # R3
             if VALIDATION_FN.search(node.name) and not node.name.startswith("_"):
-                uses_self = any(isinstance(n, ast.Name) and n.id == "self" for n in ast.walk(node) if n is not None) and any(
-                    isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id == "self"
+                uses_self = any(
+                    isinstance(n, ast.Name) and n.id == "self"
+                    for n in ast.walk(node)
+                    if n is not None
+                ) and any(
+                    isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == "self"
                     for n in ast.walk(node)
                 )
                 args = [a.arg for a in node.args.args]
-                if args[:1] == ["self"] and not uses_self and not _allowed(lines, node.lineno, "R3"):
+                if (
+                    args[:1] == ["self"]
+                    and not uses_self
+                    and not _allowed(lines, node.lineno, "R3")
+                ):
                     findings.append(
                         f"{rel}:{node.lineno} [R3] validation `{node.name}` never touches the model (`self`); "
                         "it validates a toy, not the implementation"
@@ -163,7 +195,9 @@ def main(argv: list[str]) -> int:
             print("  -", f)
         print(f"{len(findings)} finding(s). See docs/REALITY_RULES.md.")
         return 1
-    print("Reality audit passed: no hard-coded results, no-op fits, toy validations or phantom classes found.")
+    print(
+        "Reality audit passed: no hard-coded results, no-op fits, toy validations or phantom classes found."
+    )
     return 0
 
 

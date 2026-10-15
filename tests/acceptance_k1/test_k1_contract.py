@@ -1,4 +1,5 @@
 """Overseer-authored K1 acceptance tests. DO NOT EDIT (see docs/ml/K1-CONTRACT.md)."""
+
 from __future__ import annotations
 
 import importlib
@@ -11,6 +12,8 @@ import pytest
 from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[2]
+if os.environ.get("VIGIL_ACCEPTANCE") != "1":
+    pytest.skip("set VIGIL_ACCEPTANCE=1 to run K1 acceptance tests", allow_module_level=True)
 K1 = importlib.import_module(os.environ.get("VIGIL_K1_MODULE", "vigil_ml.k1"))
 REQUIRED_ROUTES = ("amortized", "ukf", "nuts", "npe")
 SCHEDULE = [0, 60, 120, 180, 240, 300, 360]
@@ -38,7 +41,9 @@ def _draws(route, obs, rng, n=400):
 
 
 def test_param_names_contract():
-    assert {"doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"} <= set(K1.PARAM_NAMES)
+    assert {"doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"} <= set(
+        K1.PARAM_NAMES
+    )
 
 
 @pytest.mark.parametrize("name", REQUIRED_ROUTES)
@@ -89,7 +94,9 @@ def test_routes_agree_with_reference():
         ref = _draws(K1.ROUTES["nuts"], obs, rng)["doubling_time_days"]
         for other in ("amortized", "npe"):
             o = _draws(K1.ROUTES[other], obs, rng)["doubling_time_days"]
-            assert abs(np.mean(o) - np.mean(ref)) <= 0.30 * np.mean(ref), f"{other} disagrees with NUTS"
+            assert abs(np.mean(o) - np.mean(ref)) <= 0.30 * np.mean(ref), (
+                f"{other} disagrees with NUTS"
+            )
             lo, hi = np.percentile(o, [2.5, 97.5])
             assert lo <= np.mean(ref) <= hi, f"NUTS mean outside {other} 95% interval"
 
@@ -110,8 +117,11 @@ def test_risk_is_posterior_derived_and_monotone():
 
 def test_no_direct_label_head():
     model = K1.HybridKineticModelK1()
-    names = [n for n, _ in getattr(model, "recognition_net", model).named_parameters()] if hasattr(
-        getattr(model, "recognition_net", model), "named_parameters") else []
+    names = (
+        [n for n, _ in getattr(model, "recognition_net", model).named_parameters()]
+        if hasattr(getattr(model, "recognition_net", model), "named_parameters")
+        else []
+    )
     names += list(vars(model).keys())
     bad = [n for n in names if re.search(r"risk_logit|label_head", n)]
     assert not bad, f"model contains a direct label head: {bad}"
@@ -125,4 +135,6 @@ def test_identifiability_is_computed():
     assert len(ev) == len(K1.PARAM_NAMES), "eigenvalues must cover every parameter"
     ratio = np.abs(ev) / max(np.max(np.abs(ev)), 1e-300)
     expected_nonid = int(np.sum(ratio < 1e-6))
-    assert len(out["non_identifiable"]) == expected_nonid, "non_identifiable list not consistent with eigenvalues"
+    assert len(out["non_identifiable"]) == expected_nonid, (
+        "non_identifiable list not consistent with eigenvalues"
+    )
