@@ -8,6 +8,9 @@ dependencies = [
     "pytest-cov>=5.0.0",
     "hypothesis>=6.100.0",
     "ruff>=0.6.0",
+    "numpyro>=0.22.0",
+    "jax>=0.10.2",
+    "sbi>=0.27.0",
 ]
 
 [tool.uv.workspace]

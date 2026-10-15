@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S2_SEQUENTIAL  
-**Date Executed:** 2026-10-15 22:00:17 UTC  
+**Date Executed:** 2026-10-15 22:54:52 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Pre-Registered Hypothesis Testing
