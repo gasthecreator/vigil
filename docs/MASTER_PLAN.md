@@ -1,6 +1,6 @@
 # Vigil — Master Plan
 
-> **Document status:** Canonical. Version 1.0 (2026-10-14). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
+> **Document status:** Canonical. Version 1.1 (2026-10-14). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
 > **Formerly named:** Sentinel (renamed to Vigil, 2026-10-14). Any remaining "Sentinel" string in code, docs, config, UI or artifact names is a defect to fix in Phase 0.
 > **This file is the single source of truth for what Vigil is, why it exists, what "finished" means, and how it gets built.** If another file, an old prompt, or your own prior output contradicts it, this file wins. If this file is wrong or incomplete, say so in a proposal (Section 17.4); do not silently deviate.
 
@@ -8,7 +8,7 @@
 
 ## 0. How the executor (Gemini / Antigravity) must use this document
 
-1. **Read order at the start of every session:** `AGENTS.md` → this file (all of it; it is long on purpose) → `docs/PROGRESS.md` (where we are) → `docs/EVIDENCE.md` (what is known and what is only claimed) → the phase brief you were pointed at (Section 14).
+1. **Read order at the start of every session:** `AGENTS.md` → this file (all of it; it is long on purpose) → `docs/ML_PROGRAM.md` (binding ML/statistics program; stricter than §6.1–6.3, §8 where they differ) → `docs/PROGRESS.md` (where we are) → `docs/EVIDENCE.md` (what is known and what is only claimed) → the phase brief you were pointed at (Section 14).
 2. **Operating skills (mandatory, always on):**
    - `.agent/skills/complete-solution/SKILL.md` — never take the easier route, never defer, never stub, never fake verification.
    - `.agent/skills/repo-standards/SKILL.md` (+ its `references/` and `assets/templates/`) — the repository must meet Google/Microsoft/Amazon/OpenSSF-grade standards at all times.
@@ -277,6 +277,8 @@ Every synthetic row carries `synthetic=true` and `generator_id`; APIs and UI sho
 
 ## 8. Machine-learning & statistical specification
 
+> **The deep ML/statistics program is `docs/ML_PROGRAM.md` (binding).** It adds: hybrid mechanistic–neural state-space model (K1), anytime-valid sequential detection with patient-level false-alarm control (K2), Bayesian joint longitudinal–survival comparator (K3), deep irregular-time zoo with pre-training and scaling study (K4), hierarchical lab harmonisation (K5), active sensing / next-test timing (K6), causal delay analysis (K7), verification-bias, lead-time and overdetection evaluation, ten pre-registered studies S1–S10, and an ML engineering/compute plan. Where this section and the ML Program differ, the ML Program wins.
+
 ### 8.1 Problem formulations
 - **P-A (site propensity | metastasis):** multi-class/probabilistic over {bone, liver, lung, brain, other}, from baseline features. Evaluated by log-loss, calibration, and subgroup performance.
 - **P-B (event-risk over horizons):** time-to-event (discrete-time hazard) with horizons H ∈ {3,6,12} months; landmark prediction at each new observation; right-censoring handled; competing risk (death without recurrence) handled by cause-specific or Fine–Gray style formulation.
@@ -473,7 +475,7 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 
 ### Phase 1 — Simulation Laboratory & data foundation
 - WP1.1 `vigil-core`: analyte registry (≥ 20 analytes, LOINC/UCUM, biological variation with citations), unit conversion library, plausibility bounds, FHIR mappers; property tests.
-- WP1.2 `vigil-sim`: ≥ 3 mechanistic generators with calibration-target tests (Section 6.13); latent-event labelling; informative missingness; inter-lab offsets; error injection (for M3); symptom/PRO generation; Nigerian-context priors (stage mix, subtype mix, missingness/cost) cited from `docs/EVIDENCE.md`; deterministic seeds; dataset cards; throughput benchmark (≥ 10⁵ patients generated in minutes).
+- WP1.2 `vigil-sim` (must satisfy the **P1 simulator requirements in `docs/ML_PROGRAM.md` §9**: latent compartments and seeding times, marker shedding/clearance kinetics, organ coupling, treatment effects, lab offsets, verification mechanism with true vs observed labels, MNAR observation model, label delay, competing risks, indolent trajectories, null trajectories, exported ground-truth latents): ≥ 3 mechanistic generators with calibration-target tests (Section 6.13); latent-event labelling; informative missingness; inter-lab offsets; error injection (for M3); symptom/PRO generation; Nigerian-context priors (stage mix, subtype mix, missingness/cost) cited from `docs/EVIDENCE.md`; deterministic seeds; dataset cards; throughput benchmark (≥ 10⁵ patients generated in minutes).
 - WP1.3 Ingestion framework and loaders for SEER-derived tables (schema + loader contract; actual restricted data are human-acquired), METABRIC & TCGA-BRCA clinical files, Project Data Sphere study packages, MIMIC-IV cancer-cohort builder; each with dataset card and validation suite. Where data are not yet obtained, the loader is developed against the **public data dictionaries** and a fixture generated from them, and the report states exactly which real-data runs are pending (this is a blocker-bounded state, not a stub).
 - WP1.4 Leakage test-suite (shuffled-label canary, future-leak detector, outcome-derived-feature static check, scaler-fit checks) as a reusable library with its own tests.
 - WP1.5 `docs/data/ACCESS.md` and `docs/clinical/PARTNERSHIP/` packages (Section 7.2).
@@ -481,12 +483,13 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 
 ### Phase 2 — Evaluation backbone & classical science core
 - WP2.1 `vigil-eval` harness (metrics with reference-value tests, splits, bootstrap, subgroup, DCA, lead-time, alert-burden, ablation runner, report renderer, regression gate).
-- WP2.2 M2 classical stack: rule baselines, Cox/discrete-time hazard, gradient boosting, joint longitudinal–survival comparator; engineered velocity/acceleration/variability/missingness features; horizon formulation; calibration.
+- WP2.2 M2 classical stack (plus K3 joint model and the P2 ML deliverables in `docs/ML_PROGRAM.md` §9): rule baselines, Cox/discrete-time hazard, gradient boosting, joint longitudinal–survival comparator; engineered velocity/acceleration/variability/missingness features; horizon formulation; calibration.
 - WP2.3 M1: literature/registry priors, hierarchical Bayesian & multinomial & boosted comparators; calibration; evidence badges; model cards.
 - WP2.4 First **honest benchmark report** on T-S data (cross-generator) with explicit “synthetic” labelling and sim-to-real section; experiment records EXP-0001…
 - **Exit gate:** one-command benchmark reproduces committed reports; metric implementations verified; baselines present; model/dataset cards; no ROC-AUC≈1.0 results unexplained; report committed.
 
 ### Phase 3 — Advanced modelling, calibration, uncertainty, abstention
+- WP3.0 **Execute `docs/ML_PROGRAM.md` K1, K2, K4, K5, K6, K8 and studies S1, S2, S4, S5, S6, S9, S10 in full** (pre-registered, with SBC, validity stress suite, identifiability and scaling studies; negative results committed).
 - WP3.1 Deep irregular-time families (GRU-D, GRU-ODE-Bayes, Neural CDE, continuous-time transformer, GRUwE), forward-only encoders, ensembles, self-supervised pre-training on MIMIC-IV-derived series (if access is granted; else on simulator-derived unlabeled series with the limitation stated).
 - WP3.2 Conformal risk control, adaptive conformal, abstention (8.7), OOD detection, calibrated alert tiers (8.6).
 - WP3.3 Exhaustive ablations and subgroup studies; failure-mode atlas; stress tests (missingness, shift, noise, unit errors).
@@ -495,7 +498,7 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 - **Exit gate:** selected model(s) beat the best classical baseline on calibrated net benefit with non-overlapping CIs *or* the classical winner ships with the elimination record; calibration/subgroup gates (8.3) satisfied or documented as release-blocking; alert policy chosen with α-budgets; runtime parity/latency tests green; report committed.
 
 ### Phase 4 — Plausibility, explanation, test ladder
-- WP4.1 M3 full implementation and validation on simulated ground truth with error injection; RCV tables with cited CVi/CVa; individual reference intervals; inter-lab offsets; three-way posterior calibration.
+- WP4.1 M3 full implementation (built on K1 predictive distributions + RCV/delta checks + K5 offsets; study S7) and validation on simulated ground truth with error injection; RCV tables with cited CVi/CVa; individual reference intervals; inter-lab offsets; three-way posterior calibration.
 - WP4.2 M5 fact-table → narrative → verifier; templates in all planned languages (machine-drafted, flagged unreviewed); adversarial suite; faithfulness evaluation of attribution methods.
 - WP4.3 M4 evidence base: curated sources for modality–organ sensitivity/specificity ranges, capability registry schema & seed from public information (flagged unverified), ranking engine, metamorphic tests.
 - **Exit gate:** M3/M4/M5 acceptance criteria met; verifier 100% on adversarial suite; evidence rows each cited; report committed.
@@ -517,6 +520,7 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 - **Exit gate:** Section 9.7 UX budgets met; WCAG 2.2 AA automated evidence plus a manual-audit checklist completed; offline e2e passes; report committed.
 
 ### Phase 7 — Treatment continuity, RT triage, quality audit (M7, M10, M13-twin)
+- WP7.0 K7 causal pipeline validated on simulation (study S8) per `docs/ML_PROGRAM.md`.
 - WP7.1 Harm model with evidence levels and uncertainty; optimiser (CP-SAT/MILP) with fairness and stability; explanation per move; scheduler UI.
 - WP7.2 Department digital twin; policy comparison study (≥ 1,000 replications/policy, sensitivity analysis over harm parameters); conclusion by Section 13.
 - WP7.3 Delay ledger, patient notifications integration (M6), audit trail.
@@ -615,7 +619,7 @@ Apply GitHub rulesets/branch protection and enable repository security features 
 | Level | Name | Meaning | Requires |
 |---|---|---|---|
 | **L0** | Honest prototype | What existed at `fa48736` *after* Phase 0 relabelling | Phase 0 |
-| **L1** | **Software-complete research platform (Vigil v1.0-rc)** | All modules implemented to their acceptance criteria; all tests/gates green; evaluated on synthetic + public data with honest labels; full safety/regulatory document set prepared | Phases 0–8 accepted |
+| **L1** | **Software-complete research platform (Vigil v1.0-rc)** | All modules (including every study S1–S10 in `docs/ML_PROGRAM.md` with decision records and a reproducible `VigilBench`) implemented to their acceptance criteria; all tests/gates green; evaluated on synthetic + public data with honest labels; full safety/regulatory document set prepared | Phases 0–8 accepted |
 | **L2** | Publicly benchmarked | Reproducible open benchmark and preprint-quality report (TRIPOD+AI) on T-S/T-P tiers; external reproduction by someone other than the builders | L1 + external reproduction |
 | **L3** | **Retrospectively validated** in the target setting | T-R results on a partner hospital cohort per the pre-registered plan; Missed-Signal Audit delivered | L2 + partner data + ethics approval |
 | **L4** | Prospectively validated (silent mode) | T-Q calibration and lead-time per pre-registration, alert burden within budget, subgroup gates met | L3 + governance |
@@ -645,4 +649,4 @@ Quantitative targets for lead time gained, false-alarm budget, sensitivity at th
 ## 19. Glossary
 **CDSS** clinical decision support system · **RCV** reference change value · **CVa/CVi/CVg** analytical, within-subject, between-subject coefficient of variation · **LOINC/UCUM/FHIR/SNOMED** health-data coding, unit and exchange standards · **DCA** decision-curve analysis · **ECE** expected calibration error · **PCCP** predetermined change control plan · **TRIPOD+AI / PROBAST+AI / DECIDE-AI / CONSORT-AI** reporting and appraisal guidelines for AI prediction/decision-support studies · **NDPA/NDPC** Nigeria Data Protection Act 2023 / Commission · **NHREC** Nigerian national health research ethics body · **MRD/ctDNA** minimal residual disease / circulating tumour DNA · **RT** radiotherapy · **LINAC** linear accelerator · **ACI** adaptive conformal inference · **DP** differential privacy · **CRDT** conflict-free replicated data type.
 
-*End of Master Plan v1.0.*
+*End of Master Plan v1.1.*

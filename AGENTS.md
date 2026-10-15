@@ -5,6 +5,7 @@ This repository is **Vigil** (formerly *Sentinel*), a breast-cancer follow-up de
 ## Mandatory reading order
 1. This file.
 2. [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) — the canonical product, plan, standards and definition of success. **Read all of it.**
+   Then [`docs/ML_PROGRAM.md`](docs/ML_PROGRAM.md) — the binding ML/statistics program (the product's scientific core). **Read all of it.**
 3. [`docs/PROGRESS.md`](docs/PROGRESS.md) — current phase, verdicts, pending human actions.
 4. [`docs/EVIDENCE.md`](docs/EVIDENCE.md) — what is known vs. only claimed.
 5. The phase brief you were given (it will reference `MASTER_PLAN.md` §14).
