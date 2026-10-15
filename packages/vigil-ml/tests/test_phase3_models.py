@@ -50,10 +50,11 @@ def test_k1_online_ukf_filtering():
         {"day": 90.0, "ca15_3": 19.5, "alt": 22.5},
         {"day": 180.0, "ca15_3": 24.0, "alt": 25.0},
     ]
-    x, P, log_liks = k1.filter_online(history)
+    x, P, log_liks, consistency = k1.filter_online(history)
     assert x.shape == (9,)
     assert P.shape == (9, 9)
     assert len(log_liks) == 3
+    assert "average_nis" in consistency
     assert np.all(x >= 0.0)
 
 

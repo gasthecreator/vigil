@@ -81,18 +81,18 @@
   },
   "K1_Kinetic": {
     "in_distribution": {
-      "auc": 0.6025,
-      "brier": 0.1977,
-      "ece": 0.1412
+      "auc": 0.6658,
+      "brier": 0.188,
+      "ece": 0.1648
     },
     "g3_stress": {
-      "auc": 0.6705,
-      "brier": 0.2094,
-      "ece": 0.0908
+      "auc": 0.7043,
+      "brier": 0.1999,
+      "ece": 0.1065
     },
     "degradation": {
-      "delta_auc": -0.068,
-      "delta_ece": -0.0504
+      "delta_auc": -0.0384,
+      "delta_ece": -0.0583
     }
   },
   "K4_DeepZoo": {

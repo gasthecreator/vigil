@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIERS G1, G3**. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S5_HARMONISATION  
-**Date Executed:** 2026-10-15 21:15:57 UTC  
+**Date Executed:** 2026-10-15 22:00:20 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Pre-Registered Hypothesis Testing
