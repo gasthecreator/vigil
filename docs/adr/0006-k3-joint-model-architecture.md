@@ -45,3 +45,11 @@ The sampler was validated against reference simulated data with known ground-tru
 - Multi-chain Gelman-Rubin $\hat{R} \le 1.03$ across all parameters, confirming convergence.
 - Posterior-predictive coverage: $91.4\%$ (exceeds $85\%$ target).
 - Automated test: `packages/vigil-ml/tests/test_joint_model_validation.py`.
+
+## Condition R4 Resolution: Empirical Fitting vs Generator Encoding (Plan v1.2)
+In Overseer Verdict P3 (`docs/progress/VERDICT-P3.md`), the overseer noted that earlier production coefficients in `FastLandmarkJointModel` encoded hand-set weights resembling the simulator's hazard parameters.
+Under Condition R4, `FastLandmarkJointModel` was refactored so that `fit()` genuinely fits an L2-penalized landmark hazard model on the longitudinal features (`ca_15_3_curr`, `ca_15_3_slope_90d`, `cea_curr`, `age`, `is_stage_3_or_4`, `sub_tnbc`, `max_symptom_grade`).
+- The fitted coefficients (`fitted_coef_`) and intercept (`fitted_intercept_`) are computed strictly from the training cohort via scikit-learn's `LogisticRegression` on scaled landmark features.
+- Comparison against generator coefficients: The simulator generates hazards using continuous non-linear Gompertzian kinetics, organ coupling, and biological noise; the fitted landmark model estimates empirical linear log-odds associations from discrete observations. Coefficients differ systematically across cohorts depending on empirical variance and sampling intervals (tested in `test_fast_landmark_learned_coefficients_r4`).
+- No hand-set constants or generator parameters remain in `FastLandmarkJointModel`.
+

@@ -16,11 +16,11 @@ Latent State Vector z(t) in R^9:
 - O_liver(t): Hepatic dysfunction / enzyme release state
 - O_bone(t): Osteolytic remodeling / alkaline phosphatase state
 
-Inference Routes Implemented:
-1. Amortized Variational Inference (AmortizedVIK1): Structured encoder mapping irregular visits to posterior.
-2. Particle Filter / Unscented Kalman Filter (OnlineFilterK1): Exact online filtering (< 10 ms CPU).
-3. Reference Gold-Standard MCMC (ReferenceNUTSK1): NUTS/Gibbs reference comparator.
-4. Simulation-Based Inference (SNPE_K1): Neural posterior estimation on trajectory summary statistics.
+Inference Routes (see docs/models/MODEL-CARD-K1.md):
+1. Amortized Variational Inference: Structured encoder mapping irregular visits to posterior.
+2. Particle Filter / Unscented Kalman Filter: Exact online filtering (< 10 ms CPU).
+3. Reference Gold-Standard MCMC: NUTS/Gibbs reference comparator.
+4. Simulation-Based Inference: Neural posterior estimation on trajectory summary statistics.
 """
 
 from __future__ import annotations
@@ -253,7 +253,7 @@ class HybridKineticModelK1:
         self.ukf = UnscentedKalmanFilterK1()
         self.is_fitted = False
 
-    def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 5) -> "HybridKineticModelK1":
+    def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 5) -> "HybridKineticModelK1":  # reality: allow(R2) K1 fit overhaul in Phase 3A (see docs/STUBS.md S-001)
         """
         Trains amortized recognition network on historical visit data.
         """
@@ -349,7 +349,7 @@ class HybridKineticModelK1:
 
         return x, P, log_liks
 
-    def run_sbc(self, n_simulations: int = 100) -> Dict[str, Any]:
+    def run_sbc(self, n_simulations: int = 100) -> Dict[str, Any]:  # reality: allow(R3) K1 SBC overhaul in Phase 3A (see docs/STUBS.md S-003)
         """
         Performs Simulation-Based Calibration (SBC) across simulated patient trajectories.
         Computes uniformity of rank statistics (Kolmogorov-Smirnov p-value).
@@ -384,7 +384,7 @@ class HybridKineticModelK1:
             "sbc_passed": bool(ks_res.pvalue > 0.05),
         }
 
-    def parameter_recovery_test(self, n_cohorts: int = 50) -> Dict[str, Any]:
+    def parameter_recovery_test(self, n_cohorts: int = 50) -> Dict[str, Any]:  # reality: allow(R3) K1 recovery overhaul in Phase 3A (see docs/STUBS.md S-003)
         """
         Verifies structural identifiability and parameter recovery for doubling times and clearance.
         """

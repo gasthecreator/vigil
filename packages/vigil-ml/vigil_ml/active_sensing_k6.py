@@ -97,22 +97,7 @@ class ActiveSensingEngineK6:
         )
 
     def run_study_s6(self) -> Dict[str, Any]:
-        """
-        Study S6: Evaluates detection delay vs total surveillance cost in simulation
-        comparing K6 active sensing against fixed 3-month and fixed 6-month schedules.
-        """
-        # Simulation results over 5-year follow-up:
-        # Fixed 3-month: 20 visits * $20 = $400, detection delay 42 days
-        # Fixed 6-month: 10 visits * $20 = $200, detection delay 92 days
-        # K6 Adaptive: ~11 visits * average $18 = $198, detection delay 48 days!
-        return {
-            "fixed_3month": {"mean_visits": 20.0, "mean_cost_usd": 400.0, "mean_detection_delay_days": 42.1},
-            "fixed_6month": {"mean_visits": 10.0, "mean_cost_usd": 200.0, "mean_detection_delay_days": 91.8},
-            "k6_active_sensing": {"mean_visits": 11.2, "mean_cost_usd": 204.0, "mean_detection_delay_days": 47.6},
-            "delay_reduction_vs_6mo_days": 44.2,
-            "cost_saving_vs_3mo_pct": 49.0,
-            "conclusion": (
-                "K6 Active Sensing achieves detection latency comparable to intensive 3-month surveillance (47.6 vs 42.1 days) "
-                "while cutting cumulative surveillance costs by 49.0%, matching the low cost of 6-month follow-up."
-            ),
-        }
+        """Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."""
+        raise NotImplementedError(
+            "Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."
+        )

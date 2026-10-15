@@ -25,6 +25,8 @@ jobs:
         run: python3 scripts/check_claims.py
       - name: Verify evidence register and citations
         run: python3 scripts/check_evidence.py
+      - name: Verify reality audit and anti-fabrication policy
+        run: python3 scripts/reality_audit.py --require-stub-registry
 
   backend-lint-and-test:
     runs-on: ubuntu-latest

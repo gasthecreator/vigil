@@ -33,6 +33,8 @@ lint:
 	$(PYTHON) scripts/check_claims.py
 	@echo "==> Verifying evidence register and citations..."
 	$(PYTHON) scripts/check_evidence.py
+	@echo "==> Verifying reality audit..."
+	$(PYTHON) scripts/reality_audit.py --require-stub-registry
 	@echo "==> Running ruff linter..."
 	$(UV) run ruff check .
 	@echo "==> Running web linter..."

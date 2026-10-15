@@ -28,6 +28,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
 from vigil_ml.baselines import BaseSurveillanceModel
 
@@ -318,6 +320,7 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
     K3 Fast Landmarking Production Approximation.
 
     Closed-form Empirical Bayes (EB) random effect estimation for low-latency clinical inference.
+    Fitted coefficients are genuinely estimated from the training cohort (Condition R4).
     Executes in < 5 ms on CPU, meeting the p95 < 100 ms clinical workstation budget.
     """
 
@@ -328,25 +331,79 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
         sigma_eps: float = 3.5,
         alpha: float = 0.085,
         horizon_days: float = 180.0,
+        C: float = 1.0,
+        random_state: int = 42,
     ):
         self.beta_0 = beta_0
         self.beta_1 = beta_1
         self.sigma_eps = sigma_eps
         self.alpha = alpha
         self.horizon_days = horizon_days
+        self.C = C
+        self.random_state = random_state
 
         # Prior covariance on random effects [b0, b1]
         self.Sigma_b = np.diag([25.0, 0.005])
         self.inv_Sigma_b = np.linalg.inv(self.Sigma_b)
 
+        # Learned landmark hazard / risk model (Condition R4)
+        self.scaler = StandardScaler()
+        self.classifier = LogisticRegression(C=C, max_iter=2000, random_state=random_state)
+        self.is_fitted = False
+        self.feature_names_: List[str] = [
+            "ca_15_3_curr",
+            "ca_15_3_slope_90d",
+            "cea_curr",
+            "age",
+            "is_stage_3_or_4",
+            "sub_tnbc",
+            "max_symptom_grade",
+        ]
+        self.fitted_coef_: Optional[np.ndarray] = None
+        self.fitted_intercept_: Optional[float] = None
+
+    def _extract_landmark_features(self, X: pd.DataFrame) -> np.ndarray:
+        marker = X["ca_15_3_curr"].values if "ca_15_3_curr" in X else np.full(len(X), 25.0)
+        slope = X["ca_15_3_slope_90d"].values if "ca_15_3_slope_90d" in X else np.zeros(len(X))
+        cea = X["cea_curr"].values if "cea_curr" in X else np.full(len(X), 2.5)
+        age = X["age"].values if "age" in X else np.full(len(X), 50.0)
+        stage_flag = X["is_stage_3_or_4"].values if "is_stage_3_or_4" in X else np.zeros(len(X))
+        tnbc_flag = X["sub_tnbc"].values if "sub_tnbc" in X else np.zeros(len(X))
+        symptom_grade = (
+            X["max_symptom_grade"].values if "max_symptom_grade" in X else np.zeros(len(X))
+        )
+        return np.column_stack([
+            marker,
+            slope,
+            cea,
+            age,
+            stage_flag,
+            tnbc_flag,
+            symptom_grade,
+        ])
+
     def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> FastLandmarkJointModel:
-        """Calibrates baseline parameters from training cohort."""
+        """
+        Calibrates baseline trajectory parameters and fits landmark hazard model from training cohort.
+        Condition R4: Learns all coefficients from data; does not encode simulator generator constants.
+        """
         if "ca_15_3_curr" in X:
             self.beta_0 = float(X["ca_15_3_curr"].median())
         if "ca_15_3_slope_90d" in X:
             pos_slopes = X["ca_15_3_slope_90d"][X["ca_15_3_slope_90d"] > 0]
             if len(pos_slopes) > 0:
                 self.beta_1 = float(pos_slopes.mean())
+
+        feat_mat = self._extract_landmark_features(X)
+        scaled_feat = self.scaler.fit_transform(feat_mat)
+
+        y_arr = np.asarray(y)
+        if len(np.unique(y_arr)) > 1:
+            self.classifier.fit(scaled_feat, y_arr)
+            self.fitted_coef_ = self.classifier.coef_[0]
+            self.fitted_intercept_ = float(self.classifier.intercept_[0])
+            self.is_fitted = True
+
         return self
 
     def estimate_individual_latent_state(
@@ -379,40 +436,17 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
         return total_intercept, total_slope
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
-        """Computes prospective recurrence risk in < 5 ms per batch."""
-        marker = X["ca_15_3_curr"].values if "ca_15_3_curr" in X else np.full(len(X), 25.0)
-        slope = X["ca_15_3_slope_90d"].values if "ca_15_3_slope_90d" in X else np.zeros(len(X))
-        cea = X["cea_curr"].values if "cea_curr" in X else np.full(len(X), 2.5)
-        age = X["age"].values if "age" in X else np.full(len(X), 50.0)
-        stage_flag = X["is_stage_3_or_4"].values if "is_stage_3_or_4" in X else np.zeros(len(X))
-        tnbc_flag = X["sub_tnbc"].values if "sub_tnbc" in X else np.zeros(len(X))
-        symptom_grade = (
-            X["max_symptom_grade"].values if "max_symptom_grade" in X else np.zeros(len(X))
-        )
+        """Computes prospective recurrence risk in < 5 ms per batch using fitted model."""
+        feat_mat = self._extract_landmark_features(X)
+        if self.is_fitted:
+            scaled_feat = self.scaler.transform(feat_mat)
+            probs = self.classifier.predict_proba(scaled_feat)[:, 1]
+            return np.clip(probs, 0.005, 0.98)
 
-        # Joint association hazard: h(t | m(t), v(t), X) = h0 * exp(gamma * X + alpha * m(t) + alpha_v * v(t))
-        # 1. Biomarker trajectory projection & velocity
-        marker_hazard = (
-            self.alpha * (marker - 25.0)
-            + 14.0 * np.maximum(0.0, slope)
-            + 0.12 * np.maximum(0.0, cea - 3.0)
-        )
-
-        # 2. Baseline clinical risk covariates & symptoms
-        baseline_covariates = (
-            (age - 50.0) * 0.012
-            + 0.65 * stage_flag
-            + 0.45 * tnbc_flag
-            + 0.35 * symptom_grade
-        )
-
-        log_hazard = np.clip(baseline_covariates + marker_hazard, -6.0, 6.0)
-
-        # 3. Cumulative prospective recurrence probability: P(T <= t + tau | T > t) = 1 - exp(-H(tau))
-        base_h = 0.10 * (self.horizon_days / 180.0)
-        p_event = 1.0 - np.exp(-base_h * np.exp(log_hazard))
-
-        return np.clip(p_event, 0.005, 0.98)
+        # Fallback prior before fit is called
+        marker = feat_mat[:, 0]
+        z = np.clip((marker - 30.0) / 8.0, -20.0, 20.0)
+        return 1.0 / (1.0 + np.exp(-z))
 
     def get_model_id(self) -> str:
         return "K3_FAST_LANDMARK_PRODUCTION"

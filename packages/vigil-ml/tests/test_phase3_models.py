@@ -13,6 +13,7 @@ Comprehensive test suite for Phase 3 ML deliverables:
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import torch
 from vigil_ml.active_sensing_k6 import ActiveSensingEngineK6, TestPanelTier
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
@@ -126,11 +127,11 @@ def test_k4_deep_zoo_architectures():
     assert out_cde.shape == (4, 1)
 
 
-def test_k4_scaling_and_pretraining_study():
+def test_k4_scaling_and_pretraining_study_retracted():
     k4 = DeepZooK4(architecture="grud", hidden_dim=64)
-    study_res = k4.run_pretraining_and_scaling_study()
-    assert len(study_res["sample_sizes"]) == 5
-    assert study_res["with_pretraining_auc"][0] > study_res["without_pretraining_auc"][0]
+    with pytest.raises(NotImplementedError) as excinfo:
+        k4.run_pretraining_and_scaling_study()
+    assert "retracted" in str(excinfo.value).lower()
 
 
 # ---------------------------------------------------------------------------
@@ -173,8 +174,9 @@ def test_k6_active_sensing_recommendations():
     assert rec_high.suggested_interval_days == 14
     assert rec_high.recommended_panel == TestPanelTier.TIER_3_COMPREHENSIVE
 
-    study_s6 = k6.run_study_s6()
-    assert study_s6["cost_saving_vs_3mo_pct"] > 40.0
+    with pytest.raises(NotImplementedError) as excinfo:
+        k6.run_study_s6()
+    assert "retracted" in str(excinfo.value).lower()
 
 
 # ---------------------------------------------------------------------------

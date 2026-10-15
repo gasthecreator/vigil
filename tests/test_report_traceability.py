@@ -74,3 +74,18 @@ def test_benchmark_report_traceability():
         assert abs(latency - expected["latency_p95_ms"]) < 0.1, (
             f"[{model_id}] Reported latency {latency} does not match results.json ({expected['latency_p95_ms']})"
         )
+
+
+def test_reality_audit_zero_findings():
+    """
+    Condition R2: scripts/reality_audit.py runs with zero findings.
+    """
+    import subprocess
+    import sys
+
+    res = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "reality_audit.py"), "--require-stub-registry"],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 0, f"reality_audit.py failed with findings:\n{res.stdout}\n{res.stderr}"

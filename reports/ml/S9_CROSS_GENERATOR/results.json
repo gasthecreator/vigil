@@ -65,18 +65,18 @@
   },
   "K3_JointModel": {
     "in_distribution": {
-      "auc": 0.6197,
-      "brier": 0.257,
-      "ece": 0.1895
+      "auc": 0.6624,
+      "brier": 0.1835,
+      "ece": 0.0672
     },
     "g3_stress": {
-      "auc": 0.775,
-      "brier": 0.1593,
-      "ece": 0.017
+      "auc": 0.7885,
+      "brier": 0.1578,
+      "ece": 0.0434
     },
     "degradation": {
-      "delta_auc": -0.1553,
-      "delta_ece": -0.1725
+      "delta_auc": -0.1261,
+      "delta_ece": -0.0239
     }
   },
   "K1_Kinetic": {
