@@ -1,0 +1,51 @@
+# Skeleton CI. Adapt build/lint/test commands to the stack; replace <sha> with the real
+# 40-char commit SHA of each action (comment the version). Do not leave placeholders.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read        # least privilege; grant more per job only if needed
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@<sha> # v4
+      - run: make fmt-check lint
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@<sha> # v4
+      - run: make test            # unit + integration; fail on race/flake detection flags where available
+      - run: make coverage        # report as a signal; optional ratchet
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@<sha> # v4
+      - run: make build
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write   # for code scanning upload
+    steps:
+      - uses: actions/checkout@<sha> # v4
+      - run: make vuln-scan     # govulncheck / cargo audit / npm audit / osv-scanner
+      # Add: CodeQL (separate workflow), gitleaks secret scan
+
+# Untrusted input rule: never put ${{ github.event.* }} directly in `run:`; pass via env:.
+# Never use pull_request_target to check out and run PR code.

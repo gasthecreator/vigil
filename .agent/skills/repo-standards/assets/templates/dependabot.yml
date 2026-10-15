@@ -1,0 +1,18 @@
+# Place at .github/dependabot.yml. Keep only the ecosystems the repo uses.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
+  - package-ecosystem: gomod        # or cargo, npm, pip, docker
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 3 }   # avoid freshly published (possibly malicious) releases
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }

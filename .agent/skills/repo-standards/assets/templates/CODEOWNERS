@@ -1,0 +1,18 @@
+# Place at .github/CODEOWNERS. Last matching pattern wins. Use teams, not just individuals.
+# Enforce via ruleset: "Require review from Code Owners".
+
+# Default owner for everything
+*                       @org/maintainers
+
+# Areas (replace with real paths and owners; 2+ owners per critical area)
+/cmd/                   @org/backend
+/internal/              @org/backend
+/api/                   @org/backend @org/api-reviewers
+/migrations/            @org/backend @org/data
+/deploy/                @org/platform
+/docs/                  @org/maintainers
+
+# Security-sensitive: CI definitions and policy files
+/.github/workflows/     @org/security @org/platform
+/.github/CODEOWNERS     @org/maintainers
+/SECURITY.md            @org/security
