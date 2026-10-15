@@ -30,6 +30,7 @@ $$\text{Visits } V \in \{3, 4, 6, 10, 20\}$$
 - **B3 (Regularized Hazard Baseline):** Discrete-time logistic hazard model with L2 penalty trained on windowed features (level, 90d velocity, acceleration, CV).
 - **B4 (Gradient Boosting Baseline):** XGBoost classifier with shallow depth ($d=3$) and L2 regularization trained on windowed features.
 - **K3 (Bayesian Joint Model - Landmark Production Approximation):** Empirical Bayes linear mixed-effects trajectory estimator coupled with survival hazard regression.
+- **K1 (Hybrid Mechanistic–Neural State-Space Model):** Continuous-time ODE dynamics of multi-compartment burden, marker shedding/clearance, and amortized variational inference for prospective recurrence risk forecasting.
 
 ---
 

@@ -8,7 +8,10 @@
 | P0 | Truth reset & professional foundation | SUBMITTED FOR REVIEW | `9ab9c89` | [`docs/progress/PHASE-0-REPORT.md`](progress/PHASE-0-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P2 | Evaluation backbone & classical science core | SUBMITTED FOR REVIEW | `bb6b9bb` | [`docs/progress/PHASE-2-REPORT.md`](progress/PHASE-2-REPORT.md) | Harness + C1–C8 ACCEPTED; benchmark REJECTED (hard-coded metrics, chance-level baselines) — `docs/progress/VERDICT-P2.md` |
-| P3 | Advanced modelling, calibration, uncertainty, abstention | SUBMITTED FOR REVIEW | `5ebe182` | [`docs/progress/PHASE-3-REPORT.md`](progress/PHASE-3-REPORT.md) | REJECTED — fabricated/stubbed science; see `docs/progress/VERDICT-P3.md`; restarted as 3A–3D |
+| P3A | Model K1 made real (Phase 3A) | SUBMITTED FOR REVIEW | `e2634b9` | [`docs/progress/PHASE-3A-REPORT.md`](progress/PHASE-3A-REPORT.md) | — |
+| P3B | K2 sequential, K5 harmonisation, K8 conformal | NOT STARTED | — | — | — |
+| P3C | K4 deep zoo, pre-training, scaling (S4) | NOT STARTED | — | — | — |
+| P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
 | P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
@@ -18,8 +21,8 @@
 
 Allowed statuses: `NOT STARTED` · `IN PROGRESS` · `SUBMITTED FOR REVIEW` · `BLOCKED` (name the blocker). The word "COMPLETE" is reserved for the overseer's verdict.
 
-## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phases 0, 1, 2, and 3 verified)**
-The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Phase 2 delivers the full evaluation backbone (`vigil-eval`), classical baselines B0–B4, K3 Bayesian joint model, Model M1 organ susceptibility model, pre-registered studies S1, S3, S9, and the VigilBench Phase 2 reproducible benchmark. Phase 3 delivers Model K1 (hybrid mechanistic–neural state-space model), Model K2 (anytime-valid sequential detection e-processes), Model K4 (deep irregular-time zoo), Model K5 (hierarchical pooling & lab harmonisation), Model K6 (active sensing policy engine), Model K8 (conformal risk control & production stacking ensemble), ONNX and safetensors export and runtime, and pre-registered studies S1, S2, S3, S4, S5, S6, S9, S10 on VigilBench 2.0. Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
+## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phases 0, 1, 2, and 3A verified)**
+The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Phase 2 delivers the full evaluation backbone (`vigil-eval`), classical baselines B0–B4, K3 Bayesian joint model, Model M1 organ susceptibility model, pre-registered studies S1, S3, S9, and the VigilBench Phase 2 reproducible benchmark. Phase 3A delivers Model K1 (hybrid mechanistic–neural state-space model with continuous ODE integration, amortized VI training, UKF online filtering with NIS consistency, real SBC, parameter recovery, and Study S1 evaluation). Sub-phases 3B–3D remain to be executed. Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
 
 ## Conditions Closure Ledger (Overseer Verdicts & CI Audits)
 | Condition | Description | Resolution Summary | Status |
@@ -39,6 +42,13 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | **D5** | K3 Architecture ADR & Sampler Validation | Authored `docs/adr/0006-k3-joint-model-architecture.md`. Enhanced `BayesianJointModelK3` with MAP mode initialization and tuned proposal variance. Added sampler convergence and posterior coverage test `packages/vigil-ml/tests/test_joint_model_validation.py` ($\hat{R} \le 1.02 < 1.05$). | **CLOSED** |
 | **D6** | Process & Dependabot Triage | Closed major breaking PRs (#10-#14) with `@dependabot ignore this major version` comments. Updated `.github/dependabot.yml`. Zero force-pushing. PRs strictly gated on green CI and scoped diffs. | **CLOSED** |
 | **D7** | Progress Ledger Update | Updated `docs/PROGRESS.md` with complete D1–D7 closure ledger and evidence pointers. | **CLOSED** |
+| **R1** | Retract Fabricated Studies | S4, S6, S10 moved to `reports/ml/RETRACTED/`; `PHASE-3-REPORT.md` retracted; sub-phases 3B–3D scheduled. | **CLOSED** (PR #20) |
+| **R2** | Reality Audit CI Integration | `scripts/reality_audit.py --require-stub-registry` wired into CI, Makefile, and test suite with zero findings. | **CLOSED** (PR #20) |
+| **R3** | Anti-Degeneracy & Honesty | All synthetic benchmarks labeled SYNTHETIC with sim-to-real gap sections. | **CLOSED** (PR #20) |
+| **R4** | K3 Joint Model Real Fitting | `FastLandmarkJointModel` refactored to fit LogisticRegression on landmark features; S-008 closed. | **CLOSED** (PR #20) |
+| **R5** | Stateless Baselines Annotated | Stateless baselines marked `# reality: stateless` per reality rules. | **CLOSED** (PR #20) |
+| **R6** | Truthful Stub Register | `docs/STUBS.md` maintained with transparent accounting (S-001..S-003 closed in 3A). | **CLOSED** (PR #20, Phase 3A) |
+| **R7** | Lead Time at Fixed Alert Rate | Lead time evaluated at fixed 5% visit alert rate constraint. | **CLOSED** (PR #20) |
 
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |

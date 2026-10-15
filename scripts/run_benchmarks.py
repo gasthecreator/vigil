@@ -15,6 +15,14 @@ Executes:
 
 from __future__ import annotations
 
+import os
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import json
 import sys
 import time
@@ -23,6 +31,9 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
+import torch
+
+torch.set_num_threads(1)
 
 # Add repository paths
 ROOT = Path(__file__).resolve().parent.parent
@@ -117,6 +128,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=0.5),
             "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
             "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
+            "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
         }
 
         stratum_res = {}
@@ -927,6 +939,7 @@ def render_master_benchmark_report(
         ("B3_RegularizedHazard", "B3_REGULARIZED_HAZARD", "Discrete Survival"),
         ("B4_GradientBoosting", "B4_GRADIENT_BOOSTING", "Non-linear Tree"),
         ("K3_JointModel", "K3_FAST_LANDMARK", "Bayesian Joint"),
+        ("K1_Kinetic", "K1_KINETIC", "Mechanistic State-Space"),
     ]
 
     leaderboard_dict = {}
