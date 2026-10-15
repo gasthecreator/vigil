@@ -41,6 +41,7 @@ testpaths = [
     "packages/vigil-core/tests",
     "packages/vigil-sim/tests",
     "packages/vigil-eval/tests",
+    "packages/vigil-ml/tests",
     "packages/contracts/tests",
 ]
 python_files = ["test_*.py"]
