@@ -2,16 +2,17 @@
 
 import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    Float,
-    Boolean,
-    DateTime,
-    ForeignKey,
     JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Index,
+    Integer,
+    String,
 )
 from sqlalchemy.orm import relationship
 
@@ -31,16 +32,34 @@ class Patient(Base):
     status = Column(String(50), default="active", nullable=False)
 
     # Relationships
-    baseline_profile = relationship("BaselineProfile", back_populates="patient", uselist=False, cascade="all, delete-orphan")
-    lab_results = relationship("LabResult", back_populates="patient", cascade="all, delete-orphan", order_by="LabResult.date_drawn")
-    risk_inferences = relationship("RiskInference", back_populates="patient", cascade="all, delete-orphan", order_by="RiskInference.created_at")
+    baseline_profile = relationship(
+        "BaselineProfile", back_populates="patient", uselist=False, cascade="all, delete-orphan"
+    )
+    lab_results = relationship(
+        "LabResult",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="LabResult.date_drawn",
+    )
+    risk_inferences = relationship(
+        "RiskInference",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="RiskInference.created_at",
+    )
 
 
 class BaselineProfile(Base):
     __tablename__ = "baseline_profiles"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     tumor_stage = Column(Integer, nullable=False)
     er_status = Column(Boolean, nullable=False)
     pr_status = Column(Boolean, nullable=False)
@@ -57,7 +76,9 @@ class LabResult(Base):
     __tablename__ = "lab_results"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     date_drawn = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     alt_level = Column(Float, nullable=False)
     ast_level = Column(Float, nullable=False)
@@ -67,15 +88,25 @@ class LabResult(Base):
 
     # Relationships
     patient = relationship("Patient", back_populates="lab_results")
-    risk_inference = relationship("RiskInference", back_populates="lab_result", uselist=False, cascade="all, delete-orphan")
+    risk_inference = relationship(
+        "RiskInference", back_populates="lab_result", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class RiskInference(Base):
     __tablename__ = "risk_inferences"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    lab_result_id = Column(String(36), ForeignKey("lab_results.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    lab_result_id = Column(
+        String(36),
+        ForeignKey("lab_results.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     calculated_metastasis_risk = Column(Float, nullable=False, index=True)
     triage_flag = Column(Boolean, nullable=False, index=True)
     justification_text = Column(String(1000), nullable=False)

@@ -12,9 +12,10 @@ from __future__ import annotations
 import math
 from enum import Enum
 from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
-from vigil_core.units import convert_units, normalize_unit_string
+from vigil_core.units import convert_units
 
 
 class TargetOrgan(str, Enum):
@@ -40,6 +41,7 @@ class PlausibilityStatus(str, Enum):
 
 class BiologicalVariation(BaseModel):
     """Within-subject (CVi) and between-subject (CVg) biological variation from EFLM."""
+
     cv_i: float = Field(..., description="Within-subject biological coefficient of variation (%)")
     cv_g: float = Field(..., description="Between-subject biological coefficient of variation (%)")
     index_of_individuality: float = Field(..., description="II = CVi / CVg")
@@ -48,12 +50,14 @@ class BiologicalVariation(BaseModel):
 
 class AnalyticalSpecification(BaseModel):
     """Desirable analytical precision and maximum bias goals."""
+
     cv_a_desirable: float = Field(..., description="Desirable analytical CV (%) = 0.5 * CVi")
     bias_max_desirable: float = Field(..., description="Desirable maximum bias (%)")
 
 
 class PlausibilityBounds(BaseModel):
     """Physiological, reference, and critical safety thresholds."""
+
     physiological_min: float = Field(..., description="Absolute biological minimum limit")
     physiological_max: float = Field(..., description="Absolute biological maximum limit")
     reference_low: float = Field(..., description="Healthy population reference low")
@@ -64,12 +68,15 @@ class PlausibilityBounds(BaseModel):
 
 class AnalyteDefinition(BaseModel):
     """Full clinical definition of an analyte in the Vigil registry."""
+
     code: str = Field(..., description="Unique internal identifier (e.g. 'ca_15_3')")
     name: str = Field(..., description="Standard clinical display name")
     description: str = Field(..., description="Brief clinical role and diagnostic utility")
     loinc_code: str = Field(..., description="Official Regenstrief LOINC code")
     canonical_unit: str = Field(..., description="Canonical UCUM unit string")
-    supported_units: List[str] = Field(default_factory=list, description="Supported alternate UCUM units")
+    supported_units: List[str] = Field(
+        default_factory=list, description="Supported alternate UCUM units"
+    )
     biological_variation: BiologicalVariation
     analytical_spec: AnalyticalSpecification
     plausibility: PlausibilityBounds
@@ -78,6 +85,7 @@ class AnalyteDefinition(BaseModel):
 
 class PlausibilityResult(BaseModel):
     """Result of validating an analyte measurement against clinical boundaries."""
+
     analyte_code: str
     original_value: float
     original_unit: str
@@ -784,6 +792,7 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
 # Helper Functions & Reference Change Value (RCV)
 # ==============================================================================
 
+
 def get_analyte(code: str) -> AnalyteDefinition:
     """Retrieves an analyte definition by code. Case-insensitive."""
     clean_code = code.strip().lower()
@@ -859,7 +868,9 @@ def check_plausibility(
     Converts input value to canonical unit before validation.
     """
     analyte = get_analyte(analyte_code)
-    canonical_val = convert_units(value, from_unit=unit, to_unit=analyte.canonical_unit, analyte_code=analyte.code)
+    canonical_val = convert_units(
+        value, from_unit=unit, to_unit=analyte.canonical_unit, analyte_code=analyte.code
+    )
     p = analyte.plausibility
 
     # Check unphysiological bounds

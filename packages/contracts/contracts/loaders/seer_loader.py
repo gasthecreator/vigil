@@ -6,7 +6,7 @@ Validates fields against official NCI SEER Research Data Dictionary.
 """
 
 from pathlib import Path
-from typing import Optional
+
 import pandas as pd
 from pydantic import BaseModel, Field, ValidationError
 

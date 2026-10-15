@@ -3,7 +3,6 @@ Tests for vigil_core.analytes: Analyte registry completeness, RCV mathematics, a
 """
 
 import pytest
-
 from vigil_core.analytes import (
     ANALYTE_REGISTRY,
     PlausibilityStatus,
@@ -22,11 +21,32 @@ def test_analyte_registry_contains_at_least_20_analytes():
 
 def test_analyte_registry_specifications():
     required_codes = [
-        "ca_15_3", "ca_27_29", "cea", "alt", "ast", "alp", "ggt",
-        "total_bilirubin", "direct_bilirubin", "albumin", "total_protein",
-        "ldh", "calcium", "corrected_calcium", "phosphate", "creatinine",
-        "egfr", "urea", "haemoglobin", "platelets", "wbc", "anc", "nlr",
-        "esr", "crp", "inr"
+        "ca_15_3",
+        "ca_27_29",
+        "cea",
+        "alt",
+        "ast",
+        "alp",
+        "ggt",
+        "total_bilirubin",
+        "direct_bilirubin",
+        "albumin",
+        "total_protein",
+        "ldh",
+        "calcium",
+        "corrected_calcium",
+        "phosphate",
+        "creatinine",
+        "egfr",
+        "urea",
+        "haemoglobin",
+        "platelets",
+        "wbc",
+        "anc",
+        "nlr",
+        "esr",
+        "crp",
+        "inr",
     ]
     for code in required_codes:
         analyte = get_analyte(code)
@@ -54,7 +74,7 @@ def test_rcv_calculation_matches_analytical_formula():
     # 99% confidence bidirectional (Z = 2.576)
     rcv_ca153_99 = calculate_rcv("ca_15_3", confidence=0.99, two_sided=True, log_normal=False)
     assert rcv_ca153_99 > rcv_ca153
-    expected_99 = math_sqrt_2 = 1.41421356 * 2.576 * 6.484597
+    expected_99 = 1.41421356 * 2.576 * 6.484597
     assert rcv_ca153_99 == pytest.approx(expected_99, rel=1e-3)
 
     # Log-normal RCV for skewed analytes

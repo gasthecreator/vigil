@@ -25,16 +25,19 @@ class UnitDimension(str, Enum):
 
 class UnitConversionError(ValueError):
     """Base exception for unit conversion failures."""
+
     pass
 
 
 class IncompatibleUnitsError(UnitConversionError):
     """Raised when attempting to convert between different non-convertible dimensions."""
+
     pass
 
 
 class InvalidUnitError(UnitConversionError):
     """Raised when an unrecognized or malformed unit string is supplied."""
+
     pass
 
 
@@ -70,14 +73,12 @@ UNIT_REGISTRY: Dict[str, Tuple[UnitDimension, float]] = {
     "ug/mL": (UnitDimension.MASS_CONCENTRATION, 0.001),
     "ng/mL": (UnitDimension.MASS_CONCENTRATION, 1e-6),
     "pg/mL": (UnitDimension.MASS_CONCENTRATION, 1e-9),
-
     # Molar concentration (base: mol/L)
     "mol/L": (UnitDimension.MOLAR_CONCENTRATION, 1.0),
     "mmol/L": (UnitDimension.MOLAR_CONCENTRATION, 1e-3),
     "umol/L": (UnitDimension.MOLAR_CONCENTRATION, 1e-6),
     "nmol/L": (UnitDimension.MOLAR_CONCENTRATION, 1e-9),
     "pmol/L": (UnitDimension.MOLAR_CONCENTRATION, 1e-12),
-
     # Enzymatic activity / arbitrary units (base: U/L)
     "U/L": (UnitDimension.ENZYMATIC_ACTIVITY, 1.0),
     "IU/L": (UnitDimension.ENZYMATIC_ACTIVITY, 1.0),
@@ -86,7 +87,6 @@ UNIT_REGISTRY: Dict[str, Tuple[UnitDimension, float]] = {
     "kU/L": (UnitDimension.ENZYMATIC_ACTIVITY, 1000.0),
     "ukat/L": (UnitDimension.ENZYMATIC_ACTIVITY, 60.0),  # 1 ukat/L = 60 U/L
     "[iU]/mL": (UnitDimension.ENZYMATIC_ACTIVITY, 1000.0),  # CA 15-3 standard unit
-
     # Cell count (base: 10*9/L, equivalent to 10^3/uL or x10^9/L)
     "10*9/L": (UnitDimension.CELL_COUNT, 1.0),
     "10^9/L": (UnitDimension.CELL_COUNT, 1.0),
@@ -99,14 +99,11 @@ UNIT_REGISTRY: Dict[str, Tuple[UnitDimension, float]] = {
     "cells/uL": (UnitDimension.CELL_COUNT, 1e-3),
     "10*12/L": (UnitDimension.CELL_COUNT, 1000.0),  # RBC count
     "10^12/L": (UnitDimension.CELL_COUNT, 1000.0),
-
     # Percentage
     "%": (UnitDimension.PERCENTAGE, 1.0),
-
     # Velocity
     "mm/h": (UnitDimension.VELOCITY, 1.0),
     "mm/hr": (UnitDimension.VELOCITY, 1.0),
-
     # Ratio / dimensionless
     "1": (UnitDimension.RATIO, 1.0),
     "ratio": (UnitDimension.RATIO, 1.0),
@@ -177,8 +174,11 @@ def convert_units(
         return base_value / scale_to
 
     # Case 2: Mass concentration <-> Molar concentration bridge
-    if (dim_from == UnitDimension.MASS_CONCENTRATION and dim_to == UnitDimension.MOLAR_CONCENTRATION) or \
-       (dim_from == UnitDimension.MOLAR_CONCENTRATION and dim_to == UnitDimension.MASS_CONCENTRATION):
+    if (
+        dim_from == UnitDimension.MASS_CONCENTRATION and dim_to == UnitDimension.MOLAR_CONCENTRATION
+    ) or (
+        dim_from == UnitDimension.MOLAR_CONCENTRATION and dim_to == UnitDimension.MASS_CONCENTRATION
+    ):
         if not analyte_code:
             raise IncompatibleUnitsError(
                 f"Cannot convert between '{from_unit}' ({dim_from.value}) and '{to_unit}' "

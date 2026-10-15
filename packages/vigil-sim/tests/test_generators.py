@@ -2,14 +2,10 @@
 Tests for vigil_sim.generators: Mechanistic cohort generators G1, G2, G3 and anti-leakage invariants.
 """
 
-import numpy as np
 import pandas as pd
 import pytest
-
 from vigil_sim.generators import (
-    BreastCancerSubtype,
     GeneratorType,
-    PresentationStage,
     get_generator,
 )
 
@@ -65,8 +61,19 @@ def test_latent_states_export_for_recovery_studies():
 
     assert not latent_df.empty
     expected_cols = [
-        "patient_id", "day", "b_loc", "b_bone", "b_liver", "b_lung", "b_brain",
-        "total_burden", "m_ca153", "m_cea", "o_liver", "o_bone", "o_renal"
+        "patient_id",
+        "day",
+        "b_loc",
+        "b_bone",
+        "b_liver",
+        "b_lung",
+        "b_brain",
+        "total_burden",
+        "m_ca153",
+        "m_cea",
+        "o_liver",
+        "o_bone",
+        "o_renal",
     ]
     for col in expected_cols:
         assert col in latent_df.columns
@@ -82,7 +89,15 @@ def test_unleaked_training_examples_contract():
     assert set(y.unique()).issubset({0, 1})
 
     # Strict anti-leakage checks on feature columns
-    forbidden_tokens = ["recurrence", "event", "is_anomaly", "anomaly", "label", "outcome", "target"]
+    forbidden_tokens = [
+        "recurrence",
+        "event",
+        "is_anomaly",
+        "anomaly",
+        "label",
+        "outcome",
+        "target",
+    ]
     for col in X.columns:
         col_lower = col.lower()
         for tok in forbidden_tokens:

@@ -3,17 +3,17 @@
 Remediates Defect A6: Gated demo seeding endpoint for local environment only.
 """
 
-from datetime import timedelta
 import random
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from datetime import timedelta
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 from vigil_api.config import settings
 from vigil_api.database import get_db
-from vigil_api.models.patient import Patient, BaselineProfile, LabResult, RiskInference
-from vigil_api.ml.synthetic_generator import generate_patient_baseline, generate_longitudinal_labs
 from vigil_api.ml.inference import VigilEngine
+from vigil_api.ml.synthetic_generator import generate_longitudinal_labs, generate_patient_baseline
+from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
 
 router = APIRouter()
 
@@ -58,9 +58,7 @@ def get_cohort_analytics(db: Session = Depends(get_db)):
                 organ_aggregates[k] += vec.get(k, 0.0)
 
     avg_risk = round(total_risk / max(scored_count, 1), 3)
-    avg_organs = {
-        k: round(v / max(baseline_count, 1), 3) for k, v in organ_aggregates.items()
-    }
+    avg_organs = {k: round(v / max(baseline_count, 1), 3) for k, v in organ_aggregates.items()}
 
     return {
         "is_synthetic": settings.IS_SYNTHETIC_DATA,

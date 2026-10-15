@@ -10,6 +10,7 @@ Per MASTER_PLAN.md §14 WP0.3 and ADR-0002:
 """
 
 from typing import Any
+
 import numpy as np
 
 from vigil_api.config import settings
@@ -96,7 +97,7 @@ class VigilEngine:
         ca153 = float(new_lab_result.get("ca_15_3", 18.0))
         alt = float(new_lab_result.get("alt_level", 20.0))
         ast = float(new_lab_result.get("ast_level", 20.0))
-        cr = float(new_lab_result.get("creatinine", 0.9))
+        float(new_lab_result.get("creatinine", 0.9))
         wbc = float(new_lab_result.get("wbc_count", 6.5))
 
         # Velocity calculation from historical sequence

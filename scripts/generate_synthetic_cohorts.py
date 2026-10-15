@@ -12,6 +12,7 @@ Saves both patient registries, observations, and latent ground truth states.
 import hashlib
 import json
 from pathlib import Path
+
 from vigil_sim.generators import GeneratorType, get_generator
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "synthetic"

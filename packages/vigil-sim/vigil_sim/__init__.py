@@ -11,11 +11,11 @@ from vigil_sim.calibration import (
 from vigil_sim.generators import (
     BaseCohortGenerator,
     BreastCancerSubtype,
+    BurstSheddingGenerator,
     CohortDataset,
     ContinuousSecretionGenerator,
-    BurstSheddingGenerator,
-    HeavyTailedNoiseGenerator,
     GeneratorType,
+    HeavyTailedNoiseGenerator,
     LatentCompartmentState,
     LongitudinalObservation,
     PatientBaseline,

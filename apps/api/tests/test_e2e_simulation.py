@@ -6,15 +6,16 @@ Removes machine-specific paths (Defect A16).
 """
 
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 
 from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
-
 from vigil_api.config import settings
-from vigil_api.main import app
 from vigil_api.database import Base, engine
+from vigil_api.main import app
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -66,15 +67,50 @@ def test_e2e_surveillance_simulation(client):
     base_date = datetime(2025, 1, 15, 9, 0, 0)
     simulated_draws = [
         # Visit 1: Post-treatment nadir (Normal)
-        {"date_drawn": (base_date).isoformat(), "alt_level": 22.0, "ast_level": 19.0, "creatinine": 0.85, "ca_15_3": 16.5, "wbc_count": 6.1},
+        {
+            "date_drawn": (base_date).isoformat(),
+            "alt_level": 22.0,
+            "ast_level": 19.0,
+            "creatinine": 0.85,
+            "ca_15_3": 16.5,
+            "wbc_count": 6.1,
+        },
         # Visit 2: 3-Month Routine (Normal)
-        {"date_drawn": (base_date + timedelta(days=90)).isoformat(), "alt_level": 24.0, "ast_level": 21.0, "creatinine": 0.88, "ca_15_3": 18.0, "wbc_count": 6.4},
+        {
+            "date_drawn": (base_date + timedelta(days=90)).isoformat(),
+            "alt_level": 24.0,
+            "ast_level": 21.0,
+            "creatinine": 0.88,
+            "ca_15_3": 18.0,
+            "wbc_count": 6.4,
+        },
         # Visit 3: 6-Month Routine (Borderline velocity inflection)
-        {"date_drawn": (base_date + timedelta(days=180)).isoformat(), "alt_level": 35.0, "ast_level": 30.0, "creatinine": 0.90, "ca_15_3": 25.5, "wbc_count": 7.2},
+        {
+            "date_drawn": (base_date + timedelta(days=180)).isoformat(),
+            "alt_level": 35.0,
+            "ast_level": 30.0,
+            "creatinine": 0.90,
+            "ca_15_3": 25.5,
+            "wbc_count": 7.2,
+        },
         # Visit 4: 9-Month Follow-up (Sub-threshold divergence)
-        {"date_drawn": (base_date + timedelta(days=270)).isoformat(), "alt_level": 58.0, "ast_level": 52.0, "creatinine": 0.92, "ca_15_3": 38.0, "wbc_count": 8.9},
+        {
+            "date_drawn": (base_date + timedelta(days=270)).isoformat(),
+            "alt_level": 58.0,
+            "ast_level": 52.0,
+            "creatinine": 0.92,
+            "ca_15_3": 38.0,
+            "wbc_count": 8.9,
+        },
         # Visit 5: 12-Month Follow-up (Full Metastatic Biomarker Spike)
-        {"date_drawn": (base_date + timedelta(days=360)).isoformat(), "alt_level": 115.0, "ast_level": 105.0, "creatinine": 0.98, "ca_15_3": 78.0, "wbc_count": 11.8},
+        {
+            "date_drawn": (base_date + timedelta(days=360)).isoformat(),
+            "alt_level": 115.0,
+            "ast_level": 105.0,
+            "creatinine": 0.98,
+            "ca_15_3": 78.0,
+            "wbc_count": 11.8,
+        },
     ]
 
     last_risk_response = None

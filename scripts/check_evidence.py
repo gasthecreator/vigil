@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 import time
@@ -33,7 +32,9 @@ ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_FILE = ROOT / "docs" / "EVIDENCE.md"
 EVIDENCE_DIR = ROOT / "docs" / "evidence"
 
-CROSSREF_USER_AGENT = "VigilEvidenceChecker/1.0 (https://github.com/gasthecreator/vigil; mailto:research@vigil.org)"
+CROSSREF_USER_AGENT = (
+    "VigilEvidenceChecker/1.0 (https://github.com/gasthecreator/vigil; mailto:research@vigil.org)"
+)
 
 
 def parse_evidence_file(path: Path) -> dict[str, dict]:
@@ -133,20 +134,33 @@ def check_evidence(check_network: bool = True) -> bool:
 
             # Check 2: Dossier must contain required audit sections
             dossier_text = dossier_path.read_text(encoding="utf-8")
-            if "Status: `PRIMARY-VERIFIED`" not in dossier_text and "Status:** `PRIMARY-VERIFIED`" not in dossier_text:
-                errors.append(f"[{entry_id}] Dossier {dossier_path.name} missing status declaration.")
+            if (
+                "Status: `PRIMARY-VERIFIED`" not in dossier_text
+                and "Status:** `PRIMARY-VERIFIED`" not in dossier_text
+            ):
+                errors.append(
+                    f"[{entry_id}] Dossier {dossier_path.name} missing status declaration."
+                )
             if "Retrieval" not in dossier_text and "Verification Date" not in dossier_text:
-                errors.append(f"[{entry_id}] Dossier {dossier_path.name} missing Verification Date.")
+                errors.append(
+                    f"[{entry_id}] Dossier {dossier_path.name} missing Verification Date."
+                )
             if "Primary Source" not in dossier_text:
-                errors.append(f"[{entry_id}] Dossier {dossier_path.name} missing Primary Source section.")
+                errors.append(
+                    f"[{entry_id}] Dossier {dossier_path.name} missing Primary Source section."
+                )
             if (
                 "Excerpt" not in dossier_text
                 and "Numbers" not in dossier_text
                 and "Provisions" not in dossier_text
             ):
-                errors.append(f"[{entry_id}] Dossier {dossier_path.name} missing verbatim excerpts, reported numbers, or statutory provisions.")
+                errors.append(
+                    f"[{entry_id}] Dossier {dossier_path.name} missing verbatim excerpts, reported numbers, or statutory provisions."
+                )
 
-            print(f"✅ [{entry_id}] PRIMARY-VERIFIED dossier confirmed: docs/evidence/{entry_id}.md")
+            print(
+                f"✅ [{entry_id}] PRIMARY-VERIFIED dossier confirmed: docs/evidence/{entry_id}.md"
+            )
         else:
             secondary_count += 1
             print(f"ℹ️  [{entry_id}] {status}: {title}")

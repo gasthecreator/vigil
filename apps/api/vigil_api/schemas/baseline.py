@@ -1,6 +1,6 @@
 """Pydantic schemas for Baseline Profile."""
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TargetOrganVector(BaseModel):

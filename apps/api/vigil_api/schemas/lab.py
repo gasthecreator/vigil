@@ -2,11 +2,14 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LabResultCreate(BaseModel):
-    date_drawn: Optional[datetime] = Field(default=None, description="Date and time blood specimen was drawn")
+    date_drawn: Optional[datetime] = Field(
+        default=None, description="Date and time blood specimen was drawn"
+    )
     alt_level: float = Field(..., ge=1.0, le=1000.0, description="Alanine Transaminase (U/L)")
     ast_level: float = Field(..., ge=1.0, le=1000.0, description="Aspartate Transaminase (U/L)")
     creatinine: float = Field(..., ge=0.1, le=20.0, description="Serum Creatinine (mg/dL)")

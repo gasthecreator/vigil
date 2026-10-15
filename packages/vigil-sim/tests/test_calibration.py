@@ -8,8 +8,6 @@ Meeting these targets verifies that the generator parameters produce the intende
 behavior; it does NOT constitute independent real-world clinical validation.
 """
 
-import pytest
-
 from vigil_sim.calibration import evaluate_cohort_calibration, run_full_calibration_check
 from vigil_sim.generators import GeneratorType, get_generator
 
@@ -111,7 +109,11 @@ def test_g3_noise_calibration():
 def test_run_full_calibration_check():
     """Verifies that the multi-generator calibration runner executes across G1, G2, G3."""
     reports = run_full_calibration_check(seed=123)
-    assert set(reports.keys()) == {"g1_smooth_kinetics", "g2_shedding_bursts", "g3_heavy_tailed_noise"}
+    assert set(reports.keys()) == {
+        "g1_smooth_kinetics",
+        "g2_shedding_bursts",
+        "g3_heavy_tailed_noise",
+    }
     for name, r in reports.items():
         assert r.num_patients == 350
         assert r.observation_specificity >= 0.98

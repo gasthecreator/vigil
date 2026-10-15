@@ -43,22 +43,51 @@ IGNORE_PATHS = {
 # Forbidden phrases per MASTER_PLAN §11.1 and Defect A11
 FORBIDDEN_PHRASES = [
     (r"\benterprise-grade\b", "Forbidden claim: 'enterprise-grade' (Defect A11)"),
-    (r"\bproduction-ready\b", "Forbidden claim: 'production-ready' without regulatory/clinical validation (Defect A11)"),
+    (
+        r"\bproduction-ready\b",
+        "Forbidden claim: 'production-ready' without regulatory/clinical validation (Defect A11)",
+    ),
     (r"\bfrontier-grade\b", "Forbidden claim: 'frontier-grade' (Defect A11)"),
     (r"\bstate-of-the-art\b", "Forbidden claim: 'state-of-the-art' (Defect A11)"),
     (r"\bzero compromises\b", "Forbidden claim: 'zero compromises' (Defect A11)"),
-    (r"\bdetects metastasis\b", "Forbidden claim: 'detects metastasis' (must say decision support / signal)"),
-    (r"\bpredicts cancer\b", "Forbidden claim: 'predicts cancer' (must say decision support / risk estimation)"),
-    (r"\bclinically validated\b", "Forbidden claim: 'clinically validated' (must have committed clinical trial evidence)"),
+    (
+        r"\bdetects metastasis\b",
+        "Forbidden claim: 'detects metastasis' (must say decision support / signal)",
+    ),
+    (
+        r"\bpredicts cancer\b",
+        "Forbidden claim: 'predicts cancer' (must say decision support / risk estimation)",
+    ),
+    (
+        r"\bclinically validated\b",
+        "Forbidden claim: 'clinically validated' (must have committed clinical trial evidence)",
+    ),
     (r"\bfda approved\b", "Forbidden claim: 'FDA approved'"),
     (r"\bnafdac approved\b", "Forbidden claim: 'NAFDAC approved'"),
     (r"\bsaves lives\b", "Forbidden claim: 'saves lives' (violates §2 / §11.1)"),
-    (r"\broc-auc\s*=?\s*1\.000?\b", "Forbidden claim: perfect ROC-AUC 1.000 is a leakage defect, not a result (Defect A2)"),
-    (r"\br\^?2\s*=?\s*0\.7884\b", "Forbidden claim: ungrounded R² 0.7884 on circular synthetic targets (Defect A2)"),
+    (
+        r"\broc-auc\s*=?\s*1\.000?\b",
+        "Forbidden claim: perfect ROC-AUC 1.000 is a leakage defect, not a result (Defect A2)",
+    ),
+    (
+        r"\br\^?2\s*=?\s*0\.7884\b",
+        "Forbidden claim: ungrounded R² 0.7884 on circular synthetic targets (Defect A2)",
+    ),
 ]
 
 # Files where personal / machine-specific paths must NOT appear
-PATH_CHECK_EXTENSIONS = {".py", ".ts", ".tsx", ".json", ".yaml", ".yml", ".env", ".toml", ".sh", ".mjs"}
+PATH_CHECK_EXTENSIONS = {
+    ".py",
+    ".ts",
+    ".tsx",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".env",
+    ".toml",
+    ".sh",
+    ".mjs",
+}
 
 
 def should_ignore(path: Path, root: Path) -> bool:
@@ -82,8 +111,12 @@ def check_file(path: Path, root: Path) -> list[str]:
     if path.suffix in PATH_CHECK_EXTENSIONS:
         if "/Users/" in content:
             # Allow check_claims.py or audit report quoting the defect
-            if not str(rel_path).startswith("scripts/") and not str(rel_path).startswith("docs/audits/"):
-                errors.append(f"{rel_path}: Contains hard-coded personal machine path '/Users/' (Defect A4)")
+            if not str(rel_path).startswith("scripts/") and not str(rel_path).startswith(
+                "docs/audits/"
+            ):
+                errors.append(
+                    f"{rel_path}: Contains hard-coded personal machine path '/Users/' (Defect A4)"
+                )
 
     # 2. Check for forbidden phrases
     lower_content = content.lower()
@@ -110,7 +143,9 @@ def check_mandatory_artifacts(root: Path) -> list[str]:
 
     hazard_log = root / "docs" / "safety" / "HAZARD-LOG.md"
     if not hazard_log.exists():
-        errors.append("docs/safety/HAZARD-LOG.md is missing (Mandatory safety hazard log per §11.2)")
+        errors.append(
+            "docs/safety/HAZARD-LOG.md is missing (Mandatory safety hazard log per §11.2)"
+        )
 
     return errors
 

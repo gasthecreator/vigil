@@ -14,11 +14,7 @@ from uuid import uuid4
 
 from vigil_core.analytes import ANALYTE_REGISTRY, get_analyte
 
-
-LOINC_TO_ANALYTE_CODE = {
-    analyte.loinc_code: analyte.code
-    for analyte in ANALYTE_REGISTRY.values()
-}
+LOINC_TO_ANALYTE_CODE = {analyte.loinc_code: analyte.code for analyte in ANALYTE_REGISTRY.values()}
 
 
 def patient_to_fhir(
@@ -49,7 +45,9 @@ def patient_to_fhir(
                 {
                     "system": "urn:vigil:provenance",
                     "code": "synthetic" if is_synthetic else "clinical",
-                    "display": "Synthetic Research Cohort" if is_synthetic else "Clinical Primary Record",
+                    "display": "Synthetic Research Cohort"
+                    if is_synthetic
+                    else "Clinical Primary Record",
                 }
             ],
         },
@@ -118,30 +116,35 @@ def observation_to_fhir(
     effective_dt = effective_datetime or datetime.now(timezone.utc).isoformat()
 
     ref_range = []
-    if analyte.plausibility.reference_low is not None and analyte.plausibility.reference_high is not None:
-        ref_range.append({
-            "low": {
-                "value": analyte.plausibility.reference_low,
-                "unit": analyte.canonical_unit,
-                "system": "http://unitsofmeasure.org",
-                "code": analyte.canonical_unit,
-            },
-            "high": {
-                "value": analyte.plausibility.reference_high,
-                "unit": analyte.canonical_unit,
-                "system": "http://unitsofmeasure.org",
-                "code": analyte.canonical_unit,
-            },
-            "type": {
-                "coding": [
-                    {
-                        "system": "http://terminology.hl7.org/CodeSystem/referencerange-meaning",
-                        "code": "normal",
-                        "display": "Normal Range",
-                    }
-                ]
-            },
-        })
+    if (
+        analyte.plausibility.reference_low is not None
+        and analyte.plausibility.reference_high is not None
+    ):
+        ref_range.append(
+            {
+                "low": {
+                    "value": analyte.plausibility.reference_low,
+                    "unit": analyte.canonical_unit,
+                    "system": "http://unitsofmeasure.org",
+                    "code": analyte.canonical_unit,
+                },
+                "high": {
+                    "value": analyte.plausibility.reference_high,
+                    "unit": analyte.canonical_unit,
+                    "system": "http://unitsofmeasure.org",
+                    "code": analyte.canonical_unit,
+                },
+                "type": {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/referencerange-meaning",
+                            "code": "normal",
+                            "display": "Normal Range",
+                        }
+                    ]
+                },
+            }
+        )
 
     resource: Dict[str, Any] = {
         "resourceType": "Observation",
@@ -185,7 +188,9 @@ def observation_to_fhir(
                 {
                     "system": "urn:vigil:provenance",
                     "code": "synthetic" if is_synthetic else "clinical",
-                    "display": "Synthetic Research Cohort" if is_synthetic else "Clinical Observation",
+                    "display": "Synthetic Research Cohort"
+                    if is_synthetic
+                    else "Clinical Observation",
                 }
             ],
         },

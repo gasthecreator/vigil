@@ -16,10 +16,10 @@ Tuned to reproduce empirical figures from published literature (EVIDENCE E1, E12
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+
 import numpy as np
 
-from vigil_core.analytes import TargetOrgan
 from vigil_sim.generators import CohortDataset, GeneratorType
 
 
@@ -28,23 +28,23 @@ class CalibrationReport:
     generator_type: GeneratorType
     num_patients: int
     num_observations: int
-    
+
     # Lead time targets (Molina et al. 1995: 4.2 ± 2.3 months = 126 ± 69 days)
     conditional_lead_time_mean_days: float
     conditional_lead_time_std_days: float
     unconditional_lead_time_mean_days: float  # Censoring rule: 0 days if no preclinical elevation
     lead_time_target_met: bool
-    
+
     # Sensitivity targets (overall and organ-stratified)
     overall_sensitivity: float
     organ_sensitivity: Dict[str, float]
     sensitivity_target_met: bool
-    
+
     # Specificity targets (both per-observation and per-patient)
     observation_specificity: float
     patient_specificity: float
     specificity_target_met: bool
-    
+
     all_targets_met: bool
     details: Dict[str, Any]
 
@@ -80,17 +80,17 @@ def evaluate_cohort_calibration(
     from Molina et al. 1995 (n=1,023) and Wu et al. 2017 (n=243,896).
     """
     pt_map = {p.patient_id: p for p in cohort.patients}
-    
+
     # Lead time tracking
     conditional_lead_times: List[float] = []
     unconditional_lead_times: List[float] = []
-    
+
     # Sensitivity tracking (overall and by organ)
     recurrent_total = 0
     recurrent_positive = 0
     organ_totals: Dict[str, int] = {}
     organ_positives: Dict[str, int] = {}
-    
+
     # Specificity tracking
     non_rec_obs_total = 0
     non_rec_obs_negative = 0
@@ -113,8 +113,10 @@ def evaluate_cohort_calibration(
 
             # Find preclinical elevations: obs <= recurrence_day and ca_15_3 >= cutoff
             elevated_days = [
-                obs.day for obs in obs_sorted
-                if obs.day <= pt.true_recurrence_day and obs.analytes.get("ca_15_3", 0.0) >= ca_15_3_cutoff
+                obs.day
+                for obs in obs_sorted
+                if obs.day <= pt.true_recurrence_day
+                and obs.analytes.get("ca_15_3", 0.0) >= ca_15_3_cutoff
             ]
 
             if elevated_days:
@@ -157,7 +159,9 @@ def evaluate_cohort_calibration(
 
     # Lead time statistics
     mean_cond_lead = float(np.mean(conditional_lead_times)) if conditional_lead_times else 0.0
-    std_cond_lead = float(np.std(conditional_lead_times)) if len(conditional_lead_times) > 1 else 0.0
+    std_cond_lead = (
+        float(np.std(conditional_lead_times)) if len(conditional_lead_times) > 1 else 0.0
+    )
     mean_uncond_lead = float(np.mean(unconditional_lead_times)) if unconditional_lead_times else 0.0
 
     lead_met = abs(mean_cond_lead - target_conditional_lead_days) <= lead_tolerance_days
@@ -173,7 +177,9 @@ def evaluate_cohort_calibration(
 
     # Specificity statistics
     obs_spec = (non_rec_obs_negative / non_rec_obs_total) if non_rec_obs_total > 0 else 1.0
-    pt_spec = (non_rec_patients_clean / non_rec_patients_total) if non_rec_patients_total > 0 else 1.0
+    pt_spec = (
+        (non_rec_patients_clean / non_rec_patients_total) if non_rec_patients_total > 0 else 1.0
+    )
     spec_met = (obs_spec >= min_observation_specificity) and (pt_spec >= min_patient_specificity)
 
     all_met = bool(lead_met and sens_met and spec_met)
