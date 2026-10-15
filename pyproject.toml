@@ -1,0 +1,49 @@
+[project]
+name = "vigil-workspace"
+version = "0.1.0-alpha"
+description = "Vigil Precision Oncology Decision Support Platform Workspace"
+requires-python = ">=3.11"
+dependencies = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "hypothesis>=6.100.0",
+    "ruff>=0.6.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "packages/vigil-core",
+    "packages/vigil-sim",
+    "packages/vigil-eval",
+    "packages/vigil-ml",
+]
+
+[tool.uv.sources]
+vigil-core = { workspace = true }
+vigil-sim = { workspace = true }
+vigil-eval = { workspace = true }
+vigil-ml = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "apps/api/tests",
+    "packages/vigil-core/tests",
+    "packages/vigil-sim/tests",
+    "packages/vigil-eval/tests",
+]
+python_files = ["test_*.py"]
+pythonpath = [
+    "apps/api",
+    "packages/vigil-core",
+    "packages/vigil-sim",
+    "packages/vigil-eval",
+    "packages/vigil-ml",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

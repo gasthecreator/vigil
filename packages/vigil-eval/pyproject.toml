@@ -1,0 +1,18 @@
+[project]
+name = "vigil-eval"
+version = "0.1.0-alpha"
+description = "Vigil Evaluation Backbone, Metrics Suite, and Leakage Test Harness"
+authors = [{ name = "Gideon Sanni", email = "gideonsanni2023@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "vigil-core",
+    "numpy>=1.26.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.4.0",
+    "scipy>=1.11.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

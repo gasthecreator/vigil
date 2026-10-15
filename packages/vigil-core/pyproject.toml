@@ -1,0 +1,14 @@
+[project]
+name = "vigil-core"
+version = "0.1.0-alpha"
+description = "Vigil Shared Clinical Domain Entities, Analyte Registry, LOINC/UCUM, and FHIR Mappers"
+authors = [{ name = "Gideon Sanni", email = "gideonsanni2023@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -13,6 +13,8 @@ build/
 *.sqlite
 *.sqlite3
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # Node & Next.js
 node_modules/
@@ -33,3 +35,11 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# ML artifacts & test outputs
+*.pkl
+!quarantine/legacy_models/*.pkl
+coverage/
+.coverage
+*.lcov
+reports/temp/

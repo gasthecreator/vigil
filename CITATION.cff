@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use or reference Vigil in scientific research, clinical studies, or software, please cite it as below."
+authors:
+  - family-names: "Sanni"
+    given-names: "Gideon"
+    email: "gideonsanni2023@gmail.com"
+title: "Vigil: Continuous Multimodal Oncology Surveillance and Decision-Support Platform"
+version: 0.1.0-alpha
+date-released: 2026-10-14
+url: "https://github.com/gasthecreator/vigil"
+license: "Apache-2.0"
+keywords:
+  - oncology
+  - decision-support
+  - breast-cancer
+  - biomarker-kinetics
+  - surveillance
+  - clinical-safety

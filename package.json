@@ -1,0 +1,15 @@
+{
+  "name": "vigil-monorepo",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/ui",
+    "packages/contracts"
+  ],
+  "scripts": {
+    "web:dev": "npm --workspace=@vigil/web run dev",
+    "web:build": "npm --workspace=@vigil/web run build",
+    "web:lint": "npm --workspace=@vigil/web run lint"
+  }
+}

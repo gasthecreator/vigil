@@ -1,0 +1,17 @@
+[project]
+name = "vigil-sim"
+version = "0.1.0-alpha"
+description = "Vigil Mechanistic Cohort Simulation Laboratory and Digital Twin"
+authors = [{ name = "Gideon Sanni", email = "gideonsanni2023@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "vigil-core",
+    "numpy>=1.26.0",
+    "pandas>=2.0.0",
+    "scipy>=1.11.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
