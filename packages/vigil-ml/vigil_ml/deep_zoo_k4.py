@@ -176,7 +176,7 @@ class DeepZooK4:
             self.model = GRUDModel(input_dim=7, hidden_dim=hidden_dim)
         self.is_fitted = False
 
-    def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 3) -> "DeepZooK4":
+    def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 3) -> "DeepZooK4":  # reality: allow(R2) K4 fit deferred to Phase 3C (see docs/STUBS.md S-004)
         self.is_fitted = True
         return self
 
@@ -228,26 +228,7 @@ class DeepZooK4:
         return np.array(risks)
 
     def run_pretraining_and_scaling_study(self) -> Dict[str, Any]:
-        """
-        Study S4: Evaluates label-efficiency curves across training set sizes (50, 100, 200, 500, 1000)
-        and model scales (Small=32, Medium=64, Large=128), with vs without self-supervised pre-training.
-        """
-        sample_sizes = [50, 100, 200, 500, 1000]
-        # Realistic AUC trajectory: pre-training provides +0.03 to +0.05 boost at low N (50-200)
-        # and converges at high N (1000). Larger scale helps marginally at high N, overfits at low N.
-        res = {
-            "sample_sizes": sample_sizes,
-            "without_pretraining_auc": [0.652, 0.704, 0.741, 0.785, 0.806],
-            "with_pretraining_auc":    [0.701, 0.742, 0.778, 0.803, 0.812],
-            "scaling_study": {
-                "small_32":  {"auc_n100": 0.738, "auc_n1000": 0.801, "params": 24000, "latency_ms": 1.2},
-                "medium_64": {"auc_n100": 0.742, "auc_n1000": 0.812, "params": 85000, "latency_ms": 2.4},
-                "large_128": {"auc_n100": 0.718, "auc_n1000": 0.814, "params": 310000, "latency_ms": 6.8},
-            },
-            "conclusion": (
-                "Self-supervised pre-training provides decisive label-efficiency gain (+0.049 AUC at N=50). "
-                "Medium scale (hidden_dim=64) dominates the Pareto frontier; large scale (128) overfits at low N "
-                "with 3x latency penalty without statistically significant gain at N=1000."
-            ),
-        }
-        return res
+        """Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."""
+        raise NotImplementedError(
+            "Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."
+        )

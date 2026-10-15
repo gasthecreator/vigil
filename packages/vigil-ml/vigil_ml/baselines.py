@@ -27,7 +27,7 @@ class BaseSurveillanceModel(ABC):
     """Abstract base class for all surveillance inference models."""
 
     @abstractmethod
-    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> BaseSurveillanceModel:
+    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> BaseSurveillanceModel:  # reality: stateless
         pass
 
     @abstractmethod
@@ -69,7 +69,7 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
         self.cutoff = cutoff
         self.scale = scale
 
-    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> SingleThresholdBaseline:
+    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> SingleThresholdBaseline:  # reality: stateless
         # Pre-set rule; fit is a no-op or calibration check
         return self
 
@@ -100,7 +100,7 @@ class VelocityBaseline(BaseSurveillanceModel):
         self.cea_slope_col = cea_slope_col
         self.cutoff = velocity_cutoff
 
-    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> VelocityBaseline:
+    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> VelocityBaseline:  # reality: stateless
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:

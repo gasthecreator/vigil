@@ -4,26 +4,23 @@
 > This benchmark was conducted exclusively on **SYNTHETIC DATA** (Tiers G1, G2, G3). All metrics, lead times, and calibration curves reflect synthetic cohort properties and simulator dynamics. They DO NOT represent clinical evidence of patient benefit, diagnostic accuracy, or regulatory validation.
 
 **Benchmark Version:** VigilBench 2.0 (Phase 2 & 3 Core)  
-**Execution Timestamp:** 2026-10-15 19:45:51 UTC  
+**Execution Timestamp:** 2026-10-15 21:16:01 UTC  
 **Governing Documents:** `docs/MASTER_PLAN.md` §14 WP2.1-WP2.4, WP3.0-WP3.5; `docs/ML_PROGRAM.md` §3, §4, §6, §9  
 
 ---
 
 ## 1. Overall Model Leaderboard (Synthetic Tier G1 In-Distribution)
 
-Evaluated on N=1,000 held-out synthetic patients with prospective horizon $\tau = 365$ days using Kaplan-Meier inverse probability of censoring weighting (Uno et al. 2007).
+Evaluated on N=1,000 held-out synthetic patients with prospective horizon $\tau = 365$ days using Kaplan-Meier inverse probability of censoring weighting (Uno et al. 2007). Lead time evaluated at fixed 5% visit alert rate constraint (Condition R7 & RR9).
 
 | Model ID | Family | IPCW ROC-AUC (V=10) | Brier Score | ECE | Lead Time (Conditional) | Latency (p95 CPU) |
 |---|---|---|---|---|---|---|
 | `B0_PREVALENCE` | Heuristic | 0.5000 | 0.2113 | 0.0199 | 0.0 days | 0.00 ms |
-| `B1_SINGLE_THRESHOLD` | Clinical Rule | 0.7218 | 0.1464 | 0.0427 | 142.9 days | 0.01 ms |
-| `B2_VELOCITY_RULE` | Kinetic Rule | 0.5518 | 0.1966 | 0.0594 | 266.3 days | 0.02 ms |
-| `B3_REGULARIZED_HAZARD` | Discrete Survival | 0.7704 | 0.1399 | 0.0217 | 363.1 days | 0.66 ms |
-| `B4_GRADIENT_BOOSTING` | Non-linear Tree | 0.8142 | 0.1308 | 0.0344 | 278.8 days | 1.30 ms |
-| `K3_FAST_LANDMARK` | Bayesian Joint | 0.7887 | 0.1341 | 0.0569 | 305.3 days | 0.06 ms |
-| `K1_KINETIC_HYBRID` | ODE-Neural State-Space | 0.7023 | 0.1544 | 0.0257 | 102.9 days | 0.04 ms |
-| `K4_DEEP_IRREGULAR_ZOO` | Deep Irregular (GRU-D) | 0.7002 | 0.1584 | 0.0375 | 107.4 days | 0.04 ms |
-| `K8_PRODUCTION_ENSEMBLE` | Conformal Stacking | 0.7175 | 0.1614 | 0.0475 | 83.1 days | 0.03 ms |
+| `B1_SINGLE_THRESHOLD` | Clinical Rule | 0.7218 | 0.1464 | 0.0427 | 36.7 days | 0.01 ms |
+| `B2_VELOCITY_RULE` | Kinetic Rule | 0.5518 | 0.1966 | 0.0594 | 117.0 days | 0.02 ms |
+| `B3_REGULARIZED_HAZARD` | Discrete Survival | 0.7704 | 0.1399 | 0.0217 | 57.9 days | 0.62 ms |
+| `B4_GRADIENT_BOOSTING` | Non-linear Tree | 0.8142 | 0.1308 | 0.0344 | 64.3 days | 1.46 ms |
+| `K3_FAST_LANDMARK` | Bayesian Joint | 0.8075 | 0.1393 | 0.0202 | 55.4 days | 0.17 ms |
 
 ---
 
@@ -48,8 +45,6 @@ These gaps will be directly addressed in Phase 3 (conformal risk control), Phase
 - **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)
 - **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)
 - **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)
-- **Study S4 (Deep Zoo Pre-Training & Scaling):** [`reports/ml/S4_PRETRAINING_SCALING/REPORT.md`](./S4_PRETRAINING_SCALING/REPORT.md)
 - **Study S5 (Multi-Site Lab Harmonisation):** [`reports/ml/S5_HARMONISATION/REPORT.md`](./S5_HARMONISATION/REPORT.md)
-- **Study S6 (Active Sensing & Adaptive Scheduling):** [`reports/ml/S6_ACTIVE_SENSING/REPORT.md`](./S6_ACTIVE_SENSING/REPORT.md)
 - **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)
-- **Study S10 (Multi-Site Synthetic Trial & Federated Learning):** [`reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/REPORT.md`](./S10_MULTISITE_SYNTHETIC_TRIAL/REPORT.md)
+- **Retracted Studies (Condition R1):** Studies S4, S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3 and deferred to sub-phases 3C and 3D.

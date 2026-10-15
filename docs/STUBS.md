@@ -11,5 +11,5 @@ Every placeholder, simplification or not-yet-real component must appear here. An
 | S-005 | K6, S6 | Results hard-coded | Phase 3 | Phase 3D | K6, S6 |
 | S-006 | M12/S10 | Results hard-coded; no federation or DP implemented | Phase 3 | Phase 3D | M12, S10 |
 | S-007 | K8 ensemble | Re-implements member formulas with hand-set weights | Phase 3 | Phase 3B | K8 |
-| S-008 | K3 `FastLandmarkJointModel` | Hand-set coefficients mirror simulator generating process | Phase 2/3 | Phase 3A (R4) | K3 |
+| S-008 | K3 `FastLandmarkJointModel` | RESOLVED (Condition R4): Learns coefficients from data | Closed | Phase 3A (R4) | None (Resolved) |
 | S-009 | K2, K5 | Not audited by overseer; treat as UNVERIFIED until re-verified through RR1–RR4 | Phase 3 | Phase 3B | K2, K5 |

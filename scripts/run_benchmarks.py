@@ -46,7 +46,6 @@ from vigil_eval.verification_bias import (
     evaluate_ipw_verification,
     evaluate_latent_class_em,
 )
-from vigil_ml.active_sensing_k6 import ActiveSensingEngineK6
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
     PrevalenceBaseline,
@@ -118,9 +117,6 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=0.5),
             "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
             "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
-            "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
-            "K4_DeepZoo": DeepZooK4(architecture="grud", hidden_dim=64),
-            "K8_ProductionEnsemble": ProductionEnsembleK8(),
         }
 
         stratum_res = {}
@@ -167,15 +163,16 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             p95_lat = float(np.percentile(lat_times, 95))
             p50_lat = float(np.percentile(lat_times, 50))
 
-            # Preclinical lead-time evaluation (vigil_eval.lead_time, Condition D1)
+            # Preclinical lead-time evaluation at fixed 5% visit alert rate (Condition R7 & RR9)
             if name == "B0_Prevalence":
                 lead_time_val = 0.0
             else:
+                alert_thresh = float(np.percentile(preds, 95.0))
                 alert_df = pd.DataFrame(
                     {
                         "patient_id": X_test["patient_id"].values,
                         "day": X_test["eval_day"].values,
-                        "alert_triggered": (preds >= 0.20).astype(int),
+                        "alert_triggered": (preds >= alert_thresh).astype(int),
                     }
                 )
                 lead_rep = evaluate_lead_time_and_overdetection(
@@ -534,29 +531,10 @@ def render_s2_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s4(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S4: DEEP ZOO PRE-TRAINING & SCALING ANALYSIS")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-PRETRAIN-SCALING-S4",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate self-supervised pre-training and scaling across N in {50, 100, 200, 500, 1000}",
-        num_samples=1000,
+    """Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."""
+    raise NotImplementedError(
+        "Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."
     )
-
-    k4 = DeepZooK4()
-    s4_results = k4.run_pretraining_and_scaling_study()
-
-    s4_dir = ROOT / "reports" / "ml" / "S4_PRETRAINING_SCALING"
-    s4_dir.mkdir(parents=True, exist_ok=True)
-    with open(s4_dir / "results.json", "w") as f:
-        json.dump(s4_results, f, indent=2)
-
-    render_s4_markdown(s4_results, s4_dir / "REPORT.md")
-    print("✅ Study S4 Complete. Results saved to reports/ml/S4_PRETRAINING_SCALING/")
-    return s4_results
 
 
 def render_s4_markdown(results: Dict[str, Any], path: Path) -> None:
@@ -659,29 +637,10 @@ def render_s5_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s6(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S6: ACTIVE SENSING & ADAPTIVE SURVEILLANCE SCHEDULING")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-ACTIVE-SENSING-S6",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate K6 active sensing trade-off between detection delay and cumulative surveillance cost",
-        num_samples=1000,
+    """Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."""
+    raise NotImplementedError(
+        "Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."
     )
-
-    k6 = ActiveSensingEngineK6()
-    s6_results = k6.run_study_s6()
-
-    s6_dir = ROOT / "reports" / "ml" / "S6_ACTIVE_SENSING"
-    s6_dir.mkdir(parents=True, exist_ok=True)
-    with open(s6_dir / "results.json", "w") as f:
-        json.dump(s6_results, f, indent=2)
-
-    render_s6_markdown(s6_results, s6_dir / "REPORT.md")
-    print("✅ Study S6 Complete. Results saved to reports/ml/S6_ACTIVE_SENSING/")
-    return s6_results
 
 
 def render_s6_markdown(results: Dict[str, Any], path: Path) -> None:
@@ -717,60 +676,10 @@ def render_s6_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s10(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S10: MULTI-SITE SYNTHETIC TRIAL & FEDERATED LEARNING (M12)")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-MULTISITE-CONSORTIUM-S10",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate M12 federated partial pooling across 5 heterogeneous clinical sites",
-        num_samples=2500,
+    """Study S10 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-006)."""
+    raise NotImplementedError(
+        "Study S10 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-006)."
     )
-
-    sites = {
-        "Site_A_Tertiary_Academic": {"local_auc": 0.812, "centralized_auc": 0.825, "federated_auc": 0.821, "n_patients": 1200},
-        "Site_B_Regional_General":   {"local_auc": 0.774, "centralized_auc": 0.814, "federated_auc": 0.808, "n_patients": 600},
-        "Site_C_Rural_Mission":      {"local_auc": 0.691, "centralized_auc": 0.795, "federated_auc": 0.786, "n_patients": 150},
-        "Site_D_Cancer_Center":      {"local_auc": 0.798, "centralized_auc": 0.820, "federated_auc": 0.816, "n_patients": 400},
-        "Site_E_Community_Outreach": {"local_auc": 0.684, "centralized_auc": 0.789, "federated_auc": 0.778, "n_patients": 150},
-    }
-
-    mean_local = float(np.mean([s["local_auc"] for s in sites.values()]))
-    mean_centralized = float(np.mean([s["centralized_auc"] for s in sites.values()]))
-    mean_federated = float(np.mean([s["federated_auc"] for s in sites.values()]))
-    utility_drop = mean_centralized - mean_federated
-    equity_gain_c = sites["Site_C_Rural_Mission"]["federated_auc"] - sites["Site_C_Rural_Mission"]["local_auc"]
-    equity_gain_e = sites["Site_E_Community_Outreach"]["federated_auc"] - sites["Site_E_Community_Outreach"]["local_auc"]
-
-    s10_results = {
-        "sites": sites,
-        "summary": {
-            "mean_local_auc": round(mean_local, 4),
-            "mean_centralized_auc": round(mean_centralized, 4),
-            "mean_federated_auc": round(mean_federated, 4),
-            "utility_drop_delta_auc": round(utility_drop, 4),
-            "rural_site_c_equity_gain": round(equity_gain_c, 4),
-            "community_site_e_equity_gain": round(equity_gain_e, 4),
-            "federated_utility_pass": bool(utility_drop <= 0.03),
-        },
-        "conclusion": (
-            f"M12 Federated Partial Pooling incurs a negligible utility penalty of {utility_drop:.4f} AUC "
-            f"relative to centralized pooling (well below the pre-registered <= 0.03 threshold). "
-            f"Crucially, it provides a dramatic equity boost for under-resourced sites (+{equity_gain_c:.3f} AUC for Site C, "
-            f"+{equity_gain_e:.3f} AUC for Site E), confirming pre-registered hypotheses H1, H2, and H3."
-        ),
-    }
-
-    s10_dir = ROOT / "reports" / "ml" / "S10_MULTISITE_SYNTHETIC_TRIAL"
-    s10_dir.mkdir(parents=True, exist_ok=True)
-    with open(s10_dir / "results.json", "w") as f:
-        json.dump(s10_results, f, indent=2)
-
-    render_s10_markdown(s10_results, s10_dir / "REPORT.md")
-    print("✅ Study S10 Complete. Results saved to reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/")
-    return s10_results
 
 
 def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
@@ -987,11 +896,8 @@ def render_master_benchmark_report(
     s1_res: Dict[str, Any],
     s2_res: Dict[str, Any],
     s3_res: Dict[str, Any],
-    s4_res: Dict[str, Any],
     s5_res: Dict[str, Any],
-    s6_res: Dict[str, Any],
     s9_res: Dict[str, Any],
-    s10_res: Dict[str, Any],
     path: Path,
 ) -> None:
     lines = [
@@ -1008,7 +914,7 @@ def render_master_benchmark_report(
         "",
         "## 1. Overall Model Leaderboard (Synthetic Tier G1 In-Distribution)",
         "",
-        "Evaluated on N=1,000 held-out synthetic patients with prospective horizon $\\tau = 365$ days using Kaplan-Meier inverse probability of censoring weighting (Uno et al. 2007).",
+        "Evaluated on N=1,000 held-out synthetic patients with prospective horizon $\\tau = 365$ days using Kaplan-Meier inverse probability of censoring weighting (Uno et al. 2007). Lead time evaluated at fixed 5% visit alert rate constraint (Condition R7 & RR9).",
         "",
         "| Model ID | Family | IPCW ROC-AUC (V=10) | Brier Score | ECE | Lead Time (Conditional) | Latency (p95 CPU) |",
         "|---|---|---|---|---|---|---|",
@@ -1021,9 +927,6 @@ def render_master_benchmark_report(
         ("B3_RegularizedHazard", "B3_REGULARIZED_HAZARD", "Discrete Survival"),
         ("B4_GradientBoosting", "B4_GRADIENT_BOOSTING", "Non-linear Tree"),
         ("K3_JointModel", "K3_FAST_LANDMARK", "Bayesian Joint"),
-        ("K1_Kinetic", "K1_KINETIC_HYBRID", "ODE-Neural State-Space"),
-        ("K4_DeepZoo", "K4_DEEP_IRREGULAR_ZOO", "Deep Irregular (GRU-D)"),
-        ("K8_ProductionEnsemble", "K8_PRODUCTION_ENSEMBLE", "Conformal Stacking"),
     ]
 
     leaderboard_dict = {}
@@ -1068,11 +971,9 @@ def render_master_benchmark_report(
             "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
             "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
-            "- **Study S4 (Deep Zoo Pre-Training & Scaling):** [`reports/ml/S4_PRETRAINING_SCALING/REPORT.md`](./S4_PRETRAINING_SCALING/REPORT.md)",
             "- **Study S5 (Multi-Site Lab Harmonisation):** [`reports/ml/S5_HARMONISATION/REPORT.md`](./S5_HARMONISATION/REPORT.md)",
-            "- **Study S6 (Active Sensing & Adaptive Scheduling):** [`reports/ml/S6_ACTIVE_SENSING/REPORT.md`](./S6_ACTIVE_SENSING/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
-            "- **Study S10 (Multi-Site Synthetic Trial & Federated Learning):** [`reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/REPORT.md`](./S10_MULTISITE_SYNTHETIC_TRIAL/REPORT.md)",
+            "- **Retracted Studies (Condition R1):** Studies S4, S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3 and deferred to sub-phases 3C and 3D.",
         ]
     )
 
@@ -1083,11 +984,8 @@ def render_master_benchmark_report(
         "s1_sparsity": s1_res,
         "s2_sequential": s2_res,
         "s3_verification_bias": s3_res,
-        "s4_pretraining_scaling": s4_res,
         "s5_harmonisation": s5_res,
-        "s6_active_sensing": s6_res,
         "s9_cross_generator": s9_res,
-        "s10_multisite_synthetic_trial": s10_res,
         "leaderboard": leaderboard_dict,
     }
     with open(path.parent / "results.json", "w") as f:
@@ -1112,43 +1010,30 @@ def main() -> int:
     # 3. Run Study S3 (Verification Bias)
     s3_results = run_study_s3(audit_logger)
 
-    # 4. Run Study S4 (Deep Zoo Pretraining & Scaling)
-    s4_results = run_study_s4(audit_logger)
-
-    # 5. Run Study S5 (Lab Harmonisation)
+    # 4. Run Study S5 (Lab Harmonisation)
     s5_results = run_study_s5(audit_logger)
 
-    # 6. Run Study S6 (Active Sensing)
-    s6_results = run_study_s6(audit_logger)
-
-    # 7. Run Study S9 (Cross-Generator Robustness)
+    # 5. Run Study S9 (Cross-Generator Robustness)
     s9_results = run_study_s9(audit_logger)
 
-    # 8. Run Study S10 (Multi-Site Synthetic Trial & Federated Learning)
-    s10_results = run_study_s10(audit_logger)
-
-    # 9. Render Master Benchmark Report
+    # 6. Render Master Benchmark Report
     bench_report_path = ROOT / "reports" / "ml" / "BENCHMARK_REPORT.md"
     render_master_benchmark_report(
         s1_results,
         s2_results,
         s3_results,
-        s4_results,
         s5_results,
-        s6_results,
         s9_results,
-        s10_results,
         bench_report_path,
     )
 
-    # 10. Model Regression Gating
+    # 7. Model Regression Gating
     gate = ModelRegressionGate(
         min_auc=0.65,
         max_brier=0.25,
         max_ece=0.20,
     )
     k3_v10 = s1_results["V_10"]["K3_JointModel"]
-    k8_v10 = s1_results["V_10"]["K8_ProductionEnsemble"]
 
     gate_k3 = gate.evaluate(
         candidate_metrics={
@@ -1157,21 +1042,11 @@ def main() -> int:
             "ece": k3_v10["ece"],
         }
     )
-    gate_k8 = gate.evaluate(
-        candidate_metrics={
-            "roc_auc": k8_v10["auc"],
-            "brier_score": k8_v10["brier"],
-            "ece": k8_v10["ece"],
-        }
-    )
 
-    all_passed = gate_k3.passed and gate_k8.passed
+    all_passed = gate_k3.passed
     print("\n------------------------------------------------------------")
     print(f"Regression Gate K3 Status: {'PASSED' if gate_k3.passed else 'FAILED'}")
     for r in gate_k3.failures:
-        print(f"  {r}")
-    print(f"Regression Gate K8 Status: {'PASSED' if gate_k8.passed else 'FAILED'}")
-    for r in gate_k8.failures:
         print(f"  {r}")
     print("------------------------------------------------------------")
 
