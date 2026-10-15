@@ -1,6 +1,6 @@
 # Vigil — Master Plan
 
-> **Document status:** Canonical. Version 1.1 (2026-10-14). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
+> **Document status:** Canonical. Version 1.2 (2026-10-16). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
 > **Formerly named:** Sentinel (renamed to Vigil, 2026-10-14). Any remaining "Sentinel" string in code, docs, config, UI or artifact names is a defect to fix in Phase 0.
 > **This file is the single source of truth for what Vigil is, why it exists, what "finished" means, and how it gets built.** If another file, an old prompt, or your own prior output contradicts it, this file wins. If this file is wrong or incomplete, say so in a proposal (Section 17.4); do not silently deviate.
 
@@ -16,7 +16,8 @@
 4. **"Done" is not a feeling.** A task, work package or phase is done only when its **exit gate** (Section 14) is met and the **evidence** it demands is committed (test output, metric files, screenshots, reports). Never write "complete", "done", "production-ready", "enterprise-grade" or "state of the art" in any file, commit message or report unless a committed artifact proves the specific claim. The previous builder session declared the project finished after one pass; that was wrong, and the reasons are itemised in Section 15. Do not repeat it.
 5. **You are not the only reader.** A reviewer (Claude) will audit your reports with very little context and no ability to run your machine. Make every report self-contained (Section 16).
 6. **No time pressure exists.** This is a multi-month product. Nothing is deferred because it is large, tedious, or complex. The *only* valid reason to drop or shrink something is a **failed feasibility experiment with committed evidence** (Section 13) or a **concrete external blocker** (missing access, data, credentials, legal permission, or a human-only action). Name the blocker, finish everything around it, and list what remains.
-7. **Ask for nothing you can derive.** Make reasonable decisions, record them as ADRs (`docs/adr/`), and keep moving. Ask the product owner only for the things in Section 17.3 (human-only actions).
+7. **Reality rules (binding, plan v1.2).** `docs/REALITY_RULES.md` defines what counts as real: results are computed, `fit` learns, validation exercises the implementation, no phantom features, ensembles call their members, placeholders are registered in `docs/STUBS.md`. `NOT MET`, `BLOCKED` and "this lost to the baseline" are always acceptable; a fabricated `MET` invalidates the whole phase. `scripts/reality_audit.py` must pass in CI.
+8. **Ask for nothing you can derive.** Make reasonable decisions, record them as ADRs (`docs/adr/`), and keep moving. Ask the product owner only for the things in Section 17.3 (human-only actions).
 
 ---
 
@@ -489,6 +490,8 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 - **Exit gate:** one-command benchmark reproduces committed reports; metric implementations verified; baselines present; model/dataset cards; no ROC-AUC≈1.0 results unexplained; report committed.
 
 ### Phase 3 — Advanced modelling, calibration, uncertainty, abstention
+
+> **Plan v1.2 split.** Phase 3 as originally written is too large to execute and verify in one pass, and the first attempt produced stubs and fabricated studies (see `docs/progress/VERDICT-P3.md`). Phase 3 is now executed and reviewed as four sub-phases, each stopping for a verdict: **3A** K1 hybrid kinetic model made real (training, all four inference routes, SBC/recovery through the real code, identifiability, study S1 arm); **3B** K2 sequential detection, K5 harmonisation, K8 conformal/abstention/ensemble built from the *real* member models (studies S2, S5); **3C** K4 deep zoo with real training, pre-training and scaling (study S4, S9 arms); **3D** K6 active sensing, M12 federated/DP feasibility, model selection ADR, export/runtime (studies S6, S10). Exit-gate items below apply to the sub-phase that owns them.
 - WP3.0 **Execute `docs/ML_PROGRAM.md` K1, K2, K4, K5, K6, K8 and studies S1, S2, S4, S5, S6, S9, S10 in full** (pre-registered, with SBC, validity stress suite, identifiability and scaling studies; negative results committed).
 - WP3.1 Deep irregular-time families (GRU-D, GRU-ODE-Bayes, Neural CDE, continuous-time transformer, GRUwE), forward-only encoders, ensembles, self-supervised pre-training on MIMIC-IV-derived series (if access is granted; else on simulator-derived unlabeled series with the limitation stated).
 - WP3.2 Conformal risk control, adaptive conformal, abstention (8.7), OOD detection, calibrated alert tiers (8.6).
@@ -649,4 +652,4 @@ Quantitative targets for lead time gained, false-alarm budget, sensitivity at th
 ## 19. Glossary
 **CDSS** clinical decision support system · **RCV** reference change value · **CVa/CVi/CVg** analytical, within-subject, between-subject coefficient of variation · **LOINC/UCUM/FHIR/SNOMED** health-data coding, unit and exchange standards · **DCA** decision-curve analysis · **ECE** expected calibration error · **PCCP** predetermined change control plan · **TRIPOD+AI / PROBAST+AI / DECIDE-AI / CONSORT-AI** reporting and appraisal guidelines for AI prediction/decision-support studies · **NDPA/NDPC** Nigeria Data Protection Act 2023 / Commission · **NHREC** Nigerian national health research ethics body · **MRD/ctDNA** minimal residual disease / circulating tumour DNA · **RT** radiotherapy · **LINAC** linear accelerator · **ACI** adaptive conformal inference · **DP** differential privacy · **CRDT** conflict-free replicated data type.
 
-*End of Master Plan v1.1.*
+*End of Master Plan v1.2.*
