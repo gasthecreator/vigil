@@ -21,7 +21,7 @@
 * **Primary Sources:**
   1. Molina R, Zanon G, Filella X, Moreno F, Jo J, Daniels M, Latre ML, Pahisa J, Velasco M, Ballesta AM. "Use of serial carcinoembryonic antigen and CA 15.3 assays in detecting relapses in breast cancer patients." *Breast Cancer Res Treat*. 1995;36(1):41–48. doi:[10.1007/BF00690183](https://doi.org/10.1007/BF00690183). PMID:[7579505](https://pubmed.ncbi.nlm.nih.gov/7579505/).
   2. Duffy MJ. "Serum Tumor Markers in Breast Cancer: Are They of Clinical Value?" *Clin Chem*. 2006;52(3):345–351. doi:[10.1373/clinchem.2005.059832](https://doi.org/10.1373/clinchem.2005.059832). PMID:[16410341](https://pubmed.ncbi.nlm.nih.gov/16410341/).
-  3. Khatcheressian JM, Wolff AC, Smith TJ, et al. "American Society of Clinical Oncology 2006 Update of the Breast Cancer Follow-Up and Management Guidelines in the Adjuvant Setting." *J Clin Oncol*. 2006;24(31):5091–5097. doi:[10.1200/JCO.2006.08.8575](https://doi.org/10.1200/JCO.2006.08.8575). PMID:[17075121](https://pubmed.ncbi.nlm.nih.gov/17075121/).
+  3. Khatcheressian JM, Wolff AC, Smith TJ, et al. "American Society of Clinical Oncology 2006 Update of the Breast Cancer Follow-Up and Management Guidelines in the Adjuvant Setting." *J Clin Oncol*. 2006;24(31):5091–5097. doi:[10.1200/JCO.2006.08.8575](https://doi.org/10.1200/JCO.2006.08.8575). PMID:[17033037](https://pubmed.ncbi.nlm.nih.gov/17033037/).
 * **Verified Figures (Molina et al. 1995 cohort of 1,023 patients):**
   - Cohort: 1,023 primary breast cancer patients followed 1–10 years (mean 6.2 years); 246 patients developed metastases.
   - Pre-recurrence elevation lead time: 4.2 ± 2.3 months for CA 15-3 (elevated in 41% of recurrence cases prior to clinical diagnosis); 4.9 ± 2.2 months for CEA (elevated in 40%).
@@ -82,7 +82,7 @@
 * **Verified Figures:**
   - Advanced stage presentation: In sub-Saharan Africa, median percentage presenting at Stage III/IV is 74.7% (Jedy-Agba 2016, 83 studies, 26,788 patients).
   - Young age at diagnosis: Mean age at diagnosis is 44.8 ± 11.8 years in Nigerian/Senegalese cohort (Huo 2009), 12–15 years younger than North American cohorts.
-  - Molecular subtype breakdown (Huo 2009 indigenous cohort, n=378): Triple Negative represents 55% (27% basal-like, 28% unclassified); Luminal A 27%; Luminal B 2%; HER2+/ER- 15%.
+  - Molecular subtype breakdown (Huo 2009 indigenous cohort, n=378): Triple Negative represents 55% (derived sum: 27% basal-like + 28% unclassified); Luminal A 27%; Luminal B 2%; HER2+/ER- 15%.
 * **Used by:** `vigil-sim` demographic and biological priors, clinical study protocol (`docs/clinical/PARTNERSHIP/STUDY-PROTOCOL.md`).
 
 ### E14 — Nigeria Data Protection Act 2023 — `PRIMARY-VERIFIED`

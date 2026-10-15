@@ -1,0 +1,508 @@
+{
+  "s1_sparsity": {
+    "V_3": {
+      "B0_Prevalence": {
+        "auc": 0.5,
+        "auc_ci_lower": 0.5,
+        "auc_ci_upper": 0.5,
+        "brier": 0.2716,
+        "ece": 0.0144,
+        "net_benefit": 0.3112,
+        "lead_time_days": 0.0,
+        "latency_p95_ms": 0.0,
+        "latency_p50_ms": 0.0
+      },
+      "B1_SingleThreshold": {
+        "auc": 0.6646,
+        "auc_ci_lower": 0.6293,
+        "auc_ci_upper": 0.7003,
+        "brier": 0.2363,
+        "ece": 0.0401,
+        "net_benefit": 0.1932,
+        "lead_time_days": 163.1,
+        "latency_p95_ms": 0.01,
+        "latency_p50_ms": 0.01
+      },
+      "B2_Velocity": {
+        "auc": 0.536,
+        "auc_ci_lower": 0.5056,
+        "auc_ci_upper": 0.5544,
+        "brier": 0.2832,
+        "ece": 0.0523,
+        "net_benefit": 0.3077,
+        "lead_time_days": 379.8,
+        "latency_p95_ms": 0.02,
+        "latency_p50_ms": 0.02
+      },
+      "B3_RegularizedHazard": {
+        "auc": 0.7109,
+        "auc_ci_lower": 0.6878,
+        "auc_ci_upper": 0.7452,
+        "brier": 0.2069,
+        "ece": 0.0407,
+        "net_benefit": 0.2733,
+        "lead_time_days": 398.9,
+        "latency_p95_ms": 0.54,
+        "latency_p50_ms": 0.51
+      },
+      "B4_GradientBoosting": {
+        "auc": 0.755,
+        "auc_ci_lower": 0.7285,
+        "auc_ci_upper": 0.7788,
+        "brier": 0.203,
+        "ece": 0.0505,
+        "net_benefit": 0.2931,
+        "lead_time_days": 330.8,
+        "latency_p95_ms": 1.45,
+        "latency_p50_ms": 1.22
+      },
+      "K3_JointModel": {
+        "auc": 0.7169,
+        "auc_ci_lower": 0.6853,
+        "auc_ci_upper": 0.748,
+        "brier": 0.2082,
+        "ece": 0.0238,
+        "net_benefit": 0.2734,
+        "lead_time_days": 367.8,
+        "latency_p95_ms": 0.06,
+        "latency_p50_ms": 0.05
+      }
+    },
+    "V_4": {
+      "B0_Prevalence": {
+        "auc": 0.5,
+        "auc_ci_lower": 0.5,
+        "auc_ci_upper": 0.5,
+        "brier": 0.2459,
+        "ece": 0.0089,
+        "net_benefit": 0.252,
+        "lead_time_days": 0.0,
+        "latency_p95_ms": 0.0,
+        "latency_p50_ms": 0.0
+      },
+      "B1_SingleThreshold": {
+        "auc": 0.6825,
+        "auc_ci_lower": 0.6566,
+        "auc_ci_upper": 0.7134,
+        "brier": 0.1953,
+        "ece": 0.0414,
+        "net_benefit": 0.1736,
+        "lead_time_days": 148.6,
+        "latency_p95_ms": 0.01,
+        "latency_p50_ms": 0.01
+      },
+      "B2_Velocity": {
+        "auc": 0.5591,
+        "auc_ci_lower": 0.5361,
+        "auc_ci_upper": 0.5766,
+        "brier": 0.2449,
+        "ece": 0.058,
+        "net_benefit": 0.2494,
+        "lead_time_days": 316.8,
+        "latency_p95_ms": 0.02,
+        "latency_p50_ms": 0.02
+      },
+      "B3_RegularizedHazard": {
+        "auc": 0.7323,
+        "auc_ci_lower": 0.7053,
+        "auc_ci_upper": 0.7611,
+        "brier": 0.1776,
+        "ece": 0.0281,
+        "net_benefit": 0.2246,
+        "lead_time_days": 376.0,
+        "latency_p95_ms": 0.53,
+        "latency_p50_ms": 0.5
+      },
+      "B4_GradientBoosting": {
+        "auc": 0.7853,
+        "auc_ci_lower": 0.758,
+        "auc_ci_upper": 0.8083,
+        "brier": 0.1693,
+        "ece": 0.0421,
+        "net_benefit": 0.2506,
+        "lead_time_days": 308.8,
+        "latency_p95_ms": 1.42,
+        "latency_p50_ms": 1.21
+      },
+      "K3_JointModel": {
+        "auc": 0.7467,
+        "auc_ci_lower": 0.7218,
+        "auc_ci_upper": 0.7717,
+        "brier": 0.174,
+        "ece": 0.0323,
+        "net_benefit": 0.2333,
+        "lead_time_days": 336.7,
+        "latency_p95_ms": 0.06,
+        "latency_p50_ms": 0.05
+      }
+    },
+    "V_6": {
+      "B0_Prevalence": {
+        "auc": 0.5,
+        "auc_ci_lower": 0.5,
+        "auc_ci_upper": 0.5,
+        "brier": 0.2226,
+        "ece": 0.0119,
+        "net_benefit": 0.1984,
+        "lead_time_days": 0.0,
+        "latency_p95_ms": 0.0,
+        "latency_p50_ms": 0.0
+      },
+      "B1_SingleThreshold": {
+        "auc": 0.7117,
+        "auc_ci_lower": 0.6862,
+        "auc_ci_upper": 0.7345,
+        "brier": 0.1599,
+        "ece": 0.0409,
+        "net_benefit": 0.1565,
+        "lead_time_days": 142.8,
+        "latency_p95_ms": 0.01,
+        "latency_p50_ms": 0.01
+      },
+      "B2_Velocity": {
+        "auc": 0.562,
+        "auc_ci_lower": 0.5426,
+        "auc_ci_upper": 0.5801,
+        "brier": 0.2105,
+        "ece": 0.056,
+        "net_benefit": 0.1968,
+        "lead_time_days": 268.6,
+        "latency_p95_ms": 0.02,
+        "latency_p50_ms": 0.02
+      },
+      "B3_RegularizedHazard": {
+        "auc": 0.7613,
+        "auc_ci_lower": 0.7383,
+        "auc_ci_upper": 0.7824,
+        "brier": 0.1505,
+        "ece": 0.0188,
+        "net_benefit": 0.189,
+        "lead_time_days": 364.3,
+        "latency_p95_ms": 0.53,
+        "latency_p50_ms": 0.5
+      },
+      "B4_GradientBoosting": {
+        "auc": 0.8065,
+        "auc_ci_lower": 0.7865,
+        "auc_ci_upper": 0.8257,
+        "brier": 0.1418,
+        "ece": 0.0359,
+        "net_benefit": 0.2096,
+        "lead_time_days": 280.8,
+        "latency_p95_ms": 1.29,
+        "latency_p50_ms": 1.22
+      },
+      "K3_JointModel": {
+        "auc": 0.7788,
+        "auc_ci_lower": 0.7571,
+        "auc_ci_upper": 0.8013,
+        "brier": 0.1443,
+        "ece": 0.0464,
+        "net_benefit": 0.1977,
+        "lead_time_days": 306.7,
+        "latency_p95_ms": 0.06,
+        "latency_p50_ms": 0.05
+      }
+    },
+    "V_10": {
+      "B0_Prevalence": {
+        "auc": 0.5,
+        "auc_ci_lower": 0.5,
+        "auc_ci_upper": 0.5,
+        "brier": 0.2113,
+        "ece": 0.0199,
+        "net_benefit": 0.1724,
+        "lead_time_days": 0.0,
+        "latency_p95_ms": 0.0,
+        "latency_p50_ms": 0.0
+      },
+      "B1_SingleThreshold": {
+        "auc": 0.7218,
+        "auc_ci_lower": 0.6982,
+        "auc_ci_upper": 0.7452,
+        "brier": 0.1464,
+        "ece": 0.0427,
+        "net_benefit": 0.1465,
+        "lead_time_days": 142.9,
+        "latency_p95_ms": 0.01,
+        "latency_p50_ms": 0.01
+      },
+      "B2_Velocity": {
+        "auc": 0.5518,
+        "auc_ci_lower": 0.5316,
+        "auc_ci_upper": 0.5703,
+        "brier": 0.1966,
+        "ece": 0.0594,
+        "net_benefit": 0.1721,
+        "lead_time_days": 266.3,
+        "latency_p95_ms": 0.02,
+        "latency_p50_ms": 0.02
+      },
+      "B3_RegularizedHazard": {
+        "auc": 0.7704,
+        "auc_ci_lower": 0.7499,
+        "auc_ci_upper": 0.7913,
+        "brier": 0.1399,
+        "ece": 0.0217,
+        "net_benefit": 0.171,
+        "lead_time_days": 363.1,
+        "latency_p95_ms": 0.55,
+        "latency_p50_ms": 0.51
+      },
+      "B4_GradientBoosting": {
+        "auc": 0.8142,
+        "auc_ci_lower": 0.7956,
+        "auc_ci_upper": 0.8321,
+        "brier": 0.1308,
+        "ece": 0.0344,
+        "net_benefit": 0.189,
+        "lead_time_days": 278.8,
+        "latency_p95_ms": 1.27,
+        "latency_p50_ms": 1.2
+      },
+      "K3_JointModel": {
+        "auc": 0.7887,
+        "auc_ci_lower": 0.7672,
+        "auc_ci_upper": 0.8087,
+        "brier": 0.1341,
+        "ece": 0.0569,
+        "net_benefit": 0.1801,
+        "lead_time_days": 305.3,
+        "latency_p95_ms": 0.06,
+        "latency_p50_ms": 0.05
+      }
+    },
+    "V_20": {
+      "B0_Prevalence": {
+        "auc": 0.5,
+        "auc_ci_lower": 0.5,
+        "auc_ci_upper": 0.5,
+        "brier": 0.211,
+        "ece": 0.0202,
+        "net_benefit": 0.1717,
+        "lead_time_days": 0.0,
+        "latency_p95_ms": 0.0,
+        "latency_p50_ms": 0.0
+      },
+      "B1_SingleThreshold": {
+        "auc": 0.7216,
+        "auc_ci_lower": 0.6978,
+        "auc_ci_upper": 0.7451,
+        "brier": 0.1462,
+        "ece": 0.0428,
+        "net_benefit": 0.146,
+        "lead_time_days": 142.9,
+        "latency_p95_ms": 0.01,
+        "latency_p50_ms": 0.01
+      },
+      "B2_Velocity": {
+        "auc": 0.5508,
+        "auc_ci_lower": 0.5305,
+        "auc_ci_upper": 0.5693,
+        "brier": 0.1963,
+        "ece": 0.0595,
+        "net_benefit": 0.1715,
+        "lead_time_days": 266.3,
+        "latency_p95_ms": 0.02,
+        "latency_p50_ms": 0.02
+      },
+      "B3_RegularizedHazard": {
+        "auc": 0.7703,
+        "auc_ci_lower": 0.7499,
+        "auc_ci_upper": 0.7915,
+        "brier": 0.1398,
+        "ece": 0.0211,
+        "net_benefit": 0.1705,
+        "lead_time_days": 363.1,
+        "latency_p95_ms": 0.57,
+        "latency_p50_ms": 0.51
+      },
+      "B4_GradientBoosting": {
+        "auc": 0.8141,
+        "auc_ci_lower": 0.7956,
+        "auc_ci_upper": 0.8321,
+        "brier": 0.1306,
+        "ece": 0.0346,
+        "net_benefit": 0.1883,
+        "lead_time_days": 278.8,
+        "latency_p95_ms": 1.27,
+        "latency_p50_ms": 1.2
+      },
+      "K3_JointModel": {
+        "auc": 0.7887,
+        "auc_ci_lower": 0.7672,
+        "auc_ci_upper": 0.8084,
+        "brier": 0.1339,
+        "ece": 0.0572,
+        "net_benefit": 0.1796,
+        "lead_time_days": 305.3,
+        "latency_p95_ms": 0.09,
+        "latency_p50_ms": 0.05
+      }
+    }
+  },
+  "s3_verification_bias": {
+    "oracle_ground_truth": {
+      "sensitivity": 0.7411,
+      "specificity": 0.9979,
+      "verification_rate": 0.5796,
+      "n_patients": 2500
+    },
+    "complete_case_estimator": {
+      "sensitivity": 0.9092,
+      "specificity": 1.0,
+      "bias_sensitivity": 0.1682,
+      "bias_specificity": 0.0021
+    },
+    "ipw_estimator": {
+      "sensitivity": 0.7371,
+      "specificity": 1.0,
+      "bias_sensitivity": -0.0039,
+      "bias_specificity": 0.0021
+    },
+    "latent_class_em_estimator": {
+      "sensitivity": 0.7175,
+      "specificity": 0.9982,
+      "bias_sensitivity": -0.0236,
+      "bias_specificity": 0.0003
+    }
+  },
+  "s9_cross_generator": {
+    "B1_SingleThreshold": {
+      "in_distribution": {
+        "auc": 0.6083,
+        "brier": 0.19,
+        "ece": 0.1337
+      },
+      "g3_stress": {
+        "auc": 0.7072,
+        "brier": 0.1804,
+        "ece": 0.0505
+      },
+      "degradation": {
+        "delta_auc": -0.0989,
+        "delta_ece": -0.0832
+      }
+    },
+    "B2_Velocity": {
+      "in_distribution": {
+        "auc": 0.5317,
+        "brier": 0.3063,
+        "ece": 0.2082
+      },
+      "g3_stress": {
+        "auc": 0.5742,
+        "brier": 0.224,
+        "ece": 0.0729
+      },
+      "degradation": {
+        "delta_auc": -0.0425,
+        "delta_ece": -0.1353
+      }
+    },
+    "B3_RegularizedHazard": {
+      "in_distribution": {
+        "auc": 0.6407,
+        "brier": 0.1865,
+        "ece": 0.0594
+      },
+      "g3_stress": {
+        "auc": 0.7562,
+        "brier": 0.1695,
+        "ece": 0.0337
+      },
+      "degradation": {
+        "delta_auc": -0.1155,
+        "delta_ece": -0.0257
+      }
+    },
+    "B4_GradientBoosting": {
+      "in_distribution": {
+        "auc": 0.6909,
+        "brier": 0.1749,
+        "ece": 0.0522
+      },
+      "g3_stress": {
+        "auc": 0.7489,
+        "brier": 0.1854,
+        "ece": 0.0522
+      },
+      "degradation": {
+        "delta_auc": -0.058,
+        "delta_ece": 0.0
+      }
+    },
+    "K3_JointModel": {
+      "in_distribution": {
+        "auc": 0.6197,
+        "brier": 0.257,
+        "ece": 0.1895
+      },
+      "g3_stress": {
+        "auc": 0.775,
+        "brier": 0.1593,
+        "ece": 0.017
+      },
+      "degradation": {
+        "delta_auc": -0.1553,
+        "delta_ece": -0.1725
+      }
+    }
+  },
+  "leaderboard": {
+    "B0_PREVALENCE": {
+      "family": "Heuristic",
+      "ipcw_roc_auc": 0.5,
+      "brier_score": 0.2113,
+      "ece": 0.0199,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
+    },
+    "B1_SINGLE_THRESHOLD": {
+      "family": "Clinical Rule",
+      "ipcw_roc_auc": 0.7218,
+      "brier_score": 0.1464,
+      "ece": 0.0427,
+      "lead_time_days": 142.9,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
+    },
+    "B2_VELOCITY_RULE": {
+      "family": "Kinetic Rule",
+      "ipcw_roc_auc": 0.5518,
+      "brier_score": 0.1966,
+      "ece": 0.0594,
+      "lead_time_days": 266.3,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
+    },
+    "B3_REGULARIZED_HAZARD": {
+      "family": "Discrete Survival",
+      "ipcw_roc_auc": 0.7704,
+      "brier_score": 0.1399,
+      "ece": 0.0217,
+      "lead_time_days": 363.1,
+      "latency_p95_ms": 0.55,
+      "latency_p50_ms": 0.51
+    },
+    "B4_GRADIENT_BOOSTING": {
+      "family": "Non-linear Tree",
+      "ipcw_roc_auc": 0.8142,
+      "brier_score": 0.1308,
+      "ece": 0.0344,
+      "lead_time_days": 278.8,
+      "latency_p95_ms": 1.27,
+      "latency_p50_ms": 1.2
+    },
+    "K3_FAST_LANDMARK": {
+      "family": "Bayesian Joint",
+      "ipcw_roc_auc": 0.7887,
+      "brier_score": 0.1341,
+      "ece": 0.0569,
+      "lead_time_days": 305.3,
+      "latency_p95_ms": 0.06,
+      "latency_p50_ms": 0.05
+    }
+  }
+}

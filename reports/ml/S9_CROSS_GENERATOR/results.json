@@ -3,80 +3,80 @@
     "in_distribution": {
       "auc": 0.6083,
       "brier": 0.19,
-      "ece": 0.1719
+      "ece": 0.1337
     },
     "g3_stress": {
       "auc": 0.7072,
       "brier": 0.1804,
-      "ece": 0.1292
+      "ece": 0.0505
     },
     "degradation": {
       "delta_auc": -0.0989,
-      "delta_ece": -0.0427
+      "delta_ece": -0.0832
     }
   },
   "B2_Velocity": {
     "in_distribution": {
       "auc": 0.5317,
       "brier": 0.3063,
-      "ece": 0.2214
+      "ece": 0.2082
     },
     "g3_stress": {
       "auc": 0.5742,
       "brier": 0.224,
-      "ece": 0.0394
+      "ece": 0.0729
     },
     "degradation": {
       "delta_auc": -0.0425,
-      "delta_ece": -0.182
+      "delta_ece": -0.1353
     }
   },
   "B3_RegularizedHazard": {
     "in_distribution": {
-      "auc": 0.5113,
-      "brier": 0.2144,
-      "ece": 0.0578
+      "auc": 0.6407,
+      "brier": 0.1865,
+      "ece": 0.0594
     },
     "g3_stress": {
-      "auc": 0.4168,
-      "brier": 0.2762,
-      "ece": 0.0399
+      "auc": 0.7562,
+      "brier": 0.1695,
+      "ece": 0.0337
     },
     "degradation": {
-      "delta_auc": 0.0945,
-      "delta_ece": -0.0179
+      "delta_auc": -0.1155,
+      "delta_ece": -0.0257
     }
   },
   "B4_GradientBoosting": {
     "in_distribution": {
-      "auc": 0.5763,
-      "brier": 0.2031,
-      "ece": 0.0422
+      "auc": 0.6909,
+      "brier": 0.1749,
+      "ece": 0.0522
     },
     "g3_stress": {
-      "auc": 0.62,
-      "brier": 0.2331,
-      "ece": 0.0402
+      "auc": 0.7489,
+      "brier": 0.1854,
+      "ece": 0.0522
     },
     "degradation": {
-      "delta_auc": -0.0437,
-      "delta_ece": -0.002
+      "delta_auc": -0.058,
+      "delta_ece": 0.0
     }
   },
   "K3_JointModel": {
     "in_distribution": {
-      "auc": 0.5619,
-      "brier": 0.2685,
-      "ece": 0.2456
+      "auc": 0.6197,
+      "brier": 0.257,
+      "ece": 0.1895
     },
     "g3_stress": {
-      "auc": 0.7097,
-      "brier": 0.187,
-      "ece": 0.1425
+      "auc": 0.775,
+      "brier": 0.1593,
+      "ece": 0.017
     },
     "degradation": {
-      "delta_auc": -0.1477,
-      "delta_ece": -0.1031
+      "delta_auc": -0.1553,
+      "delta_ece": -0.1725
     }
   }
 }
