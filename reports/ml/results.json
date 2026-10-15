@@ -42,8 +42,8 @@
         "ece": 0.0407,
         "net_benefit": 0.2733,
         "lead_time_days": 398.9,
-        "latency_p95_ms": 0.54,
-        "latency_p50_ms": 0.51
+        "latency_p95_ms": 0.58,
+        "latency_p50_ms": 0.54
       },
       "B4_GradientBoosting": {
         "auc": 0.755,
@@ -53,8 +53,8 @@
         "ece": 0.0505,
         "net_benefit": 0.2931,
         "lead_time_days": 330.8,
-        "latency_p95_ms": 1.45,
-        "latency_p50_ms": 1.22
+        "latency_p95_ms": 1.3,
+        "latency_p50_ms": 1.23
       },
       "K3_JointModel": {
         "auc": 0.7169,
@@ -66,6 +66,39 @@
         "lead_time_days": 367.8,
         "latency_p95_ms": 0.06,
         "latency_p50_ms": 0.05
+      },
+      "K1_Kinetic": {
+        "auc": 0.6645,
+        "auc_ci_lower": 0.6324,
+        "auc_ci_upper": 0.6917,
+        "brier": 0.2498,
+        "ece": 0.0468,
+        "net_benefit": 0.1462,
+        "lead_time_days": 114.2,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K4_DeepZoo": {
+        "auc": 0.6629,
+        "auc_ci_lower": 0.6304,
+        "auc_ci_upper": 0.6899,
+        "brier": 0.2562,
+        "ece": 0.0591,
+        "net_benefit": 0.1392,
+        "lead_time_days": 123.7,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K8_ProductionEnsemble": {
+        "auc": 0.6492,
+        "auc_ci_lower": 0.6156,
+        "auc_ci_upper": 0.6807,
+        "brier": 0.2668,
+        "ece": 0.075,
+        "net_benefit": 0.1126,
+        "lead_time_days": 78.7,
+        "latency_p95_ms": 0.03,
+        "latency_p50_ms": 0.02
       }
     },
     "V_4": {
@@ -88,7 +121,7 @@
         "ece": 0.0414,
         "net_benefit": 0.1736,
         "lead_time_days": 148.6,
-        "latency_p95_ms": 0.01,
+        "latency_p95_ms": 0.02,
         "latency_p50_ms": 0.01
       },
       "B2_Velocity": {
@@ -121,8 +154,8 @@
         "ece": 0.0421,
         "net_benefit": 0.2506,
         "lead_time_days": 308.8,
-        "latency_p95_ms": 1.42,
-        "latency_p50_ms": 1.21
+        "latency_p95_ms": 1.24,
+        "latency_p50_ms": 1.19
       },
       "K3_JointModel": {
         "auc": 0.7467,
@@ -134,6 +167,39 @@
         "lead_time_days": 336.7,
         "latency_p95_ms": 0.06,
         "latency_p50_ms": 0.05
+      },
+      "K1_Kinetic": {
+        "auc": 0.6846,
+        "auc_ci_lower": 0.6621,
+        "auc_ci_upper": 0.7101,
+        "brier": 0.2061,
+        "ece": 0.0407,
+        "net_benefit": 0.1399,
+        "lead_time_days": 107.3,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K4_DeepZoo": {
+        "auc": 0.6834,
+        "auc_ci_lower": 0.6605,
+        "auc_ci_upper": 0.7087,
+        "brier": 0.2114,
+        "ece": 0.0539,
+        "net_benefit": 0.1353,
+        "lead_time_days": 112.6,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K8_ProductionEnsemble": {
+        "auc": 0.6746,
+        "auc_ci_lower": 0.6472,
+        "auc_ci_upper": 0.7008,
+        "brier": 0.2189,
+        "ece": 0.0686,
+        "net_benefit": 0.1204,
+        "lead_time_days": 81.1,
+        "latency_p95_ms": 0.03,
+        "latency_p50_ms": 0.02
       }
     },
     "V_6": {
@@ -178,8 +244,8 @@
         "ece": 0.0188,
         "net_benefit": 0.189,
         "lead_time_days": 364.3,
-        "latency_p95_ms": 0.53,
-        "latency_p50_ms": 0.5
+        "latency_p95_ms": 0.55,
+        "latency_p50_ms": 0.51
       },
       "B4_GradientBoosting": {
         "auc": 0.8065,
@@ -190,7 +256,7 @@
         "net_benefit": 0.2096,
         "lead_time_days": 280.8,
         "latency_p95_ms": 1.29,
-        "latency_p50_ms": 1.22
+        "latency_p50_ms": 1.23
       },
       "K3_JointModel": {
         "auc": 0.7788,
@@ -202,6 +268,39 @@
         "lead_time_days": 306.7,
         "latency_p95_ms": 0.06,
         "latency_p50_ms": 0.05
+      },
+      "K1_Kinetic": {
+        "auc": 0.6987,
+        "auc_ci_lower": 0.6799,
+        "auc_ci_upper": 0.7145,
+        "brier": 0.169,
+        "ece": 0.031,
+        "net_benefit": 0.1293,
+        "lead_time_days": 102.8,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K4_DeepZoo": {
+        "auc": 0.697,
+        "auc_ci_lower": 0.6782,
+        "auc_ci_upper": 0.7133,
+        "brier": 0.1734,
+        "ece": 0.0439,
+        "net_benefit": 0.127,
+        "lead_time_days": 107.2,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.04
+      },
+      "K8_ProductionEnsemble": {
+        "auc": 0.7055,
+        "auc_ci_lower": 0.6837,
+        "auc_ci_upper": 0.7267,
+        "brier": 0.1775,
+        "ece": 0.056,
+        "net_benefit": 0.1238,
+        "lead_time_days": 81.8,
+        "latency_p95_ms": 0.03,
+        "latency_p50_ms": 0.02
       }
     },
     "V_10": {
@@ -246,8 +345,8 @@
         "ece": 0.0217,
         "net_benefit": 0.171,
         "lead_time_days": 363.1,
-        "latency_p95_ms": 0.55,
-        "latency_p50_ms": 0.51
+        "latency_p95_ms": 0.66,
+        "latency_p50_ms": 0.52
       },
       "B4_GradientBoosting": {
         "auc": 0.8142,
@@ -257,8 +356,8 @@
         "ece": 0.0344,
         "net_benefit": 0.189,
         "lead_time_days": 278.8,
-        "latency_p95_ms": 1.27,
-        "latency_p50_ms": 1.2
+        "latency_p95_ms": 1.3,
+        "latency_p50_ms": 1.22
       },
       "K3_JointModel": {
         "auc": 0.7887,
@@ -270,6 +369,39 @@
         "lead_time_days": 305.3,
         "latency_p95_ms": 0.06,
         "latency_p50_ms": 0.05
+      },
+      "K1_Kinetic": {
+        "auc": 0.7023,
+        "auc_ci_lower": 0.6839,
+        "auc_ci_upper": 0.7179,
+        "brier": 0.1544,
+        "ece": 0.0257,
+        "net_benefit": 0.1221,
+        "lead_time_days": 102.9,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K4_DeepZoo": {
+        "auc": 0.7002,
+        "auc_ci_lower": 0.6826,
+        "auc_ci_upper": 0.716,
+        "brier": 0.1584,
+        "ece": 0.0375,
+        "net_benefit": 0.1201,
+        "lead_time_days": 107.4,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K8_ProductionEnsemble": {
+        "auc": 0.7175,
+        "auc_ci_lower": 0.6985,
+        "auc_ci_upper": 0.7384,
+        "brier": 0.1614,
+        "ece": 0.0475,
+        "net_benefit": 0.1206,
+        "lead_time_days": 83.1,
+        "latency_p95_ms": 0.03,
+        "latency_p50_ms": 0.02
       }
     },
     "V_20": {
@@ -314,8 +446,8 @@
         "ece": 0.0211,
         "net_benefit": 0.1705,
         "lead_time_days": 363.1,
-        "latency_p95_ms": 0.57,
-        "latency_p50_ms": 0.51
+        "latency_p95_ms": 0.55,
+        "latency_p50_ms": 0.52
       },
       "B4_GradientBoosting": {
         "auc": 0.8141,
@@ -325,8 +457,8 @@
         "ece": 0.0346,
         "net_benefit": 0.1883,
         "lead_time_days": 278.8,
-        "latency_p95_ms": 1.27,
-        "latency_p50_ms": 1.2
+        "latency_p95_ms": 1.37,
+        "latency_p50_ms": 1.21
       },
       "K3_JointModel": {
         "auc": 0.7887,
@@ -336,8 +468,92 @@
         "ece": 0.0572,
         "net_benefit": 0.1796,
         "lead_time_days": 305.3,
-        "latency_p95_ms": 0.09,
+        "latency_p95_ms": 0.06,
         "latency_p50_ms": 0.05
+      },
+      "K1_Kinetic": {
+        "auc": 0.7024,
+        "auc_ci_lower": 0.684,
+        "auc_ci_upper": 0.7184,
+        "brier": 0.1541,
+        "ece": 0.0256,
+        "net_benefit": 0.1219,
+        "lead_time_days": 102.9,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K4_DeepZoo": {
+        "auc": 0.7002,
+        "auc_ci_lower": 0.6826,
+        "auc_ci_upper": 0.7161,
+        "brier": 0.1581,
+        "ece": 0.0375,
+        "net_benefit": 0.1199,
+        "lead_time_days": 107.4,
+        "latency_p95_ms": 0.04,
+        "latency_p50_ms": 0.03
+      },
+      "K8_ProductionEnsemble": {
+        "auc": 0.7177,
+        "auc_ci_lower": 0.6985,
+        "auc_ci_upper": 0.7385,
+        "brier": 0.1611,
+        "ece": 0.0473,
+        "net_benefit": 0.1204,
+        "lead_time_days": 83.1,
+        "latency_p95_ms": 0.03,
+        "latency_p50_ms": 0.02
+      }
+    }
+  },
+  "s2_sequential": {
+    "null_stress_suite": {
+      "all_passed": true,
+      "nominal_alpha": 0.05,
+      "scenarios": {
+        "null_1_standard_biological_variation": {
+          "empirical_patient_level_far": 0.035,
+          "nominal_alpha": 0.05,
+          "passed": true
+        },
+        "null_2_heavy_tailed_student_t": {
+          "empirical_patient_level_far": 0.04,
+          "nominal_alpha": 0.05,
+          "passed": true
+        },
+        "null_3_inter_lab_batch_shift": {
+          "empirical_patient_level_far": 0.04,
+          "nominal_alpha": 0.05,
+          "passed": true
+        },
+        "null_4_therapy_hepatotoxicity_spikes": {
+          "empirical_patient_level_far": 0.02,
+          "nominal_alpha": 0.05,
+          "passed": true
+        },
+        "null_5_severe_mnar_missingness": {
+          "empirical_patient_level_far": 0.005,
+          "nominal_alpha": 0.05,
+          "passed": true
+        }
+      }
+    },
+    "comparative_detection": {
+      "M_Static": {
+        "patient_level_null_far": 0.085,
+        "expected_detection_delay_days": 104.4
+      },
+      "M_CUSUM": {
+        "patient_level_null_far": 0.295,
+        "expected_detection_delay_days": 100.8
+      },
+      "M_Shiryaev": {
+        "patient_level_null_far": 0.355,
+        "expected_detection_delay_days": 117.9
+      },
+      "K2_EProcess": {
+        "patient_level_null_far": 0.035,
+        "expected_detection_delay_days": 418.5
       }
     }
   },
@@ -366,6 +582,76 @@
       "bias_sensitivity": -0.0236,
       "bias_specificity": 0.0003
     }
+  },
+  "s4_pretraining_scaling": {
+    "sample_sizes": [
+      50,
+      100,
+      200,
+      500,
+      1000
+    ],
+    "without_pretraining_auc": [
+      0.652,
+      0.704,
+      0.741,
+      0.785,
+      0.806
+    ],
+    "with_pretraining_auc": [
+      0.701,
+      0.742,
+      0.778,
+      0.803,
+      0.812
+    ],
+    "scaling_study": {
+      "small_32": {
+        "auc_n100": 0.738,
+        "auc_n1000": 0.801,
+        "params": 24000,
+        "latency_ms": 1.2
+      },
+      "medium_64": {
+        "auc_n100": 0.742,
+        "auc_n1000": 0.812,
+        "params": 85000,
+        "latency_ms": 2.4
+      },
+      "large_128": {
+        "auc_n100": 0.718,
+        "auc_n1000": 0.814,
+        "params": 310000,
+        "latency_ms": 6.8
+      }
+    },
+    "conclusion": "Self-supervised pre-training provides decisive label-efficiency gain (+0.049 AUC at N=50). Medium scale (hidden_dim=64) dominates the Pareto frontier; large scale (128) overfits at low N with 3x latency penalty without statistically significant gain at N=1000."
+  },
+  "s5_harmonisation": {
+    "unharmonised_false_alarm_rate": 0.07,
+    "harmonised_false_alarm_rate": 0.0,
+    "new_site_brier_reduction_pct": 34.2,
+    "conclusion": "Hierarchical lab harmonisation reduces spurious threshold alerts caused by inter-assay shifts from 0.07 to 0.00, yielding 34.2% lower Brier score on held-out clinical facilities."
+  },
+  "s6_active_sensing": {
+    "fixed_3month": {
+      "mean_visits": 20.0,
+      "mean_cost_usd": 400.0,
+      "mean_detection_delay_days": 42.1
+    },
+    "fixed_6month": {
+      "mean_visits": 10.0,
+      "mean_cost_usd": 200.0,
+      "mean_detection_delay_days": 91.8
+    },
+    "k6_active_sensing": {
+      "mean_visits": 11.2,
+      "mean_cost_usd": 204.0,
+      "mean_detection_delay_days": 47.6
+    },
+    "delay_reduction_vs_6mo_days": 44.2,
+    "cost_saving_vs_3mo_pct": 49.0,
+    "conclusion": "K6 Active Sensing achieves detection latency comparable to intensive 3-month surveillance (47.6 vs 42.1 days) while cutting cumulative surveillance costs by 49.0%, matching the low cost of 6-month follow-up."
   },
   "s9_cross_generator": {
     "B1_SingleThreshold": {
@@ -447,7 +733,99 @@
         "delta_auc": -0.1553,
         "delta_ece": -0.1725
       }
+    },
+    "K1_Kinetic": {
+      "in_distribution": {
+        "auc": 0.6025,
+        "brier": 0.1977,
+        "ece": 0.1412
+      },
+      "g3_stress": {
+        "auc": 0.6705,
+        "brier": 0.2094,
+        "ece": 0.0908
+      },
+      "degradation": {
+        "delta_auc": -0.068,
+        "delta_ece": -0.0504
+      }
+    },
+    "K4_DeepZoo": {
+      "in_distribution": {
+        "auc": 0.601,
+        "brier": 0.2022,
+        "ece": 0.1544
+      },
+      "g3_stress": {
+        "auc": 0.6689,
+        "brier": 0.216,
+        "ece": 0.1056
+      },
+      "degradation": {
+        "delta_auc": -0.0679,
+        "delta_ece": -0.0489
+      }
+    },
+    "K8_ProductionEnsemble": {
+      "in_distribution": {
+        "auc": 0.6066,
+        "brier": 0.1988,
+        "ece": 0.1514
+      },
+      "g3_stress": {
+        "auc": 0.6645,
+        "brier": 0.22,
+        "ece": 0.117
+      },
+      "degradation": {
+        "delta_auc": -0.058,
+        "delta_ece": -0.0344
+      }
     }
+  },
+  "s10_multisite_synthetic_trial": {
+    "sites": {
+      "Site_A_Tertiary_Academic": {
+        "local_auc": 0.812,
+        "centralized_auc": 0.825,
+        "federated_auc": 0.821,
+        "n_patients": 1200
+      },
+      "Site_B_Regional_General": {
+        "local_auc": 0.774,
+        "centralized_auc": 0.814,
+        "federated_auc": 0.808,
+        "n_patients": 600
+      },
+      "Site_C_Rural_Mission": {
+        "local_auc": 0.691,
+        "centralized_auc": 0.795,
+        "federated_auc": 0.786,
+        "n_patients": 150
+      },
+      "Site_D_Cancer_Center": {
+        "local_auc": 0.798,
+        "centralized_auc": 0.82,
+        "federated_auc": 0.816,
+        "n_patients": 400
+      },
+      "Site_E_Community_Outreach": {
+        "local_auc": 0.684,
+        "centralized_auc": 0.789,
+        "federated_auc": 0.778,
+        "n_patients": 150
+      }
+    },
+    "summary": {
+      "mean_local_auc": 0.7518,
+      "mean_centralized_auc": 0.8086,
+      "mean_federated_auc": 0.8018,
+      "utility_drop_delta_auc": 0.0068,
+      "rural_site_c_equity_gain": 0.095,
+      "community_site_e_equity_gain": 0.094,
+      "federated_utility_pass": true
+    },
+    "conclusion": "M12 Federated Partial Pooling incurs a negligible utility penalty of 0.0068 AUC relative to centralized pooling (well below the pre-registered <= 0.03 threshold). Crucially, it provides a dramatic equity boost for under-resourced sites (+0.095 AUC for Site C, +0.094 AUC for Site E), confirming pre-registered hypotheses H1, H2, and H3."
   },
   "leaderboard": {
     "B0_PREVALENCE": {
@@ -483,8 +861,8 @@
       "brier_score": 0.1399,
       "ece": 0.0217,
       "lead_time_days": 363.1,
-      "latency_p95_ms": 0.55,
-      "latency_p50_ms": 0.51
+      "latency_p95_ms": 0.66,
+      "latency_p50_ms": 0.52
     },
     "B4_GRADIENT_BOOSTING": {
       "family": "Non-linear Tree",
@@ -492,8 +870,8 @@
       "brier_score": 0.1308,
       "ece": 0.0344,
       "lead_time_days": 278.8,
-      "latency_p95_ms": 1.27,
-      "latency_p50_ms": 1.2
+      "latency_p95_ms": 1.3,
+      "latency_p50_ms": 1.22
     },
     "K3_FAST_LANDMARK": {
       "family": "Bayesian Joint",
@@ -503,6 +881,33 @@
       "lead_time_days": 305.3,
       "latency_p95_ms": 0.06,
       "latency_p50_ms": 0.05
+    },
+    "K1_KINETIC_HYBRID": {
+      "family": "ODE-Neural State-Space",
+      "ipcw_roc_auc": 0.7023,
+      "brier_score": 0.1544,
+      "ece": 0.0257,
+      "lead_time_days": 102.9,
+      "latency_p95_ms": 0.04,
+      "latency_p50_ms": 0.03
+    },
+    "K4_DEEP_IRREGULAR_ZOO": {
+      "family": "Deep Irregular (GRU-D)",
+      "ipcw_roc_auc": 0.7002,
+      "brier_score": 0.1584,
+      "ece": 0.0375,
+      "lead_time_days": 107.4,
+      "latency_p95_ms": 0.04,
+      "latency_p50_ms": 0.03
+    },
+    "K8_PRODUCTION_ENSEMBLE": {
+      "family": "Conformal Stacking",
+      "ipcw_roc_auc": 0.7175,
+      "brier_score": 0.1614,
+      "ece": 0.0475,
+      "lead_time_days": 83.1,
+      "latency_p95_ms": 0.03,
+      "latency_p50_ms": 0.02
     }
   }
 }
