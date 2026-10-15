@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIERS G1, G2, G3**. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S9_CROSS_GENERATOR  
-**Date Executed:** 2026-10-15 22:00:24 UTC  
+**Date Executed:** 2026-10-15 22:56:11 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Worst-Case Reporting
@@ -19,7 +19,7 @@
 | `B3_RegularizedHazard` | 0.6407 | 0.7562 | **-0.1155** | 0.0594 | 0.0337 |
 | `B4_GradientBoosting` | 0.6909 | 0.7489 | **-0.0580** | 0.0522 | 0.0522 |
 | `K3_JointModel` | 0.6624 | 0.7885 | **-0.1261** | 0.0672 | 0.0434 |
-| `K1_Kinetic` | 0.6658 | 0.7043 | **-0.0384** | 0.1648 | 0.1065 |
+| `K1_Kinetic` | 0.4923 | 0.4949 | **-0.0026** | 0.0770 | 0.1300 |
 | `K4_DeepZoo` | 0.6010 | 0.6689 | **-0.0679** | 0.1544 | 0.1056 |
 | `K8_ProductionEnsemble` | 0.6066 | 0.6645 | **-0.0580** | 0.1514 | 0.1170 |
 

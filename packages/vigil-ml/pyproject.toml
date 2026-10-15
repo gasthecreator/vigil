@@ -17,6 +17,9 @@ dependencies = [
     "onnx>=1.23.2",
     "onnxruntime>=1.31.0",
     "onnxscript>=0.7.2",
+    "jax>=0.4.0",
+    "numpyro>=0.15.0",
+    "sbi>=0.23.0",
 ]
 
 [build-system]

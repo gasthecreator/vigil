@@ -69,7 +69,7 @@ from vigil_ml.deep_zoo_k4 import DeepZooK4
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
 from vigil_ml.joint_model import FastLandmarkJointModel
-from vigil_ml.kinetic_k1 import HybridKineticModelK1
+from vigil_ml.k1 import HybridKineticModelK1
 from vigil_ml.sequential_k2 import SequentialDetectorBenchmark
 from vigil_sim.generators import GeneratorType, get_generator
 

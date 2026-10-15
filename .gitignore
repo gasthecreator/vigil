@@ -44,3 +44,4 @@ coverage/
 .coverage
 *.lcov
 reports/temp/
+sbi-logs/
