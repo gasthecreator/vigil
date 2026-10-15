@@ -1,0 +1,82 @@
+{
+  "B1_SingleThreshold": {
+    "in_distribution": {
+      "auc": 0.6083,
+      "brier": 0.19,
+      "ece": 0.1719
+    },
+    "g3_stress": {
+      "auc": 0.7072,
+      "brier": 0.1804,
+      "ece": 0.1292
+    },
+    "degradation": {
+      "delta_auc": -0.0989,
+      "delta_ece": -0.0427
+    }
+  },
+  "B2_Velocity": {
+    "in_distribution": {
+      "auc": 0.5317,
+      "brier": 0.3063,
+      "ece": 0.2214
+    },
+    "g3_stress": {
+      "auc": 0.5742,
+      "brier": 0.224,
+      "ece": 0.0394
+    },
+    "degradation": {
+      "delta_auc": -0.0425,
+      "delta_ece": -0.182
+    }
+  },
+  "B3_RegularizedHazard": {
+    "in_distribution": {
+      "auc": 0.5113,
+      "brier": 0.2144,
+      "ece": 0.0578
+    },
+    "g3_stress": {
+      "auc": 0.4168,
+      "brier": 0.2762,
+      "ece": 0.0399
+    },
+    "degradation": {
+      "delta_auc": 0.0945,
+      "delta_ece": -0.0179
+    }
+  },
+  "B4_GradientBoosting": {
+    "in_distribution": {
+      "auc": 0.5763,
+      "brier": 0.2031,
+      "ece": 0.0422
+    },
+    "g3_stress": {
+      "auc": 0.62,
+      "brier": 0.2331,
+      "ece": 0.0402
+    },
+    "degradation": {
+      "delta_auc": -0.0437,
+      "delta_ece": -0.002
+    }
+  },
+  "K3_JointModel": {
+    "in_distribution": {
+      "auc": 0.5619,
+      "brier": 0.2685,
+      "ece": 0.2456
+    },
+    "g3_stress": {
+      "auc": 0.7097,
+      "brier": 0.187,
+      "ece": 0.1425
+    },
+    "degradation": {
+      "delta_auc": -0.1477,
+      "delta_ece": -0.1031
+    }
+  }
+}

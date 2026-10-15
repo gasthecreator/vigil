@@ -1,0 +1,26 @@
+{
+  "oracle_ground_truth": {
+    "sensitivity": 0.7411,
+    "specificity": 0.9979,
+    "verification_rate": 0.5796,
+    "n_patients": 2500
+  },
+  "complete_case_estimator": {
+    "sensitivity": 0.9092,
+    "specificity": 1.0,
+    "bias_sensitivity": 0.1682,
+    "bias_specificity": 0.0021
+  },
+  "ipw_estimator": {
+    "sensitivity": 0.7371,
+    "specificity": 1.0,
+    "bias_sensitivity": -0.0039,
+    "bias_specificity": 0.0021
+  },
+  "latent_class_em_estimator": {
+    "sensitivity": 0.7175,
+    "specificity": 0.9982,
+    "bias_sensitivity": -0.0236,
+    "bias_specificity": 0.0003
+  }
+}

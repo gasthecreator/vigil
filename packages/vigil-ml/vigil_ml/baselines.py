@@ -76,7 +76,7 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
         vals = X[self.marker_col].values if self.marker_col in X else np.zeros(len(X))
         # Logistic sigmoid centered at cutoff
-        z = (vals - self.cutoff) / self.scale
+        z = np.clip((vals - self.cutoff) / self.scale, -30.0, 30.0)
         return 1.0 / (1.0 + np.exp(-z))
 
     def get_model_id(self) -> str:
@@ -107,7 +107,7 @@ class VelocityBaseline(BaseSurveillanceModel):
         ca_slope = X[self.ca153_slope_col].values if self.ca153_slope_col in X else np.zeros(len(X))
         cea_slope = X[self.cea_slope_col].values if self.cea_slope_col in X else np.zeros(len(X))
         combined_velocity = np.maximum(ca_slope, cea_slope * 2.0)
-        z = (combined_velocity - self.cutoff) / 0.05
+        z = np.clip((combined_velocity - self.cutoff) / 0.05, -30.0, 30.0)
         return 1.0 / (1.0 + np.exp(-z))
 
     def get_model_id(self) -> str:
@@ -123,21 +123,27 @@ class RegularizedCoxHazardBaseline(BaseSurveillanceModel):
     def __init__(self, C: float = 1.0, random_state: int = 42):
         self.C = C
         self.random_state = random_state
-        self.model = LogisticRegression(C=C, max_iter=1000, random_state=random_state)
+        self.scaler = None
+        self.model = LogisticRegression(C=C, max_iter=2000, random_state=random_state)
         self.feature_cols: List[str] = []
 
     def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> RegularizedCoxHazardBaseline:
+        from sklearn.preprocessing import StandardScaler
+
         # Exclude non-feature columns
         drop_cols = [c for c in ["patient_id", "observation_id"] if c in X.columns]
         feat_df = X.drop(columns=drop_cols).fillna(0.0)
         self.feature_cols = list(feat_df.columns)
 
-        self.model.fit(feat_df, y)
+        self.scaler = StandardScaler()
+        scaled_X = self.scaler.fit_transform(feat_df)
+        self.model.fit(scaled_X, y)
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
         feat_df = X[self.feature_cols].fillna(0.0)
-        probs = self.model.predict_proba(feat_df)[:, 1]
+        scaled_X = self.scaler.transform(feat_df) if self.scaler is not None else feat_df
+        probs = self.model.predict_proba(scaled_X)[:, 1]
         return np.clip(probs, 0.0, 1.0)
 
     def get_model_id(self) -> str:
