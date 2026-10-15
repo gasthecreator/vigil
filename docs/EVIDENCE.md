@@ -10,7 +10,7 @@
 
 ## Clinical and biomarker evidence
 
-### E1 — Serial CA 15-3 in follow-up: lead time, sensitivity, guideline stance — `PRIMARY-VERIFIED`
+### E1 — Serial CA 15-3 in follow-up: lead time, sensitivity, guideline stance — `SECONDARY` (downgraded by overseer 2026-10-15: failed citation audit, see docs/progress/VERDICT-P0-P1.md)
 - **Primary sources:**
   1. Duffy MJ. "Serum tumor markers in breast cancer: are they clinically useful?" *Clin Chem*. 2006;52(3):345-351. doi:[10.1373/clinchem.2005.059832](https://doi.org/10.1373/clinchem.2005.059832).
   2. Molina R, Barak V, van Dalen A, et al. "Tumor markers in breast cancer-EGTM recommendations." *Anticancer Res*. 2005;25(3A):1673-1679. PMID: 16033086.
@@ -33,7 +33,7 @@
 - Sources: https://pmc.ncbi.nlm.nih.gov/articles/PMC11402396/ · https://pmc.ncbi.nlm.nih.gov/articles/PMC10870111 · https://pmc.ncbi.nlm.nih.gov/articles/6681568 · https://mdnewsline.com/early-detection-of-breast-cancer-relapse-through-serial-ctdna-tracking/ (news summary; not a primary source)
 - **Limitations:** assays, cohorts, sampling schedules differ; many retrospective; clinical utility of lead time unproven; cost/availability in Nigeria likely prohibitive (to be assessed). **Used by:** §2, §6.13, candidate extension (§13.7).
 
-### E9 — Biological variation, RCV and delta checks — `PRIMARY-VERIFIED`
+### E9 — Biological variation, RCV and delta checks — `SECONDARY` (downgraded by overseer 2026-10-15: failed citation audit, see docs/progress/VERDICT-P0-P1.md)
 - **Primary sources:**
   1. Fraser CG. *Biological Variation: From Principles to Practice*. Washington, DC: AACC Press; 2001. ISBN: 978-1890883492.
   2. Aarsand AK, Fernandez-Calle P, Webster C, et al. "The European Federation of Clinical Chemistry and Laboratory Medicine (EFLM) Biological Variation Database." *Clin Chem Lab Med*. 2020;58(8):1203-1210. doi:[10.1515/cclm-2020-0083](https://doi.org/10.1515/cclm-2020-0083).
@@ -49,7 +49,7 @@
     When $\text{II} < 0.6$, conventional population reference intervals have low sensitivity for detecting personal pathological changes, making personalized baseline and RCV tracking clinically essential.
 - **Used by:** M3 (§6.3), analyte registry (§6.2), `vigil-core`.
 
-### E12 — Metastatic site patterns — `PRIMARY-VERIFIED`
+### E12 — Metastatic site patterns — `SECONDARY` (downgraded by overseer 2026-10-15: failed citation audit, see docs/progress/VERDICT-P0-P1.md)
 - **Primary sources:**
   1. Xiao W, Zheng S, Liu P, et al. "Risk factors and survival outcomes in patients with breast cancer and specific distant metastases: a population-based analysis with SEER database." *Clin Transl Oncol*. 2018;20(9):1125-1134. doi:[10.1007/s12094-018-1833-9](https://doi.org/10.1007/s12094-018-1833-9).
   2. Wu Q, Li J, Zhu S, et al. "Breast cancer subtypes predict the preferential site of distant metastases: a SEER-based study." *Oncotarget*. 2017;8(17):27990-27996. doi:[10.18632/oncotarget.15856](https://doi.org/10.18632/oncotarget.15856).
@@ -67,7 +67,7 @@
 - Sources: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7456314/ · https://www.thecable.ng/?p=240478 · https://www.healthnews.ng/national-hospital-abuja-gets-second-radiotherapy-machine
 - **Caveat:** the counts are ~2020 and machine uptime is unknown; obtain a current national radiotherapy assessment and facility data (partner hospital). **Used by:** §2 (F3), M7 priors for downtime parameters (must be replaced by facility-measured MTBF/MTTR).
 
-### E7 — Nigerian breast-cancer presentation — `PRIMARY-VERIFIED`
+### E7 — Nigerian breast-cancer presentation — `SECONDARY` (downgraded by overseer 2026-10-15: failed citation audit, see docs/progress/VERDICT-P0-P1.md)
 - **Primary sources:**
   1. Jedy-Agba E, McCormack V, Adebamowo C, dos-Santos-Silva I. "Stage at diagnosis of breast cancer in sub-Saharan Africa: a systematic review and meta-analysis." *Lancet Glob Health*. 2016;4(12):e923-e935. doi:[10.1016/S2214-109X(16)30259-5](https://doi.org/10.1016/S2214-109X(16)30259-5).
   2. Alatise OI, et al. "Breast Cancer Presentation, Subtypes, and Treatment Pathways in Southwestern Nigeria: A Prospective Cohort." *JCO Glob Oncol*. 2021;7:1210-1221.
@@ -79,7 +79,7 @@
   - Out-of-pocket healthcare financing: >70% of patients pay entirely out-of-pocket for diagnostic investigations, causing prolonged treatment gaps, missing longitudinal visits, and diagnostic delays.
 - **Used by:** synthetic priors (§6.13), subgroup design, `vigil-sim`.
 
-### E14 — Nigeria Data Protection Act 2023 — `PRIMARY-VERIFIED`
+### E14 — Nigeria Data Protection Act 2023 — `SECONDARY` (downgraded by overseer 2026-10-15: failed citation audit, see docs/progress/VERDICT-P0-P1.md)
 - **Primary source:** Nigeria Data Protection Act, 2023 (Act No. 34 of 2023, Federal Republic of Nigeria Official Gazette No. 119, Vol. 110, Acts No. 16, Abuja, 14th June 2023).
 - **Key statutory provisions:**
   - Section 30: Health and medical data are classified as "sensitive personal data". Processing is prohibited unless specific lawful gateways are satisfied: explicit consent of the data subject (s. 30(1)(a)), medical diagnosis/treatment by a healthcare professional subject to professional secrecy (s. 30(1)(b)), or public health reasons (s. 30(1)(c)).

@@ -5,8 +5,8 @@
 ## Phase status
 | Phase | Title | Status | Last verified SHA | Report | Verdict (overseer only) |
 |---|---|---|---|---|---|
-| P0 | Truth reset & professional foundation | SUBMITTED FOR REVIEW | `9ab9c89` | [`docs/progress/PHASE-0-REPORT.md`](progress/PHASE-0-REPORT.md) | — |
-| P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | — |
+| P0 | Truth reset & professional foundation | SUBMITTED FOR REVIEW | `9ab9c89` | [`docs/progress/PHASE-0-REPORT.md`](progress/PHASE-0-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
+| P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P2 | Evaluation backbone & classical science core | NOT STARTED | — | — | — |
 | P3 | Advanced modelling, calibration, uncertainty, abstention | NOT STARTED | — | — | — |
 | P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
