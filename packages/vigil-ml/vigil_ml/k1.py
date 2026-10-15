@@ -277,6 +277,12 @@ def _get_posterior() -> Any:
     return _POSTERIOR
 
 
+def _reflect(val: np.ndarray, lo: float, hi: float) -> np.ndarray:
+    val = np.where(val < lo, 2.0 * lo - val, val)
+    val = np.where(val > hi, 2.0 * hi - val, val)
+    return np.clip(val, lo, hi)
+
+
 def _route_npe(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400) -> dict[str, np.ndarray]:
     post = _get_posterior()
 
@@ -287,15 +293,17 @@ def _route_npe(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
     else:
         y_vec = np.interp(SCHEDULE, obs.days, y_raw)
 
+    seed = int(rng.integers(0, 2**31 - 1))
+    torch.manual_seed(seed)
     x_tensor = torch.tensor(y_vec, dtype=torch.float32).unsqueeze(0)
     samples_tensor = post.sample((n_draws,), x=x_tensor, show_progress_bars=False)
     s_np = samples_tensor.numpy()
 
     return {
-        "doubling_time_days": np.clip(s_np[:, 0], 40.0, 160.0),
-        "shedding_ca153": np.clip(s_np[:, 1], 0.05, 0.35),
-        "clearance_ca153": np.clip(s_np[:, 2], 0.05, 0.20),
-        "onset_day": np.clip(s_np[:, 3], 30.0, 240.0),
+        "doubling_time_days": _reflect(s_np[:, 0], 40.0, 160.0),
+        "shedding_ca153": _reflect(s_np[:, 1], 0.05, 0.35),
+        "clearance_ca153": _reflect(s_np[:, 2], 0.05, 0.20),
+        "onset_day": _reflect(s_np[:, 3], 30.0, 240.0),
     }
 
 
