@@ -4,49 +4,67 @@
       "auc": 0.5,
       "auc_ci_lower": 0.5,
       "auc_ci_upper": 0.5,
-      "brier": 0.3071,
-      "ece": 0.0083,
-      "net_benefit": 0.3112
+      "brier": 0.2716,
+      "ece": 0.0144,
+      "net_benefit": 0.3112,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
     },
     "B1_SingleThreshold": {
       "auc": 0.6646,
       "auc_ci_lower": 0.6293,
       "auc_ci_upper": 0.7003,
       "brier": 0.2363,
-      "ece": 0.1011,
-      "net_benefit": 0.1932
+      "ece": 0.0401,
+      "net_benefit": 0.1932,
+      "lead_time_days": 163.1,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
     },
     "B2_Velocity": {
       "auc": 0.536,
       "auc_ci_lower": 0.5056,
       "auc_ci_upper": 0.5544,
       "brier": 0.2832,
-      "ece": 0.0217,
-      "net_benefit": 0.3077
+      "ece": 0.0523,
+      "net_benefit": 0.3077,
+      "lead_time_days": 379.8,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
-      "auc": 0.5119,
-      "auc_ci_lower": 0.4819,
-      "auc_ci_upper": 0.5405,
-      "brier": 0.2875,
-      "ece": 0.0382,
-      "net_benefit": 0.2063
+      "auc": 0.7109,
+      "auc_ci_lower": 0.6878,
+      "auc_ci_upper": 0.7452,
+      "brier": 0.2069,
+      "ece": 0.0407,
+      "net_benefit": 0.2733,
+      "lead_time_days": 398.9,
+      "latency_p95_ms": 0.54,
+      "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
-      "auc": 0.5972,
-      "auc_ci_lower": 0.5644,
-      "auc_ci_upper": 0.6291,
-      "brier": 0.2714,
-      "ece": 0.0501,
-      "net_benefit": 0.2297
+      "auc": 0.755,
+      "auc_ci_lower": 0.7285,
+      "auc_ci_upper": 0.7788,
+      "brier": 0.203,
+      "ece": 0.0505,
+      "net_benefit": 0.2931,
+      "lead_time_days": 330.8,
+      "latency_p95_ms": 1.45,
+      "latency_p50_ms": 1.22
     },
     "K3_JointModel": {
-      "auc": 0.6582,
-      "auc_ci_lower": 0.6176,
-      "auc_ci_upper": 0.689,
-      "brier": 0.2502,
-      "ece": 0.1054,
-      "net_benefit": 0.1428
+      "auc": 0.7169,
+      "auc_ci_lower": 0.6853,
+      "auc_ci_upper": 0.748,
+      "brier": 0.2082,
+      "ece": 0.0238,
+      "net_benefit": 0.2734,
+      "lead_time_days": 367.8,
+      "latency_p95_ms": 0.06,
+      "latency_p50_ms": 0.05
     }
   },
   "V_4": {
@@ -54,49 +72,67 @@
       "auc": 0.5,
       "auc_ci_lower": 0.5,
       "auc_ci_upper": 0.5,
-      "brier": 0.2729,
-      "ece": 0.0036,
-      "net_benefit": 0.252
+      "brier": 0.2459,
+      "ece": 0.0089,
+      "net_benefit": 0.252,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
     },
     "B1_SingleThreshold": {
       "auc": 0.6825,
       "auc_ci_lower": 0.6566,
       "auc_ci_upper": 0.7134,
       "brier": 0.1953,
-      "ece": 0.1126,
-      "net_benefit": 0.1736
+      "ece": 0.0414,
+      "net_benefit": 0.1736,
+      "lead_time_days": 148.6,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
     },
     "B2_Velocity": {
       "auc": 0.5591,
       "auc_ci_lower": 0.5361,
       "auc_ci_upper": 0.5766,
       "brier": 0.2449,
-      "ece": 0.0356,
-      "net_benefit": 0.2494
+      "ece": 0.058,
+      "net_benefit": 0.2494,
+      "lead_time_days": 316.8,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
-      "auc": 0.5041,
-      "auc_ci_lower": 0.4707,
-      "auc_ci_upper": 0.5311,
-      "brier": 0.2629,
-      "ece": 0.0246,
-      "net_benefit": 0.1533
+      "auc": 0.7323,
+      "auc_ci_lower": 0.7053,
+      "auc_ci_upper": 0.7611,
+      "brier": 0.1776,
+      "ece": 0.0281,
+      "net_benefit": 0.2246,
+      "lead_time_days": 376.0,
+      "latency_p95_ms": 0.53,
+      "latency_p50_ms": 0.5
     },
     "B4_GradientBoosting": {
-      "auc": 0.5865,
-      "auc_ci_lower": 0.5602,
-      "auc_ci_upper": 0.6134,
-      "brier": 0.2455,
-      "ece": 0.0439,
-      "net_benefit": 0.1769
+      "auc": 0.7853,
+      "auc_ci_lower": 0.758,
+      "auc_ci_upper": 0.8083,
+      "brier": 0.1693,
+      "ece": 0.0421,
+      "net_benefit": 0.2506,
+      "lead_time_days": 308.8,
+      "latency_p95_ms": 1.42,
+      "latency_p50_ms": 1.21
     },
     "K3_JointModel": {
-      "auc": 0.6792,
-      "auc_ci_lower": 0.6533,
-      "auc_ci_upper": 0.7031,
-      "brier": 0.2033,
-      "ece": 0.1119,
-      "net_benefit": 0.1445
+      "auc": 0.7467,
+      "auc_ci_lower": 0.7218,
+      "auc_ci_upper": 0.7717,
+      "brier": 0.174,
+      "ece": 0.0323,
+      "net_benefit": 0.2333,
+      "lead_time_days": 336.7,
+      "latency_p95_ms": 0.06,
+      "latency_p50_ms": 0.05
     }
   },
   "V_6": {
@@ -104,49 +140,67 @@
       "auc": 0.5,
       "auc_ci_lower": 0.5,
       "auc_ci_upper": 0.5,
-      "brier": 0.242,
-      "ece": 0.0083,
-      "net_benefit": 0.1984
+      "brier": 0.2226,
+      "ece": 0.0119,
+      "net_benefit": 0.1984,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
     },
     "B1_SingleThreshold": {
       "auc": 0.7117,
       "auc_ci_lower": 0.6862,
       "auc_ci_upper": 0.7345,
       "brier": 0.1599,
-      "ece": 0.1209,
-      "net_benefit": 0.1565
+      "ece": 0.0409,
+      "net_benefit": 0.1565,
+      "lead_time_days": 142.8,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
     },
     "B2_Velocity": {
       "auc": 0.562,
       "auc_ci_lower": 0.5426,
       "auc_ci_upper": 0.5801,
       "brier": 0.2105,
-      "ece": 0.0547,
-      "net_benefit": 0.1968
+      "ece": 0.056,
+      "net_benefit": 0.1968,
+      "lead_time_days": 268.6,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
-      "auc": 0.4994,
-      "auc_ci_lower": 0.4686,
-      "auc_ci_upper": 0.5231,
-      "brier": 0.2386,
-      "ece": 0.0212,
-      "net_benefit": 0.1134
+      "auc": 0.7613,
+      "auc_ci_lower": 0.7383,
+      "auc_ci_upper": 0.7824,
+      "brier": 0.1505,
+      "ece": 0.0188,
+      "net_benefit": 0.189,
+      "lead_time_days": 364.3,
+      "latency_p95_ms": 0.53,
+      "latency_p50_ms": 0.5
     },
     "B4_GradientBoosting": {
-      "auc": 0.5574,
-      "auc_ci_lower": 0.5352,
-      "auc_ci_upper": 0.5799,
-      "brier": 0.2244,
-      "ece": 0.0396,
-      "net_benefit": 0.1288
+      "auc": 0.8065,
+      "auc_ci_lower": 0.7865,
+      "auc_ci_upper": 0.8257,
+      "brier": 0.1418,
+      "ece": 0.0359,
+      "net_benefit": 0.2096,
+      "lead_time_days": 280.8,
+      "latency_p95_ms": 1.29,
+      "latency_p50_ms": 1.22
     },
     "K3_JointModel": {
-      "auc": 0.71,
-      "auc_ci_lower": 0.6884,
-      "auc_ci_upper": 0.7324,
-      "brier": 0.1637,
-      "ece": 0.1203,
-      "net_benefit": 0.1414
+      "auc": 0.7788,
+      "auc_ci_lower": 0.7571,
+      "auc_ci_upper": 0.8013,
+      "brier": 0.1443,
+      "ece": 0.0464,
+      "net_benefit": 0.1977,
+      "lead_time_days": 306.7,
+      "latency_p95_ms": 0.06,
+      "latency_p50_ms": 0.05
     }
   },
   "V_10": {
@@ -154,49 +208,67 @@
       "auc": 0.5,
       "auc_ci_lower": 0.5,
       "auc_ci_upper": 0.5,
-      "brier": 0.227,
-      "ece": 0.016,
-      "net_benefit": 0.1724
+      "brier": 0.2113,
+      "ece": 0.0199,
+      "net_benefit": 0.1724,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
     },
     "B1_SingleThreshold": {
       "auc": 0.7218,
       "auc_ci_lower": 0.6982,
       "auc_ci_upper": 0.7452,
       "brier": 0.1464,
-      "ece": 0.1224,
-      "net_benefit": 0.1465
+      "ece": 0.0427,
+      "net_benefit": 0.1465,
+      "lead_time_days": 142.9,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
     },
     "B2_Velocity": {
       "auc": 0.5518,
       "auc_ci_lower": 0.5316,
       "auc_ci_upper": 0.5703,
       "brier": 0.1966,
-      "ece": 0.0653,
-      "net_benefit": 0.1721
+      "ece": 0.0594,
+      "net_benefit": 0.1721,
+      "lead_time_days": 266.3,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
-      "auc": 0.5022,
-      "auc_ci_lower": 0.473,
-      "auc_ci_upper": 0.5297,
-      "brier": 0.2251,
-      "ece": 0.0251,
-      "net_benefit": 0.0991
+      "auc": 0.7704,
+      "auc_ci_lower": 0.7499,
+      "auc_ci_upper": 0.7913,
+      "brier": 0.1399,
+      "ece": 0.0217,
+      "net_benefit": 0.171,
+      "lead_time_days": 363.1,
+      "latency_p95_ms": 0.55,
+      "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
-      "auc": 0.5492,
-      "auc_ci_lower": 0.5244,
-      "auc_ci_upper": 0.5732,
-      "brier": 0.2123,
-      "ece": 0.0386,
-      "net_benefit": 0.1093
+      "auc": 0.8142,
+      "auc_ci_lower": 0.7956,
+      "auc_ci_upper": 0.8321,
+      "brier": 0.1308,
+      "ece": 0.0344,
+      "net_benefit": 0.189,
+      "lead_time_days": 278.8,
+      "latency_p95_ms": 1.27,
+      "latency_p50_ms": 1.2
     },
     "K3_JointModel": {
-      "auc": 0.7216,
-      "auc_ci_lower": 0.7025,
-      "auc_ci_upper": 0.741,
-      "brier": 0.1486,
-      "ece": 0.1196,
-      "net_benefit": 0.1353
+      "auc": 0.7887,
+      "auc_ci_lower": 0.7672,
+      "auc_ci_upper": 0.8087,
+      "brier": 0.1341,
+      "ece": 0.0569,
+      "net_benefit": 0.1801,
+      "lead_time_days": 305.3,
+      "latency_p95_ms": 0.06,
+      "latency_p50_ms": 0.05
     }
   },
   "V_20": {
@@ -204,49 +276,67 @@
       "auc": 0.5,
       "auc_ci_lower": 0.5,
       "auc_ci_upper": 0.5,
-      "brier": 0.2267,
-      "ece": 0.0162,
-      "net_benefit": 0.1717
+      "brier": 0.211,
+      "ece": 0.0202,
+      "net_benefit": 0.1717,
+      "lead_time_days": 0.0,
+      "latency_p95_ms": 0.0,
+      "latency_p50_ms": 0.0
     },
     "B1_SingleThreshold": {
       "auc": 0.7216,
       "auc_ci_lower": 0.6978,
       "auc_ci_upper": 0.7451,
       "brier": 0.1462,
-      "ece": 0.1223,
-      "net_benefit": 0.146
+      "ece": 0.0428,
+      "net_benefit": 0.146,
+      "lead_time_days": 142.9,
+      "latency_p95_ms": 0.01,
+      "latency_p50_ms": 0.01
     },
     "B2_Velocity": {
       "auc": 0.5508,
       "auc_ci_lower": 0.5305,
       "auc_ci_upper": 0.5693,
       "brier": 0.1963,
-      "ece": 0.0655,
-      "net_benefit": 0.1715
+      "ece": 0.0595,
+      "net_benefit": 0.1715,
+      "lead_time_days": 266.3,
+      "latency_p95_ms": 0.02,
+      "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
-      "auc": 0.5022,
-      "auc_ci_lower": 0.4729,
-      "auc_ci_upper": 0.5297,
-      "brier": 0.2248,
-      "ece": 0.0252,
-      "net_benefit": 0.0987
+      "auc": 0.7703,
+      "auc_ci_lower": 0.7499,
+      "auc_ci_upper": 0.7915,
+      "brier": 0.1398,
+      "ece": 0.0211,
+      "net_benefit": 0.1705,
+      "lead_time_days": 363.1,
+      "latency_p95_ms": 0.57,
+      "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
-      "auc": 0.5493,
-      "auc_ci_lower": 0.5244,
-      "auc_ci_upper": 0.5732,
-      "brier": 0.212,
-      "ece": 0.0388,
-      "net_benefit": 0.1089
+      "auc": 0.8141,
+      "auc_ci_lower": 0.7956,
+      "auc_ci_upper": 0.8321,
+      "brier": 0.1306,
+      "ece": 0.0346,
+      "net_benefit": 0.1883,
+      "lead_time_days": 278.8,
+      "latency_p95_ms": 1.27,
+      "latency_p50_ms": 1.2
     },
     "K3_JointModel": {
-      "auc": 0.7214,
-      "auc_ci_lower": 0.7024,
-      "auc_ci_upper": 0.741,
-      "brier": 0.1484,
-      "ece": 0.1192,
-      "net_benefit": 0.135
+      "auc": 0.7887,
+      "auc_ci_lower": 0.7672,
+      "auc_ci_upper": 0.8084,
+      "brier": 0.1339,
+      "ece": 0.0572,
+      "net_benefit": 0.1796,
+      "lead_time_days": 305.3,
+      "latency_p95_ms": 0.09,
+      "latency_p50_ms": 0.05
     }
   }
 }

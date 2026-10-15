@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT / "packages" / "vigil-core"))
 
 from vigil_eval.audit import FrozenTestAccessLogger
 from vigil_eval.bootstrap import patient_cluster_bootstrap
+from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
     compute_calibration_curve,
     ipcw_brier_score,
@@ -147,6 +148,34 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             )
             auc_boot = boot_res["auc"]
 
+            # Latency benchmark (p50 and p95 over >= 1,000 single calls on CPU, Condition D1)
+            sample_x = X_test.iloc[[0]]
+            lat_times = []
+            for _ in range(1000):
+                t0 = time.perf_counter()
+                m.predict_risk(sample_x)
+                lat_times.append((time.perf_counter() - t0) * 1000.0)
+            p95_lat = float(np.percentile(lat_times, 95))
+            p50_lat = float(np.percentile(lat_times, 50))
+
+            # Preclinical lead-time evaluation (vigil_eval.lead_time, Condition D1)
+            if name == "B0_Prevalence":
+                lead_time_val = 0.0
+            else:
+                alert_df = pd.DataFrame(
+                    {
+                        "patient_id": X_test["patient_id"].values,
+                        "day": X_test["eval_day"].values,
+                        "alert_triggered": (preds >= 0.20).astype(int),
+                    }
+                )
+                lead_rep = evaluate_lead_time_and_overdetection(
+                    patient_df=test_pts_df,
+                    observation_df=alert_df,
+                    alert_col="alert_triggered",
+                )
+                lead_time_val = float(lead_rep.conditional_median_days)
+
             stratum_res[name] = {
                 "auc": round(float(auc_val), 4),
                 "auc_ci_lower": round(float(auc_boot.ci_lower), 4),
@@ -154,6 +183,9 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
                 "brier": round(float(brier_val), 4),
                 "ece": round(float(cal_report.expected_calibration_error), 4),
                 "net_benefit": round(float(net_benefit), 4),
+                "lead_time_days": round(lead_time_val, 1),
+                "latency_p95_ms": round(p95_lat, 2),
+                "latency_p50_ms": round(p50_lat, 2),
             }
 
         results_by_stratum[f"V_{V}"] = stratum_res
@@ -533,39 +565,73 @@ def render_master_benchmark_report(
         "",
         "| Model ID | Family | IPCW ROC-AUC (V=10) | Brier Score | ECE | Lead Time (Conditional) | Latency (p95 CPU) |",
         "|---|---|---|---|---|---|---|",
-        f"| `B0_PREVALENCE` | Heuristic | {s1_res['V_10']['B0_Prevalence']['auc']:.4f} | {s1_res['V_10']['B0_Prevalence']['brier']:.4f} | {s1_res['V_10']['B0_Prevalence']['ece']:.4f} | 0.0 days | < 1 ms |",
-        f"| `B1_SINGLE_THRESHOLD` | Clinical Rule | {s1_res['V_10']['B1_SingleThreshold']['auc']:.4f} | {s1_res['V_10']['B1_SingleThreshold']['brier']:.4f} | {s1_res['V_10']['B1_SingleThreshold']['ece']:.4f} | ~42 days | < 1 ms |",
-        f"| `B2_VELOCITY_RULE` | Kinetic Rule | {s1_res['V_10']['B2_Velocity']['auc']:.4f} | {s1_res['V_10']['B2_Velocity']['brier']:.4f} | {s1_res['V_10']['B2_Velocity']['ece']:.4f} | ~78 days | < 2 ms |",
-        f"| `B3_REGULARIZED_HAZARD` | Discrete Survival | {s1_res['V_10']['B3_RegularizedHazard']['auc']:.4f} | {s1_res['V_10']['B3_RegularizedHazard']['brier']:.4f} | {s1_res['V_10']['B3_RegularizedHazard']['ece']:.4f} | ~88 days | 3 ms |",
-        f"| `B4_GRADIENT_BOOSTING` | Non-linear Tree | {s1_res['V_10']['B4_GradientBoosting']['auc']:.4f} | {s1_res['V_10']['B4_GradientBoosting']['brier']:.4f} | {s1_res['V_10']['B4_GradientBoosting']['ece']:.4f} | ~96 days | 5 ms |",
-        f"| `K3_FAST_LANDMARK` | Bayesian Joint | {s1_res['V_10']['K3_JointModel']['auc']:.4f} | {s1_res['V_10']['K3_JointModel']['brier']:.4f} | {s1_res['V_10']['K3_JointModel']['ece']:.4f} | ~104 days | 4 ms |",
-        "",
-        "---",
-        "",
-        "## 2. Integrity and Anti-Degeneracy Audit",
-        "Per `docs/ML_PROGRAM.md` §10 (Stop-and-Think Triggers):",
-        "- **Zero AUC ~ 1.0 Claims:** All IPCW AUC values fall in the realistic range [0.50, 0.85]. No model exhibits trivial separability or target leakage.",
-        "- **No Unverified Claims:** All numbers are computed from deterministic simulation pipelines with recorded seeds.",
-        "",
-        "---",
-        "",
-        "## 3. Sim-to-Real Gap Analysis (MASTER_PLAN §14 WP2.4)",
-        "The primary vulnerability of algorithms developed in simulation is that synthetic mathematical noise underestimates real clinical entropy. Specifically:",
-        "1. **Pre-Analytical Errors:** In vitro haemolysis and IV fluid dilution create spike artifacts that non-mechanistic decision trees misinterpret as disease acceleration.",
-        "2. **Inter-Laboratory Calibration Drifts:** Facilities using different analyzer platforms (e.g. Roche Cobas vs Abbott Architect) exhibit systematic 5-15% offsets that invalidate unadjusted static cutoffs.",
-        "3. **Verification Bias:** Confirmatory PET/CT imaging is ordered selectively for patients with symptoms or rising markers. Naive complete-case evaluation deflates specificity by over 10 percentage points.",
-        "",
-        "These gaps will be directly addressed in Phase 3 (conformal risk control), Phase 4 (M3 Plausibility Adjudicator), and Phase 9 (retrospective validation on real hospital cohorts).",
-        "",
-        "---",
-        "",
-        "## 4. Pre-Registered Study Summaries",
-        "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
-        "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
-        "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
     ]
 
+    model_mapping = [
+        ("B0_Prevalence", "B0_PREVALENCE", "Heuristic"),
+        ("B1_SingleThreshold", "B1_SINGLE_THRESHOLD", "Clinical Rule"),
+        ("B2_Velocity", "B2_VELOCITY_RULE", "Kinetic Rule"),
+        ("B3_RegularizedHazard", "B3_REGULARIZED_HAZARD", "Discrete Survival"),
+        ("B4_GradientBoosting", "B4_GRADIENT_BOOSTING", "Non-linear Tree"),
+        ("K3_JointModel", "K3_FAST_LANDMARK", "Bayesian Joint"),
+    ]
+
+    leaderboard_dict = {}
+    for m_key, m_id, family in model_mapping:
+        res = s1_res["V_10"][m_key]
+        lines.append(
+            f"| `{m_id}` | {family} | {res['auc']:.4f} | {res['brier']:.4f} | {res['ece']:.4f} | {res['lead_time_days']:.1f} days | {res['latency_p95_ms']:.2f} ms |"
+        )
+        leaderboard_dict[m_id] = {
+            "family": family,
+            "ipcw_roc_auc": res["auc"],
+            "brier_score": res["brier"],
+            "ece": res["ece"],
+            "lead_time_days": res["lead_time_days"],
+            "latency_p95_ms": res["latency_p95_ms"],
+            "latency_p50_ms": res.get("latency_p50_ms", 0.0),
+        }
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## 2. Integrity and Anti-Degeneracy Audit",
+            "Per `docs/ML_PROGRAM.md` §10 (Stop-and-Think Triggers):",
+            "- **Zero AUC ~ 1.0 Claims:** All IPCW AUC values fall in the realistic range [0.50, 0.85]. No model exhibits trivial separability or target leakage.",
+            "- **No Unverified Claims:** All numbers are computed from deterministic simulation pipelines with recorded seeds.",
+            "",
+            "---",
+            "",
+            "## 3. Sim-to-Real Gap Analysis (MASTER_PLAN §14 WP2.4)",
+            "The primary vulnerability of algorithms developed in simulation is that synthetic mathematical noise underestimates real clinical entropy. Specifically:",
+            "1. **Pre-Analytical Errors (Hypothesis):** In vitro haemolysis and IV fluid dilution create spike artifacts that non-mechanistic decision trees misinterpret as disease acceleration.",
+            "2. **Inter-Laboratory Calibration Drifts (Hypothesis):** Facilities using different analyzer platforms (e.g. Roche Cobas vs Abbott Architect) exhibit systematic 5-15% offsets that invalidate unadjusted static cutoffs.",
+            "3. **Verification Bias (Supported by Study S3 Results):** Confirmatory imaging is ordered selectively for patients with symptoms or rising markers. In Study S3, naive complete-case evaluation severely overestimates sensitivity by +16.8 percentage points (0.880 complete-case vs 0.712 true IPW) because disease-free unverified patients are excluded, while specificity changes by only ~0.2 percentage points (0.912 vs 0.914).",
+            "",
+            "These gaps will be directly addressed in Phase 3 (conformal risk control), Phase 4 (M3 Plausibility Adjudicator), and Phase 9 (retrospective validation on real hospital cohorts).",
+            "",
+            "---",
+            "",
+            "## 4. Pre-Registered Study Summaries",
+            "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
+            "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
+            "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
+        ]
+    )
+
     path.write_text("\n".join(lines))
+
+    # Save master results.json
+    master_results = {
+        "s1_sparsity": s1_res,
+        "s3_verification_bias": s3_res,
+        "s9_cross_generator": s9_res,
+        "leaderboard": leaderboard_dict,
+    }
+    with open(path.parent / "results.json", "w") as f:
+        json.dump(master_results, f, indent=2)
 
 
 def main() -> int:

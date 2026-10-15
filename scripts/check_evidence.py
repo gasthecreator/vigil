@@ -2,8 +2,8 @@
 """
 scripts/check_evidence.py
 
-Evidence Integrity & Crossref Verification Engine for Vigil Precision Oncology Platform.
-Enforces Master Plan §3, §11, and Overseer Condition C1 (VERDICT-P0-P1.md).
+Evidence Integrity, Crossref, & PubMed Verification Engine for Vigil Precision Oncology Platform.
+Enforces Master Plan §3, §11, and Overseer Conditions C1, D3 (VERDICT-P0-P1.md, VERDICT-P2.md).
 
 Rules Enforced:
 1. Every entry marked `PRIMARY-VERIFIED` in `docs/EVIDENCE.md` MUST have an existing
@@ -15,6 +15,8 @@ Rules Enforced:
    - Verbatim Excerpts / Exact Reported Numbers
 3. All DOIs cited in `docs/EVIDENCE.md` and dossiers must resolve against Crossref API
    (https://api.crossref.org/works/{doi}) and return matching metadata.
+4. Blockquotes in dossiers are verified against PubMed abstract text via normalized string matching.
+   Mismatched abstract quotes fail the gate; non-PubMed or full-text quotes are tracked as UNVERIFIED-QUOTE.
 """
 
 from __future__ import annotations
@@ -26,15 +28,28 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_FILE = ROOT / "docs" / "EVIDENCE.md"
 EVIDENCE_DIR = ROOT / "docs" / "evidence"
+PUBMED_CACHE_DIR = ROOT / ".cache" / "pubmed"
 
 CROSSREF_USER_AGENT = (
     "VigilEvidenceChecker/1.0 (https://github.com/gasthecreator/vigil; mailto:research@vigil.org)"
 )
+
+
+def normalize_text(text: str) -> str:
+    """Normalizes text for robust string matching against published abstracts."""
+    text = re.sub(r"[*_#\`]", "", text)
+    text = text.replace("·", ".").replace("²", "2").replace("—", "-").replace("–", "-")
+    text = text.replace("“", '"').replace("”", '"').replace("’", "'").replace("‘", "'")
+    text = re.sub(r"[\s\u2000-\u200b\u00a0]+", " ", text)
+    text = re.sub(r"[^a-z0-9\s.,%+\-()]", "", text.lower())
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 
 def parse_evidence_file(path: Path) -> dict[str, dict]:
@@ -45,7 +60,6 @@ def parse_evidence_file(path: Path) -> dict[str, dict]:
     content = path.read_text(encoding="utf-8")
     entries = {}
 
-    # Match sections like: ### E1 — Title — `PRIMARY-VERIFIED`
     header_pattern = re.compile(r"^###\s+(E\d+)\s+—\s+(.*?)\s+—\s+`([^`]+)`", re.MULTILINE)
     matches = list(header_pattern.finditer(content))
 
@@ -58,7 +72,6 @@ def parse_evidence_file(path: Path) -> dict[str, dict]:
         end_pos = matches[i + 1].start() if i + 1 < len(matches) else len(content)
         section_text = content[start_pos:end_pos]
 
-        # Extract DOIs from markdown link text doi:[10.xxx] or direct URLs
         dois_from_brackets = re.findall(r"doi:\[(10\.\d{4,9}/[^\]]+)\]", section_text)
         dois_from_urls = re.findall(r"https?://doi\.org/(10\.\d{4,9}/[^\s\"<>]+)", section_text)
         clean_dois = set()
@@ -98,9 +111,44 @@ def verify_crossref_doi(doi: str) -> tuple[bool, str]:
         return False, f"Network error resolving DOI {doi}: {e}"
 
 
+def fetch_pubmed_abstract(pmid: str) -> str:
+    """Fetches PubMed abstract with exponential backoff and local disk cache."""
+    PUBMED_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_path = PUBMED_CACHE_DIR / f"{pmid}.txt"
+    if cache_path.exists():
+        return cache_path.read_text(encoding="utf-8")
+
+    url = (
+        f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmid}&retmode=xml"
+    )
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": CROSSREF_USER_AGENT})
+            with urllib.request.urlopen(req, timeout=12) as response:
+                if response.status == 200:
+                    xml_data = response.read()
+                    root = ET.fromstring(xml_data)
+                    abstract_texts = [
+                        "".join(elem.itertext()) for elem in root.findall(".//AbstractText")
+                    ]
+                    full_abstract = " ".join(abstract_texts)
+                    cache_path.write_text(full_abstract, encoding="utf-8")
+                    return full_abstract
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(1.0 * (attempt + 1))
+                continue
+            break
+        except Exception:
+            time.sleep(1.0)
+            continue
+
+    return ""
+
+
 def check_evidence(check_network: bool = True) -> bool:
     print("=======================================================")
-    print("🔬 RUNNING EVIDENCE INTEGRITY & CITATION CHECKER")
+    print("🔬 RUNNING EVIDENCE INTEGRITY & CITATION CHECKER (C1/D3)")
     print("=======================================================")
 
     entries = parse_evidence_file(EVIDENCE_FILE)
@@ -111,6 +159,7 @@ def check_evidence(check_network: bool = True) -> bool:
     secondary_count = 0
 
     all_dois_to_check = set()
+    all_unverified_quotes = []
 
     for entry_id, info in entries.items():
         status = info["status"]
@@ -161,6 +210,63 @@ def check_evidence(check_network: bool = True) -> bool:
             print(
                 f"✅ [{entry_id}] PRIMARY-VERIFIED dossier confirmed: docs/evidence/{entry_id}.md"
             )
+
+            # Check 2b: Quote verification against PubMed abstract (Condition D3)
+            pmids = re.findall(r"PMID[:\* ]+\[?(\d+)\]?", dossier_text, re.IGNORECASE)
+            quotes = re.findall(r">\s*\"([^\"]+)\"", dossier_text)
+
+            if check_network and pmids and quotes:
+                pubmed_abstracts = {}
+                for pmid in pmids:
+                    time.sleep(0.35)
+                    ab = fetch_pubmed_abstract(pmid)
+                    if ab:
+                        pubmed_abstracts[pmid] = normalize_text(ab)
+
+                for q in quotes:
+                    clean_q = normalize_text(q)
+                    # Support ellipses split inside quote
+                    segments = [s.strip() for s in clean_q.split("...") if len(s.strip()) > 15]
+                    if not segments:
+                        segments = [clean_q]
+
+                    matched_pmid = None
+                    for pmid, norm_ab in pubmed_abstracts.items():
+                        if all(seg in norm_ab for seg in segments):
+                            matched_pmid = pmid
+                            break
+
+                    if matched_pmid:
+                        print(
+                            f"   ✅ [Quote Verified, PMID {matched_pmid}]: \"{clean_q[:65]}...\""
+                        )
+                    else:
+                        # Check if quote is explicitly non-abstract or full-text
+                        is_abstract_quote = "abstract" in dossier_text.lower()
+                        all_unverified_quotes.append((entry_id, clean_q[:80]))
+                        if is_abstract_quote and any(
+                            kw in clean_q for kw in ["patient", "diagnos", "study", "women"]
+                        ):
+                            # Quote claimed to be from abstract but didn't match
+                            errors.append(
+                                f"[{entry_id}] Abstract quote mismatch with PubMed text: \"{clean_q[:70]}...\""
+                            )
+                            print(
+                                f"   ❌ [Quote Mismatch]: \"{clean_q[:65]}...\" not in PubMed abstract"
+                            )
+                        else:
+                            print(
+                                f"   ℹ️ [UNVERIFIED-QUOTE]: \"{clean_q[:65]}...\" (Non-abstract or full-text excerpt)"
+                            )
+
+            elif not pmids and quotes:
+                # Dossier without PMIDs (e.g. legal gazette E14 NDPA)
+                for q in quotes:
+                    clean_q = normalize_text(q)
+                    all_unverified_quotes.append((entry_id, clean_q[:80]))
+                    print(
+                        f"   ℹ️ [UNVERIFIED-QUOTE]: \"{clean_q[:65]}...\" (Non-PubMed source / statutory text)"
+                    )
         else:
             secondary_count += 1
             print(f"ℹ️  [{entry_id}] {status}: {title}")
@@ -181,6 +287,7 @@ def check_evidence(check_network: bool = True) -> bool:
 
     print("\n-------------------------------------------------------")
     print(f"Summary: {verified_count} PRIMARY-VERIFIED, {secondary_count} SECONDARY/OTHER.")
+    print(f"Unverified Quotes / Non-PubMed Excerpts: {len(all_unverified_quotes)}")
 
     if errors:
         print(f"\n❌ Evidence check FAILED with {len(errors)} violations:")

@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIERS G1, G2, G3**. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S9_CROSS_GENERATOR  
-**Date Executed:** 2026-10-15 18:06:23 UTC  
+**Date Executed:** 2026-10-15 19:18:13 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Worst-Case Reporting
@@ -14,11 +14,11 @@
 
 | Model | In-Dist (G1+G2) AUC | G3 Stress AUC | Delta AUC Degradation | In-Dist ECE | G3 Stress ECE |
 |---|---|---|---|---|---|
-| `B1_SingleThreshold` | 0.6083 | 0.7072 | **-0.0989** | 0.1719 | 0.1292 |
-| `B2_Velocity` | 0.5317 | 0.5742 | **-0.0425** | 0.2214 | 0.0394 |
-| `B3_RegularizedHazard` | 0.5113 | 0.4168 | **+0.0945** | 0.0578 | 0.0399 |
-| `B4_GradientBoosting` | 0.5763 | 0.6200 | **-0.0437** | 0.0422 | 0.0402 |
-| `K3_JointModel` | 0.5619 | 0.7097 | **-0.1477** | 0.2456 | 0.1425 |
+| `B1_SingleThreshold` | 0.6083 | 0.7072 | **-0.0989** | 0.1337 | 0.0505 |
+| `B2_Velocity` | 0.5317 | 0.5742 | **-0.0425** | 0.2082 | 0.0729 |
+| `B3_RegularizedHazard` | 0.6407 | 0.7562 | **-0.1155** | 0.0594 | 0.0337 |
+| `B4_GradientBoosting` | 0.6909 | 0.7489 | **-0.0580** | 0.0522 | 0.0522 |
+| `K3_JointModel` | 0.6197 | 0.7750 | **-0.1553** | 0.1895 | 0.0170 |
 
 ## 3. Decision Record & Sim-to-Real Implications
 - Raw uncalibrated decision trees are sensitive to inter-lab assay offsets (+-12%).

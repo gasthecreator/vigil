@@ -99,6 +99,21 @@ class BayesianJointModelK3(BaseSurveillanceModel):
         self.beta_1 = float(np.mean((marker_vals - self.beta_0) / dt))
         self.sigma_eps = float(max(1.0, np.std(marker_vals - (self.beta_0 + self.beta_1 * times))))
 
+        # Estimate MAP mode for alpha to ensure rapid multi-chain mixing
+        def nlp(a: float) -> float:
+            haz = np.clip(a * (marker_vals - 25.0) / 10.0, -5.0, 5.0)
+            ll = np.sum(events * haz) - np.sum(np.exp(haz) * (follow_up / 365.25) * 0.1)
+            prior = -0.5 * ((a - 0.08) ** 2 / 0.01)
+            return -(ll + prior)
+
+        try:
+            from scipy.optimize import minimize_scalar
+
+            opt = minimize_scalar(nlp, bounds=(0.005, 2.0), method="bounded")
+            self.alpha = float(opt.x)
+        except Exception:
+            self.alpha = 0.08
+
         # Run MCMC chains
         chains = []
         for c in range(self.n_chains):
@@ -171,9 +186,9 @@ class BayesianJointModelK3(BaseSurveillanceModel):
             curr_sig2 = 1.0 / rng.gamma(post_a, 1.0 / post_b)
 
             # 3. Metropolis-Hastings step for survival association parameter alpha
-            prop_alpha = max(0.005, curr_alpha + float(rng.normal(0, 0.015)))
+            prop_alpha = max(0.005, curr_alpha + float(rng.normal(0, 0.035)))
 
-            mu_m = curr_b0 + curr_b1 * times
+            mu_m = marker
             haz_curr = np.clip(curr_alpha * (mu_m - 25.0) / 10.0, -5.0, 5.0)
             haz_prop = np.clip(prop_alpha * (mu_m - 25.0) / 10.0, -5.0, 5.0)
 
@@ -367,24 +382,37 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
         """Computes prospective recurrence risk in < 5 ms per batch."""
         marker = X["ca_15_3_curr"].values if "ca_15_3_curr" in X else np.full(len(X), 25.0)
         slope = X["ca_15_3_slope_90d"].values if "ca_15_3_slope_90d" in X else np.zeros(len(X))
+        cea = X["cea_curr"].values if "cea_curr" in X else np.full(len(X), 2.5)
         age = X["age"].values if "age" in X else np.full(len(X), 50.0)
+        stage_flag = X["is_stage_3_or_4"].values if "is_stage_3_or_4" in X else np.zeros(len(X))
+        tnbc_flag = X["sub_tnbc"].values if "sub_tnbc" in X else np.zeros(len(X))
+        symptom_grade = (
+            X["max_symptom_grade"].values if "max_symptom_grade" in X else np.zeros(len(X))
+        )
 
-        # Current estimated true marker level m_i(t)
-        # Combines current level with 90-day trajectory momentum
-        projected_marker = marker + slope * (self.horizon_days / 2.0)
+        # Joint association hazard: h(t | m(t), v(t), X) = h0 * exp(gamma * X + alpha * m(t) + alpha_v * v(t))
+        # 1. Biomarker trajectory projection & velocity
+        marker_hazard = (
+            self.alpha * (marker - 25.0)
+            + 14.0 * np.maximum(0.0, slope)
+            + 0.12 * np.maximum(0.0, cea - 3.0)
+        )
 
-        # Baseline age/comorbidity log-hazard
-        age_factor = (age - 50.0) * 0.015
+        # 2. Baseline clinical risk covariates & symptoms
+        baseline_covariates = (
+            (age - 50.0) * 0.012
+            + 0.65 * stage_flag
+            + 0.45 * tnbc_flag
+            + 0.35 * symptom_grade
+        )
 
-        # Joint association hazard: h(t | m(t)) = h0 * exp(gamma * X + alpha * m(t))
-        log_hazard = age_factor + self.alpha * (projected_marker - 25.0)
-        log_hazard = np.clip(log_hazard, -5.0, 5.0)
+        log_hazard = np.clip(baseline_covariates + marker_hazard, -6.0, 6.0)
 
-        # Cumulative probability of event in [t, t + horizon]
-        base_h = 0.12 * (self.horizon_days / 180.0)
+        # 3. Cumulative prospective recurrence probability: P(T <= t + tau | T > t) = 1 - exp(-H(tau))
+        base_h = 0.10 * (self.horizon_days / 180.0)
         p_event = 1.0 - np.exp(-base_h * np.exp(log_hazard))
 
-        return np.clip(p_event, 0.01, 0.95)
+        return np.clip(p_event, 0.005, 0.98)
 
     def get_model_id(self) -> str:
         return "K3_FAST_LANDMARK_PRODUCTION"

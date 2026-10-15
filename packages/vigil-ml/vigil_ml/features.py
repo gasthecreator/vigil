@@ -220,8 +220,8 @@ class WindowedFeatureExtractor:
                 event_flag = 0
 
                 if rec_event and rec_day is not None and not np.isnan(rec_day):
-                    remaining_to_rec = rec_day - d
-                    if 0.0 < remaining_to_rec <= horizon_days:
+                    remaining_to_rec = max(0.0, rec_day - d)
+                    if remaining_to_rec <= horizon_days:
                         y = 1
                     time_to_event_or_censor = max(1.0, remaining_to_rec)
                     event_flag = 1
