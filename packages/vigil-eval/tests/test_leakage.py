@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.preprocessing import StandardScaler
-
 from vigil_eval.leakage import (
     CanaryTestFailedError,
     OutcomeDerivedFeatureError,
@@ -57,20 +56,24 @@ def test_patient_split_leakage_val_overlap():
 
 def test_temporal_future_leakage_clean():
     """Verify temporal check passes when all feature times <= prediction time."""
-    df = pd.DataFrame({
-        "pred_time": [100.0, 150.0, 200.0],
-        "obs_time_1": [50.0, 140.0, 199.9],
-        "obs_time_2": [90.0, 120.0, 200.0],
-    })
+    df = pd.DataFrame(
+        {
+            "pred_time": [100.0, 150.0, 200.0],
+            "obs_time_1": [50.0, 140.0, 199.9],
+            "obs_time_2": [90.0, 120.0, 200.0],
+        }
+    )
     check_temporal_future_leakage(df, "pred_time", ["obs_time_1", "obs_time_2"])
 
 
 def test_temporal_future_leakage_detected():
     """Verify temporal future leakage triggers TemporalLeakageError."""
-    df = pd.DataFrame({
-        "pred_time": [100.0, 150.0, 200.0],
-        "obs_time": [50.0, 155.0, 190.0],  # row 1: 155 > 150
-    })
+    df = pd.DataFrame(
+        {
+            "pred_time": [100.0, 150.0, 200.0],
+            "obs_time": [50.0, 155.0, 190.0],  # row 1: 155 > 150
+        }
+    )
     with pytest.raises(TemporalLeakageError) as exc_info:
         check_temporal_future_leakage(df, "pred_time", ["obs_time"])
     assert "obs_time" in str(exc_info.value)
@@ -78,11 +81,13 @@ def test_temporal_future_leakage_detected():
 
 def test_outcome_derived_tokens_clean():
     """Verify clean feature names pass lexical check."""
-    X = pd.DataFrame({
-        "ca153_mean_u_ml": [25.0, 30.0],
-        "alt_slope": [0.1, -0.2],
-        "age_at_diagnosis": [52, 64],
-    })
+    X = pd.DataFrame(
+        {
+            "ca153_mean_u_ml": [25.0, 30.0],
+            "alt_slope": [0.1, -0.2],
+            "age_at_diagnosis": [52, 64],
+        }
+    )
     check_outcome_derived_features(X)
 
 
@@ -106,10 +111,12 @@ def test_outcome_derived_correlation_leakage():
     rng = np.random.default_rng(42)
     y = pd.Series(rng.integers(0, 2, size=100))
     # Create feature with 1.0 correlation to y
-    X = pd.DataFrame({
-        "innocent_feature": rng.normal(size=100),
-        "leaked_proxy": y.astype(float) + 1e-6,
-    })
+    X = pd.DataFrame(
+        {
+            "innocent_feature": rng.normal(size=100),
+            "leaked_proxy": y.astype(float) + 1e-6,
+        }
+    )
 
     with pytest.raises(OutcomeDerivedFeatureError) as exc:
         check_outcome_derived_features(X, y=y)
@@ -138,11 +145,13 @@ def test_shuffled_label_canary_passes_on_unleaked_data():
     """Verify that on regular synthetic features, shuffled labels collapse to chance AUC <= 0.60."""
     rng = np.random.default_rng(42)
     n = 200
-    X = pd.DataFrame({
-        "f1": rng.normal(size=n),
-        "f2": rng.normal(size=n),
-        "f3": rng.normal(size=n),
-    })
+    X = pd.DataFrame(
+        {
+            "f1": rng.normal(size=n),
+            "f2": rng.normal(size=n),
+            "f3": rng.normal(size=n),
+        }
+    )
     y = pd.Series(rng.integers(0, 2, size=n))
 
     auc = run_shuffled_label_canary(X, y, seed=42)

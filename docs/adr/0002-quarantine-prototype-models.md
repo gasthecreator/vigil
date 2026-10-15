@@ -34,4 +34,5 @@ Chosen option: **Option 2: Quarantine prototype models**.
 - Validated prospective models will be developed in Phase 2 (classical baselines) and Phase 3 (safetensors/ONNX causal models) using leakage-free clinical event horizons.
 
 ### Confirmation
-Enforced by `scripts/check_claims.py`, removal of pickle imports in production inference paths, and `apps/api` test assertions.
+- Enforced by `scripts/check_claims.py`, removal of pickle imports in production inference paths, and `apps/api` test assertions.
+- **Update (Condition C4, 2026-10-15):** In accordance with Overseer Condition C4 (`docs/progress/VERDICT-P0-P1.md`), the serialized binary files (`baseline_model.pkl`, `feature_scalers.pkl`, `longitudinal_lstm.pt`) were purged from the working tree entirely. Their immutable SHA-256 checksums and provenance are recorded in `quarantine/legacy_models/README.md`, preserved in git history at commit `45cd94b`. The repository working tree contains zero `.pkl` or `.pt` files.

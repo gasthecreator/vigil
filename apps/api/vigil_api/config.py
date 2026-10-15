@@ -6,6 +6,7 @@ and Defect A7 (hardcoded alert thresholds).
 """
 
 import os
+
 from pydantic_settings import BaseSettings
 
 

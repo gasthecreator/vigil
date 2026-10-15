@@ -23,6 +23,8 @@ jobs:
           python-version: "3.12"
       - name: Verify claims policy
         run: python3 scripts/check_claims.py
+      - name: Verify evidence register and citations
+        run: python3 scripts/check_evidence.py
 
   backend-lint-and-test:
     runs-on: ubuntu-latest

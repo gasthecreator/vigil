@@ -2,6 +2,7 @@
 
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,9 +11,9 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
-from vigil_api.config import settings
-from vigil_api.database import engine, Base
 from vigil_api.api.router import api_router
+from vigil_api.config import settings
+from vigil_api.database import Base, engine
 from vigil_api.ml.inference import VigilEngine
 
 
@@ -22,7 +23,9 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
     engine_instance = VigilEngine.get_instance()
-    print(f"VigilEngine initialized. Status: {engine_instance.status}, Loaded: {engine_instance.is_loaded}")
+    print(
+        f"VigilEngine initialized. Status: {engine_instance.status}, Loaded: {engine_instance.is_loaded}"
+    )
 
     yield
 
@@ -79,4 +82,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("vigil_api.main:app", host="0.0.0.0", port=8000, reload=True)

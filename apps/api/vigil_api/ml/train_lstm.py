@@ -9,15 +9,16 @@ BiLSTM. Valid causal forecasting models are introduced in Phase 2 and Phase 3.
 import os
 import pickle
 import random
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import roc_auc_score, accuracy_score
+from torch.utils.data import DataLoader, Dataset
 
-from vigil_api.ml.synthetic_generator import generate_synthetic_cohort
 from vigil_api.ml.models import LongitudinalLSTM
+from vigil_api.ml.synthetic_generator import generate_synthetic_cohort
 
 
 class LongitudinalTrajectoryDataset(Dataset):
@@ -84,13 +85,15 @@ def build_sequence_dataset(
     if fit_scaler:
         raw_labs_matrix = []
         for lab in all_labs:
-            raw_labs_matrix.append([
-                lab["alt_level"],
-                lab["ast_level"],
-                lab["creatinine"],
-                lab["ca_15_3"],
-                lab["wbc_count"],
-            ])
+            raw_labs_matrix.append(
+                [
+                    lab["alt_level"],
+                    lab["ast_level"],
+                    lab["creatinine"],
+                    lab["ca_15_3"],
+                    lab["wbc_count"],
+                ]
+            )
         scaler = StandardScaler()
         scaler.fit(raw_labs_matrix)
 
@@ -101,12 +104,15 @@ def build_sequence_dataset(
         patient = patient_map[p_id]
         p_labs_sorted = sorted(p_labs, key=lambda x: x["date_drawn"])
         organ_vec = patient["target_organ_susceptibility_vector"]
-        susc_arr = np.array([
-            organ_vec["bone"],
-            organ_vec["liver"],
-            organ_vec["lung"],
-            organ_vec["brain"],
-        ], dtype=np.float32)
+        susc_arr = np.array(
+            [
+                organ_vec["bone"],
+                organ_vec["liver"],
+                organ_vec["lung"],
+                organ_vec["brain"],
+            ],
+            dtype=np.float32,
+        )
 
         # Build prefixes for dynamic monitoring (e.g. at visit 2, visit 3, etc.)
         for k in range(2, len(p_labs_sorted) + 1):
@@ -118,13 +124,17 @@ def build_sequence_dataset(
 
             step_vectors = []
             for lab in sub_labs:
-                raw_lab = np.array([[
-                    lab["alt_level"],
-                    lab["ast_level"],
-                    lab["creatinine"],
-                    lab["ca_15_3"],
-                    lab["wbc_count"],
-                ]])
+                raw_lab = np.array(
+                    [
+                        [
+                            lab["alt_level"],
+                            lab["ast_level"],
+                            lab["creatinine"],
+                            lab["ca_15_3"],
+                            lab["wbc_count"],
+                        ]
+                    ]
+                )
                 scaled_lab = scaler.transform(raw_lab)[0]
                 combined = np.concatenate([scaled_lab, susc_arr], axis=0)  # dim = 9
                 step_vectors.append(combined)
@@ -158,15 +168,23 @@ def train_lstm_model(
     train_patient_ids = {p["patient_id"] for p in train_patients}
     test_patient_ids = {p["patient_id"] for p in test_patients}
 
-    train_labs = [l for l in cohort_labs if l["patient_id"] in train_patient_ids]
-    test_labs = [l for l in cohort_labs if l["patient_id"] in test_patient_ids]
+    train_labs = [lab for lab in cohort_labs if lab["patient_id"] in train_patient_ids]
+    test_labs = [lab for lab in cohort_labs if lab["patient_id"] in test_patient_ids]
 
-    train_seqs, train_labels, scaler = build_sequence_dataset(train_patients, train_labs, fit_scaler=True)
-    test_seqs, test_labels, _ = build_sequence_dataset(test_patients, test_labs, scaler=scaler, fit_scaler=False)
+    train_seqs, train_labels, scaler = build_sequence_dataset(
+        train_patients, train_labs, fit_scaler=True
+    )
+    test_seqs, test_labels, _ = build_sequence_dataset(
+        test_patients, test_labs, scaler=scaler, fit_scaler=False
+    )
 
-    print(f"Generated {len(train_seqs)} training sequence prefixes and {len(test_seqs)} test sequence prefixes.")
+    print(
+        f"Generated {len(train_seqs)} training sequence prefixes and {len(test_seqs)} test sequence prefixes."
+    )
     pos_train = sum(train_labels)
-    print(f"Positive anomaly instances in train: {pos_train}/{len(train_labels)} ({pos_train/len(train_labels)*100:.1f}%)")
+    print(
+        f"Positive anomaly instances in train: {pos_train}/{len(train_labels)} ({pos_train / len(train_labels) * 100:.1f}%)"
+    )
 
     train_dataset = LongitudinalTrajectoryDataset(train_seqs, train_labels)
     test_dataset = LongitudinalTrajectoryDataset(test_seqs, test_labels)
@@ -174,13 +192,17 @@ def train_lstm_model(
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        else ("mps" if torch.backends.mps.is_available() else "cpu")
+    )
     print(f"Training Model B on computing device: {device}")
 
     model = LongitudinalLSTM(input_size=9, hidden_size=32, num_layers=2, dropout=0.2).to(device)
 
     # Weighted loss for anomaly detection
-    pos_weight = torch.tensor([(len(train_labels) - pos_train) / max(pos_train, 1.0)]).to(device)
+    torch.tensor([(len(train_labels) - pos_train) / max(pos_train, 1.0)]).to(device)
     criterion = nn.BCELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.003, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=25)
@@ -225,7 +247,9 @@ def train_lstm_model(
             best_weights = model.state_dict().copy()
 
         if epoch % 5 == 0 or epoch == 25:
-            print(f"Epoch {epoch:02d}/25 - Train Loss: {train_loss:.4f} - Val AUC: {val_auc:.4f} - Val Acc: {val_acc:.4f}")
+            print(
+                f"Epoch {epoch:02d}/25 - Train Loss: {train_loss:.4f} - Val AUC: {val_auc:.4f} - Val Acc: {val_acc:.4f}"
+            )
 
     print(f"Best Validation ROC-AUC for Model B: {best_val_auc:.4f}")
 

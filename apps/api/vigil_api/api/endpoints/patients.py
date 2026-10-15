@@ -1,24 +1,24 @@
 """API Endpoints for Patient Management, Pathology Intake, Labs & Surveillance."""
 
 from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 from vigil_api.database import get_db
-from vigil_api.models.patient import Patient, BaselineProfile, LabResult, RiskInference
-from vigil_api.schemas.patient import PatientCreate, PatientResponse
+from vigil_api.ml.inference import SentinelEngine
+from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
 from vigil_api.schemas.baseline import BaselineCreate, BaselineResponse
-from vigil_api.schemas.lab import LabResultCreate, LabResultResponse
 from vigil_api.schemas.inference import (
     RiskInferenceResponse,
-    TrajectoryPoint,
-    TriageQueueItem,
     SimulationRequest,
     SimulationResponse,
+    TrajectoryPoint,
+    TriageQueueItem,
 )
-from vigil_api.ml.inference import VigilEngine, SentinelEngine
+from vigil_api.schemas.lab import LabResultCreate
+from vigil_api.schemas.patient import PatientCreate, PatientResponse
 
 router = APIRouter()
 
@@ -149,7 +149,9 @@ def get_patient_detail(id: str, db: Session = Depends(get_db)):
             "has_hypertension": baseline.has_hypertension,
             "renal_history": baseline.renal_history,
             "target_organ_susceptibility_vector": baseline.target_organ_susceptibility_vector,
-        } if baseline else None,
+        }
+        if baseline
+        else None,
         "latest_risk": latest_inference.calculated_metastasis_risk if latest_inference else None,
         "triage_flag": latest_inference.triage_flag if latest_inference else False,
         "latest_justification": latest_inference.justification_text if latest_inference else None,
@@ -244,16 +246,18 @@ def submit_lab_result(id: str, payload: LabResultCreate, db: Session = Depends(g
     )
 
     historical_dicts = []
-    for l in all_labs:
-        if l.id != lab_record.id:
-            historical_dicts.append({
-                "date_drawn": l.date_drawn.isoformat(),
-                "alt_level": l.alt_level,
-                "ast_level": l.ast_level,
-                "creatinine": l.creatinine,
-                "ca_15_3": l.ca_15_3,
-                "wbc_count": l.wbc_count,
-            })
+    for lab in all_labs:
+        if lab.id != lab_record.id:
+            historical_dicts.append(
+                {
+                    "date_drawn": lab.date_drawn.isoformat(),
+                    "alt_level": lab.alt_level,
+                    "ast_level": lab.ast_level,
+                    "creatinine": lab.creatinine,
+                    "ca_15_3": lab.ca_15_3,
+                    "wbc_count": lab.wbc_count,
+                }
+            )
 
     new_lab_dict = {
         "date_drawn": lab_record.date_drawn.isoformat(),
@@ -352,7 +356,9 @@ def get_patient_trajectory(id: str, db: Session = Depends(get_db)):
                 ca153_velocity_pct=ca_vel,
                 alt_velocity_pct=alt_vel,
                 triage_flag=inference.triage_flag if inference else False,
-                justification_text=inference.justification_text if inference else "Pending model evaluation.",
+                justification_text=inference.justification_text
+                if inference
+                else "Pending model evaluation.",
             )
         )
 
@@ -378,14 +384,14 @@ def simulate_future_lab(id: str, payload: SimulationRequest, db: Session = Depen
     )
     historical_dicts = [
         {
-            "date_drawn": l.date_drawn.isoformat(),
-            "alt_level": l.alt_level,
-            "ast_level": l.ast_level,
-            "creatinine": l.creatinine,
-            "ca_15_3": l.ca_15_3,
-            "wbc_count": l.wbc_count,
+            "date_drawn": lab.date_drawn.isoformat(),
+            "alt_level": lab.alt_level,
+            "ast_level": lab.ast_level,
+            "creatinine": lab.creatinine,
+            "ca_15_3": lab.ca_15_3,
+            "wbc_count": lab.wbc_count,
         }
-        for l in labs
+        for lab in labs
     ]
 
     baseline_dict = None

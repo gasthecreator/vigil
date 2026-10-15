@@ -7,14 +7,16 @@ and SEER priors are introduced in Phase 2.
 """
 
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 import pickle
+
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
 import xgboost as xgb
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 from vigil_api.ml.synthetic_generator import generate_synthetic_cohort
 
@@ -82,7 +84,9 @@ def train_baseline_model(
     # Output normalization wrapper function check
     sample_pred = Y_pred[0]
     sample_norm = np.maximum(sample_pred, 0.01) / np.sum(np.maximum(sample_pred, 0.01))
-    print(f"Sample normalized organ susceptibility output: {sample_norm} (Sum: {np.sum(sample_norm):.2f})")
+    print(
+        f"Sample normalized organ susceptibility output: {sample_norm} (Sum: {np.sum(sample_norm):.2f})"
+    )
 
     save_path = os.path.join(artifacts_dir, "baseline_model.pkl")
     with open(save_path, "wb") as f:

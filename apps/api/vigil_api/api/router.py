@@ -1,7 +1,8 @@
 """FastAPI Router aggregator."""
 
 from fastapi import APIRouter
-from vigil_api.api.endpoints import patients, analytics
+
+from vigil_api.api.endpoints import analytics, patients
 
 api_router = APIRouter()
 

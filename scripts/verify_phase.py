@@ -71,15 +71,23 @@ def verify_phase_0() -> bool:
     print("✅ All required Phase 0 artifacts exist.")
 
     # 1. Run claims policy checker
-    print("\n[Step 1/5] Running claims policy checker...")
+    print("\n[Step 1/6] Running claims policy checker...")
     code, out = run_cmd([sys.executable, "scripts/check_claims.py"])
     if code != 0:
         print(f"❌ Claims policy check failed:\n{out}")
         return False
     print("✅ Claims policy check passed.")
 
+    # 1b. Run evidence integrity checker
+    print("\n[Step 2/6] Running evidence integrity & Crossref citation checker...")
+    code, out = run_cmd([sys.executable, "scripts/check_evidence.py"])
+    if code != 0:
+        print(f"❌ Evidence check failed:\n{out}")
+        return False
+    print("✅ Evidence register and Crossref verification passed.")
+
     # 2. Verify no pickled models in apps/
-    print("\n[Step 2/5] Verifying zero .pkl files in runtime application paths...")
+    print("\n[Step 3/6] Verifying zero .pkl files in runtime application paths...")
     runtime_pickles = list((ROOT / "apps").rglob("*.pkl"))
     if runtime_pickles:
         print("❌ Found pickled models in apps/ runtime path (Defect A8):")
@@ -89,7 +97,7 @@ def verify_phase_0() -> bool:
     print("✅ Runtime paths are free of serialized pickle artifacts.")
 
     # 3. Verify no hardcoded machine paths
-    print("\n[Step 3/5] Verifying zero hardcoded machine paths in code...")
+    print("\n[Step 4/6] Verifying zero hardcoded machine paths in code...")
     for ext in [".py", ".ts", ".tsx", ".json"]:
         for p in (ROOT / "apps").rglob(f"*{ext}"):
             if ".next" in p.parts or "node_modules" in p.parts or ".venv" in p.parts:
@@ -101,7 +109,7 @@ def verify_phase_0() -> bool:
     print("✅ Zero hardcoded personal paths found in application code.")
 
     # 4. Run backend tests
-    print("\n[Step 4/5] Running backend test suite...")
+    print("\n[Step 5/6] Running backend test suite...")
     uv_bin = os.getenv("UV_BIN", str(Path.home() / ".local" / "bin" / "uv"))
     if not Path(uv_bin).exists():
         uv_bin = "uv"
@@ -112,7 +120,7 @@ def verify_phase_0() -> bool:
     print("✅ All backend API tests and E2E characterisation tests passed.")
 
     # 5. Run frontend lint and build
-    print("\n[Step 5/5] Running web frontend lint and build...")
+    print("\n[Step 6/6] Running web frontend lint and build...")
     code, out = run_cmd(["npm", "--prefix", "apps/web", "run", "lint"])
     if code != 0:
         print(f"❌ Web lint failed:\n{out}")
@@ -178,40 +186,48 @@ def verify_phase_1() -> bool:
     if not Path(uv_bin).exists():
         uv_bin = "uv"
 
-    # 1. Run vigil-core tests
-    print("\n[Step 1/5] Running vigil-core unit and property tests...")
+    # 1. Run evidence integrity checker
+    print("\n[Step 1/6] Running evidence integrity & Crossref citation checker...")
+    code, out = run_cmd([sys.executable, "scripts/check_evidence.py"])
+    if code != 0:
+        print(f"❌ Evidence check failed:\n{out}")
+        return False
+    print("✅ Evidence register and Crossref verification passed.")
+
+    # 2. Run vigil-core tests
+    print("\n[Step 2/6] Running vigil-core unit and property tests...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-core/tests", "-v"])
     if code != 0:
         print(f"❌ vigil-core tests failed:\n{out}")
         return False
     print("✅ vigil-core tests passed.")
 
-    # 2. Run vigil-sim tests and calibration target verification
-    print("\n[Step 2/5] Running vigil-sim generator tests and calibration target verification...")
+    # 3. Run vigil-sim tests and calibration target verification
+    print("\n[Step 3/6] Running vigil-sim generator tests and calibration target verification...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-sim/tests", "-v"])
     if code != 0:
         print(f"❌ vigil-sim tests failed:\n{out}")
         return False
     print("✅ vigil-sim calibration target verification passed.")
 
-    # 3. Run contracts and ingestion loaders tests
-    print("\n[Step 3/5] Running ingestion contracts and public data loaders tests...")
+    # 4. Run contracts and ingestion loaders tests
+    print("\n[Step 4/6] Running ingestion contracts and public data loaders tests...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/contracts/tests", "-v"])
     if code != 0:
         print(f"❌ contracts loader tests failed:\n{out}")
         return False
     print("✅ Ingestion contracts and data loader tests passed.")
 
-    # 4. Run leakage test suite
-    print("\n[Step 4/5] Running leakage test suite (canary and leaky fixture detection)...")
+    # 5. Run leakage test suite
+    print("\n[Step 5/6] Running leakage test suite (canary and leaky fixture detection)...")
     code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-eval/tests", "-v"])
     if code != 0:
         print(f"❌ Leakage test suite failed:\n{out}")
         return False
     print("✅ Leakage test suite passed.")
 
-    # 5. Verify dataset cards and documentation
-    print("\n[Step 5/5] Verifying data access and partnership dossiers...")
+    # 6. Verify dataset cards and documentation
+    print("\n[Step 6/6] Verifying data access and partnership dossiers...")
     access_doc = (ROOT / "docs" / "data" / "ACCESS.md").read_text()
     if "SEER" not in access_doc or "METABRIC" not in access_doc:
         print("❌ docs/data/ACCESS.md missing required data source verification")

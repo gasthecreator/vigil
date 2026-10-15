@@ -3,7 +3,6 @@ Tests for contracts.loaders: Validation of SEER, METABRIC, TCGA, PDS, and MIMIC 
 """
 
 from pathlib import Path
-import pytest
 
 from contracts.loaders import (
     build_mimic_cancer_cohort,

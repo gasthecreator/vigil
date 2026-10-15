@@ -17,12 +17,12 @@ All Phase 0 work packages (WP0.1–WP0.7) and exit-gate criteria have been satis
 
 | Gate Item | Status | Evidence Link |
 |---|---|---|
-| **CI green on `main` with Section 12 gates** | **MET** | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`scripts/verify_phase.py`](../../scripts/verify_phase.py) |
+| **CI green on `main` with Section 12 gates** | **PROVISIONALLY MET LOCALLY / PENDING REMOTE PR** | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`scripts/verify_phase.py`](../../scripts/verify_phase.py) (Local suite passes 50/50 tests; remote GitHub Actions run triggered via feature branch PR per Condition C3/C6) |
 | **Repo-standards audit scores $\ge 2$ overall, $\ge 3$ on T0–T2** | **MET** | [`docs/audits/REPO-AUDIT-P0.md`](../audits/REPO-AUDIT-P0.md) (T0=3.0, T1=3.0, T2=3.0, T3=2.5, T4=2.0, T5=2.5) |
 | **Zero secrets, zero personal/machine paths in code** | **MET** | [`scripts/check_claims.py`](../../scripts/check_claims.py), [`apps/api/vigil_api/config.py`](../../apps/api/vigil_api/config.py) |
 | **README claims all verifiable, unevidenced badges purged** | **MET** | [`README.md`](../../README.md), [`scripts/check_claims.py`](../../scripts/check_claims.py) |
 | **`make verify-phase PHASE=0` passes cleanly** | **MET** | [`scripts/verify_phase.py`](../../scripts/verify_phase.py) (Output in Section 3) |
-| **Prototype models quarantined from runtime execution** | **MET** | [`quarantine/legacy_models/README.md`](../../quarantine/legacy_models/README.md), [`docs/adr/0002-quarantine-prototype-models.md`](../adr/0002-quarantine-prototype-models.md) |
+| **Prototype models quarantined from runtime execution** | **MET** | [`quarantine/legacy_models/README.md`](../../quarantine/legacy_models/README.md), [`docs/adr/0002-quarantine-prototype-models.md`](../adr/0002-quarantine-prototype-models.md) (Binary artifacts purged from tree per C4) |
 | **Mandatory clinical disclaimers & synthetic indicators** | **MET** | [`docs/DISCLAIMER.md`](../DISCLAIMER.md), [`apps/web/src/components/SyntheticBadge.tsx`](../../apps/web/src/components/SyntheticBadge.tsx) |
 
 ---
@@ -113,6 +113,9 @@ $ python3 scripts/verify_phase.py --phase=0
 - **ADR-0003 (Claims Policy):** Institution of `scripts/check_claims.py` to prevent puffery.
 - **ADR-0004 (CORS and Environment Profiles):** Multi-environment gating (`local`, `staging`, `production`).
 - **ADR-0005 (Proposal Process):** Institutionalized `docs/proposals/PROP-####-*.md` for canonical plan updates.
+- **Overseer Findings & Remediation (VERDICT-P0-P1.md):**
+  - Quarantined model binary files (`.pkl`, `.pt`) purged from repository working tree; tracked via SHA-256 digests and historic commit pointers per Condition C4.
+  - Institution of PR-based workflow per Condition C6; CI gate verification transitioned from local-only scripts to PR workflow and GitHub Actions runs per Condition C3.
 
 ---
 

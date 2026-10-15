@@ -5,7 +5,7 @@ Loader contract and schema validation for METABRIC clinical files from cBioPorta
 """
 
 from pathlib import Path
-from typing import Optional
+
 import pandas as pd
 from pydantic import BaseModel, Field, ValidationError
 

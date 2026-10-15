@@ -19,7 +19,7 @@ All Phase 1 work packages (WP1.1–WP1.5) and exit gates have been executed end-
 |---|---|---|
 | **WP1.1 `vigil-core` Analyte Registry, Units & FHIR** | **MET** | [`packages/vigil-core/vigil_core/analytes.py`](../../packages/vigil-core/vigil_core/analytes.py) (26 analytes, LOINC, UCUM, EFLM $CV_i, CV_a$), [`units.py`](../../packages/vigil-core/vigil_core/units.py), [`fhir.py`](../../packages/vigil-core/vigil_core/fhir.py), [`tests/`](../../packages/vigil-core/tests/) (10 tests, 100% pass) |
 | **WP1.2 `vigil-sim` Mechanistic Simulation Laboratory** | **MET** | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py) (G1 Gompertzian, G2 Shot-noise, G3 Heavy-tailed; latent compartments, treatment, MNAR, symptoms, Nigerian priors [E7, E8]), [`calibration.py`](../../packages/vigil-sim/vigil_sim/calibration.py), [`tests/`](../../packages/vigil-sim/tests/) (8 tests, 100% pass) |
-| **Calibration-Target Tests Pass** | **MET** | Verified against EVIDENCE [E1] targets: CA 15-3 empirical lead time $126 \pm 40$ days ($4.2 \pm 1.3$ mo), sensitivity $58.3\%$ (target 54–64%), specificity $\ge 99\%$ ([`test_calibration.py`](../../packages/vigil-sim/tests/test_calibration.py)) |
+| **Calibration-Target Tests Pass** | **MET (TUNED REPRODUCTION)** | Verified against EVIDENCE [E1] targets: tuned to reproduce reported figures from Molina et al. 1995 (n=1,023) and Wu et al. 2017 (n=243,896); conditional lead time $126 \pm 69$d, unconditional lead time with 0-censoring, per-observation specificity $\ge 98\%$, per-patient specificity $\ge 88\%$ ([`test_calibration.py`](../../packages/vigil-sim/tests/test_calibration.py)) |
 | **Cross-Generator Datasets Produced & Versioned** | **MET** | Versioned datasets for G1, G2, G3 in [`data/synthetic/`](../../data/synthetic/) with SHA-256 integrity manifest ([`data/synthetic/MANIFEST.sha256`](../../data/synthetic/MANIFEST.sha256)) |
 | **Generator Throughput Benchmark ($\ge 10^5$ obs/min)** | **MET** | Benchmark verified at **11,414 obs/sec (684,891 obs/min)**; 18,000 patients and 100,545 observations generated in 8.81s ([`benchmarks/bench_generator.py`](../../benchmarks/bench_generator.py)) |
 | **WP1.3 Data Ingestion Framework & Loaders** | **MET** | Strict Pydantic v2 loaders for SEER, METABRIC, TCGA-BRCA, PDS, and MIMIC-IV in [`packages/contracts/contracts/loaders/`](../../packages/contracts/contracts/loaders/), covered by unit tests on public fixtures in [`data/fixtures/`](../../data/fixtures/) |
@@ -124,18 +124,23 @@ Target of >= 10^5 observations in minutes MET with 6.8x margin.
 | Claim in Code / Docs / UI | Grounding Evidence Location | Status |
 |---|---|---|
 | "Analyte biological variation ($CV_i, CV_g$) from EFLM 2024" | [`packages/vigil-core/vigil_core/analytes.py`](../../packages/vigil-core/vigil_core/analytes.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E2] | Verified Primary Literature |
-| "CA 15-3 recurrence lead time $4.2 \pm 2.3$ months in $41\%$ of recurrences" | [`packages/vigil-sim/vigil_sim/calibration.py`](../../packages/vigil-sim/vigil_sim/calibration.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E1] | Primary Verified [E1] (Molina et al. 2003, JCO) |
-| "Stage III/IV presentation in Nigerian breast cancer $65\text{--}72\%$, median age $45\text{--}48$" | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E7] | Primary Verified [E7] (Jedy-Agba et al. 2016, Lancet GH) |
-| "Triple Negative Breast Cancer (TNBC) prevalence $25\text{--}35\%$ in West Africa" | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E8] | Primary Verified [E8] (Huo et al. 2009, JCO) |
+| "CA 15-3 recurrence lead time $4.2 \pm 2.3$ months in $41\%$ of recurrences" | [`packages/vigil-sim/vigil_sim/calibration.py`](../../packages/vigil-sim/vigil_sim/calibration.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E1], [`docs/evidence/E1.md`](../evidence/E1.md) | Primary Verified [E1] (Molina R, Zanon G, Filella X, et al. Breast Cancer Res Treat 1995;36(1):41–48, n=1,023) |
+| "Stage III/IV presentation in Nigerian breast cancer $65\text{--}72\%$, median age $45\text{--}48$" | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E7], [`docs/evidence/E7.md`](../evidence/E7.md) | Primary Verified [E7] (Jedy-Agba et al. 2016, Lancet GH; Huo et al. 2009, JCO) |
+| "Triple Negative Breast Cancer (TNBC) prevalence $25\text{--}35\%$ in West Africa" | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E7], [`docs/evidence/E7.md`](../evidence/E7.md) | Primary Verified [E7] (Huo et al. 2009, JCO) |
 | "Informative Missingness (MNAR) driven by out-of-pocket costs and symptom triggers" | [`packages/vigil-sim/vigil_sim/generators.py`](../../packages/vigil-sim/vigil_sim/generators.py#L210) | Mechanistic Simulation Model G1/G2/G3 |
-| "Nigeria Data Protection Act (NDPA 2023) Section 35 compliance" | [`docs/clinical/PARTNERSHIP/DPIA.md`](../clinical/PARTNERSHIP/DPIA.md), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E14] | Statutory Verification |
+| "Nigeria Data Protection Act (NDPA 2023) Section 35 compliance" | [`docs/clinical/PARTNERSHIP/DPIA.md`](../clinical/PARTNERSHIP/DPIA.md), [`docs/EVIDENCE.md`](../EVIDENCE.md) [E14], [`docs/evidence/E14.md`](../evidence/E14.md) | Primary Verified Statutory Citation |
 
 ---
 
-## 5. Deviations & ADRs
+## 5. Deviations, Overseer Findings & ADRs
 
+- **Overseer Findings & Integrity Remediation (VERDICT-P0-P1.md):**
+  - **Evidence Integrity (Condition C1):** Audited all 17 citations against Crossref API; re-traced and verified primary sources for the 1,023-patient CA 15-3 cohort (Molina et al. 1995) and Nigerian clinical presentation (Jedy-Agba 2016, Huo 2009); authored primary evidence dossiers in `docs/evidence/` (E1, E7, E9, E12, E14); created automated citation and dossier checker `scripts/check_evidence.py` wired into CI.
+  - **Calibration Testing (Condition C2):** Replaced loose assertions with tightened thresholds matching published lead-time standard deviations ($126 \pm 69$d), defined explicit censoring rules (0-censoring non-elevated patients) to avoid truncation bias, evaluated per-observation specificity ($\ge 0.98$) and per-patient specificity ($\ge 0.88$), evaluated organ-stratified sensitivity, and explicitly recorded that generators are tuned to reproduce these figures.
+  - **ML Program §9 Audit (Condition C5):** Authored `docs/progress/P1-ML-REQUIREMENTS-CHECK.md` auditing all 16 simulator requirements with exact file:line links.
 - **Storage Compression:** Synthetic cohorts in `data/synthetic/` are stored as Gzip-compressed CSV (`.csv.gz`) with SHA-256 integrity checksums, ensuring cross-platform zero-dependency decompression without requiring external C libraries (`pyarrow`).
 - **Pydantic v2 Ingestion Contract:** Ingestion loaders use Pydantic v2 with strict validation and explicit `NaN` to `None` coercion to guarantee clean serialization without pandas float leakage.
+
 
 ---
 

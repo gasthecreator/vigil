@@ -5,14 +5,14 @@ and adds tests for CORS and environment profiles (A5, A6).
 """
 
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 
 import pytest
 from fastapi.testclient import TestClient
-
 from vigil_api.config import settings
-from vigil_api.main import app
 from vigil_api.database import Base, engine
+from vigil_api.main import app
 
 
 @pytest.fixture(scope="session", autouse=True)

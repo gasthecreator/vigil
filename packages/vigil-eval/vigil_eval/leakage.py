@@ -15,7 +15,8 @@ Detects:
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, List, Optional
+
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
@@ -26,31 +27,37 @@ from sklearn.model_selection import KFold
 
 class LeakageError(Exception):
     """Base exception for data leakage violations."""
+
     pass
 
 
 class PatientSplitLeakageError(LeakageError):
     """Raised when patient identifiers leak across train, validation, or test partitions."""
+
     pass
 
 
 class TemporalLeakageError(LeakageError):
     """Raised when observation timestamps post-date the prediction reference time."""
+
     pass
 
 
 class OutcomeDerivedFeatureError(LeakageError):
     """Raised when features contain target-derived information or forbidden anomaly tokens."""
+
     pass
 
 
 class PreprocessingLeakageError(LeakageError):
     """Raised when scalers, imputers, or encoders are fitted on evaluation data."""
+
     pass
 
 
 class CanaryTestFailedError(LeakageError):
     """Raised when a model trained on shuffled labels fails to collapse to chance performance."""
+
     pass
 
 
@@ -132,7 +139,7 @@ def check_temporal_future_leakage(
         if time_col not in df.columns:
             continue
         feat_times = pd.to_numeric(df[time_col], errors="coerce")
-        violations = (feat_times > pred_times)
+        violations = feat_times > pred_times
         if violations.any():
             count = violations.sum()
             sample_idx = df[violations].index.tolist()[:3]
@@ -203,8 +210,9 @@ def check_scaler_fit_leakage(
     if hasattr(fitted_scaler, "data_min_") and hasattr(fitted_scaler, "data_max_"):
         test_min = np.nanmin(arr, axis=0)
         test_max = np.nanmax(arr, axis=0)
-        if np.allclose(test_min, fitted_scaler.data_min_, atol=tolerance) and \
-           np.allclose(test_max, fitted_scaler.data_max_, atol=tolerance):
+        if np.allclose(test_min, fitted_scaler.data_min_, atol=tolerance) and np.allclose(
+            test_max, fitted_scaler.data_max_, atol=tolerance
+        ):
             raise PreprocessingLeakageError(
                 "Scaler fit leakage detected! Scaler fitted bounds match test set bounds exactly."
             )
@@ -223,7 +231,7 @@ def run_shuffled_label_canary(
     Performance must collapse to chance (~0.50 ROC-AUC).
     If ROC-AUC exceeds max_tolerated_auc, raises CanaryTestFailedError.
     """
-    rng = np.random.default_rng(seed)
+    np.random.default_rng(seed)
     y_shuffled = y.sample(frac=1.0, random_state=seed).reset_index(drop=True)
     X_clean = X.reset_index(drop=True).select_dtypes(include=[np.number]).fillna(0.0)
 
@@ -234,7 +242,11 @@ def run_shuffled_label_canary(
         X_train, X_test = X_clean.iloc[train_idx], X_clean.iloc[test_idx]
         y_train, y_test = y_shuffled.iloc[train_idx], y_shuffled.iloc[test_idx]
 
-        clf = model_factory() if model_factory else LogisticRegression(max_iter=200, random_state=seed)
+        clf = (
+            model_factory()
+            if model_factory
+            else LogisticRegression(max_iter=200, random_state=seed)
+        )
         clf.fit(X_train, y_train)
 
         # Probabilities

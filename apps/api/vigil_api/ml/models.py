@@ -23,7 +23,9 @@ class TemporalAttention(nn.Module):
             nn.Linear(hidden_dim // 2, 1, bias=False),
         )
 
-    def forward(self, lstm_outputs: torch.Tensor, mask: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, lstm_outputs: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
             lstm_outputs: (batch_size, seq_len, hidden_dim)
@@ -38,7 +40,9 @@ class TemporalAttention(nn.Module):
             scores = scores.masked_fill(~mask, -1e9)
 
         attention_weights = F.softmax(scores, dim=-1)  # (batch_size, seq_len)
-        context = torch.bmm(attention_weights.unsqueeze(1), lstm_outputs).squeeze(1)  # (batch_size, hidden_dim)
+        context = torch.bmm(attention_weights.unsqueeze(1), lstm_outputs).squeeze(
+            1
+        )  # (batch_size, hidden_dim)
 
         return context, attention_weights
 

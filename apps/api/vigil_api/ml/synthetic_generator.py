@@ -4,12 +4,12 @@ Generates demo cohorts of breast cancer patients with baseline pathology
 and multi-year longitudinal biomarker surveillance trajectories.
 """
 
-import uuid
 import random
+import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
-import pandas as pd
 
 
 def generate_patient_baseline(patient_id: str | None = None) -> Dict[str, Any]:
@@ -126,7 +126,9 @@ def generate_longitudinal_labs(
     base_wbc = np.random.normal(6.6, 1.1)
 
     # Determine inflection visit for recurring patients (last 2 to 4 visits)
-    anomaly_onset_idx = num_visits - random.randint(2, min(4, num_visits - 1)) if metastasis_occurred else 999
+    anomaly_onset_idx = (
+        num_visits - random.randint(2, min(4, num_visits - 1)) if metastasis_occurred else 999
+    )
 
     for visit_idx in range(num_visits):
         # Time gap between draws: 60 to 120 days
@@ -148,28 +150,30 @@ def generate_longitudinal_labs(
             anomaly_severity = step_into_anomaly / (num_visits - anomaly_onset_idx)
 
             # Progressive tumor marker doubling
-            ca153 += 25.0 * (step_into_anomaly ** 1.6) + np.random.normal(0, 3.0)
+            ca153 += 25.0 * (step_into_anomaly**1.6) + np.random.normal(0, 3.0)
 
             # Hepatic involvement
             if organ_vec["liver"] >= 0.28:
-                alt += 45.0 * (step_into_anomaly ** 1.4) + np.random.normal(0, 6.0)
-                ast += 38.0 * (step_into_anomaly ** 1.4) + np.random.normal(0, 5.0)
+                alt += 45.0 * (step_into_anomaly**1.4) + np.random.normal(0, 6.0)
+                ast += 38.0 * (step_into_anomaly**1.4) + np.random.normal(0, 5.0)
 
             # Systemic inflammatory response
             wbc += 2.2 * step_into_anomaly + np.random.normal(0, 0.5)
 
-        labs.append({
-            "id": str(uuid.uuid4()),
-            "patient_id": patient_id,
-            "date_drawn": current_date,
-            "alt_level": float(round(alt, 1)),
-            "ast_level": float(round(ast, 1)),
-            "creatinine": float(round(cr, 2)),
-            "ca_15_3": float(round(ca153, 1)),
-            "wbc_count": float(round(wbc, 1)),
-            "is_anomaly": is_anomaly_step,
-            "anomaly_severity": float(round(anomaly_severity, 2)),
-        })
+        labs.append(
+            {
+                "id": str(uuid.uuid4()),
+                "patient_id": patient_id,
+                "date_drawn": current_date,
+                "alt_level": float(round(alt, 1)),
+                "ast_level": float(round(ast, 1)),
+                "creatinine": float(round(cr, 2)),
+                "ca_15_3": float(round(ca153, 1)),
+                "wbc_count": float(round(wbc, 1)),
+                "is_anomaly": is_anomaly_step,
+                "anomaly_severity": float(round(anomaly_severity, 2)),
+            }
+        )
 
     return labs
 
@@ -206,6 +210,10 @@ if __name__ == "__main__":
     random.seed(42)
     print("Generating synthetic cohort of 500 patients...")
     cohort_patients, cohort_labs = generate_synthetic_cohort(num_patients=500)
-    print(f"Generated {len(cohort_patients)} patients and {len(cohort_labs)} longitudinal lab draws.")
+    print(
+        f"Generated {len(cohort_patients)} patients and {len(cohort_labs)} longitudinal lab draws."
+    )
     recurrences = sum(1 for p in cohort_patients if p["metastasis_occurred"])
-    print(f"Metastatic recurrence rate: {recurrences}/{len(cohort_patients)} ({recurrences/len(cohort_patients)*100:.1f}%)")
+    print(
+        f"Metastatic recurrence rate: {recurrences}/{len(cohort_patients)} ({recurrences / len(cohort_patients) * 100:.1f}%)"
+    )

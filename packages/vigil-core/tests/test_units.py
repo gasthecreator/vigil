@@ -3,8 +3,8 @@ Tests for vigil_core.units: Unit conversions, dimensional validation, and proper
 """
 
 import pytest
-from hypothesis import given, strategies as st
-
+from hypothesis import given
+from hypothesis import strategies as st
 from vigil_core.units import (
     IncompatibleUnitsError,
     InvalidUnitError,
