@@ -35,12 +35,16 @@ target-version = "py312"
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+
 [tool.pytest.ini_options]
 testpaths = [
     "apps/api/tests",
     "packages/vigil-core/tests",
     "packages/vigil-sim/tests",
     "packages/vigil-eval/tests",
+    "packages/vigil-ml/tests",
     "packages/contracts/tests",
 ]
 python_files = ["test_*.py"]

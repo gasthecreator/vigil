@@ -238,9 +238,138 @@ def verify_phase_1() -> bool:
     return True
 
 
+def verify_phase_2() -> bool:
+    print("\n=======================================================")
+    print("📊 VERIFYING PHASE 2: EVALUATION BACKBONE & CLASSICAL CORE")
+    print("=======================================================")
+
+    required_files = [
+        "packages/vigil-eval/vigil_eval/metrics.py",
+        "packages/vigil-eval/vigil_eval/bootstrap.py",
+        "packages/vigil-eval/vigil_eval/subgroups.py",
+        "packages/vigil-eval/vigil_eval/verification_bias.py",
+        "packages/vigil-eval/vigil_eval/lead_time.py",
+        "packages/vigil-eval/vigil_eval/audit.py",
+        "packages/vigil-eval/vigil_eval/regression_gate.py",
+        "packages/vigil-ml/vigil_ml/baselines.py",
+        "packages/vigil-ml/vigil_ml/features.py",
+        "packages/vigil-ml/vigil_ml/joint_model.py",
+        "packages/vigil-ml/vigil_ml/organ_susceptibility.py",
+        "reports/ml/S1_SPARSITY/PREREG.md",
+        "reports/ml/S1_SPARSITY/results.json",
+        "reports/ml/S1_SPARSITY/REPORT.md",
+        "reports/ml/S3_VERIFICATION_BIAS/PREREG.md",
+        "reports/ml/S3_VERIFICATION_BIAS/results.json",
+        "reports/ml/S3_VERIFICATION_BIAS/REPORT.md",
+        "reports/ml/S9_CROSS_GENERATOR/PREREG.md",
+        "reports/ml/S9_CROSS_GENERATOR/results.json",
+        "reports/ml/S9_CROSS_GENERATOR/REPORT.md",
+        "reports/ml/BENCHMARK_REPORT.md",
+        "reports/ml/frozen_test_access_log.jsonl",
+        "docs/models/MODEL-CARD-M1.md",
+        "docs/models/MODEL-CARD-K3.md",
+        "docs/data/DATASET-CARD-SYNTHETIC-G1-G3.md",
+        "docs/progress/PHASE-2-REPORT.md",
+    ]
+
+    missing = []
+    for rel_path in required_files:
+        p = ROOT / rel_path
+        if not p.exists():
+            missing.append(rel_path)
+
+    if missing:
+        print("❌ Missing required Phase 2 artifacts:")
+        for m in missing:
+            print(f"  - {m}")
+        return False
+    print("✅ All required Phase 2 artifacts exist.")
+
+    uv_bin = os.getenv("UV_BIN", str(Path.home() / ".local" / "bin" / "uv"))
+    if not Path(uv_bin).exists():
+        uv_bin = "uv"
+
+    # 1. Run evidence integrity checker
+    print("\n[Step 1/6] Running evidence integrity & Crossref citation checker...")
+    code, out = run_cmd([sys.executable, "scripts/check_evidence.py"])
+    if code != 0:
+        print(f"❌ Evidence check failed:\n{out}")
+        return False
+    print("✅ Evidence register and Crossref verification passed.")
+
+    # 2. Run vigil-eval test suite
+    print("\n[Step 2/6] Running vigil-eval evaluation harness test suite...")
+    code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-eval/tests", "-v"])
+    if code != 0:
+        print(f"❌ vigil-eval tests failed:\n{out}")
+        return False
+    print("✅ vigil-eval test suite passed.")
+
+    # 3. Run vigil-ml test suite
+    print("\n[Step 3/6] Running vigil-ml baselines and joint model test suite...")
+    code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-ml/tests", "-v"])
+    if code != 0:
+        print(f"❌ vigil-ml tests failed:\n{out}")
+        return False
+    print("✅ vigil-ml test suite passed.")
+
+    # 4. Check frozen test set audit log
+    print("\n[Step 4/6] Verifying frozen test set access audit log...")
+    audit_file = ROOT / "reports" / "ml" / "frozen_test_access_log.jsonl"
+    audit_records = [line for line in audit_file.read_text().splitlines() if line.strip()]
+    if len(audit_records) < 4:
+        print(
+            f"❌ Insufficient frozen test set audit records: {len(audit_records)} found (minimum 4 expected)"
+        )
+        return False
+    print(f"✅ Frozen test set access audit log verified ({len(audit_records)} records).")
+
+    # 5. Anti-degeneracy canary check: verify no ROC-AUC > 0.97
+    print("\n[Step 5/6] Verifying anti-degeneracy stop-and-think triggers (no AUROC > 0.97)...")
+    import json
+
+    for s_path in [
+        ROOT / "reports" / "ml" / "S1_SPARSITY" / "results.json",
+        ROOT / "reports" / "ml" / "S9_CROSS_GENERATOR" / "results.json",
+    ]:
+        with open(s_path) as f:
+            data = json.load(f)
+
+            def check_auc(obj):
+                if isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if k == "auc" and isinstance(v, (int, float)):
+                            if v > 0.97:
+                                raise ValueError(f"Degenerate AUC {v} > 0.97 found in {s_path}")
+                        check_auc(v)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        check_auc(item)
+
+            try:
+                check_auc(data)
+            except ValueError as e:
+                print(f"❌ Anti-degeneracy failure: {e}")
+                return False
+    print("✅ Zero degenerate/leaked AUC scores detected across all benchmark runs.")
+
+    # 6. Verify synthetic data labeling in reports
+    print("\n[Step 6/6] Verifying mandatory synthetic data labeling in reports...")
+    bench_rep = (ROOT / "reports" / "ml" / "BENCHMARK_REPORT.md").read_text()
+    if "SYNTHETIC" not in bench_rep or "Sim-to-Real Gap" not in bench_rep:
+        print(
+            "❌ reports/ml/BENCHMARK_REPORT.md missing mandatory synthetic labeling or sim-to-real section"
+        )
+        return False
+    print("✅ Benchmark report synthetic disclosure verified.")
+
+    print("\n🎉 PHASE 2 EXIT GATE: ALL CHECKS MET SUCCESSFULLY.")
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Vigil Phase Exit-Gate Verification Engine")
-    parser.add_argument("--phase", required=True, help="Phase number to verify (0 or 1)")
+    parser.add_argument("--phase", required=True, help="Phase number to verify (0, 1, or 2)")
     args = parser.parse_args()
 
     phase = str(args.phase).strip()
@@ -248,6 +377,8 @@ def main() -> int:
         success = verify_phase_0()
     elif phase == "1":
         success = verify_phase_1()
+    elif phase == "2":
+        success = verify_phase_2()
     else:
         print(f"Error: Phase {phase} verification not implemented yet.")
         return 1
