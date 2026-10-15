@@ -3,7 +3,7 @@ trigger: always_on
 description: Vigil project rules — apply to every task in this workspace
 ---
 
-1. Before any work, read `AGENTS.md`, then `docs/MASTER_PLAN.md` (entire), `docs/PROGRESS.md`, `docs/EVIDENCE.md`.
+1. Before any work, read `AGENTS.md`, then `docs/MASTER_PLAN.md` (entire), `docs/ML_PROGRAM.md` (entire), `docs/PROGRESS.md`, `docs/EVIDENCE.md`.
 2. Follow `.agent/skills/complete-solution/SKILL.md` and `.agent/skills/repo-standards/SKILL.md` on every task.
 3. Never claim completion, performance, validation or compliance without a committed artifact proving that specific claim; always label synthetic-data results as synthetic.
 4. Never edit `docs/MASTER_PLAN.md`; file `docs/proposals/PROP-####-*.md` instead.

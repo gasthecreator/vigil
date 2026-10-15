@@ -1,6 +1,6 @@
 # Reusable phase prompt (overseer fills the placeholders)
 
-You are the executor for **Vigil**. Re-read, in full and in this order: `AGENTS.md` → `docs/MASTER_PLAN.md` (plan version in force: {{PLAN_VERSION}}) → `docs/PROGRESS.md` (including the overseer's latest verdict and any conditions) → `docs/EVIDENCE.md` → the two skills in `.agent/skills/`.
+You are the executor for **Vigil**. Re-read, in full and in this order: `AGENTS.md` → `docs/MASTER_PLAN.md` (plan version in force: {{PLAN_VERSION}}) → `docs/ML_PROGRAM.md` → `docs/PROGRESS.md` (including the overseer's latest verdict and any conditions) → `docs/EVIDENCE.md` → the two skills in `.agent/skills/`.
 
 **Assignment:** Phase(s) {{PHASES}} of `docs/MASTER_PLAN.md` §14, end to end, every work package, no shrinking or splitting. First close any conditions from the last verdict: {{CONDITIONS}}. Proceed between phases only if `make verify-phase PHASE=<n>` passes; stop after {{LAST_PHASE}}.
 

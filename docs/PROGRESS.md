@@ -1,6 +1,6 @@
 # Vigil — Progress Ledger
 
-> Maintained by the executor (status, SHAs, blockers) and the overseer (verdicts). The executor **must not edit the Verdict column**. Plan version in force: **1.0** (see `docs/MASTER_PLAN.md`).
+> Maintained by the executor (status, SHAs, blockers) and the overseer (verdicts). The executor **must not edit the Verdict column**. Plan version in force: **1.1** (see `docs/MASTER_PLAN.md`).
 
 ## Phase status
 | Phase | Title | Status | Last verified SHA | Report | Verdict (overseer only) |
