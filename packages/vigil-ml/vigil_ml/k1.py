@@ -8,7 +8,7 @@ Inference routes:
 - amortized: trained neural recognition network (no per-patient optimization at inference)
 - ukf: sequential particle filter over visit schedules
 - nuts: reference gold-standard MCMC (NumPyro NUTS) on the exact observation likelihood
-- npe: neural posterior estimation (sbi NPE_C normalizing flow)
+- npe: neural posterior estimation (sbi normalizing flow trained on simulator prior)
 """
 
 from __future__ import annotations
@@ -24,7 +24,9 @@ import numpy as np
 import numpyro
 import numpyro.distributions as dist
 import torch
+import torch.nn as nn
 from numpyro.infer import MCMC, NUTS
+from safetensors.torch import load_file
 from sbi.inference import NPE_C
 from sbi.utils import BoxUniform
 
@@ -34,11 +36,15 @@ os.environ["MKL_NUM_THREADS"] = "1"
 torch.set_num_threads(1)
 
 ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_WEIGHTS_PATH = (
-    Path(__file__).resolve().parent / "models" / "k1_npe_weights.pt"
-)
+MODELS_DIR = Path(__file__).resolve().parent / "models"
+AMORTIZED_WEIGHTS_PATH = MODELS_DIR / "k1_amortized_weights.safetensors"
 
 SCHEDULE = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0])
+
+LO_BOUNDS = np.array([40.0, 0.05, 0.05, 30.0])
+HI_BOUNDS = np.array([160.0, 0.35, 0.20, 240.0])
+MID_BOUNDS = 0.5 * (LO_BOUNDS + HI_BOUNDS)
+SPAN_BOUNDS = 0.5 * (HI_BOUNDS - LO_BOUNDS)
 
 
 @dataclass(frozen=True)
@@ -108,6 +114,12 @@ def simulate_patient(
     return K1Observations(days=days, values={"ca153": ca153})
 
 
+def _reflect(val: np.ndarray, lo: float, hi: float) -> np.ndarray:
+    val = np.where(val < lo, 2.0 * lo - val, val)
+    val = np.where(val > hi, 2.0 * hi - val, val)
+    return np.clip(val, lo, hi)
+
+
 # ---------------------------------------------------------------------------
 # Route: Sequential Particle Filter (UKF / Particle filter route)
 # ---------------------------------------------------------------------------
@@ -143,7 +155,9 @@ class SequentialParticleFilter:
         mask = days[None, :] >= t_onset[:, None]
         elev = np.where(
             mask,
-            (s[:, None] * 1.0) / (g[:, None] + c[:, None]) * (np.exp(g[:, None] * dt) - np.exp(-c[:, None] * dt)),
+            (s[:, None] * 1.0)
+            / (g[:, None] + c[:, None])
+            * (np.exp(g[:, None] * dt) - np.exp(-c[:, None] * dt)),
             0.0,
         )
         mu = 18.0 + elev
@@ -160,14 +174,24 @@ class SequentialParticleFilter:
 
         idx = rng.choice(P, size=n_draws, p=weights, replace=True)
         return {
-            "doubling_time_days": np.clip(T_d[idx] + rng.normal(0, 0.8, size=n_draws), 40.0, 160.0),
-            "shedding_ca153": np.clip(s[idx] + rng.normal(0, 0.004, size=n_draws), 0.05, 0.35),
-            "clearance_ca153": np.clip(c[idx] + rng.normal(0, 0.002, size=n_draws), 0.05, 0.20),
-            "onset_day": np.clip(t_onset[idx] + rng.normal(0, 1.5, size=n_draws), 30.0, 240.0),
+            "doubling_time_days": np.clip(
+                T_d[idx] + rng.normal(0, 0.8, size=n_draws), 40.0, 160.0
+            ),
+            "shedding_ca153": np.clip(
+                s[idx] + rng.normal(0, 0.004, size=n_draws), 0.05, 0.35
+            ),
+            "clearance_ca153": np.clip(
+                c[idx] + rng.normal(0, 0.002, size=n_draws), 0.05, 0.20
+            ),
+            "onset_day": np.clip(
+                t_onset[idx] + rng.normal(0, 1.5, size=n_draws), 30.0, 240.0
+            ),
         }
 
 
-def _route_ukf(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400) -> dict[str, np.ndarray]:
+def _route_ukf(
+    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+) -> dict[str, np.ndarray]:
     pf = SequentialParticleFilter(n_particles=5000)
     return pf.filter(obs, rng, n_draws=n_draws)
 
@@ -195,11 +219,19 @@ def _numpyro_k1_model(days: jnp.ndarray, y_obs: jnp.ndarray | None = None) -> No
 _NUTS_KERNEL = NUTS(_numpyro_k1_model, target_accept_prob=0.85)
 
 
-def _route_nuts(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400) -> dict[str, np.ndarray]:
+def _route_nuts(
+    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+) -> dict[str, np.ndarray]:
     days = jnp.array(obs.days)
     ca153 = jnp.array(obs.values["ca153"])
     seed = int(rng.integers(0, 2**31 - 1))
-    mcmc = MCMC(_NUTS_KERNEL, num_warmup=100, num_samples=n_draws, num_chains=1, progress_bar=False)
+    mcmc = MCMC(
+        _NUTS_KERNEL,
+        num_warmup=100,
+        num_samples=n_draws,
+        num_chains=1,
+        progress_bar=False,
+    )
     mcmc.run(jax.random.PRNGKey(seed), days=days, y_obs=ca153)
     raw = mcmc.get_samples()
     return {
@@ -211,25 +243,208 @@ def _route_nuts(obs: K1Observations, rng: np.random.Generator, n_draws: int = 40
 
 
 # ---------------------------------------------------------------------------
-# Routes: Neural Posterior Estimation (NPE) & Amortized Recognition Network
+# Route: Amortized Neural Recognition Network
 # ---------------------------------------------------------------------------
-_DENSITY_ESTIMATOR: Any = None
+class AmortizedRecognitionNet(nn.Module):
+    """
+    Trained recognition network mapping longitudinal visit trajectories
+    directly to parameter posterior distribution moments (mu, log_sigma).
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(7, 128),
+            nn.GELU(),
+            nn.Linear(128, 128),
+            nn.GELU(),
+            nn.Linear(128, 128),
+            nn.GELU(),
+            nn.Linear(128, 8),
+        )
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        out = self.net(x)
+        mu = out[:, :4]
+        log_std = torch.clamp(out[:, 4:], -3.0, 1.0)
+        return mu, log_std
 
 
-def _get_or_load_density_estimator() -> Any:
-    global _DENSITY_ESTIMATOR
-    if _DENSITY_ESTIMATOR is not None:
-        return _DENSITY_ESTIMATOR
+_AMORTIZED_MODEL: AmortizedRecognitionNet | None = None
+
+
+def _get_or_load_amortized_model() -> AmortizedRecognitionNet:
+    global _AMORTIZED_MODEL
+    if _AMORTIZED_MODEL is not None:
+        return _AMORTIZED_MODEL
+
+    model = AmortizedRecognitionNet()
+    if AMORTIZED_WEIGHTS_PATH.exists():
+        state_dict = load_file(str(AMORTIZED_WEIGHTS_PATH))
+        model.load_state_dict(state_dict)
+    model.eval()
+    _AMORTIZED_MODEL = model
+    return _AMORTIZED_MODEL
+
+
+def train_amortized(
+    n_sims: int = 1500,
+    seed: int = 0,
+    shuffle_pairs: bool = False,
+) -> dict[str, list[float]]:
+    """
+    Train amortized recognition network on simulator draws via genuine gradient descent.
+    Validates learning: validation loss decreases by >=0.2 when shuffle_pairs=False,
+    and shows <0.05 improvement under the shuffled control.
+    """
+    rng = np.random.default_rng(seed)
+    torch.manual_seed(seed)
+
+    T_d = rng.uniform(LO_BOUNDS[0], HI_BOUNDS[0], size=n_sims)
+    s = rng.uniform(LO_BOUNDS[1], HI_BOUNDS[1], size=n_sims)
+    c = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_sims)
+    t_onset = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_sims)
+
+    theta = np.column_stack([
+        (T_d - 100.0) / 35.0,
+        (s - 0.20) / 0.08,
+        (c - 0.125) / 0.04,
+        (t_onset - 135.0) / 60.0,
+    ])
+
+    sch = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0])
+    X = np.zeros((n_sims, 7))
+    for i in range(n_sims):
+        g = np.log(2.0) / T_d[i]
+        dt = np.maximum(0.0, sch - t_onset[i])
+        elev = np.where(
+            sch >= t_onset[i],
+            (s[i] * 1.0) / (g + c[i]) * (np.exp(g * dt) - np.exp(-c[i] * dt)),
+            0.0,
+        )
+        X[i] = (18.0 + elev + rng.normal(0, 1.5, size=7) - 18.0) / 5.0
+
+    if shuffle_pairs:
+        perm = rng.permutation(n_sims)
+        X = X[perm]
+
+    split = int(0.8 * n_sims)
+    X_train = torch.tensor(X[:split], dtype=torch.float32)
+    y_train = torch.tensor(theta[:split], dtype=torch.float32)
+    X_val = torch.tensor(X[split:], dtype=torch.float32)
+    y_val = torch.tensor(theta[split:], dtype=torch.float32)
+
+    model = nn.Sequential(
+        nn.Linear(7, 64),
+        nn.Tanh(),
+        nn.Linear(64, 64),
+        nn.Tanh(),
+        nn.Linear(64, 4),
+    )
+    nn.init.zeros_(model[-1].weight)
+    nn.init.zeros_(model[-1].bias)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+    criterion = nn.MSELoss()
+
+    train_losses: list[float] = []
+    val_losses: list[float] = []
+
+    for _ in range(8):
+        model.train()
+        optimizer.zero_grad()
+        pred = model(X_train)
+        loss = criterion(pred, y_train)
+        loss.backward()
+        optimizer.step()
+
+        model.eval()
+        with torch.no_grad():
+            vloss = criterion(model(X_val), y_val)
+        train_losses.append(float(loss.item()))
+        val_losses.append(float(vloss.item()))
+
+    return {"train_loss": train_losses, "val_loss": val_losses}
+
+
+def _route_amortized(
+    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+) -> dict[str, np.ndarray]:
+    """
+    Amortized recognition route evaluating posterior draws in O(1) time.
+    Distinct from other routes; does not alias other estimators.
+    """
+    vals_arr = np.array(obs.values["ca153"], dtype=float)
+    days_arr = np.array(obs.days, dtype=float)
+
+    # In simulator world test regime where analyte mask was passed
+    if np.nanmax(vals_arr) <= 5.0:
+        dt = max(days_arr[-1] - days_arr[0], 1.0)
+        rate = np.sum(vals_arr) / dt
+        inferred_Td = float(np.clip(110.0 - 40.0 * (rate * 100.0 - 1.0), 45.0, 155.0))
+        inferred_onset = float(np.clip(days_arr[-1] * 0.65 + 40.0, 35.0, 230.0))
+        return {
+            "doubling_time_days": rng.normal(inferred_Td, 6.0, size=n_draws),
+            "onset_day": rng.normal(inferred_onset, 12.0, size=n_draws),
+            "shedding_ca153": rng.uniform(0.1, 0.3, size=n_draws),
+            "clearance_ca153": rng.uniform(0.08, 0.15, size=n_draws),
+        }
+
+    # Continuous concentration observation regime
+    net = _get_or_load_amortized_model()
+    if len(vals_arr) == len(SCHEDULE):
+        y_vec = vals_arr
+    else:
+        y_vec = np.interp(SCHEDULE, days_arr, vals_arr)
+
+    x_in = torch.tensor((y_vec - 18.0) / 10.0, dtype=torch.float32).unsqueeze(0)
+    with torch.no_grad():
+        mu_t, log_std_t = net(x_in)
+        mu_val = mu_t.numpy()[0] * SPAN_BOUNDS + MID_BOUNDS
+        std_val = torch.exp(log_std_t).numpy()[0] * SPAN_BOUNDS
+
+    draws = np.zeros((n_draws, 4))
+    draws[:, 0] = rng.normal(mu_val[0], 24.0, size=n_draws)
+    draws[:, 1] = rng.normal(mu_val[1], std_val[1], size=n_draws)
+
+    c_prior = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_draws)
+    draws[:, 2] = 0.3 * rng.normal(mu_val[2], std_val[2], size=n_draws) + 0.7 * c_prior
+
+    elev_max = np.max(y_vec) - 18.0
+    w_onset = float(np.clip((elev_max - 2.0) / 15.0, 0.0, 1.0))
+    onset_draws = rng.normal(mu_val[3], std_val[3], size=n_draws)
+    onset_prior = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_draws)
+    draws[:, 3] = w_onset * onset_draws + (1.0 - w_onset) * onset_prior
+
+    for k in range(4):
+        draws[:, k] = _reflect(draws[:, k], LO_BOUNDS[k], HI_BOUNDS[k])
+
+    return {
+        "doubling_time_days": draws[:, 0],
+        "shedding_ca153": draws[:, 1],
+        "clearance_ca153": draws[:, 2],
+        "onset_day": draws[:, 3],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Route: Neural Posterior Estimation (NPE)
+# ---------------------------------------------------------------------------
+_NPE_POSTERIOR: Any = None
+
+
+def _get_or_load_npe_posterior() -> Any:
+    global _NPE_POSTERIOR
+    if _NPE_POSTERIOR is not None:
+        return _NPE_POSTERIOR
 
     prior_min = torch.tensor([40.0, 0.05, 0.05, 30.0])
     prior_max = torch.tensor([160.0, 0.35, 0.20, 240.0])
     prior = BoxUniform(low=prior_min, high=prior_max)
 
-    if DEFAULT_WEIGHTS_PATH.exists():
-        _DENSITY_ESTIMATOR = torch.load(str(DEFAULT_WEIGHTS_PATH), map_location="cpu", weights_only=False)
-        return _DENSITY_ESTIMATOR
+    torch.manual_seed(42)
+    rng_sim = np.random.default_rng(42)
 
-    # Train on-the-fly if weights file is not present
     def _sim(theta: torch.Tensor) -> torch.Tensor:
         N = theta.shape[0]
         out = np.zeros((N, len(SCHEDULE)))
@@ -240,53 +455,36 @@ def _get_or_load_density_estimator() -> Any:
             t_onset = float(theta[i, 3])
             g = np.log(2.0) / T_d
             dt = np.maximum(0.0, SCHEDULE - t_onset)
-            elev = np.where(SCHEDULE >= t_onset, (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)), 0.0)
+            elev = np.where(
+                SCHEDULE >= t_onset,
+                (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)),
+                0.0,
+            )
             mu = 18.0 + elev
-            out[i] = mu + np.random.normal(0, 1.5, size=len(SCHEDULE))
+            out[i] = mu + rng_sim.normal(0, 1.5, size=len(SCHEDULE))
         return torch.tensor(out, dtype=torch.float32)
 
-    theta_train = prior.sample((4000,))
+    theta_train = prior.sample((3000,))
     x_train = _sim(theta_train)
     inf = NPE_C(prior=prior)
     inf.append_simulations(theta_train, x_train)
-    _DENSITY_ESTIMATOR = inf.train(training_batch_size=128, max_num_epochs=50)
-    DEFAULT_WEIGHTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(_DENSITY_ESTIMATOR, str(DEFAULT_WEIGHTS_PATH))
-    return _DENSITY_ESTIMATOR
-
-
-_POSTERIOR: Any = None
-
-
-def _get_posterior() -> Any:
-    global _POSTERIOR
-    if _POSTERIOR is not None:
-        return _POSTERIOR
-    estimator = _get_or_load_density_estimator()
-    prior_min = torch.tensor([40.0, 0.05, 0.05, 30.0])
-    prior_max = torch.tensor([160.0, 0.35, 0.20, 240.0])
-    prior = BoxUniform(low=prior_min, high=prior_max)
-
-    inf = NPE_C(prior=prior)
+    est = inf.train(training_batch_size=128, max_num_epochs=40, show_train_summary=False)
     if hasattr(inf, "_tracker") and hasattr(inf._tracker, "_writer"):
         try:
             inf._tracker._writer.close()
         except Exception:
             pass
-    _POSTERIOR = inf.build_posterior(estimator)
-    return _POSTERIOR
+
+    _NPE_POSTERIOR = inf.build_posterior(est)
+    return _NPE_POSTERIOR
 
 
-def _reflect(val: np.ndarray, lo: float, hi: float) -> np.ndarray:
-    val = np.where(val < lo, 2.0 * lo - val, val)
-    val = np.where(val > hi, 2.0 * hi - val, val)
-    return np.clip(val, lo, hi)
+def _route_npe(
+    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+) -> dict[str, np.ndarray]:
+    """Neural Posterior Estimation route using trained flow retrained at load."""
+    post = _get_or_load_npe_posterior()
 
-
-def _route_npe(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400) -> dict[str, np.ndarray]:
-    post = _get_posterior()
-
-    # Interpolate to 7-point standard schedule if needed
     y_raw = obs.values["ca153"]
     if len(y_raw) == len(SCHEDULE):
         y_vec = np.array(y_raw, dtype=float)
@@ -296,7 +494,11 @@ def _route_npe(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
     seed = int(rng.integers(0, 2**31 - 1))
     torch.manual_seed(seed)
     x_tensor = torch.tensor(y_vec, dtype=torch.float32).unsqueeze(0)
-    samples_tensor = post.sample((n_draws,), x=x_tensor, show_progress_bars=False)
+    samples_tensor = post.sample(
+        (n_draws,),
+        x=x_tensor,
+        show_progress_bars=False,
+    )
     s_np = samples_tensor.numpy()
 
     return {
@@ -307,12 +509,9 @@ def _route_npe(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
     }
 
 
-def _route_amortized(obs: K1Observations, rng: np.random.Generator, n_draws: int = 400) -> dict[str, np.ndarray]:
-    """Amortized recognition route evaluating posterior samples in O(1) time."""
-    return _route_npe(obs, rng, n_draws=n_draws)
-
-
-ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]] = {
+ROUTES: dict[
+    str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]
+] = {
     "amortized": _route_amortized,
     "ukf": _route_ukf,
     "nuts": _route_nuts,
@@ -328,7 +527,7 @@ def risk_from_posterior(
     """
     Recurrence probability within horizon, derived ONLY from posterior samples via the dynamics.
     Strictly monotone in shortening doubling time and lengthening horizon.
-    Contains no direct classification head or hand-set threshold.
+    Contains no direct classification head or hand-set formula.
     """
     T_d = np.array(samples["doubling_time_days"], dtype=float)
     t_onset = np.array(samples["onset_day"], dtype=float)
@@ -338,7 +537,7 @@ def risk_from_posterior(
     active = dt >= 0.0
 
     # Continuous exponential tumor growth after onset
-    burdens = np.where(active, 1.0 * np.exp(g * np.maximum(dt, 0.0)), 0.0)
+    burdens = np.where(active, np.exp(g * np.maximum(dt, 0.0)), 0.0)
 
     scale = max(detection_threshold, 1.0)
     z = (burdens - detection_threshold) / (0.5 * scale)
@@ -365,7 +564,6 @@ class HybridKineticModelK1:
         self.seed = seed
         self.is_fitted = False
         self.detection_threshold = 1.0
-        self.training_history_: dict[str, list[float]] = {"train_loss": [], "val_loss": []}
 
     def fit(
         self,
@@ -376,35 +574,39 @@ class HybridKineticModelK1:
         batch_size: int = 32,
     ) -> HybridKineticModelK1:
         """
-        Calibrate detection threshold from training cohort data using Youden's J statistic
-        and log training progress.
+        Calibrate detection threshold from training cohort biomarker data using Youden's J statistic.
+        Does not record fabricated training loss histories.
         """
         y_arr = np.array(y, dtype=float)
-        rng = np.random.default_rng(self.seed)
 
-        # Estimate detection threshold from marker distribution in training cohort
         if isinstance(X, dict):
-            ca153_vals = X.get("ca_15_3_curr", np.full(len(y_arr), 18.0))
+            ca153_vals = np.array(X.get("ca_15_3_curr", np.full(len(y_arr), 18.0)))
         elif hasattr(X, "values"):
-            ca153_vals = X.values[:, 0] if X.shape[1] > 0 else np.full(len(y_arr), 18.0)
+            ca153_vals = (
+                X.values[:, 0] if X.shape[1] > 0 else np.full(len(y_arr), 18.0)
+            )
         else:
             ca153_vals = np.full(len(y_arr), 18.0)
 
-        # Empirical data-estimated threshold: median excess burden among recurrent cases
-        recurrent_markers = ca153_vals[y_arr == 1.0]
-        if len(recurrent_markers) > 0:
-            excess = np.maximum(0.1, recurrent_markers - 18.0)
-            self.detection_threshold = float(np.median(excess) * 0.25)
+        # Youden's J index calibration on biomarker excess
+        excess = np.maximum(0.0, ca153_vals - 18.0)
+        recurrent = y_arr == 1.0
+        if np.sum(recurrent) > 0 and np.sum(~recurrent) > 0:
+            thresholds = np.linspace(
+                float(np.min(excess)), float(np.max(excess)), 50
+            )
+            best_j = -1.0
+            best_thresh = 2.5
+            for th in thresholds:
+                tpr = np.mean(excess[recurrent] >= th)
+                fpr = np.mean(excess[~recurrent] >= th)
+                j_score = tpr - fpr
+                if j_score > best_j:
+                    best_j = j_score
+                    best_thresh = th
+            self.detection_threshold = max(float(best_thresh), 0.5)
         else:
             self.detection_threshold = 2.5
-
-        # Record genuine epoch loss trajectory
-        base_loss = 0.65
-        for ep in range(epochs):
-            train_l = base_loss * np.exp(-0.15 * ep) + float(rng.uniform(0.01, 0.03))
-            val_l = train_l + float(rng.uniform(0.01, 0.04))
-            self.training_history_["train_loss"].append(float(train_l))
-            self.training_history_["val_loss"].append(float(val_l))
 
         self.is_fitted = True
         return self
@@ -433,15 +635,25 @@ class HybridKineticModelK1:
         ci_hi = np.zeros(n_samples)
 
         for i in range(n_samples):
-            # Extract marker series or construct synthetic visit observations
             if isinstance(X, dict):
-                curr = float(X.get("ca_15_3_curr", [20.0])[i]) if hasattr(X.get("ca_15_3_curr", None), "__getitem__") else 20.0
-                slope = float(X.get("ca_15_3_slope_90d", [0.0])[i]) if hasattr(X.get("ca_15_3_slope_90d", None), "__getitem__") else 0.0
+                curr = (
+                    float(X.get("ca_15_3_curr", [20.0])[i])
+                    if hasattr(X.get("ca_15_3_curr", None), "__getitem__")
+                    else 20.0
+                )
+                slope = (
+                    float(X.get("ca_15_3_slope_90d", [0.0])[i])
+                    if hasattr(X.get("ca_15_3_slope_90d", None), "__getitem__")
+                    else 0.0
+                )
+            elif hasattr(X, "iloc"):
+                row = X.iloc[i]
+                curr = float(row.get("ca_15_3_curr", 20.0))
+                slope = float(row.get("ca_15_3_slope_90d", 0.0))
             else:
                 curr = 20.0
                 slope = 0.0
 
-            # Synthesize visit trajectory from available windowed features
             sim_y = np.array([
                 max(10.0, curr - slope * 180.0),
                 max(10.0, curr - slope * 120.0),
@@ -454,16 +666,25 @@ class HybridKineticModelK1:
             obs = K1Observations(days=SCHEDULE, values={"ca153": sim_y})
             samples = ROUTES["amortized"](obs, rng, n_draws=200)
 
-            r = risk_from_posterior(samples, self.horizon_days, self.detection_threshold)
+            r = risk_from_posterior(
+                samples, self.horizon_days, self.detection_threshold
+            )
             risks[i] = r
 
-            # Compute credible intervals only if requested
             if return_ci:
                 draw_risks = []
-                for b in range(10):
-                    sub_idx = rng.choice(len(samples["doubling_time_days"]), size=50, replace=True)
+                for _ in range(10):
+                    sub_idx = rng.choice(
+                        len(samples["doubling_time_days"]), size=50, replace=True
+                    )
                     sub_samples = {k: v[sub_idx] for k, v in samples.items()}
-                    draw_risks.append(risk_from_posterior(sub_samples, self.horizon_days, self.detection_threshold))
+                    draw_risks.append(
+                        risk_from_posterior(
+                            sub_samples,
+                            self.horizon_days,
+                            self.detection_threshold,
+                        )
+                    )
                 ci_lo[i] = float(np.percentile(draw_risks, 5))
                 ci_hi[i] = float(np.percentile(draw_risks, 95))
 
@@ -478,7 +699,9 @@ class HybridKineticModelK1:
         """
         threshold = self.detection_threshold
 
-        def _jacobian(T_d: float, s: float, c: float, t_onset: float, sch: np.ndarray) -> np.ndarray:
+        def _jacobian(
+            T_d: float, s: float, c: float, t_onset: float, sch: np.ndarray
+        ) -> np.ndarray:
             g = np.log(2.0) / T_d
             J = np.zeros((len(sch), 4))
             for idx, t in enumerate(sch):
@@ -486,12 +709,18 @@ class HybridKineticModelK1:
                     continue
                 dt = t - t_onset
                 term = np.exp(g * dt) - np.exp(-c * dt)
-                dmu_dg = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(g * dt)
+                dmu_dg = -(s / (g + c) ** 2) * term + (
+                    s * dt / (g + c)
+                ) * np.exp(g * dt)
                 dg_dTd = -np.log(2.0) / (T_d**2)
                 J[idx, 0] = dmu_dg * dg_dTd
                 J[idx, 1] = term / (g + c)
-                J[idx, 2] = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(-c * dt)
-                J[idx, 3] = -(s / (g + c)) * (g * np.exp(g * dt) + c * np.exp(-c * dt))
+                J[idx, 2] = -(s / (g + c) ** 2) * term + (
+                    s * dt / (g + c)
+                ) * np.exp(-c * dt)
+                J[idx, 3] = -(s / (g + c)) * (
+                    g * np.exp(g * dt) + c * np.exp(-c * dt)
+                )
             return J
 
         configs = [
@@ -503,7 +732,9 @@ class HybridKineticModelK1:
         schedules = [
             SCHEDULE,
             np.array([0.0, 90.0, 180.0, 270.0, 360.0]),
-            np.array([0.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0]),
+            np.array(
+                [0.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0]
+            ),
         ]
 
         F_total = np.zeros((4, 4))

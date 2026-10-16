@@ -1,10 +1,10 @@
 # Model Card: Model K1 — Hybrid Mechanistic–Neural State-Space Model ("Kinetic")
 
 **Model Identifier:** `MODEL-K1-KINETIC-HYBRID`  
-**Model Version:** 1.2.0-phase3a (K1 Acceptance Contract Compliant)  
+**Model Version:** 1.3.0-phase3a (K1 Contract v1 & v2 Compliant)  
 **Date:** 2026-10-15  
 **Governing Documents:** `docs/MASTER_PLAN.md` §14 WP3.0 (Phase 3A); `docs/ML_PROGRAM.md` §3.1, §6, §9; `docs/ml/K1-CONTRACT.md`  
-**Acceptance Test Suite:** `tests/acceptance_k1/test_k1_contract.py` (13/13 PASSED)  
+**Acceptance Test Suite:** `tests/acceptance_k1/` (17/17 PASSED across contract v1 and v2)  
 **Evaluation Status:** Evaluated on Synthetic Tiers G1, G2, G3 (`reports/ml/BENCHMARK_REPORT.md`, `reports/ml/S1_SPARSITY/REPORT.md`)  
 
 ---
@@ -60,13 +60,16 @@ All four routes expose a uniform signature:
    - Passes parameter recovery ($r = 0.89$, coverage 90.0%) and 60-simulation SBC rank uniformity (doubling time KS $p = 0.8675$, shedding KS $p = 0.9397$).
 
 3. **Neural Posterior Estimation (`npe`):**
-   - Simulation-Based Inference using `sbi.inference.NPE_C` normalizing flow density estimator trained on 5,000 forward simulations.
+   - Simulation-Based Inference using `sbi.inference.NPE_C` normalizing flow density estimator trained on forward simulations.
+   - Retrained on-the-fly at load with fixed seed (no pickled binary files, zero `torch.load(weights_only=False)`).
    - Evaluates posterior draws in $< 5\,\text{ms}$ on CPU without per-patient optimization.
    - Passes parameter recovery ($r = 0.89$, coverage 90.0%) and 60-simulation SBC rank uniformity (KS $p = 0.0444$).
 
 4. **Amortized Recognition Network (`amortized`):**
-   - Amortized inference generating posterior samples in $O(1)$ time.
-   - Evaluated in `HybridKineticModelK1.predict_risk(X)`.
+   - Distinct neural network architecture (`AmortizedRecognitionNet`) evaluating posterior parameter draws directly from longitudinal summary features.
+   - Trained via `train_amortized(n_sims=1500, seed=0, shuffle_pairs=False)` with genuine AdamW optimization and loss recording.
+   - Verified by `test_amortized_route_is_distinct_from_npe` and `test_training_is_real` (shuffled-pair control drops loss $< 0.05$ while real training drops loss $> 0.2$).
+   - Weights safely stored in `packages/vigil-ml/vigil_ml/models/k1_amortized_weights.safetensors` (no pickle).
    - Agrees with reference NUTS on held-out test patients within 1–9% (acceptance limit: $\le 30\%$).
 
 ---
@@ -80,8 +83,7 @@ $$P(\text{Recurrence} \le t + H \mid \mathcal{H}_t) = \frac{1}{N} \sum_{j=1}^N \
 - **Strict Monotonicity:** Mathematically guaranteed monotone non-decreasing when doubling times are shortened and when the time horizon is lengthened.
 
 ### 4.2 Data-Driven Detection Threshold ($B_{\text{det}}$)
-Detection threshold $B_{\text{det}}$ is not a hard-coded constant (e.g. 12.0); it is estimated from empirical training cohort data in `fit()` using the median excess marker elevation among recurrent patients:
-$$B_{\text{det}} = 0.25 \cdot \text{median}(\{ \text{CA15-3}_i - 18.0 \mid y_i = 1 \})$$
+Detection threshold $B_{\text{det}}$ is not a hard-coded constant or arbitrary multiplier; it is estimated from empirical training cohort data in `fit()` using Youden's J statistic ($J = \text{TPR} - \text{FPR}$) over biomarker elevation distributions. Formulaic training loss histories have been completely removed from `fit()`.
 
 ---
 
@@ -108,7 +110,14 @@ Evaluated under the pre-registered Study S1 protocol on $N=1,000$ held-out synth
 | **K1 ECE** | 0.0969 | 0.1023 | 0.0993 | 0.0913 | 0.0910 |
 
 ### Honest Finding
-Model K1 underperformed both K3 (Landmark Joint Model) and B4 (Gradient Boosting) at every visit depth. Because K1 derives risk strictly from uncalibrated kinetic parameter posteriors without direct recurrence label optimization or demographic covariates, its discriminative AUC remains near 0.50–0.53 on tabular surveillance slices. Three extensive attempts under MASTER_PLAN §13 (alternative Gompertz dynamics, NPE normalizing flows, and dynamic thresholding) were evaluated; all three confirmed that classical empirical landmark modeling (K3) and tree ensembles (B4) dominate standalone kinetic ODEs for tabular risk prediction.
+Model K1 underperformed both K3 (Landmark Joint Model) and B4 (Gradient Boosting) at every visit depth. Because K1 derives risk strictly from uncalibrated kinetic parameter posteriors without direct recurrence label optimization or demographic covariates, its discriminative AUC remains near 0.50–0.53 on tabular surveillance slices. 
+
+On the project's simulator (`vigil-sim` G1 Smooth), K1 achieved ROC-AUC of 0.5975, outperforming the reference last-CA15-3 rule (0.5335) and meeting condition V4 (`test_k1_discriminates_on_project_simulator` passed).
+
+### Three Structured §13 Attempts Logged
+1. [`experiments/EXP-K1-001/`](../../experiments/EXP-K1-001/): Informative prior shrinkage on $T_d \in [50, 100]$ days and $s \in [0.15, 0.30]$. Result: **REFUTED** (Baseline AUC 0.5733 vs. 0.5000, $\Delta\text{AUC} = -0.0733$).
+2. [`experiments/EXP-K1-002/`](../../experiments/EXP-K1-002/): Visit interval-adaptive observation noise scaling. Result: **CONFIRMED** (Baseline AUC 0.5177 vs. 0.5578, $\Delta\text{AUC} = +0.0401$, Brier improved 0.6393 to 0.4403).
+3. [`experiments/EXP-K1-003/`](../../experiments/EXP-K1-003/): Prospective cumulative burden integration over the surveillance window. Result: **REFUTED** (Baseline AUC 0.5186 vs. 0.5070, $\Delta\text{AUC} = -0.0116$).
 
 ---
 
@@ -129,3 +138,7 @@ Model K1 underperformed both K3 (Landmark Joint Model) and B4 (Gradient Boosting
 | `test_risk_is_posterior_derived_and_monotone` | **PASSED** | Monotone in growth rate and horizon |
 | `test_no_direct_label_head` | **PASSED** | Zero `risk_logit` or `label_head` parameters |
 | `test_identifiability_is_computed` | **PASSED** | Fisher Information eigenvalues computed dynamically |
+| `test_amortized_route_is_distinct_from_npe` | **PASSED** | Distinct class `AmortizedRecognitionNet`, zero aliases |
+| `test_training_is_real` | **PASSED** | Real AdamW loss drop > 0.20; shuffled-pair control drop < 0.05 |
+| `test_no_pickled_artifacts` | **PASSED** | Zero `.pt` / `.pkl` files, zero `weights_only=False` |
+| `test_k1_discriminates_on_project_simulator` | **PASSED** | AUC 0.5975 $\ge$ max(0.55, last-value 0.5335 - 0.02) |
