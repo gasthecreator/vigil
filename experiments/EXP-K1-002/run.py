@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 import numpy as np
-from sklearn.metrics import roc_auc_score, brier_score_loss
+from sklearn.metrics import brier_score_loss, roc_auc_score
+from vigil_ml.k1 import ROUTES, K1Observations, risk_from_posterior
 from vigil_sim.generators import GeneratorType, get_generator
-from vigil_ml.k1 import K1Observations, ROUTES, risk_from_posterior
 
 DIR = Path(__file__).resolve().parent
+
 
 def main() -> None:
     config = json.loads((DIR / "config.json").read_text())
@@ -46,7 +48,7 @@ def main() -> None:
         intervals = np.diff(days)
         mean_dt = float(np.mean(intervals)) if len(intervals) > 0 else 90.0
         dt_factor = float(np.clip(mean_dt / 90.0, 0.7, 1.4))
-        
+
         # Adaptive adjustment on hazard
         risk_scaled = float(np.clip(risk_base * (1.0 / dt_factor), 0.0, 1.0))
 
@@ -73,21 +75,24 @@ def main() -> None:
     }
 
     (DIR / "results.json").write_text(json.dumps(results, indent=2))
-    print(f"EXP-K1-002 Complete: baseline AUC={auc_base:.4f}, scaled AUC={auc_scaled:.4f}, delta={delta_auc:.4f}")
+    print(
+        f"EXP-K1-002 Complete: baseline AUC={auc_base:.4f}, scaled AUC={auc_scaled:.4f}, delta={delta_auc:.4f}"
+    )
 
     report = f"""# EXP-K1-002 Report: Interval-Adaptive Noise Scaling
 
-- **Baseline ROC-AUC:** {results['baseline_auc']:.4f}
-- **Intervention ROC-AUC:** {results['intervention_auc']:.4f}
-- **Delta ROC-AUC:** {results['delta_auc']:+.4f}
-- **Baseline Brier Score:** {results['baseline_brier']:.4f}
-- **Intervention Brier Score:** {results['intervention_brier']:.4f}
-- **Hypothesis Verdict:** {'CONFIRMED' if results['hypothesis_confirmed'] else 'REFUTED'}
+- **Baseline ROC-AUC:** {results["baseline_auc"]:.4f}
+- **Intervention ROC-AUC:** {results["intervention_auc"]:.4f}
+- **Delta ROC-AUC:** {results["delta_auc"]:+.4f}
+- **Baseline Brier Score:** {results["baseline_brier"]:.4f}
+- **Intervention Brier Score:** {results["intervention_brier"]:.4f}
+- **Hypothesis Verdict:** {"CONFIRMED" if results["hypothesis_confirmed"] else "REFUTED"}
 
 ### Findings
-Interval-adaptive noise scaling adjusted for clustered sampling frequencies, shifting Brier score from {results['baseline_brier']:.4f} to {results['intervention_brier']:.4f}, with delta AUC of {results['delta_auc']:+.4f}.
+Interval-adaptive noise scaling adjusted for clustered sampling frequencies, shifting Brier score from {results["baseline_brier"]:.4f} to {results["intervention_brier"]:.4f}, with delta AUC of {results["delta_auc"]:+.4f}.
 """
     (DIR / "REPORT.md").write_text(report)
+
 
 if __name__ == "__main__":
     main()

@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 import numpy as np
-from sklearn.metrics import roc_auc_score, brier_score_loss
+from sklearn.metrics import brier_score_loss, roc_auc_score
+from vigil_ml.k1 import ROUTES, K1Observations, risk_from_posterior
 from vigil_sim.generators import GeneratorType, get_generator
-from vigil_ml.k1 import K1Observations, ROUTES, risk_from_posterior
 
 DIR = Path(__file__).resolve().parent
+
 
 def main() -> None:
     config = json.loads((DIR / "config.json").read_text())
@@ -64,7 +66,7 @@ def main() -> None:
                 else:
                     integral = dt
                 cum_burdens.append(integral)
-        
+
         mean_burden = float(np.mean(cum_burdens))
         # Map cumulative burden to calibrated prospective probability
         r_cum = float(1.0 - np.exp(-mean_burden / 500.0))
@@ -92,21 +94,24 @@ def main() -> None:
     }
 
     (DIR / "results.json").write_text(json.dumps(results, indent=2))
-    print(f"EXP-K1-003 Complete: point AUC={auc_point:.4f}, cum AUC={auc_cum:.4f}, delta={delta_auc:.4f}")
+    print(
+        f"EXP-K1-003 Complete: point AUC={auc_point:.4f}, cum AUC={auc_cum:.4f}, delta={delta_auc:.4f}"
+    )
 
     report = f"""# EXP-K1-003 Report: Cumulative Burden Integration
 
-- **Baseline ROC-AUC:** {results['baseline_auc']:.4f}
-- **Intervention ROC-AUC:** {results['intervention_auc']:.4f}
-- **Delta ROC-AUC:** {results['delta_auc']:+.4f}
-- **Baseline Brier Score:** {results['baseline_brier']:.4f}
-- **Intervention Brier Score:** {results['intervention_brier']:.4f}
-- **Hypothesis Verdict:** {'CONFIRMED' if results['hypothesis_confirmed'] else 'REFUTED'}
+- **Baseline ROC-AUC:** {results["baseline_auc"]:.4f}
+- **Intervention ROC-AUC:** {results["intervention_auc"]:.4f}
+- **Delta ROC-AUC:** {results["delta_auc"]:+.4f}
+- **Baseline Brier Score:** {results["baseline_brier"]:.4f}
+- **Intervention Brier Score:** {results["intervention_brier"]:.4f}
+- **Hypothesis Verdict:** {"CONFIRMED" if results["hypothesis_confirmed"] else "REFUTED"}
 
 ### Findings
-Prospective cumulative burden integration over the surveillance interval yielded an AUC of {results['intervention_auc']:.4f} versus {results['baseline_auc']:.4f} for point hazard, an incremental change of {results['delta_auc']:+.4f}.
+Prospective cumulative burden integration over the surveillance interval yielded an AUC of {results["intervention_auc"]:.4f} versus {results["baseline_auc"]:.4f} for point hazard, an incremental change of {results["delta_auc"]:+.4f}.
 """
     (DIR / "REPORT.md").write_text(report)
+
 
 if __name__ == "__main__":
     main()

@@ -174,18 +174,10 @@ class SequentialParticleFilter:
 
         idx = rng.choice(P, size=n_draws, p=weights, replace=True)
         return {
-            "doubling_time_days": np.clip(
-                T_d[idx] + rng.normal(0, 0.8, size=n_draws), 40.0, 160.0
-            ),
-            "shedding_ca153": np.clip(
-                s[idx] + rng.normal(0, 0.004, size=n_draws), 0.05, 0.35
-            ),
-            "clearance_ca153": np.clip(
-                c[idx] + rng.normal(0, 0.002, size=n_draws), 0.05, 0.20
-            ),
-            "onset_day": np.clip(
-                t_onset[idx] + rng.normal(0, 1.5, size=n_draws), 30.0, 240.0
-            ),
+            "doubling_time_days": np.clip(T_d[idx] + rng.normal(0, 0.8, size=n_draws), 40.0, 160.0),
+            "shedding_ca153": np.clip(s[idx] + rng.normal(0, 0.004, size=n_draws), 0.05, 0.35),
+            "clearance_ca153": np.clip(c[idx] + rng.normal(0, 0.002, size=n_draws), 0.05, 0.20),
+            "onset_day": np.clip(t_onset[idx] + rng.normal(0, 1.5, size=n_draws), 30.0, 240.0),
         }
 
 
@@ -305,12 +297,14 @@ def train_amortized(
     c = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_sims)
     t_onset = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_sims)
 
-    theta = np.column_stack([
-        (T_d - 100.0) / 35.0,
-        (s - 0.20) / 0.08,
-        (c - 0.125) / 0.04,
-        (t_onset - 135.0) / 60.0,
-    ])
+    theta = np.column_stack(
+        [
+            (T_d - 100.0) / 35.0,
+            (s - 0.20) / 0.08,
+            (c - 0.125) / 0.04,
+            (t_onset - 135.0) / 60.0,
+        ]
+    )
 
     sch = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0])
     X = np.zeros((n_sims, 7))
@@ -509,9 +503,7 @@ def _route_npe(
     }
 
 
-ROUTES: dict[
-    str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]
-] = {
+ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]] = {
     "amortized": _route_amortized,
     "ukf": _route_ukf,
     "nuts": _route_nuts,
@@ -582,9 +574,7 @@ class HybridKineticModelK1:
         if isinstance(X, dict):
             ca153_vals = np.array(X.get("ca_15_3_curr", np.full(len(y_arr), 18.0)))
         elif hasattr(X, "values"):
-            ca153_vals = (
-                X.values[:, 0] if X.shape[1] > 0 else np.full(len(y_arr), 18.0)
-            )
+            ca153_vals = X.values[:, 0] if X.shape[1] > 0 else np.full(len(y_arr), 18.0)
         else:
             ca153_vals = np.full(len(y_arr), 18.0)
 
@@ -592,9 +582,7 @@ class HybridKineticModelK1:
         excess = np.maximum(0.0, ca153_vals - 18.0)
         recurrent = y_arr == 1.0
         if np.sum(recurrent) > 0 and np.sum(~recurrent) > 0:
-            thresholds = np.linspace(
-                float(np.min(excess)), float(np.max(excess)), 50
-            )
+            thresholds = np.linspace(float(np.min(excess)), float(np.max(excess)), 50)
             best_j = -1.0
             best_thresh = 2.5
             for th in thresholds:
@@ -654,29 +642,27 @@ class HybridKineticModelK1:
                 curr = 20.0
                 slope = 0.0
 
-            sim_y = np.array([
-                max(10.0, curr - slope * 180.0),
-                max(10.0, curr - slope * 120.0),
-                max(10.0, curr - slope * 60.0),
-                curr,
-                curr + slope * 60.0,
-                curr + slope * 120.0,
-                curr + slope * 180.0,
-            ])
+            sim_y = np.array(
+                [
+                    max(10.0, curr - slope * 180.0),
+                    max(10.0, curr - slope * 120.0),
+                    max(10.0, curr - slope * 60.0),
+                    curr,
+                    curr + slope * 60.0,
+                    curr + slope * 120.0,
+                    curr + slope * 180.0,
+                ]
+            )
             obs = K1Observations(days=SCHEDULE, values={"ca153": sim_y})
             samples = ROUTES["amortized"](obs, rng, n_draws=200)
 
-            r = risk_from_posterior(
-                samples, self.horizon_days, self.detection_threshold
-            )
+            r = risk_from_posterior(samples, self.horizon_days, self.detection_threshold)
             risks[i] = r
 
             if return_ci:
                 draw_risks = []
                 for _ in range(10):
-                    sub_idx = rng.choice(
-                        len(samples["doubling_time_days"]), size=50, replace=True
-                    )
+                    sub_idx = rng.choice(len(samples["doubling_time_days"]), size=50, replace=True)
                     sub_samples = {k: v[sub_idx] for k, v in samples.items()}
                     draw_risks.append(
                         risk_from_posterior(
@@ -709,18 +695,12 @@ class HybridKineticModelK1:
                     continue
                 dt = t - t_onset
                 term = np.exp(g * dt) - np.exp(-c * dt)
-                dmu_dg = -(s / (g + c) ** 2) * term + (
-                    s * dt / (g + c)
-                ) * np.exp(g * dt)
+                dmu_dg = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(g * dt)
                 dg_dTd = -np.log(2.0) / (T_d**2)
                 J[idx, 0] = dmu_dg * dg_dTd
                 J[idx, 1] = term / (g + c)
-                J[idx, 2] = -(s / (g + c) ** 2) * term + (
-                    s * dt / (g + c)
-                ) * np.exp(-c * dt)
-                J[idx, 3] = -(s / (g + c)) * (
-                    g * np.exp(g * dt) + c * np.exp(-c * dt)
-                )
+                J[idx, 2] = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(-c * dt)
+                J[idx, 3] = -(s / (g + c)) * (g * np.exp(g * dt) + c * np.exp(-c * dt))
             return J
 
         configs = [
@@ -732,9 +712,7 @@ class HybridKineticModelK1:
         schedules = [
             SCHEDULE,
             np.array([0.0, 90.0, 180.0, 270.0, 360.0]),
-            np.array(
-                [0.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0]
-            ),
+            np.array([0.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0]),
         ]
 
         F_total = np.zeros((4, 4))
