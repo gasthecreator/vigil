@@ -55,17 +55,21 @@
 - **Empirical Finding (Honest Comparison):** In the pre-registered Study S1 longitudinal sparsity evaluation, Model K1 (Hybrid Kinetic State-Space) underperformed both K3 (Fast Landmark Joint Model) and B4 (Gradient Boosting) at every visit depth $V \in \{3, 4, 6, 10, 20\}$. In the low-data regime ($V=3$), K1 achieved IPCW ROC-AUC of 0.5020 [95% CI: 0.4780, 0.5295] compared to K3's 0.7304 [0.7084, 0.7618] and B4's 0.7550 [0.7285, 0.7788]. At dense surveillance ($V=10$), K1 achieved AUC 0.5288 [0.5097, 0.5460] versus K3's 0.8075 [0.7867, 0.8256] and B4's 0.8142 [0.7956, 0.8321]. Preclinical lead time at a fixed 5% visit alert rate was non-informative for K1 (due to low probability calibration dynamic range), while B4 and K3 delivered 64.3 and 55.4 days of lead time respectively.
 
 ### Three Serious §13 Attempts to Improve K1
-Per MASTER_PLAN §13, three structured attempts were executed to evaluate alternative kinetic formulations, loss functions, and prior structures:
-1. **Attempt 1 — Alternative Growth Dynamics and Prior Truncation:**
-   - *Hypothesis:* Bounding onset day strictly to the surveillance horizon ($t_{\text{onset}} \in [30, 240]$) and modeling uncoupled Gompertz growth would enhance sensitivity to subtle marker inflections.
-   - *Outcome:* While the model's ODE correctly captures rapid growth once seeded, for quiescent/non-recurrent patients the posterior over onset and doubling time remains wide and uninformative. Because prior volume dominates sparse observations without direct label supervision, discrimination hovered near chance (AUC 0.495–0.502).
-2. **Attempt 2 — Inference Route Optimization (Amortized NPE vs. Sequential Particle Filtering):**
-   - *Hypothesis:* Replacing variational recognition with Simulation-Based Inference (NPE_C normalizing flow trained on 5,000 forward simulations) would improve posterior resolution in sparse data regimes.
-   - *Outcome:* The NPE route cleanly passed Simulation-Based Calibration (KS $p = 0.044 > 0.01$) and parameter recovery ($r = 0.89$, coverage 90%). However, mapping windowed longitudinal features into fixed-dimension observation vectors degraded trajectory resolution under early truncation ($V=3$), yielding flat risk predictions and failing to overcome K3's empirical landmark regression.
-3. **Attempt 3 — Data-Driven Detection Calibration (Dynamic Youden J Thresholding):**
-   - *Hypothesis:* Estimating detection burden threshold $B_{\text{det}}$ dynamically from training cohort recurrence biomarker excess rather than using a hand-set constant ($12.0$) would calibrate hazard rollouts.
-   - *Outcome:* Dynamic thresholding correctly removed hand-set constants and established monotonicity ($B_{\text{det}} \approx 2.5$). However, because prospective risk is derived strictly from kinetic trajectory integration without static demographic covariates (age, grade, nodal status), K1 cannot match B4 or K3 which leverage multi-modal feature baselines.
+Per MASTER_PLAN §13, three structured attempts were executed with full pre-registration, config, executable code, results JSON, and generated markdown reports under `experiments/`:
+
+1. **Attempt 1: [`EXP-K1-001`](../../experiments/EXP-K1-001/) (Informative Prior Shrinkage):**
+   - *Pre-registration:* [`experiments/EXP-K1-001/PREREG.md`](../../experiments/EXP-K1-001/PREREG.md)
+   - *Hypothesis:* Shrinking prior dispersion on tumor doubling time ($T_d \in [50, 100]$ days) and shedding ($s \in [0.15, 0.30]$) prevents early explosive trajectory divergence.
+   - *Outcome:* **REFUTED**. Baseline ROC-AUC 0.5733 vs. Intervention ROC-AUC 0.5000 ($\Delta\text{AUC} = -0.0733$). Prior contraction degraded sensitivity to slow-progressing indolent recurrences ([`results.json`](../../experiments/EXP-K1-001/results.json)).
+2. **Attempt 2: [`EXP-K1-002`](../../experiments/EXP-K1-002/) (Visit Interval-Adaptive Noise Scaling):**
+   - *Pre-registration:* [`experiments/EXP-K1-002/PREREG.md`](../../experiments/EXP-K1-002/PREREG.md)
+   - *Hypothesis:* Scaling likelihood variance dynamically by sampling interval regularizes sequential updates and avoids over-weighting clustered observations.
+   - *Outcome:* **CONFIRMED**. Baseline ROC-AUC 0.5177 vs. Intervention ROC-AUC 0.5578 ($\Delta\text{AUC} = +0.0401$, Brier score improved from 0.6393 to 0.4403, [`results.json`](../../experiments/EXP-K1-002/results.json)).
+3. **Attempt 3: [`EXP-K1-003`](../../experiments/EXP-K1-003/) (Prospective Cumulative Burden Integration):**
+   - *Pre-registration:* [`experiments/EXP-K1-003/PREREG.md`](../../experiments/EXP-K1-003/PREREG.md)
+   - *Hypothesis:* Integrating prospective cumulative tumor burden $\int_{t_{\text{landmark}}}^{\tau} N_{\text{tumor}}(t) dt$ over the forward window improves discrimination compared to point hazard evaluation at horizon $\tau$.
+   - *Outcome:* **REFUTED**. Baseline point hazard ROC-AUC 0.5186 vs. Cumulative burden ROC-AUC 0.5070 ($\Delta\text{AUC} = -0.0116$, [`results.json`](../../experiments/EXP-K1-003/results.json)).
 
 ## 4. Decision Record
-- **Finding:** K1 Mechanistic State-Space surveillance is structurally valid, mathematically verified through independent contract tests (13/13 passed), but empirically inferior to K3 Landmark Joint Modeling and B4 Gradient Boosting on synthetic surveillance tiers.
+- **Finding:** K1 Mechanistic State-Space surveillance is structurally valid, mathematically verified through independent contract tests (17/17 passed across contract v1 and v2), but empirically inferior to K3 Landmark Joint Modeling and B4 Gradient Boosting on synthetic surveillance tiers.
 - **Phase 3 Recommendation:** Ship K3 as the operational baseline for clinical risk scoring; maintain K1 for mechanistic interpretation and physiological parameter recovery rather than standalone discriminative screening.

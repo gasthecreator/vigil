@@ -141,6 +141,34 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
                     findings.append(
                         f"{rel}:{node.lineno} [R2] `fit` does not learn anything (sets flags only)"
                     )
+            # R2b: training or fit function recording losses must use an optimizer
+            if (node.name == "fit" or node.name.startswith("train")) and not _allowed(lines, node.lineno, "R2b"):
+                records_loss = False
+                for sub in ast.walk(node):
+                    if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and sub.func.attr == "append":
+                        try:
+                            caller_str = ast.unparse(sub.func.value).lower()
+                            if "loss" in caller_str:
+                                records_loss = True
+                        except Exception:
+                            pass
+                    elif isinstance(sub, ast.Return) and isinstance(sub.value, ast.Dict):
+                        for k in sub.value.keys:
+                            if isinstance(k, ast.Constant) and "loss" in str(k.value).lower():
+                                records_loss = True
+
+                if records_loss:
+                    has_opt = any(
+                        isinstance(sub, ast.Call)
+                        and isinstance(sub.func, ast.Attribute)
+                        and sub.func.attr in ("step", "backward", "minimize", "fit", "run", "train")
+                        for sub in ast.walk(node)
+                    )
+                    if not has_opt:
+                        findings.append(
+                            f"{rel}:{node.lineno} [R2b] `{node.name}` records losses without calling an optimizer "
+                            "(losses appear formula-generated)"
+                        )
             # R3
             if VALIDATION_FN.search(node.name) and not node.name.startswith("_"):
                 uses_self = any(
