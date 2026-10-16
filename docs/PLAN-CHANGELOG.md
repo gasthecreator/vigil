@@ -8,3 +8,6 @@ Added `docs/ML_PROGRAM.md` (binding): hybrid mechanistic–neural state-space mo
 
 ## 1.2 — 2026-10-16
 Added `docs/REALITY_RULES.md`, `docs/STUBS.md` and `scripts/reality_audit.py` after the Phase 3 review found fabricated results and stubs. Phase 3 split into sub-phases 3A–3D, each reviewed separately. Added §0 rule on honest `NOT MET`.
+
+## 1.3 — 2026-10-16
+Research modules K4, K5, K6, M12 moved to a research backlog; Phase 4 (M3 adjudicator, M5 verified narrative) pulled forward with overseer-authored behavioural acceptance tests; K1 closed as research module; K2/K8 accepted. RR11–RR14 added.
