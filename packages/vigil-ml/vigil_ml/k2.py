@@ -100,9 +100,6 @@ class SequentialDetector:
         Returns True once an alert has been raised (latched).
         None represents a missed / unmeasured observation.
         """
-        if self._alert:
-            return True
-
         if value is None:
             return self._alert
 

@@ -1,0 +1,24 @@
+{
+  "calibration_seed": 999,
+  "n_patients": 500,
+  "parameter_names": [
+    "doubling_time_days",
+    "shedding_ca153",
+    "clearance_ca153",
+    "onset_day"
+  ],
+  "parameter_descriptions": {
+    "doubling_time_days": "Tumor doubling time in days",
+    "shedding_ca153": "Biomarker shedding rate into circulation per unit tumor burden per day",
+    "clearance_ca153": "First-order hepatic/renal clearance rate in 1/days",
+    "onset_day": "Day of microscopic recurrence onset post-surgery"
+  },
+  "residual_sd": [
+    25.2695,
+    0.0738,
+    0.0404,
+    42.6228
+  ],
+  "signal_snr_threshold_u_ml": 4.5,
+  "clearance_prior_weight": 0.7
+}

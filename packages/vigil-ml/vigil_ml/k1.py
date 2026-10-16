@@ -13,6 +13,7 @@ Inference routes:
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -357,11 +358,23 @@ def train_amortized(
     return {"train_loss": train_losses, "val_loss": val_losses, "model": model}
 
 
-# Parameters fitted on separate calibration split (seed 999, N=500 patients) per RR11:
-# - Empirical residual RMSE on calibration split: doubling_time 25.27d, shedding 0.074, clearance 0.040, onset 42.62d.
-# - Clearance prior weight 0.70 from physiological clearance variance across population.
-# - Information threshold 12.0 U/mL (biomarker signal-to-noise floor).
-CALIBRATED_RESIDUAL_SD = np.array([25.27, 0.074, 0.040, 42.62])
+# Parameters fitted on separate calibration split (seed 999, N=500 patients) via scripts/calibrate_k1.py per RR11/RR13:
+# Residual standard deviations for the 4 latent kinetic parameters:
+#   Index 0: doubling_time_days = 25.27 days
+#   Index 1: shedding_ca153     = 0.074 U/mL per unit tumor burden per day
+#   Index 2: clearance_ca153    = 0.040 day^-1
+#   Index 3: onset_day          = 42.62 days post-surgery
+# (Note: These are kinetic ODE parameters, NOT multi-analyte measurement noise).
+CALIBRATION_FILE = Path(__file__).parent / "models" / "k1_calibration.json"
+if CALIBRATION_FILE.exists():
+    try:
+        _calib_data = json.loads(CALIBRATION_FILE.read_text())
+        CALIBRATED_RESIDUAL_SD = np.array(_calib_data["residual_sd"], dtype=np.float64)
+    except Exception:
+        CALIBRATED_RESIDUAL_SD = np.array([25.27, 0.074, 0.040, 42.62])
+else:
+    CALIBRATED_RESIDUAL_SD = np.array([25.27, 0.074, 0.040, 42.62])
+
 CLEARANCE_PRIOR_WEIGHT = 0.70
 ONSET_SNR_THRESHOLD = 3.0
 
@@ -608,53 +621,17 @@ class HybridKineticModelK1:
         """
         rng = np.random.default_rng(self.seed)
 
-        # Support direct K1Observations objects or collections
+        # Strict enforcement per RR12 & Condition B-3:
+        # Accepts only real longitudinal observation sequences (K1Observations). Refuses tabular summaries or slope approximations.
         if isinstance(X, K1Observations):
             obs_list = [X]
-        elif isinstance(X, (list, tuple)) and len(X) > 0 and isinstance(X[0], K1Observations):
+        elif isinstance(X, (list, tuple)) and len(X) > 0 and all(isinstance(x, K1Observations) for x in X):
             obs_list = list(X)
         else:
-            n_samples = 1
-            if isinstance(X, dict):
-                for v in X.values():
-                    if hasattr(v, "__len__"):
-                        n_samples = len(v)
-                        break
-            elif hasattr(X, "shape"):
-                n_samples = X.shape[0]
-
-            obs_list = []
-            for i in range(n_samples):
-                if isinstance(X, dict):
-                    curr = (
-                        float(X.get("ca_15_3_curr", [20.0])[i])
-                        if hasattr(X.get("ca_15_3_curr", None), "__getitem__")
-                        else 20.0
-                    )
-                    slope = (
-                        float(X.get("ca_15_3_slope_90d", [0.0])[i])
-                        if hasattr(X.get("ca_15_3_slope_90d", None), "__getitem__")
-                        else 0.0
-                    )
-                    dt = (
-                        float(X.get("days_since_last_visit", [90.0])[i])
-                        if hasattr(X.get("days_since_last_visit", None), "__getitem__")
-                        else 90.0
-                    )
-                elif hasattr(X, "iloc"):
-                    row = X.iloc[i]
-                    curr = float(row.get("ca_15_3_curr", 20.0))
-                    slope = float(row.get("ca_15_3_slope_90d", 0.0))
-                    dt = float(row.get("days_since_last_visit", 90.0))
-                else:
-                    curr = 20.0
-                    slope = 0.0
-                    dt = 90.0
-
-                # Formulate strictly historical observations up to current landmark time (no future points synthesized)
-                days = np.array([0.0, max(dt, 30.0)])
-                vals = np.array([max(5.0, curr - slope * dt), curr])
-                obs_list.append(K1Observations(days=days, values={"ca153": vals}))
+            raise TypeError(
+                "HybridKineticModelK1.predict_risk accepts only real observation sequences "
+                "of type K1Observations (RR12). Tabular summaries or derived slope inputs are refused."
+            )
 
         n_pts = len(obs_list)
         risks = np.zeros(n_pts)
