@@ -1,6 +1,6 @@
 {
   "experiment_id": "EXP-K1-002",
-  "seed": 43,
+  "seed": 42,
   "num_patients": 300,
   "horizon_days": 730.0,
   "landmark_day": 365.0,

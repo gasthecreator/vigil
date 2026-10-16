@@ -32,6 +32,8 @@ from vigil_ml.joint_model import (
     FastLandmarkJointModel,
     PosteriorPredictiveResult,
 )
+from vigil_ml.k2 import SequentialDetector
+from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
 from vigil_ml.kinetic_k1 import HybridKineticModelK1, UnscentedKalmanFilterK1
 from vigil_ml.organ_susceptibility import (
     TARGET_ORGANS,
@@ -70,6 +72,7 @@ __all__ = [
     "HybridKineticModelK1",
     "UnscentedKalmanFilterK1",
     # K2 Sequential detection
+    "SequentialDetector",
     "SequentialEProcessK2",
     "AlertTier",
     "SequentialAlertResult",
@@ -87,6 +90,9 @@ __all__ = [
     "TestPanelTier",
     "ActiveSensingRecommendation",
     # K8 Conformal & Ensemble
+    "ConformalRiskController",
+    "OODGate",
+    "AdaptiveConformal",
     "ConformalRiskControllerK8",
     "ConformalPredictionResult",
     "ProductionEnsembleK8",

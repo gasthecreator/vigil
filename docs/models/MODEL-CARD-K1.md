@@ -1,16 +1,16 @@
 # Model Card: Model K1 — Hybrid Mechanistic–Neural State-Space Model ("Kinetic")
 
 **Model Identifier:** `MODEL-K1-KINETIC-HYBRID`  
-**Model Version:** 1.3.0-phase3a (K1 Contract v1 & v2 Compliant)  
-**Date:** 2026-10-15  
-**Governing Documents:** `docs/MASTER_PLAN.md` §14 WP3.0 (Phase 3A); `docs/ML_PROGRAM.md` §3.1, §6, §9; `docs/ml/K1-CONTRACT.md`  
-**Acceptance Test Suite:** `tests/acceptance_k1/` (17/17 PASSED across contract v1 and v2)  
-**Evaluation Status:** Evaluated on Synthetic Tiers G1, G2, G3 (`reports/ml/BENCHMARK_REPORT.md`, `reports/ml/S1_SPARSITY/REPORT.md`)  
+**Model Version:** 1.3.1-research (Research Inference Module; ADR-0007)  
+**Date:** 2026-10-16  
+**Governing Documents:** `docs/MASTER_PLAN.md` §13, §14; `docs/ML_PROGRAM.md` §3.1; `docs/adr/0007-k1-research-inference-module.md`  
+**Acceptance Test Suite:** `tests/acceptance_k1/`  
+**Deployment Status:** **K1 is a research inference module; K3/B4 are the shipped surveillance baselines** (ADR-0007). Evaluated on Synthetic Tiers G1, G2, G3 (`reports/ml/BENCHMARK_REPORT.md`, `reports/ml/S1_SPARSITY/REPORT.md`).  
 
 ---
 
 ## 1. Model Overview & Intended Use
-Model K1 is Vigil's continuous-time mechanistic surveillance model. Serial laboratory measurements (CA 15-3, CEA) are modeled as noisy, discrete observations of an underlying continuous kinetic state vector governed by post-treatment breast cancer recurrence dynamics.
+Model K1 is Vigil's continuous-time mechanistic inference module. Serial laboratory measurements (CA 15-3, CEA) are modeled as noisy, discrete observations of an underlying continuous kinetic state vector governed by post-treatment breast cancer recurrence dynamics. Per ADR-0007, K1 is retained as an honest, validated scientific inference module for parameter recovery and kinetic explanation, while K3 (Joint Model) and B4 (Gradient Boosting) serve as the primary shippable surveillance baselines.
 
 ### Primary Intended Use
 Continuous prospective estimation of subclinical tumor doubling time $T_d$, shedding and clearance parameters, recurrence onset day $t_{\text{onset}}$, and prospective horizon recurrence probability $P(T \le t + H \mid \mathcal{H}_t)$ derived strictly from the kinetic posterior.

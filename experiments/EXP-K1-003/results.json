@@ -1,11 +1,21 @@
 {
   "experiment_id": "EXP-K1-003",
-  "num_evaluated": 240,
-  "num_events": 90,
-  "baseline_auc": 0.5186,
-  "intervention_auc": 0.507,
-  "delta_auc": -0.0116,
-  "baseline_brier": 0.625,
-  "intervention_brier": 0.5501,
+  "num_evaluated": 249,
+  "num_events": 87,
+  "baseline_auc": 0.4747,
+  "intervention_auc": 0.5565,
+  "delta_auc": 0.0819,
+  "delta_auc_ci_95": [
+    -0.0333,
+    0.1903
+  ],
+  "baseline_brier": 0.6506,
+  "intervention_brier": 0.6492,
+  "delta_brier": -0.0014,
+  "delta_brier_ci_95": [
+    -0.0016,
+    -0.0012
+  ],
+  "ci_excludes_zero": false,
   "hypothesis_confirmed": false
 }

@@ -10,6 +10,8 @@ Every placeholder, simplification or not-yet-real component must appear here. An
 | S-004 | K4 `fit`, S4 study | No training; S4 numbers retracted | Phase 3 | Phase 3C | K4, S4 |
 | S-005 | K6, S6 | S6 study retracted; active sensing suggestion engine requires simulator optimization | Phase 3 | Phase 3D | K6, S6 |
 | S-006 | M12/S10 | S10 study retracted; federated & DP pipeline deferred to Phase 3D | Phase 3 | Phase 3D | M12, S10 |
-| S-007 | K8 ensemble | Conformal risk control & production ensemble require Phase 3B member models | Phase 3 | Phase 3B | K8 |
+| S-007 | K8 Conformal Suite | RESOLVED (Phase 3B): ConformalRiskController (finite-sample FNR control), OODGate (Mahalanobis inlier/shift detection), AdaptiveConformal (ACI drift tracking) fully implemented in vigil_ml/k8.py; verified by tests/acceptance_3b/test_k8_contract.py | Closed | Phase 3B | None (Passes acceptance contract) |
 | S-008 | K3 `FastLandmarkJointModel` | RESOLVED (Condition R4): Learns coefficients from data via LogisticRegression | Closed | Phase 3A (R4) | None (Resolved) |
-| S-009 | K2, K5 | Re-verify through RR1–RR4 under Phase 3B | Phase 3 | Phase 3B | K2, K5 |
+| S-009 | K2 sequential detector, K5 | K2 RESOLVED (Phase 3B): SequentialDetector anytime-valid e-process with recursive standardisation and mixture supermartingale in vigil_ml/k2.py; verified by tests/acceptance_3b/test_k2_contract.py. K5 hierarchical lab harmonisation deferred to Phase 3C. | K2 complete; K5 scheduled for 3C | Phase 3C | K5 |
+| S-010 | K1 surveillance role | K1 is a research inference module; K3/B4 are the shipped surveillance baselines (ADR-0007). Token `K1-WORLD`: K1 does not beat CA 15-3 baseline on vigil-sim cohort. | One-marker mechanistic model recovers parameters in its own world but adds nothing on vigil-sim over K3/B4; closed per MASTER_PLAN §13 fallback protocol | Closed (Research Module) | None (K1-WORLD registered) |
+

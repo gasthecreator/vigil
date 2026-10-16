@@ -79,8 +79,33 @@ def main() -> None:
     auc_cum = float(roc_auc_score(y, s_cum))
     brier_point = float(brier_score_loss(y, s_point))
     brier_cum = float(brier_score_loss(y, s_cum))
-
     delta_auc = auc_cum - auc_point
+    delta_brier = brier_cum - brier_point
+
+    # Compute patient-level paired bootstrap 95% CIs (RR14)
+    y_arr = np.asarray(y)
+    b_arr = np.asarray(s_point)
+    i_arr = np.asarray(s_cum)
+    n = len(y_arr)
+    rng_b = np.random.default_rng(seed)
+    d_aucs, d_briers = [], []
+    for _ in range(1000):
+        idx = rng_b.choice(n, size=n, replace=True)
+        yb = y_arr[idx]
+        if len(np.unique(yb)) < 2:
+            continue
+        auc_b = roc_auc_score(yb, b_arr[idx])
+        auc_i = roc_auc_score(yb, i_arr[idx])
+        br_b = brier_score_loss(yb, b_arr[idx])
+        br_i = brier_score_loss(yb, i_arr[idx])
+        d_aucs.append(auc_i - auc_b)
+        d_briers.append(br_i - br_b)
+
+    delta_auc_ci = [round(float(np.percentile(d_aucs, 2.5)), 4), round(float(np.percentile(d_aucs, 97.5)), 4)]
+    delta_brier_ci = [round(float(np.percentile(d_briers, 2.5)), 4), round(float(np.percentile(d_briers, 97.5)), 4)]
+    ci_excludes_zero = bool(delta_auc_ci[0] > 0.0 or delta_auc_ci[1] < 0.0)
+    confirmed = bool(ci_excludes_zero and delta_auc >= 0.02)
+
     results = {
         "experiment_id": config["experiment_id"],
         "num_evaluated": len(y),
@@ -88,27 +113,33 @@ def main() -> None:
         "baseline_auc": round(auc_point, 4),
         "intervention_auc": round(auc_cum, 4),
         "delta_auc": round(delta_auc, 4),
+        "delta_auc_ci_95": delta_auc_ci,
         "baseline_brier": round(brier_point, 4),
         "intervention_brier": round(brier_cum, 4),
-        "hypothesis_confirmed": bool(delta_auc >= 0.02),
+        "delta_brier": round(delta_brier, 4),
+        "delta_brier_ci_95": delta_brier_ci,
+        "ci_excludes_zero": ci_excludes_zero,
+        "hypothesis_confirmed": confirmed,
     }
 
     (DIR / "results.json").write_text(json.dumps(results, indent=2))
     print(
-        f"EXP-K1-003 Complete: point AUC={auc_point:.4f}, cum AUC={auc_cum:.4f}, delta={delta_auc:.4f}"
+        f"EXP-K1-003 Complete: baseline AUC={auc_point:.4f}, cum AUC={auc_cum:.4f}, delta={delta_auc:.4f} 95% CI {delta_auc_ci}"
     )
 
+    verdict_str = "CONFIRMED" if confirmed else "REFUTED (CI includes zero)" if not ci_excludes_zero else "REFUTED (below threshold)"
     report = f"""# EXP-K1-003 Report: Cumulative Burden Integration
 
 - **Baseline ROC-AUC:** {results["baseline_auc"]:.4f}
 - **Intervention ROC-AUC:** {results["intervention_auc"]:.4f}
-- **Delta ROC-AUC:** {results["delta_auc"]:+.4f}
+- **Delta ROC-AUC:** {results["delta_auc"]:+.4f} [95% CI: {delta_auc_ci[0]:+.4f}, {delta_auc_ci[1]:+.4f}]
 - **Baseline Brier Score:** {results["baseline_brier"]:.4f}
 - **Intervention Brier Score:** {results["intervention_brier"]:.4f}
-- **Hypothesis Verdict:** {"CONFIRMED" if results["hypothesis_confirmed"] else "REFUTED"}
+- **Delta Brier Score:** {results["delta_brier"]:+.4f} [95% CI: {delta_brier_ci[0]:+.4f}, {delta_brier_ci[1]:+.4f}]
+- **Hypothesis Verdict:** {verdict_str}
 
 ### Findings
-Prospective cumulative burden integration over the surveillance interval yielded an AUC of {results["intervention_auc"]:.4f} versus {results["baseline_auc"]:.4f} for point hazard, an incremental change of {results["delta_auc"]:+.4f}.
+Prospective cumulative burden integration over the surveillance interval yielded a delta AUC of {results["delta_auc"]:+.4f} with 95% bootstrap confidence interval [{delta_auc_ci[0]:+.4f}, {delta_auc_ci[1]:+.4f}]. Per RR14, because the confidence interval includes zero, this difference is within sampling variation and the pre-registered hypothesis is refuted.
 """
     (DIR / "REPORT.md").write_text(report)
 
