@@ -100,17 +100,20 @@ def test_k1_discriminates_on_project_simulator():
         ce = p["competing_event_day"]
         if ce is not None and ce == ce and ce <= 730 and not rec:
             continue
-        o = obs_df[(obs_df.patient_id == p["patient_id"]) & (obs_df.day <= 365)].dropna(
-            subset=["observed_ca_15_3"]
-        )
+        # `observed_ca_15_3` is a boolean "was measured" flag; values are in `ca_15_3`.
+        o = obs_df[
+            (obs_df.patient_id == p["patient_id"])
+            & (obs_df.day <= 365)
+            & (obs_df["observed_ca_15_3"].astype(bool))
+        ]
         if len(o) < 2:
             continue
         ob = K1.K1Observations(
-            days=o["day"].to_numpy(float), values={"ca153": o["observed_ca_15_3"].to_numpy(float)}
+            days=o["day"].to_numpy(float), values={"ca153": o["ca_15_3"].to_numpy(float)}
         )
         samples = route(ob, rng, 100)
         s.append(K1.risk_from_posterior(samples, 730.0))
-        ref.append(float(o["observed_ca_15_3"].iloc[-1]))
+        ref.append(float(o["ca_15_3"].iloc[-1]))
         y.append(int(rec and day is not None and 365 < day <= 730))
     assert sum(y) >= 10 and len(set(y)) == 2, "too few events to evaluate"
     auc = roc_auc_score(y, s)

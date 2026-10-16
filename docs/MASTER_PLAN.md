@@ -1,6 +1,6 @@
 # Vigil — Master Plan
 
-> **Document status:** Canonical. Version 1.2 (2026-10-16). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
+> **Document status:** Canonical. Version 1.3 (2026-10-16). Owner: Gideon Sanni (product owner). Plan author and reviewer: Claude (overseer). Builder: Gemini / Google Antigravity (executor).
 > **Formerly named:** Sentinel (renamed to Vigil, 2026-10-14). Any remaining "Sentinel" string in code, docs, config, UI or artifact names is a defect to fix in Phase 0.
 > **This file is the single source of truth for what Vigil is, why it exists, what "finished" means, and how it gets built.** If another file, an old prompt, or your own prior output contradicts it, this file wins. If this file is wrong or incomplete, say so in a proposal (Section 17.4); do not silently deviate.
 
@@ -500,6 +500,8 @@ The owner's instruction: *pursue the possible and the apparently impossible; rem
 - WP3.5 M12 feasibility study on multi-site simulation (federated + DP) per 6.12 with conclusion by protocol.
 - **Exit gate:** selected model(s) beat the best classical baseline on calibrated net benefit with non-overlapping CIs *or* the classical winner ships with the elimination record; calibration/subgroup gates (8.3) satisfied or documented as release-blocking; alert policy chosen with α-budgets; runtime parity/latency tests green; report committed.
 
+> **Plan v1.3 re-ordering.** Evidence from K1 and K2 (see `docs/progress/VERDICT-P3A3.md`, `VERDICT-P3B.md`) shows that sophisticated models do not beat K3/B4 on the simulator, while guarantees (K2, K8) and honest handling of surprising results are where the product's value lies. Research modules **K4, K5, K6 and M12 move to a research backlog** (remain registered `NOT MET` in `docs/STUBS.md`; they may be revisited after real data exist). Phase 4 is executed next, starting with **M3 and M5**, accepted by behavioural tests in `tests/acceptance_p4/` (`docs/ml/M3-M5-CONTRACT.md`); M4 follows in Phase 4b.
+
 ### Phase 4 — Plausibility, explanation, test ladder
 - WP4.1 M3 full implementation (built on K1 predictive distributions + RCV/delta checks + K5 offsets; study S7) and validation on simulated ground truth with error injection; RCV tables with cited CVi/CVa; individual reference intervals; inter-lab offsets; three-way posterior calibration.
 - WP4.2 M5 fact-table → narrative → verifier; templates in all planned languages (machine-drafted, flagged unreviewed); adversarial suite; faithfulness evaluation of attribution methods.
@@ -652,4 +654,4 @@ Quantitative targets for lead time gained, false-alarm budget, sensitivity at th
 ## 19. Glossary
 **CDSS** clinical decision support system · **RCV** reference change value · **CVa/CVi/CVg** analytical, within-subject, between-subject coefficient of variation · **LOINC/UCUM/FHIR/SNOMED** health-data coding, unit and exchange standards · **DCA** decision-curve analysis · **ECE** expected calibration error · **PCCP** predetermined change control plan · **TRIPOD+AI / PROBAST+AI / DECIDE-AI / CONSORT-AI** reporting and appraisal guidelines for AI prediction/decision-support studies · **NDPA/NDPC** Nigeria Data Protection Act 2023 / Commission · **NHREC** Nigerian national health research ethics body · **MRD/ctDNA** minimal residual disease / circulating tumour DNA · **RT** radiotherapy · **LINAC** linear accelerator · **ACI** adaptive conformal inference · **DP** differential privacy · **CRDT** conflict-free replicated data type.
 
-*End of Master Plan v1.2.*
+*End of Master Plan v1.3.*

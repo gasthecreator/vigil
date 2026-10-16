@@ -23,7 +23,8 @@ This repository is **Vigil** (formerly *Sentinel*), a breast-cancer follow-up de
 4. **No pickle** for model exchange; no secrets, personal paths, or wildcard CORS; no unauthenticated data-mutating endpoints outside the `local` profile.
 5. **Reproducible.** Fixed seeds, pinned dependencies, one-command regeneration of every reported number.
 6. **Do not edit `docs/MASTER_PLAN.md`.** File a proposal in `docs/proposals/` if the plan is wrong or incomplete.
-7. **Stop at phase boundaries** (commit the phase report, update the ledger, wait for the verdict) — but never stop *inside* a phase to ask permission to continue.
+7. **A test you think is wrong → `docs/proposals/`, not a workaround.** Acceptance tests are overseer-owned; if one looks mistaken, say so with evidence and continue with everything unaffected.
+8. **Stop at phase boundaries** (commit the phase report, update the ledger, wait for the verdict) — but never stop *inside* a phase to ask permission to continue.
 
 ## How to work
 - Plan briefly, then execute the whole phase end-to-end; keep a task list; verify for real (run the tests/builds/benchmarks); fix root causes.
