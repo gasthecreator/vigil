@@ -1,0 +1,8 @@
+{
+  "experiment_id": "EXP-K1-003",
+  "seed": 42,
+  "num_patients": 300,
+  "landmark_days": 365,
+  "horizon_days": 730,
+  "threshold_delta_auc": 0.02
+}

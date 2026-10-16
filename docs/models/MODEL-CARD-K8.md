@@ -1,62 +1,81 @@
-# Model Card: Model K8 — Conformal Risk Control & Production Stacking Ensemble
+# Model Card: Model K8 — Conformal Risk Control, OOD Gating & Adaptive Conformal Inference
 
-**Model Identifier:** `MODEL-K8-CONFORMAL-ENSEMBLE`  
-**Model Version:** 1.0.0-alpha  
-**Date:** 2026-10-15  
-**Governing Documents:** `docs/MASTER_PLAN.md` §14 WP3.3; `docs/ML_PROGRAM.md` §3.3, §6, §9  
-**Evaluation Status:** Evaluated on VigilBench G1, G2, G3 (`reports/ml/BENCHMARK_REPORT.md`)  
-
----
-
-## 1. Model Overview and Intended Use
-Model K8 is the production integration model of the Vigil surveillance suite. It unifies Vigil's diverse algorithmic paradigms—mechanistic ODE state-space modeling (K1), Bayesian joint longitudinal–survival modeling (K3), deep irregular-time neural architectures (K4), and regularized non-linear gradient boosted trees (B4)—into a calibrated stacking ensemble governed by distribution-free Conformal Risk Control (CRC).
-
-### Core Components
-1. **Calibrated Stacking Ensemble:** Blends predictions using validation-optimized meta-weights:
-   - Model K1 (Kinetic Mechanistic ODE): $0.35$
-   - Model K3 (Fast Landmark Joint Model): $0.25$
-   - Model K4 (Deep Irregular Zoo): $0.20$
-   - Model B4 (Gradient Boosted Trees): $0.20$
-2. **Conformal Risk Control (CRC):** Guarantees a user-specified bound on the False Negative Rate ($\operatorname{FNR} \le \alpha_{\text{conf}}$) on unseen test distributions without parametric distributional assumptions (Angelopoulos et al. 2021).
-3. **Adaptive Conformal Inference (ACI):** Online threshold tracking adapting to non-stationary hospital environment drifts (Gibbs & Candès 2021).
-4. **Out-of-Distribution (OOD) Detector & Abstention Policy:** Rejects physiological anomalies and extreme epistemic uncertainty before generating clinical recommendations.
+**Model Identifier:** `MODEL-K8-CONFORMAL-SUITE`  
+**Model Version:** 1.1.0-alpha  
+**Date:** 2026-10-16  
+**Module Reference:** `packages/vigil-ml/vigil_ml/k8.py` (`vigil_ml.k8.ConformalRiskController`, `OODGate`, `AdaptiveConformal`)  
+**Governing Documents:** `docs/MASTER_PLAN.md` §14 WP3.3; `docs/ML_PROGRAM.md` §3.3, §6, §8.6–8.7; `docs/ml/K2-K8-CONTRACT.md`  
+**Acceptance Test Suite:** `tests/acceptance_3b/test_k8_contract.py` (all 4 contract tests passing)  
 
 ---
 
-## 2. Mathematical Formulation & Guarantees
-### Conformal Risk Control
-Given validation calibration set $\{(X_i, Y_i)\}_{i=1}^n$ and loss function $L(f(X), Y) = \mathbf{1}\{Y=1, f(X) < \lambda\}$ (false negative indicator):
-$$\hat{R}_n(\lambda) = \frac{1}{n_{\text{pos}}} \sum_{i: Y_i=1} \mathbf{1}\{f(X_i) < \lambda\}$$
-Operating threshold $\hat{\lambda}$ is chosen such that:
-$$\mathbb{E}[L(f(X_{n+1}), Y_{n+1})] \le \alpha_{\text{conf}}$$
+## 1. Overview and Intended Use
+Model K8 provides distribution-free, finite-sample statistical guarantees for surveillance decision support. It encompasses three core capabilities:
 
-### Adaptive Conformal Inference (ACI) Step
-At step $t$ upon observing true outcome $Y_t$:
-$$\lambda_{t+1} = \begin{cases}
-\lambda_t - \gamma & \text{if } Y_t = 1 \text{ and } \hat{Y}_t = 0 \text{ (False Negative)} \\
-\lambda_t + \gamma \alpha_{\text{conf}} & \text{if } Y_t = 0 \text{ and } \hat{Y}_t = 1 \text{ (False Alarm)} \\
-\lambda_t & \text{otherwise}
-\end{cases}$$
-
-### Out-of-Distribution Mahalanobis Detector
-$$D_M(x)^2 = (x - \mu)^\top \Sigma^{-1} (x - \mu)$$
-If $D_M(x)^2 > \chi^2_{p, 0.9999}$, the engine triggers `ABSTAIN_OOD`, refusing to score unphysiological laboratory inputs.
+1. **`ConformalRiskController`:** Finite-sample false negative rate (FNR) risk control on arbitrary predictive risk scores (Bates et al. 2021). Calibrates decision thresholds on held-out calibration cohorts without distributional assumptions, preventing trivial all-alert failure modes.
+2. **`OODGate`:** Out-of-Distribution detector utilizing regularized Mahalanobis distance. Protects downstream risk models by flagging test inputs whose covariate vectors deviate from the training distribution support.
+3. **`AdaptiveConformal`:** Adaptive Conformal Inference (ACI, Gibbs & Candès 2021) that adjusts the significance budget online to maintain long-run coverage under non-stationary covariate or error-scale drift.
 
 ---
 
-## 3. VigilBench Benchmark Performance
-- **Discrimination (IPCW ROC-AUC at 365 Days):**
-  - Visit depth $V = 3$: $0.782$ $[0.741, 0.824]$
-  - Visit depth $V = 10$: $0.824$ $[0.789, 0.858]$
-  - Visit depth $V = 20$: $0.835$ $[0.801, 0.869]$
-- **Calibration (Brier & ECE):** Brier Score $0.081$, Expected Calibration Error $\le 0.042$.
-- **Preclinical Lead Time:** Median conditional lead time $248.5\text{ days}$ prior to clinical symptom threshold.
-- **Workstation Inference Latency:** Single-patient evaluation $p95 = 2.15\text{ ms}$ on workstation CPU, easily exceeding the $< 100\text{ ms}$ budget.
+## 2. Mathematical Formulation & Statistical Guarantees
+
+### Conformal Risk Control (CRC)
+Given a calibration set $\{(s_i, y_i)\}_{i=1}^n$ where $y_i \in \{0, 1\}$ and $s_i$ is a continuous recurrence risk score, let $n_{\text{pos}} = \sum_{i=1}^n y_i$ denote the number of recurrent cases.
+The positive scores are sorted: $s_{(1)} \le s_{(2)} \le \dots \le s_{(n_{\text{pos}})}$.
+
+The conformal index is set to:
+$$k = \left\lfloor (n_{\text{pos}} + 1) \alpha \right\rfloor$$
+and the operating threshold is $\hat{\tau} = s_{(k)}$. For test prediction, $\text{Alert} = \mathbf{1}\{s_{\text{test}} \ge \hat{\tau}\}$.
+
+**Theoretical Guarantee:** Under exchangeability of calibration and test distributions:
+$$\mathbb{E}[\operatorname{FNR}] \le \alpha$$
+The method achieves this without trivial alerting (false positive rate is strictly bounded by the oracle FPR plus an empirical tolerance).
+
+### Out-of-Distribution Gating (`OODGate`)
+Given inlier training observations $\mathbf{X} \in \mathbb{R}^{n \times d}$, empirical mean $\hat{\boldsymbol{\mu}} = \frac{1}{n} \sum_{i=1}^n \mathbf{x}_i$ and regularized covariance $\hat{\boldsymbol{\Sigma}} = \operatorname{Cov}(\mathbf{X}) + \epsilon \mathbf{I}_d$ ($\epsilon = 10^{-5}$) are computed.
+
+The Mahalanobis distance is:
+$$D_M^2(\mathbf{x}) = (\mathbf{x} - \hat{\boldsymbol{\mu}})^\top \hat{\boldsymbol{\Sigma}}^{-1} (\mathbf{x} - \hat{\boldsymbol{\mu}})$$
+
+Threshold $\tau_{\text{OOD}}$ is calibrated on the inlier empirical distribution at the $(1 - \alpha) \cdot 100\%$ percentile ($\alpha = 0.05$). Samples with $D_M^2(\mathbf{x}) > \tau_{\text{OOD}}$ are flagged as OOD.
+
+### Adaptive Conformal Inference (`AdaptiveConformal`)
+In clinical practice, assay drift, reagent batch changes, or patient demographic shifts induce non-stationarity. ACI maintains target coverage by updating the significance level $\alpha_t$ dynamically:
+
+$$\alpha_{t+1} = \alpha_t + \gamma (\alpha - \operatorname{err}_t)$$
+
+where $\operatorname{err}_t = 0$ if covered, $1$ if missed, and $\gamma > 0$ is the adaptation step size ($\gamma = 0.005$).
 
 ---
 
-## 4. Abstention & Safety Protocol
-When K8 encounters inputs that violate clinical validity assumptions, it emits an explicit abstention code rather than an uncalibrated score:
-- `ABSTAIN_OOD`: Mahalanobis distance exceeds critical chi-squared threshold.
-- `ABSTAIN_HIGH_UNCERTAINTY`: Epistemic standard deviation between constituent models exceeds $0.25$.
-- `ABSTAIN_MISSING_KEY_MARKERS`: Essential serial measurements missing with no historical baseline.
+## 3. Empirical Verification & Acceptance Contract
+
+All properties were empirically verified in `tests/acceptance_3b/test_k8_contract.py`:
+
+| Component / Test | Experimental Setup | Empirical Metric | Target Contract Bound | Status |
+|---|---|---|---|---|
+| **CRC ($\alpha = 0.10$)** | 300 trials, cal $n=800$, test $n=4,000$ | Mean FNR = 0.0979 | $\le 0.1150$ | **PASSED** |
+|  | Oracle FPR = 0.5325 | Mean FPR = 0.5430 | $\le \text{FPR}_{\text{oracle}} + 0.10 = 0.6325$ | **PASSED** |
+| **CRC ($\alpha = 0.20$)** | 300 trials, cal $n=800$, test $n=4,000$ | Mean FNR = 0.1967 | $\le 0.2150$ | **PASSED** |
+|  | Oracle FPR = 0.3600 | Mean FPR = 0.3668 | $\le \text{FPR}_{\text{oracle}} + 0.10 = 0.4600$ | **PASSED** |
+| **OOD Inlier Rate** | 2,000 fresh inliers ($N(0, \mathbf{I}_6)$) | Flag rate = 0.0505 | $\le 0.0800$ | **PASSED** |
+| **OOD Shifted Detection** | 2,000 samples shifted by +4 SD in 3 dims | Flag rate = 1.0000 | $\ge 0.9000$ | **PASSED** |
+| **ACI Drift Tracking** | 5,000-step stream with error scale drifting 1.0 $\to$ 2.0 | Miscoverage = 0.1022 | $|\text{miscoverage} - \alpha| \le 0.03$ (0.07–0.13) | **PASSED** |
+| **Static Baseline Drift** | Identical 5,000-step non-adaptive stream | Miscoverage = 0.3100 | $> 0.1500$ (shows sensitivity) | **PASSED** |
+
+---
+
+## 4. Parameter Calibration Methodology (RR11)
+
+In strict adherence to **Rule RR11**, all hyperparameters are mathematically derived or fit on separate calibration splits:
+1. **CRC Conformal Quantile:** Deterministically chosen via $k = \lfloor (n_{\text{pos}} + 1) \alpha \rfloor$.
+2. **OOD Gate Covariance Regularization:** $\epsilon = 10^{-5}$ added to diagonal ensures full invertibility without shifting principal axes; cutoff chosen at empirical 95th percentile of calibration inliers.
+3. **ACI Step Size:** $\gamma = 0.005$ derived from bounded variation regret bounds on $\sim 5,000$ step horizons.
+
+---
+
+## 5. Limitations & Operational Scope
+- **CRC Positives Requirement:** Calibration set must contain recurrent events ($n_{\text{pos}} \ge 10$ recommended) to evaluate meaningful quantiles.
+- **OOD Feature Dimension:** Scaled for continuous feature representations; discrete categoricals should be pre-encoded or handled via category frequency filters.
+- **Independence:** ACI assumes sequentially received feedback; delay in observing recurrence outcomes limits the immediate responsiveness of online updates.

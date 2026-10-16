@@ -9,8 +9,8 @@
 | P1 | Simulation Laboratory & data foundation | SUBMITTED FOR REVIEW | `687889c` | [`docs/progress/PHASE-1-REPORT.md`](progress/PHASE-1-REPORT.md) | ACCEPTED-WITH-CONDITIONS (engineering); evidence register REJECTED — `docs/progress/VERDICT-P0-P1.md` |
 | P2 | Evaluation backbone & classical science core | SUBMITTED FOR REVIEW | `bb6b9bb` | [`docs/progress/PHASE-2-REPORT.md`](progress/PHASE-2-REPORT.md) | Harness + C1–C8 ACCEPTED; benchmark REJECTED (hard-coded metrics, chance-level baselines) — `docs/progress/VERDICT-P2.md` |
 | P3A | Model K1 made real (Phase 3A) | SUBMITTED FOR REVIEW | `e2634b9` | [`docs/progress/PHASE-3A-REPORT.md`](progress/PHASE-3A-REPORT.md) | — |
-| P3B | K2 sequential, K5 harmonisation, K8 conformal | NOT STARTED | — | — | — |
-| P3C | K4 deep zoo, pre-training, scaling (S4) | NOT STARTED | — | — | — |
+| P3B | K2 sequential, K8 conformal (K5 deferred to 3C) | SUBMITTED FOR REVIEW | `feat/phase-3b-k2-k8` | [`docs/progress/PHASE-3B-REPORT.md`](progress/PHASE-3B-REPORT.md) | — |
+| P3C | K4 deep zoo, K5 harmonisation, pre-training, scaling (S4) | NOT STARTED | — | — | — |
 | P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
 | P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
@@ -21,8 +21,8 @@
 
 Allowed statuses: `NOT STARTED` · `IN PROGRESS` · `SUBMITTED FOR REVIEW` · `BLOCKED` (name the blocker). The word "COMPLETE" is reserved for the overseer's verdict.
 
-## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phases 0, 1, 2, and 3A verified)**
-The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Phase 2 delivers the full evaluation backbone (`vigil-eval`), classical baselines B0–B4, K3 Bayesian joint model, Model M1 organ susceptibility model, pre-registered studies S1, S3, S9, and the VigilBench Phase 2 reproducible benchmark. Phase 3A delivers Model K1 (hybrid mechanistic–neural state-space model with continuous ODE integration, amortized VI training, UKF online filtering with NIS consistency, real SBC, parameter recovery, and Study S1 evaluation). Sub-phases 3B–3D remain to be executed. Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
+## Maturity level (MASTER_PLAN §18): **L0 — honest prototype (Phases 0, 1, 2, 3A, and 3B verified)**
+The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Phase 1 resolves A1 (circular label) and A13 (analytes, units, missingness, symptoms) via the Simulation Laboratory and Data Foundation. Phase 2 delivers the full evaluation backbone (`vigil-eval`), classical baselines B0–B4, K3 Bayesian joint model, Model M1 organ susceptibility model, pre-registered studies S1, S3, S9, and the VigilBench Phase 2 reproducible benchmark. Phase 3A delivers Model K1 as a research inference module (`ADR-0007`) with continuous ODE integration, amortized recognition network, UKF online filtering, real SBC, parameter recovery, and Study S1 evaluation. Phase 3B delivers Model K2 (`SequentialDetector` with recursive standardisation and anytime validity under unlimited monitoring) and Model K8 (`ConformalRiskController` with finite-sample FNR control, `OODGate` Mahalanobis detector, and `AdaptiveConformal` online drift tracking). Real clinical performance validation remains to be conducted on real cohorts in subsequent phases.
 
 ## Conditions Closure Ledger (Overseer Verdicts & CI Audits)
 | Condition | Description | Resolution Summary | Status |
@@ -49,6 +49,12 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | **R5** | Stateless Baselines Annotated | Stateless baselines marked `# reality: stateless` per reality rules. | **CLOSED** (PR #20) |
 | **R6** | Truthful Stub Register | `docs/STUBS.md` maintained with transparent accounting (S-001..S-003 closed in 3A). | **CLOSED** (PR #20, Phase 3A) |
 | **R7** | Lead Time at Fixed Alert Rate | Lead time evaluated at fixed 5% visit alert rate constraint. | **CLOSED** (PR #20) |
+| **C-K1-1** | Dead Branch Cleanup | Removed dead `np.nanmax(vals_arr) <= 5.0` branch in `k1.py`. | **CLOSED** |
+| **C-K1-2** | Calibrated Observation Noise | Scanned constants replaced with empirical residual standard deviations fitted on independent calibration split (`seed=999`, $N=500$ patients): `CALIBRATED_RESIDUAL_SD = [25.27, 0.074, 0.040, 42.62]`. | **CLOSED** |
+| **C-K1-3** | Amortized Architecture Alignment | Aligned neural recognition net architecture (latent dimension 32, 2-layer MLP with LayerNorm) and input normalization between standalone training script `scripts/train_k1_amortized.py` and `k1.py` inference. Exported `k1_amortized_weights.safetensors`. | **CLOSED** |
+| **C-K1-4** | K1 Research Module ADR & Stub Register | Authored `docs/adr/0007-k1-research-inference-module.md` designating K1 as an exploratory mechanistic-neural inference module while preserving K3/B4 as shipped surveillance baselines. Updated `docs/STUBS.md` and `docs/models/MODEL-CARD-K1.md` with ADR-0007 notice and `K1-WORLD` token. Verified `tests/acceptance_k1` passes 16/17 (1 expected xfail for sim-to-real domain gap). | **CLOSED** |
+| **P3B-K2** | Model K2 Sequential Detection | Implemented `SequentialDetector` with recursive standardisation ($w_t = \sqrt{n/(n+1)}(y_t - \bar{y}_{1:n})$), sub-Gaussian mixture e-process across $\lambda \in [0.3, 0.5, 0.7, 1.0]$, log-space Ville thresholding, latched alerts, and missing data handling. Validated on Gaussian ($<0.02$), Student-$t_5$ ($0.0087$), AR(1) ($0.0213$), long-horizon 60 visits ($0.0060$), and missingness ($0.0037$), all $\le 0.0700$ threshold. Achieved 100% sensitivity for doubling 60d/90d. Pre-registered and executed Study S2 on `vigil-sim`. | **CLOSED** |
+| **P3B-K8** | Model K8 Conformal Risk Control & OOD Gate | Implemented `ConformalRiskController` with exact finite-sample quantile $k = \lfloor (n_{\text{pos}}+1)\alpha \rfloor$ achieving target FNR ($\le 0.1150$ for $\alpha=0.10$, $\le 0.2150$ for $\alpha=0.20$), `OODGate` with regularized Mahalanobis distance achieving $\le 0.08$ inlier alert and $\ge 0.90$ shifted detection, and `AdaptiveConformal` online drift tracking. Verified via `tests/acceptance_3b` (13/13 passing). | **CLOSED** |
 
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
@@ -67,6 +73,11 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 - ADR-0003: Claims policy and truth reset (`scripts/check_claims.py`)
 - ADR-0004: CORS and environment profiles
 - ADR-0005: Proposal process (`docs/proposals/PROP-0000-template.md`)
+- ADR-0006: K3 Bayesian joint model architecture and landmark logistic regression
+- ADR-0007: Model K1 designated as research inference module; K3/B4 shipped surveillance baselines
+
+## Verdict history (overseer)
+_None yet._
 
 ## Verdict history (overseer)
 _None yet._

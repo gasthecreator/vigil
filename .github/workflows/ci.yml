@@ -45,7 +45,9 @@ jobs:
       - name: Run tests
         run: uv run pytest
       - name: Run K1 acceptance contract tests
-        run: VIGIL_ACCEPTANCE=1 uv run pytest tests/acceptance_k1 -v
+        run: VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -v
+      - name: Run Phase 3B acceptance contract tests
+        run: VIGIL_ACCEPT_3B=1 uv run pytest tests/acceptance_3b -v
 
   frontend-lint-and-build:
     runs-on: ubuntu-latest

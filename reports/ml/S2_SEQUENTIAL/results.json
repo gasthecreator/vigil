@@ -1,51 +1,82 @@
 {
-  "null_stress_suite": {
-    "all_passed": true,
-    "nominal_alpha": 0.05,
-    "scenarios": {
-      "null_1_standard_biological_variation": {
-        "empirical_patient_level_far": 0.035,
-        "nominal_alpha": 0.05,
-        "passed": true
-      },
-      "null_2_heavy_tailed_student_t": {
-        "empirical_patient_level_far": 0.04,
-        "nominal_alpha": 0.05,
-        "passed": true
-      },
-      "null_3_inter_lab_batch_shift": {
-        "empirical_patient_level_far": 0.04,
-        "nominal_alpha": 0.05,
-        "passed": true
-      },
-      "null_4_therapy_hepatotoxicity_spikes": {
-        "empirical_patient_level_far": 0.02,
-        "nominal_alpha": 0.05,
-        "passed": true
-      },
-      "null_5_severe_mnar_missingness": {
-        "empirical_patient_level_far": 0.005,
-        "nominal_alpha": 0.05,
-        "passed": true
-      }
-    }
+  "study_id": "S2_SEQUENTIAL",
+  "vigil_sim_study": {
+    "n_null_patients": 187,
+    "n_recurrence_patients": 291,
+    "static_far": 0.0053,
+    "static_far_ci": [
+      0.0,
+      0.016
+    ],
+    "k2_far": 0.0,
+    "k2_far_ci": [
+      0.0,
+      0.0
+    ],
+    "static_power": 0.5292,
+    "static_power_ci": [
+      0.4708,
+      0.5876
+    ],
+    "k2_power": 0.4124,
+    "k2_power_ci": [
+      0.3574,
+      0.4708
+    ],
+    "static_median_delay_days": 79.5,
+    "k2_median_delay_days": 100.7,
+    "static_mean_delay_days": 98.0,
+    "k2_mean_delay_days": 125.7
   },
-  "comparative_detection": {
-    "M_Static": {
-      "patient_level_null_far": 0.085,
-      "expected_detection_delay_days": 104.4
+  "acceptance_stress_suite": {
+    "gauss10": {
+      "empirical_far": 0.0033,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
     },
-    "M_CUSUM": {
-      "patient_level_null_far": 0.295,
-      "expected_detection_delay_days": 100.8
+    "gauss12": {
+      "empirical_far": 0.0153,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
     },
-    "M_Shiryaev": {
-      "patient_level_null_far": 0.355,
-      "expected_detection_delay_days": 117.9
+    "heavy": {
+      "empirical_far": 0.0087,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
     },
-    "K2_EProcess": {
-      "patient_level_null_far": 0.035,
-      "expected_detection_delay_days": 418.5
+    "ar1": {
+      "empirical_far": 0.0213,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
+    },
+    "anytime_60_visits": {
+      "empirical_far": 0.006,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
+    },
+    "missing_30_percent": {
+      "empirical_far": 0.0037,
+      "nominal_alpha": 0.05,
+      "target_bound": 0.07,
+      "passed": true
+    },
+    "power_doubling_90d": {
+      "detection_fraction": 1.0,
+      "median_delay_days": 117.8,
+      "target_fraction": 0.75,
+      "target_delay_days": 240.0,
+      "passed": true
+    },
+    "power_doubling_60d": {
+      "detection_fraction": 1.0,
+      "median_delay_days": 96.2,
+      "target_fraction": 0.85,
+      "passed": true
     }
   }
 }

@@ -1,0 +1,21 @@
+{
+  "experiment_id": "EXP-K1-002",
+  "num_evaluated": 249,
+  "num_events": 87,
+  "baseline_auc": 0.4747,
+  "intervention_auc": 0.509,
+  "delta_auc": 0.0343,
+  "delta_auc_ci_95": [
+    -0.0508,
+    0.1176
+  ],
+  "baseline_brier": 0.6506,
+  "intervention_brier": 0.4354,
+  "delta_brier": -0.2152,
+  "delta_brier_ci_95": [
+    -0.2489,
+    -0.1858
+  ],
+  "ci_excludes_zero": false,
+  "hypothesis_confirmed": false
+}

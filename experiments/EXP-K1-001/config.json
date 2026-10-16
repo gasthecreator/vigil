@@ -1,0 +1,8 @@
+{
+  "experiment_id": "EXP-K1-001",
+  "seed": 42,
+  "num_patients": 300,
+  "horizon_days": 730.0,
+  "landmark_day": 365.0,
+  "intervention": "informative_prior_shrinkage"
+}

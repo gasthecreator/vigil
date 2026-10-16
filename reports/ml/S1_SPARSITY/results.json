@@ -41,8 +41,8 @@
       "ece": 0.0407,
       "net_benefit": 0.2733,
       "lead_time_days": 60.3,
-      "latency_p95_ms": 0.6,
-      "latency_p50_ms": 0.5
+      "latency_p95_ms": 0.81,
+      "latency_p50_ms": 0.53
     },
     "B4_GradientBoosting": {
       "auc": 0.755,
@@ -52,8 +52,8 @@
       "ece": 0.0505,
       "net_benefit": 0.2931,
       "lead_time_days": 62.8,
-      "latency_p95_ms": 1.24,
-      "latency_p50_ms": 1.11
+      "latency_p95_ms": 1.32,
+      "latency_p50_ms": 1.14
     },
     "K3_JointModel": {
       "auc": 0.7304,
@@ -63,19 +63,19 @@
       "ece": 0.0314,
       "net_benefit": 0.2664,
       "lead_time_days": 54.0,
-      "latency_p95_ms": 0.15,
+      "latency_p95_ms": 0.17,
       "latency_p50_ms": 0.14
     },
     "K1_Kinetic": {
-      "auc": 0.502,
-      "auc_ci_lower": 0.478,
-      "auc_ci_upper": 0.5295,
-      "brier": 0.3219,
-      "ece": 0.0969,
-      "net_benefit": 0.0,
-      "lead_time_days": 420.3,
-      "latency_p95_ms": 11.74,
-      "latency_p50_ms": 10.57
+      "auc": 0.4368,
+      "auc_ci_lower": 0.4063,
+      "auc_ci_upper": 0.4766,
+      "brier": 0.2997,
+      "ece": 0.0889,
+      "net_benefit": 0.2971,
+      "lead_time_days": 403.7,
+      "latency_p95_ms": 0.13,
+      "latency_p50_ms": 0.12
     }
   },
   "V_4": {
@@ -120,8 +120,8 @@
       "ece": 0.0281,
       "net_benefit": 0.2246,
       "lead_time_days": 62.7,
-      "latency_p95_ms": 0.53,
-      "latency_p50_ms": 0.5
+      "latency_p95_ms": 0.65,
+      "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
       "auc": 0.7853,
@@ -131,8 +131,8 @@
       "ece": 0.0421,
       "net_benefit": 0.2506,
       "lead_time_days": 67.1,
-      "latency_p95_ms": 1.15,
-      "latency_p50_ms": 1.1
+      "latency_p95_ms": 1.31,
+      "latency_p50_ms": 1.15
     },
     "K3_JointModel": {
       "auc": 0.7647,
@@ -142,19 +142,19 @@
       "ece": 0.024,
       "net_benefit": 0.2305,
       "lead_time_days": 54.9,
-      "latency_p95_ms": 0.15,
+      "latency_p95_ms": 0.16,
       "latency_p50_ms": 0.14
     },
     "K1_Kinetic": {
-      "auc": 0.4954,
-      "auc_ci_lower": 0.4672,
-      "auc_ci_upper": 0.5165,
-      "brier": 0.2849,
-      "ece": 0.1023,
-      "net_benefit": 0.0,
-      "lead_time_days": 415.7,
-      "latency_p95_ms": 11.7,
-      "latency_p50_ms": 10.56
+      "auc": 0.4546,
+      "auc_ci_lower": 0.428,
+      "auc_ci_upper": 0.4877,
+      "brier": 0.2671,
+      "ece": 0.0879,
+      "net_benefit": 0.244,
+      "lead_time_days": 437.8,
+      "latency_p95_ms": 0.14,
+      "latency_p50_ms": 0.12
     }
   },
   "V_6": {
@@ -199,7 +199,7 @@
       "ece": 0.0188,
       "net_benefit": 0.189,
       "lead_time_days": 59.1,
-      "latency_p95_ms": 0.54,
+      "latency_p95_ms": 0.57,
       "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
@@ -210,8 +210,8 @@
       "ece": 0.0359,
       "net_benefit": 0.2096,
       "lead_time_days": 64.3,
-      "latency_p95_ms": 1.22,
-      "latency_p50_ms": 1.1
+      "latency_p95_ms": 1.16,
+      "latency_p50_ms": 1.11
     },
     "K3_JointModel": {
       "auc": 0.7985,
@@ -221,19 +221,19 @@
       "ece": 0.0199,
       "net_benefit": 0.2021,
       "lead_time_days": 55.9,
-      "latency_p95_ms": 0.15,
+      "latency_p95_ms": 0.16,
       "latency_p50_ms": 0.14
     },
     "K1_Kinetic": {
-      "auc": 0.5145,
-      "auc_ci_lower": 0.4851,
-      "auc_ci_upper": 0.538,
-      "brier": 0.2515,
-      "ece": 0.0993,
-      "net_benefit": 0.0,
-      "lead_time_days": 274.5,
-      "latency_p95_ms": 11.6,
-      "latency_p50_ms": 10.55
+      "auc": 0.4448,
+      "auc_ci_lower": 0.4191,
+      "auc_ci_upper": 0.4722,
+      "brier": 0.238,
+      "ece": 0.09,
+      "net_benefit": 0.1885,
+      "lead_time_days": 476.0,
+      "latency_p95_ms": 0.14,
+      "latency_p50_ms": 0.12
     }
   },
   "V_10": {
@@ -278,8 +278,8 @@
       "ece": 0.0217,
       "net_benefit": 0.171,
       "lead_time_days": 57.9,
-      "latency_p95_ms": 0.53,
-      "latency_p50_ms": 0.5
+      "latency_p95_ms": 0.54,
+      "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
       "auc": 0.8142,
@@ -289,8 +289,8 @@
       "ece": 0.0344,
       "net_benefit": 0.189,
       "lead_time_days": 64.3,
-      "latency_p95_ms": 1.14,
-      "latency_p50_ms": 1.1
+      "latency_p95_ms": 1.18,
+      "latency_p50_ms": 1.12
     },
     "K3_JointModel": {
       "auc": 0.8075,
@@ -300,19 +300,19 @@
       "ece": 0.0202,
       "net_benefit": 0.187,
       "lead_time_days": 55.4,
-      "latency_p95_ms": 0.15,
+      "latency_p95_ms": 0.16,
       "latency_p50_ms": 0.14
     },
     "K1_Kinetic": {
-      "auc": 0.5288,
-      "auc_ci_lower": 0.5097,
-      "auc_ci_upper": 0.546,
-      "brier": 0.2353,
-      "ece": 0.0913,
-      "net_benefit": 0.0,
-      "lead_time_days": 393.7,
-      "latency_p95_ms": 11.9,
-      "latency_p50_ms": 10.62
+      "auc": 0.4437,
+      "auc_ci_lower": 0.4165,
+      "auc_ci_upper": 0.4713,
+      "brier": 0.2239,
+      "ece": 0.0863,
+      "net_benefit": 0.1676,
+      "lead_time_days": 488.2,
+      "latency_p95_ms": 0.13,
+      "latency_p50_ms": 0.12
     }
   },
   "V_20": {
@@ -346,7 +346,7 @@
       "ece": 0.0595,
       "net_benefit": 0.1715,
       "lead_time_days": 117.0,
-      "latency_p95_ms": 0.03,
+      "latency_p95_ms": 0.02,
       "latency_p50_ms": 0.02
     },
     "B3_RegularizedHazard": {
@@ -357,7 +357,7 @@
       "ece": 0.0211,
       "net_benefit": 0.1705,
       "lead_time_days": 57.9,
-      "latency_p95_ms": 0.55,
+      "latency_p95_ms": 0.54,
       "latency_p50_ms": 0.51
     },
     "B4_GradientBoosting": {
@@ -368,8 +368,8 @@
       "ece": 0.0346,
       "net_benefit": 0.1883,
       "lead_time_days": 64.3,
-      "latency_p95_ms": 1.24,
-      "latency_p50_ms": 1.12
+      "latency_p95_ms": 1.17,
+      "latency_p50_ms": 1.11
     },
     "K3_JointModel": {
       "auc": 0.8076,
@@ -383,15 +383,15 @@
       "latency_p50_ms": 0.14
     },
     "K1_Kinetic": {
-      "auc": 0.5012,
-      "auc_ci_lower": 0.4755,
-      "auc_ci_upper": 0.5209,
-      "brier": 0.2349,
-      "ece": 0.091,
-      "net_benefit": 0.0,
-      "lead_time_days": 394.5,
-      "latency_p95_ms": 12.74,
-      "latency_p50_ms": 11.15
+      "auc": 0.4485,
+      "auc_ci_lower": 0.4224,
+      "auc_ci_upper": 0.4752,
+      "brier": 0.2235,
+      "ece": 0.083,
+      "net_benefit": 0.1681,
+      "lead_time_days": 458.7,
+      "latency_p95_ms": 0.13,
+      "latency_p50_ms": 0.12
     }
   }
 }
