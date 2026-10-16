@@ -19,3 +19,9 @@
 
 ## Enforcement
 `python scripts/reality_audit.py` fails CI on: hard-coded float results inside study/benchmark functions (RR1), no-op `fit` (RR2), validation methods that never touch `self` (RR3), phantom classes named in module docstrings (RR4). Passing it is necessary, not sufficient; the overseer still reviews behaviour.
+
+## Added in plan v1.2.1 (after the K1 acceptance review)
+- **RR11 No tuning on acceptance seeds.** Constants that affect a posterior, threshold, width or blend (e.g. a "std = 24.0", a `0.3·net + 0.7·prior` mix, an elevation-weighted prior mixture) must be fitted on a separate calibration split and recorded in code/config with how they were obtained. Scanning a constant on the exact seed an acceptance test uses is test-gaming and invalidates the result.
+- **RR12 Do not invent observations.** A model must be fed the patient's real history. Fabricating "past" or "future" points from summary statistics and passing them as data is forbidden.
+- **RR13 Deployed artefacts are reproducible from the repo.** Every model weight file must be produced by a committed script with fixed seeds; the training function that tests exercise must be the one that produces the deployed model.
+- **RR14 Effects need uncertainty.** A difference between two AUCs on a few hundred patients is reported with a bootstrap CI over patients; "CONFIRMED"/"REFUTED" requires the CI to exclude zero.
