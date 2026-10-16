@@ -48,6 +48,8 @@ jobs:
         run: VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -v
       - name: Run Phase 3B acceptance contract tests
         run: VIGIL_ACCEPT_3B=1 uv run pytest tests/acceptance_3b -v
+      - name: Run Phase 4a acceptance contract tests
+        run: VIGIL_ACCEPT_P4=1 uv run pytest tests/acceptance_p4 -v
 
   frontend-lint-and-build:
     runs-on: ubuntu-latest

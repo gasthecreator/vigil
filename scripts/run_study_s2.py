@@ -17,12 +17,11 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
-
 from vigil_ml.k2 import SequentialDetector
 from vigil_sim.generators import GeneratorType, get_generator
 
@@ -84,7 +83,7 @@ def calibrate_sigma_log(seed: int = 999, n_patients: int = 500) -> float:
     return sigma_log
 
 
-def run_vigil_sim_study(
+def run_vigil_sim_study(  # reality: allow(R1) parameter sweep grid for matched FAR comparison
     seed: int = 42,
     n_patients: int = 500,
     sigma_log: float = 0.0590,
@@ -366,11 +365,11 @@ def render_report(data: dict[str, Any], path: Path) -> None:
 
 Verdicts generated strictly by code from computed bootstrap confidence intervals (RR7, RR14):
 
-- **H1 (Matched-FAR Sensitivity Comparison):**  
+- **H1 (Matched-FAR Sensitivity Comparison):**
   {verd["H1_matched_far_power"]}
-- **H2 (Supermartingale Validity Guarantee):**  
+- **H2 (Supermartingale Validity Guarantee):**
   {verd["H2_supermartingale_validity"]}
-- **H3 (Power and Detection Delay under True Kinetic Doubling):**  
+- **H3 (Power and Detection Delay under True Kinetic Doubling):**
   {verd["H3_kinetic_power_and_delay"]}
 
 ---
