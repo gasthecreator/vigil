@@ -222,10 +222,16 @@ class RadiotherapyScheduler:
 
         # (a) Reward for delivering fractions: heavily prioritize filling capacity and treating patients
         FRACTION_DELIVERED_REWARD = 20000
+        FRACTION_CONTINUATION_REWARD = 60000
         for p in patients:
             uid = _course_uid(p)
+            rew = (
+                FRACTION_CONTINUATION_REWARD
+                if p.fractions_completed > 0
+                else FRACTION_DELIVERED_REWARD
+            )
             for d in range(num_days):
-                objective_terms.append(-FRACTION_DELIVERED_REWARD * y[(uid, d)])
+                objective_terms.append(-rew * y[(uid, d)])
 
         # (b) Delay harm while waiting (1 - started[uid, d])
         for p in patients:
@@ -254,15 +260,15 @@ class RadiotherapyScheduler:
             uid = _course_uid(p)
             remaining = p.fractions_total - p.fractions_completed
             if remaining > 0:
+                # Direct interruption penalty for unscheduled days in ongoing courses
+                if p.fractions_completed > 0:
+                    for d in range(min(num_days, remaining)):
+                        daily_int_cost = int(round(self.interruption_penalty * self.SCALE)) + 150
+                        objective_terms.append(daily_int_cost * (1 - y[(uid, d)]))
+
                 for d in range(num_days - 2):
                     gap_var = model.NewBoolVar(f"gap_{uid}_d{d}")
-                    model.Add(
-                        gap_var
-                        >= y[(uid, d)]
-                        + y[(uid, d + 2)]
-                        - y[(uid, d + 1)]
-                        - 1
-                    )
+                    model.Add(gap_var >= y[(uid, d)] + y[(uid, d + 2)] - y[(uid, d + 1)] - 1)
                     objective_terms.append(gap_var * int_gap_cost)
 
         model.Minimize(sum(objective_terms))

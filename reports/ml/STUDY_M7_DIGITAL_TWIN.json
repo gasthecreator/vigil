@@ -1,0 +1,282 @@
+{
+  "study": "M7-TWIN",
+  "description": "Departmental Digital Twin & Radiotherapy Triage Evaluation (CP-SAT)",
+  "pre_registration": "docs/studies/PREREG-M7-TWIN.md",
+  "timestamp": "2026-10-17T18:50:00Z",
+  "replications": 50,
+  "facility": {
+    "linacs": 2,
+    "daily_capacity_per_linac": 16,
+    "total_daily_capacity": 32,
+    "mtbf_days": 21.0,
+    "mttr_days": 7.0
+  },
+  "baseline_summary": {
+    "cpsat": {
+      "mean_harm": 0.08218,
+      "mean_wait_days": 6.94,
+      "mean_subgroup_disparity_days": 1.2
+    },
+    "urgency_heuristic": {
+      "mean_harm": 0.0188,
+      "mean_wait_days": 13.11,
+      "mean_subgroup_disparity_days": 1.82
+    },
+    "fcfs": {
+      "mean_harm": 0.02128,
+      "mean_wait_days": 12.72,
+      "mean_subgroup_disparity_days": 1.0
+    },
+    "greedy_proxy": {
+      "mean_harm": 0.01674
+    }
+  },
+  "paired_comparisons": {
+    "fcfs_minus_cpsat": {
+      "mean_difference": -0.0609,
+      "bootstrap_ci_95": [
+        -0.07402,
+        -0.04919
+      ]
+    },
+    "urgency_minus_cpsat": {
+      "mean_difference": -0.06338,
+      "bootstrap_ci_95": [
+        -0.07647,
+        -0.05146
+      ]
+    },
+    "greedy_proxy_minus_cpsat": {
+      "mean_difference": -0.06544,
+      "bootstrap_ci_95": [
+        -0.07874,
+        -0.05349
+      ]
+    }
+  },
+  "hypotheses": {
+    "H1_harm_reduction_vs_fcfs": {
+      "statement": "CP-SAT achieves lower harm than FCFS",
+      "observed_mean_diff": -0.0609,
+      "bootstrap_95_ci": [
+        -0.07402,
+        -0.04919
+      ],
+      "verdict": "REFUTED"
+    },
+    "H2_cpsat_vs_urgency_heuristic": {
+      "statement": "CP-SAT vs Clinical Urgency Heuristic (honest reporting of strongest baseline)",
+      "observed_mean_diff": -0.06338,
+      "bootstrap_95_ci": [
+        -0.07647,
+        -0.05146
+      ],
+      "verdict": "URGENCY_ACHIEVES_LOWER_RAW_HARM",
+      "trade_off_analysis": "The unconstrained Clinical Urgency Heuristic strictly protects ongoing courses and high urgency tiers at the cost of higher wait disparity and starvation of lower-urgency patients. CP-SAT enforces bounded wait disparity (<= 5.0d) and prevents starvation."
+    },
+    "H3_subgroup_fairness": {
+      "statement": "Subgroup wait disparity <= 5.0 days under CP-SAT",
+      "observed_disparity_days": 1.2,
+      "threshold_days": 5.0,
+      "verdict": "SUPPORTED"
+    },
+    "H4_ranking_stability": {
+      "statement": "Spearman rank correlation >= 0.80 across parameter ranges",
+      "min_spearman_rho": 0.9824,
+      "threshold": 0.8,
+      "verdict": "SUPPORTED"
+    }
+  },
+  "sensitivity_analysis": {
+    "adjuvant_post_lumpectomy": {
+      "clinical_context": "adjuvant_post_lumpectomy",
+      "evidence_level": "SECONDARY",
+      "delay_days": 45,
+      "interruption_days": 3,
+      "baseline_expected_harm": 0.01,
+      "grace_period_sweep": {
+        "min": 42,
+        "max": 70,
+        "harm_at_min": 0.0104,
+        "harm_at_max": 0.01
+      },
+      "ramp_end_sweep": {
+        "min": 70,
+        "max": 112,
+        "harm_at_min": 0.01,
+        "harm_at_max": 0.01
+      },
+      "base_rate_sweep": {
+        "min": 0.03,
+        "max": 0.08,
+        "harm_at_min": 0.01,
+        "harm_at_max": 0.01
+      },
+      "interruption_penalty_sweep": {
+        "min": 0.005,
+        "max": 0.02,
+        "harm_at_min": 0.005,
+        "harm_at_max": 0.02
+      },
+      "rr_bounds": {
+        "min": 1.02,
+        "max": 1.14,
+        "harm_at_min": 0.01,
+        "harm_at_max": 0.01
+      }
+    },
+    "adjuvant_post_mastectomy": {
+      "clinical_context": "adjuvant_post_mastectomy",
+      "evidence_level": "ASSUMPTION",
+      "delay_days": 45,
+      "interruption_days": 3,
+      "baseline_expected_harm": 0.015,
+      "grace_period_sweep": {
+        "min": 42,
+        "max": 70,
+        "harm_at_min": 0.016,
+        "harm_at_max": 0.015
+      },
+      "ramp_end_sweep": {
+        "min": 70,
+        "max": 112,
+        "harm_at_min": 0.015,
+        "harm_at_max": 0.015
+      },
+      "base_rate_sweep": {
+        "min": 0.06,
+        "max": 0.15,
+        "harm_at_min": 0.015,
+        "harm_at_max": 0.015
+      },
+      "interruption_penalty_sweep": {
+        "min": 0.008,
+        "max": 0.03,
+        "harm_at_min": 0.008,
+        "harm_at_max": 0.03
+      },
+      "rr_bounds": {
+        "min": 1.03,
+        "max": 1.18,
+        "harm_at_min": 0.015,
+        "harm_at_max": 0.015
+      }
+    },
+    "curative_tnbc": {
+      "clinical_context": "curative_tnbc",
+      "evidence_level": "ASSUMPTION",
+      "delay_days": 45,
+      "interruption_days": 3,
+      "baseline_expected_harm": 0.02725,
+      "grace_period_sweep": {
+        "min": 28,
+        "max": 56,
+        "harm_at_min": 0.03775,
+        "harm_at_max": 0.025
+      },
+      "ramp_end_sweep": {
+        "min": 56,
+        "max": 84,
+        "harm_at_min": 0.02725,
+        "harm_at_max": 0.02725
+      },
+      "base_rate_sweep": {
+        "min": 0.1,
+        "max": 0.22,
+        "harm_at_min": 0.0265,
+        "harm_at_max": 0.0283
+      },
+      "interruption_penalty_sweep": {
+        "min": 0.015,
+        "max": 0.04,
+        "harm_at_min": 0.01725,
+        "harm_at_max": 0.04225
+      },
+      "rr_bounds": {
+        "min": 1.05,
+        "max": 1.28,
+        "harm_at_min": 0.02575,
+        "harm_at_max": 0.0292
+      }
+    },
+    "palliative_bone_brain": {
+      "clinical_context": "palliative_bone_brain",
+      "evidence_level": "ASSUMPTION",
+      "delay_days": 45,
+      "interruption_days": 3,
+      "baseline_expected_harm": 0.13645,
+      "grace_period_sweep": {
+        "min": 0,
+        "max": 7,
+        "harm_at_min": 0.13645,
+        "harm_at_max": 0.11884
+      },
+      "ramp_end_sweep": {
+        "min": 7,
+        "max": 21,
+        "harm_at_min": 0.13645,
+        "harm_at_max": 0.13645
+      },
+      "base_rate_sweep": {
+        "min": 0.12,
+        "max": 0.3,
+        "harm_at_min": 0.09787,
+        "harm_at_max": 0.18467
+      },
+      "interruption_penalty_sweep": {
+        "min": 0.02,
+        "max": 0.06,
+        "harm_at_min": 0.11645,
+        "harm_at_max": 0.15645
+      },
+      "rr_bounds": {
+        "min": 1.15,
+        "max": 1.5,
+        "harm_at_min": 0.08665,
+        "harm_at_max": 0.20742
+      }
+    }
+  },
+  "stability_analysis": {
+    "n_patients": 16,
+    "spearman_correlation": 0.9824,
+    "concordant_pairs_fraction": 0.975,
+    "baseline_order": [
+      "P_pal_2",
+      "P_pal_5",
+      "P_pal_10",
+      "P_pal_15",
+      "P_tnbc_75",
+      "P_tnbc_55",
+      "P_pmrt_90",
+      "P_pmrt_70",
+      "P_lump_60",
+      "P_lump_80",
+      "P_lump_20",
+      "P_lump_45",
+      "P_pmrt_30",
+      "P_pmrt_50",
+      "P_tnbc_15",
+      "P_tnbc_35"
+    ],
+    "perturbed_order": [
+      "P_pal_15",
+      "P_pal_2",
+      "P_pal_5",
+      "P_pal_10",
+      "P_tnbc_75",
+      "P_tnbc_55",
+      "P_pmrt_90",
+      "P_pmrt_70",
+      "P_lump_60",
+      "P_lump_80",
+      "P_lump_20",
+      "P_lump_45",
+      "P_pmrt_30",
+      "P_pmrt_50",
+      "P_tnbc_15",
+      "P_tnbc_35"
+    ]
+  },
+  "wall_time_seconds": 102.14
+}
