@@ -368,6 +368,8 @@ class ScheduleSolveResponse(BaseModel):
     fairness_disparity: float
     assignments: List[ScheduleAssignment]
     unassigned_patient_ids: List[str]
+    patients_included: int = 0
+    patients_unconsented_included: int = 0
     synthetic: bool = True
 
 

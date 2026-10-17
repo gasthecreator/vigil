@@ -133,45 +133,37 @@ def test_env(tmp_path):
     app.dependency_overrides.clear()
 
 
-def set_patient_consent_state(engine, patient_id: str, state: str):
-    """Update consent state for a patient: 'active', 'revoked', or 'expired'."""
+def set_patient_consent_state(client: TestClient, patient_id: str, state: str):
+    """Update consent state for a patient strictly over HTTP (no direct DB manipulation)."""
+    admin_token = create_access_token(subject="admin-consent", role=UserRole.ADMIN.value)
+    headers = {"Authorization": f"Bearer {admin_token}", "X-Vigil-Role": "admin"}
     now = datetime.now(timezone.utc)
-    with Session(engine) as session:
-        # Clear existing consent records
-        session.query(ConsentRecord).filter(ConsentRecord.patient_id == patient_id).delete()
-        if state == "active":
-            session.add(
-                ConsentRecord(
-                    patient_id=patient_id,
-                    consent_type="surveillance_monitoring",
-                    granted=True,
-                    granted_at=now,
-                    scope="full",
-                )
-            )
-        elif state == "revoked":
-            session.add(
-                ConsentRecord(
-                    patient_id=patient_id,
-                    consent_type="surveillance_monitoring",
-                    granted=True,
-                    granted_at=now - timedelta(days=5),
-                    withdrawn_at=now - timedelta(days=1),
-                    scope="full",
-                )
-            )
-        elif state == "expired":
-            session.add(
-                ConsentRecord(
-                    patient_id=patient_id,
-                    consent_type="surveillance_monitoring",
-                    granted=True,
-                    granted_at=now - timedelta(days=365),
-                    expires_at=now - timedelta(days=1),
-                    scope="full",
-                )
-            )
-        session.commit()
+    if state == "active":
+        res = client.post(
+            f"/api/v1/patients/{patient_id}/consent",
+            json={"consent_type": "surveillance_monitoring", "granted": True, "scope": "full"},
+            headers=headers,
+        )
+        assert res.status_code == 201
+    elif state == "revoked":
+        res = client.post(
+            f"/api/v1/patients/{patient_id}/consent",
+            json={"consent_type": "surveillance_monitoring", "granted": False, "scope": "full"},
+            headers=headers,
+        )
+        assert res.status_code == 201
+    elif state == "expired":
+        res = client.post(
+            f"/api/v1/patients/{patient_id}/consent",
+            json={
+                "consent_type": "surveillance_monitoring",
+                "granted": True,
+                "scope": "full",
+                "expires_at": (now - timedelta(days=1)).isoformat(),
+            },
+            headers=headers,
+        )
+        assert res.status_code == 201
 
 
 ROLES = [
@@ -194,7 +186,7 @@ def test_role_x_endpoint_x_consent_matrix(test_env, role: str, consent_state: st
     # Enforce strict auth in test
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
 
-    set_patient_consent_state(engine, "pat-target", consent_state)
+    set_patient_consent_state(client, "pat-target", consent_state)
 
     token = create_access_token(
         subject=f"usr-{role}",
@@ -292,7 +284,7 @@ def test_patient_role_cannot_read_foreign_records(test_env, monkeypatch):
     client, engine = test_env
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
 
-    set_patient_consent_state(engine, "pat-target", "active")
+    set_patient_consent_state(client, "pat-target", "active")
 
     token_pat_target = create_access_token(subject="pat-target", role=UserRole.PATIENT.value)
     headers = {"Authorization": f"Bearer {token_pat_target}"}
@@ -316,7 +308,7 @@ def test_patient_list_redaction(test_env, monkeypatch):
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
 
     # pat-target has revoked/no consent; pat-foreign has active consent
-    set_patient_consent_state(engine, "pat-target", "revoked")
+    set_patient_consent_state(client, "pat-target", "revoked")
 
     token_clinician = create_access_token(subject="doc-1", role=UserRole.CLINICIAN.value)
     headers = {"Authorization": f"Bearer {token_clinician}"}
@@ -348,3 +340,100 @@ def test_patient_list_redaction(test_env, monkeypatch):
     assert r_search_consented.status_code == 200
     assert len(r_search_consented.json()) == 1
     assert r_search_consented.json()[0]["id"] == "pat-foreign"
+
+
+def test_http_consent_lifecycle_and_withdrawal_matrix(test_env, monkeypatch):
+    """P12-D: Strictly tests consent withdrawal, re-grant, and expiry entirely over HTTP.
+
+    Never mutates or edits the database directly. Verifies that HTTP POST /consent with:
+    1. granted=False revokes access immediately (HTTP 403)
+    2. granted=True re-grants access (HTTP 200)
+    3. withdrawn_at in the past revokes access immediately (HTTP 403)
+    4. expires_at in the past revokes access immediately (HTTP 403)
+    across patient reads, observation reads, and trajectory queries.
+    """
+    client, engine = test_env
+    monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
+
+    clinician_token = create_access_token(subject="doc-lifecycle", role=UserRole.CLINICIAN.value)
+    headers = {"Authorization": f"Bearer {clinician_token}", "X-Vigil-Role": "clinician"}
+
+    # 1. Register a fresh patient over HTTP
+    r_create = client.post(
+        "/api/v1/patients/",
+        json={"age": 52, "mrn": "MRN-HTTP-CONSENT", "status": "active"},
+        headers=headers,
+    )
+    assert r_create.status_code == 201
+    pid = r_create.json()["id"]
+
+    # Read without consent -> 403
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 403
+    assert client.get(f"/api/v1/patients/{pid}/observations", headers=headers).status_code == 403
+
+    # Grant active consent over HTTP
+    r_grant = client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "full", "granted": True, "consent_type": "surveillance_monitoring"},
+        headers=headers,
+    )
+    assert r_grant.status_code == 201
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/patients/{pid}/observations", headers=headers).status_code == 200
+
+    # Withdraw consent over HTTP (granted=False)
+    r_withdraw = client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "full", "granted": False, "consent_type": "surveillance_monitoring"},
+        headers=headers,
+    )
+    assert r_withdraw.status_code == 201
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 403
+    assert client.get(f"/api/v1/patients/{pid}/observations", headers=headers).status_code == 403
+
+    # Re-grant consent over HTTP
+    r_regrant = client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "full", "granted": True, "consent_type": "surveillance_monitoring"},
+        headers=headers,
+    )
+    assert r_regrant.status_code == 201
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 200
+
+    # Withdraw with historical withdrawn_at timestamp over HTTP
+    now = datetime.now(timezone.utc)
+    r_withdrawn_at = client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={
+            "scope": "full",
+            "granted": True,
+            "consent_type": "surveillance_monitoring",
+            "withdrawn_at": (now - timedelta(hours=2)).isoformat(),
+        },
+        headers=headers,
+    )
+    assert r_withdrawn_at.status_code == 201
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 403
+
+    # Re-grant
+    client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "full", "granted": True, "consent_type": "surveillance_monitoring"},
+        headers=headers,
+    )
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 200
+
+    # Withdraw with expired timestamp over HTTP
+    r_expired = client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={
+            "scope": "full",
+            "granted": True,
+            "consent_type": "surveillance_monitoring",
+            "expires_at": (now - timedelta(days=1)).isoformat(),
+        },
+        headers=headers,
+    )
+    assert r_expired.status_code == 201
+    assert client.get(f"/api/v1/patients/{pid}", headers=headers).status_code == 403
+

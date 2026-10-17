@@ -223,20 +223,13 @@ def test_symptom_diary_crud_and_consent(companion_env):
     symptoms = resp_list.json()
     assert len(symptoms) == 2
 
-    # Withdraw patient consent and verify symptoms are protected (403)
-    with Session(engine) as s:
-        s.query(ConsentRecord).filter(ConsentRecord.patient_id == patient_id).delete()
-        s.add(
-            ConsentRecord(
-                patient_id=patient_id,
-                consent_type="surveillance_monitoring",
-                granted=True,
-                granted_at=datetime.now(timezone.utc) - timedelta(days=2),
-                withdrawn_at=datetime.now(timezone.utc) - timedelta(days=1),
-                scope="full",
-            )
-        )
-        s.commit()
+    # Withdraw patient consent over HTTP and verify symptoms are protected (403)
+    resp_withdraw = client.post(
+        f"/api/v1/patients/{patient_id}/consent",
+        json={"consent_type": "surveillance_monitoring", "granted": False, "scope": "full"},
+        headers=clinician_hdr,
+    )
+    assert resp_withdraw.status_code == 201
 
     resp_withdrawn = client.get(f"/api/v1/patients/{patient_id}/symptoms", headers=clinician_hdr)
     assert resp_withdrawn.status_code == 403
@@ -379,19 +372,15 @@ def test_caregiver_share_security_attacks(companion_env):
             .where(CaregiverShare.id == share_id)
             .values(expires_at=datetime.now(timezone.utc) + timedelta(days=10))
         )
-        # Withdraw consent
-        s.query(ConsentRecord).filter(ConsentRecord.patient_id == patient_id).delete()
-        s.add(
-            ConsentRecord(
-                patient_id=patient_id,
-                consent_type="surveillance_monitoring",
-                granted=True,
-                granted_at=datetime.now(timezone.utc) - timedelta(days=10),
-                withdrawn_at=datetime.now(timezone.utc) - timedelta(minutes=5),
-                scope="full",
-            )
-        )
         s.commit()
+
+    # Withdraw patient consent over HTTP
+    resp_withdraw = client.post(
+        f"/api/v1/patients/{patient_id}/consent",
+        json={"consent_type": "surveillance_monitoring", "granted": False, "scope": "full"},
+        headers=clinician_hdr,
+    )
+    assert resp_withdraw.status_code == 201
 
     # Attack 3: Patient has withdrawn consent -> caregiver access rejected with 403
     resp_no_consent = client.get(f"/api/v1/companion/share/{token}")
