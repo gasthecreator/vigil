@@ -75,6 +75,12 @@ export const Header: React.FC = () => {
             Clinician Workstation
           </Link>
           <Link
+            href="/continuity"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+          >
+            RT Continuity (M7)
+          </Link>
+          <Link
             href="/companion"
             className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors"
           >

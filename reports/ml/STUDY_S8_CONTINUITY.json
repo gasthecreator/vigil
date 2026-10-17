@@ -1,0 +1,127 @@
+{
+  "policies": {
+    "HarmAware": {
+      "mean_excess_harm": 0.01849,
+      "harm_95ci": [
+        0.01757,
+        0.01944
+      ],
+      "mean_wait_days": 3.3786,
+      "wait_95ci": [
+        3.22495,
+        3.54008
+      ],
+      "max_observed_wait": 31,
+      "subgroup_wait_disparity_days": 0.59655,
+      "disparity_95ci": [
+        0.56084,
+        0.63371
+      ]
+    },
+    "FCFS": {
+      "mean_excess_harm": 0.02119,
+      "harm_95ci": [
+        0.02021,
+        0.02227
+      ],
+      "mean_wait_days": 3.49743,
+      "wait_95ci": [
+        3.33319,
+        3.66697
+      ],
+      "max_observed_wait": 30,
+      "subgroup_wait_disparity_days": 0.55743,
+      "disparity_95ci": [
+        0.5249,
+        0.59378
+      ]
+    },
+    "UrgencyHeuristic": {
+      "mean_excess_harm": 0.0177,
+      "harm_95ci": [
+        0.01678,
+        0.01864
+      ],
+      "mean_wait_days": 4.12622,
+      "wait_95ci": [
+        3.94589,
+        4.30435
+      ],
+      "max_observed_wait": 53,
+      "subgroup_wait_disparity_days": 0.90214,
+      "disparity_95ci": [
+        0.84276,
+        0.96226
+      ]
+    }
+  },
+  "paired_comparisons": {
+    "fcfs_minus_harm_aware": {
+      "mean_delta_harm": 0.0027,
+      "delta_95ci": [
+        0.00251,
+        0.00288
+      ],
+      "p_value_empirical": 0.097,
+      "harm_reduction_relative_pct": 12.72
+    },
+    "heuristic_minus_harm_aware": {
+      "mean_delta_harm": -0.0008,
+      "delta_95ci": [
+        -0.00099,
+        -0.00063
+      ],
+      "p_value_empirical": 0.681,
+      "harm_reduction_relative_pct": -4.5
+    }
+  },
+  "hypothesis_evaluations": {
+    "H1_harm_reduction_vs_fcfs": {
+      "verdict": "CONFIRMED",
+      "evidence": "Paired delta 95% CI [0.00251, 0.00288] strictly positive."
+    },
+    "H2_harm_reduction_vs_heuristic": {
+      "verdict": "REFUTED",
+      "evidence": "Paired delta 95% CI [-0.00099, -0.00063]."
+    },
+    "H3_algorithmic_fairness_and_no_starvation": {
+      "verdict": "CONFIRMED",
+      "evidence": "Subgroup disparity 0.60d <= 5.0d threshold; wait bounded."
+    }
+  },
+  "sensitivity_analysis": {
+    "mttr_duration_sweep": [
+      {
+        "mttr_mu": 1.2,
+        "approx_median_mttr_days": 3.3,
+        "harm_aware_mean_harm": 0.0131,
+        "fcfs_mean_harm": 0.01493,
+        "delta_harm": 0.00184
+      },
+      {
+        "mttr_mu": 1.6,
+        "approx_median_mttr_days": 5.0,
+        "harm_aware_mean_harm": 0.01966,
+        "fcfs_mean_harm": 0.02228,
+        "delta_harm": 0.00262
+      },
+      {
+        "mttr_mu": 2.0,
+        "approx_median_mttr_days": 7.4,
+        "harm_aware_mean_harm": 0.02681,
+        "fcfs_mean_harm": 0.03036,
+        "delta_harm": 0.00355
+      }
+    ]
+  },
+  "meta": {
+    "study": "S8_LITE_CONTINUITY",
+    "pre_registration": "docs/studies/PREREG-S8.md",
+    "replications": 1000,
+    "simulation_horizon_days": 60,
+    "n_machines": 2,
+    "daily_machine_nominal_capacity": 25,
+    "random_seed": 20261017,
+    "synthetic": true
+  }
+}

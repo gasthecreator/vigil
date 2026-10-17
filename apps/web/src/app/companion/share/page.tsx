@@ -202,14 +202,14 @@ export default function CaregiverSharePage() {
                   <input
                     type="text"
                     readOnly
-                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/companion/share?token=${createdShare.share_token}`}
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/companion/share?token=${createdShare.share_token || ""}`}
                     className="flex-1 bg-white border border-teal-300 text-xs text-slate-800 px-3 py-2 rounded-lg font-mono"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => copyShareLink(createdShare.share_token)}
+                    onClick={() => copyShareLink(createdShare.share_token || "")}
                     className="shrink-0 bg-white"
                   >
                     {copied ? (

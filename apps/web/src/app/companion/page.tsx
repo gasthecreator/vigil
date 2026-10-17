@@ -24,13 +24,18 @@ export default function CompanionDashboard() {
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [isUnlocking, setIsUnlocking] = useState<boolean>(false);
   const [observations, setObservations] = useState<any[]>([]);
+  const [delayNotice, setDelayNotice] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const obs = await apiClient.listObservations(patientId);
+        const [obs, notice] = await Promise.all([
+          apiClient.listObservations(patientId).catch(() => []),
+          apiClient.getPatientDelayNotice(patientId).catch(() => null),
+        ]);
         setObservations(obs || []);
+        setDelayNotice(notice);
       } catch (err) {
         console.error("Failed to load companion observations:", err);
       } finally {
@@ -162,6 +167,62 @@ export default function CompanionDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Treatment Continuity & Schedule Transparency (Master Plan §6.7, §6.8 / M7 / M8) */}
+      {delayNotice && delayNotice.has_active_treatment && (
+        <Card className="border-slate-200 overflow-hidden shadow-sm">
+          <CardHeader className="bg-indigo-50/70 border-b border-indigo-100 py-3.5 px-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-indigo-700" aria-hidden="true" />
+                <h2 className="text-sm font-bold text-indigo-950">
+                  Radiotherapy Treatment Schedule & Continuity
+                </h2>
+              </div>
+              <Badge
+                variant={delayNotice.total_delay_days > 0 ? "warning" : "default"}
+                className={delayNotice.total_delay_days > 0 ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-emerald-100 text-emerald-900 border-emerald-300"}
+              >
+                {delayNotice.total_delay_days > 0 ? `${delayNotice.total_delay_days} Days Delay` : "On Schedule"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 space-y-3">
+            <p className="text-sm text-slate-800 leading-relaxed">
+              {delayNotice.plain_language_notice}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <span className="text-slate-500 font-medium">Assigned Machine:</span>
+                <p className="font-bold text-slate-900 mt-0.5">
+                  {delayNotice.machine_name || "Elekta LINAC-01"}
+                </p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <span className="text-slate-500 font-medium">Next Scheduled Session:</span>
+                <p className="font-bold text-indigo-950 mt-0.5">
+                  {delayNotice.expected_start_date
+                    ? new Date(delayNotice.expected_start_date).toLocaleDateString("en-NG", {
+                        weekday: "short",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "To be confirmed by care team"}
+                </p>
+              </div>
+            </div>
+
+            {delayNotice.delay_history && delayNotice.delay_history.length > 0 && (
+              <div className="pt-2 text-xs text-slate-500 border-t border-slate-100">
+                <span className="font-semibold text-slate-700">Latest schedule update: </span>
+                <span>{delayNotice.delay_history[0].reason}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Action Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

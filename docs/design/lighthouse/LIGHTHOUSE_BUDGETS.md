@@ -1,6 +1,6 @@
 # Lighthouse UX & Accessibility Audit Report
 **Master Plan §9.7 / Condition P9-C / P10-A**
-**Audit Date:** 2026-10-17T21:34:38.035Z
+**Audit Date:** 2026-10-17T22:42:02.347Z
 
 ## Committed Engineering Budgets
 - **Performance Budget:** $\ge 90$
@@ -9,15 +9,17 @@
 
 | Audited View & Exact URL | Performance | Accessibility | TTI | Best Practices | SEO | Status |
 |---|---|---|---|---|---|---|
-| **TRIAGE** (`http://127.0.0.1:3000/`) | **99** | **100** | **2472 ms** | **96** | **100** | ✅ MET |
-| **TIMELINE** (`http://127.0.0.1:3000/patients/PAT-001`) | **98** | **98** | **2002 ms** | **96** | **100** | ✅ MET |
-| **COMPANION** (`http://127.0.0.1:3000/companion`) | **99** | **98** | **2004 ms** | **96** | **100** | ✅ MET |
-| **EXPLAINER** (`http://127.0.0.1:3000/companion/results/obs-001`) | **96** | **98** | **1960 ms** | **96** | **100** | ✅ MET |
-| **SYMPTOMS** (`http://127.0.0.1:3000/companion/symptoms`) | **100** | **94** | **1811 ms** | **96** | **100** | ✅ MET |
+| **TRIAGE** (`http://127.0.0.1:3000/`) | **99** | **100** | **2385 ms** | **96** | **100** | ✅ MET |
+| **TIMELINE** (`http://127.0.0.1:3000/patients/PAT-001`) | **98** | **98** | **1963 ms** | **96** | **100** | ✅ MET |
+| **CONTINUITY** (`http://127.0.0.1:3000/continuity`) | **99** | **98** | **1964 ms** | **96** | **100** | ✅ MET |
+| **COMPANION** (`http://127.0.0.1:3000/companion`) | **100** | **98** | **1859 ms** | **96** | **100** | ✅ MET |
+| **EXPLAINER** (`http://127.0.0.1:3000/companion/results/obs-001`) | **97** | **98** | **2569 ms** | **96** | **100** | ✅ MET |
+| **SYMPTOMS** (`http://127.0.0.1:3000/companion/symptoms`) | **100** | **94** | **2029 ms** | **96** | **100** | ✅ MET |
 
 ## Committed Artifacts
 - **TRIAGE View:** [`triage-report.html`](./triage-report.html) / [`triage-report.json`](./triage-report.json)
 - **TIMELINE View:** [`timeline-report.html`](./timeline-report.html) / [`timeline-report.json`](./timeline-report.json)
+- **CONTINUITY View:** [`continuity-report.html`](./continuity-report.html) / [`continuity-report.json`](./continuity-report.json)
 - **COMPANION View:** [`companion-report.html`](./companion-report.html) / [`companion-report.json`](./companion-report.json)
 - **EXPLAINER View:** [`explainer-report.html`](./explainer-report.html) / [`explainer-report.json`](./explainer-report.json)
 - **SYMPTOMS View:** [`symptoms-report.html`](./symptoms-report.html) / [`symptoms-report.json`](./symptoms-report.json)

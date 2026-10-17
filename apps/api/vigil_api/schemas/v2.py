@@ -172,7 +172,8 @@ class CaregiverShareCreateRequest(BaseModel):
 class CaregiverShareResponse(BaseModel):
     id: str
     patient_id: str
-    share_token: str
+    share_token: Optional[str] = None
+    token_preview: str
     caregiver_name: str
     relationship_type: str
     scope: str
@@ -220,6 +221,33 @@ class DisclosureUnlockResponse(BaseModel):
     synthetic: bool = True
 
 
+class DisclosureReleaseRequest(BaseModel):
+    reason: Optional[str] = Field(
+        "Patient requested release of withheld diagnostic result",
+        description="Reason or patient note for requesting clinician release",
+    )
+
+
+class DisclosureReleaseRequestResponse(BaseModel):
+    requested: bool = True
+    task_id: str
+    message: str
+    synthetic: bool = True
+
+
+class DisclosureLockRequest(BaseModel):
+    reason: Optional[str] = Field(
+        "Clinician re-locked disclosure", description="Reason for re-locking disclosure"
+    )
+
+
+class DisclosureLockResponse(BaseModel):
+    locked: bool = True
+    locked_at: datetime
+    message: str
+    synthetic: bool = True
+
+
 class PlainLanguageExplainerResponse(BaseModel):
     observation_id: str
     patient_id: str
@@ -233,4 +261,141 @@ class PlainLanguageExplainerResponse(BaseModel):
     flesch_kincaid_grade_level: float
     word_count: int
     verified: bool = True
+    synthetic: bool = True
+
+
+# ==============================================================================
+# Treatment Continuity & Radiotherapy Triage Schemas (M7)
+# ==============================================================================
+
+
+class LinacMachineResponse(BaseModel):
+    id: str
+    facility_id: Optional[str] = None
+    machine_name: str
+    daily_slot_capacity: int
+    status: str
+    downtime_started_at: Optional[datetime] = None
+    expected_return_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    synthetic: bool = True
+
+
+class LinacMachineStatusUpdate(BaseModel):
+    status: str = Field(..., description="Machine status: operational, down, maintenance")
+    expected_return_at: Optional[datetime] = Field(
+        None, description="Expected time machine will return to operational status"
+    )
+    reason: Optional[str] = Field(None, description="Reason for downtime or maintenance")
+
+
+class RadiotherapyCourseCreate(BaseModel):
+    patient_id: str
+    clinical_context: str = Field(
+        "adjuvant_post_lumpectomy",
+        description="Clinical context: adjuvant_post_lumpectomy, adjuvant_post_mastectomy, curative_tnbc, palliative_bone_brain",
+    )
+    total_fractions: int = Field(15, ge=1, le=40)
+    prescribed_start_date: datetime
+    urgency_tier: str = Field("routine", description="Urgency tier: emergency, urgent, routine")
+    assigned_machine_id: Optional[str] = None
+    baseline_subgroup: Optional[str] = None
+
+
+class RadiotherapyCourseResponse(BaseModel):
+    id: str
+    patient_id: str
+    assigned_machine_id: Optional[str] = None
+    clinical_context: str
+    total_fractions: int
+    fractions_delivered: int
+    prescribed_start_date: datetime
+    scheduled_start_date: Optional[datetime] = None
+    actual_start_date: Optional[datetime] = None
+    urgency_tier: str
+    status: str
+    baseline_subgroup: Optional[str] = None
+    current_delay_days: int = 0
+    expected_excess_harm: float = 0.0
+    created_at: datetime
+    updated_at: datetime
+    synthetic: bool = True
+
+
+class DelayLedgerEntryResponse(BaseModel):
+    id: str
+    patient_id: str
+    course_id: str
+    delay_days: int
+    reason: str
+    marginal_harm: Optional[float] = None
+    moved_from_date: Optional[datetime] = None
+    moved_to_date: datetime
+    clinician_overridden: bool = False
+    recorded_by: str = "system_cp_sat"
+    created_at: datetime
+    synthetic: bool = True
+
+
+class ScheduleSolveRequest(BaseModel):
+    horizon_days: int = Field(30, ge=5, le=60)
+    fairness_disparity_bound: float = Field(5.0, ge=0.5, le=30.0)
+    max_wait_days: int = Field(45, ge=5, le=120)
+    stability_penalty: float = Field(0.01, ge=0.0)
+
+
+class ScheduleAssignment(BaseModel):
+    patient_id: str
+    course_id: str
+    machine_id: str
+    start_day: int
+    scheduled_date: datetime
+    fractions: int
+    context: str
+    delay_days: int
+    marginal_harm: float
+    explanation: str
+    is_moved: bool = False
+
+
+class ScheduleSolveResponse(BaseModel):
+    status: str
+    solver_time_seconds: float
+    total_excess_harm: float
+    mean_delay_days: float
+    max_delay_days: int
+    fairness_disparity: float
+    assignments: List[ScheduleAssignment]
+    unassigned_patient_ids: List[str]
+    synthetic: bool = True
+
+
+class ScheduleConfirmRequest(BaseModel):
+    assignments: List[ScheduleAssignment]
+    reason: Optional[str] = Field(
+        "Clinician approved CP-SAT continuity reallocation",
+        description="Clinical rationale for confirming the schedule reallocation",
+    )
+
+
+class ScheduleConfirmResponse(BaseModel):
+    confirmed: bool = True
+    ledger_entries_created: int
+    audit_event_id: str
+    message: str
+    synthetic: bool = True
+
+
+class PatientDelayNoticeResponse(BaseModel):
+    patient_id: str
+    has_active_treatment: bool
+    course_id: Optional[str] = None
+    clinical_context: Optional[str] = None
+    total_delay_days: int = 0
+    machine_name: Optional[str] = None
+    machine_status: Optional[str] = None
+    expected_start_date: Optional[datetime] = None
+    plain_language_notice: str
+    delay_history: List[DelayLedgerEntryResponse] = []
     synthetic: bool = True

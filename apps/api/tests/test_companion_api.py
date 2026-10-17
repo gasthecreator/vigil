@@ -525,3 +525,244 @@ def test_patient_observation_explainer_endpoint(companion_env):
             )
         ).scalar_one_or_none()
         assert audit is not None
+
+
+# =========================================================================
+# 7. Remediations: P11-E (Token Hashing), P11-A (Request-Release & Re-Lock), P11-F (Clinical Gate)
+# =========================================================================
+
+
+def test_caregiver_token_hashing_at_rest_and_preview_p11_e(companion_env):
+    """P11-E: Bearer tokens hashed at rest; raw token returned once; list returns preview only."""
+    import hashlib
+
+    client, engine = companion_env
+    clinician_hdr = get_token_headers("doc-01", UserRole.CLINICIAN)
+    patient_id = "pat-comp-01"
+
+    # 1. Create a share
+    create_resp = client.post(
+        f"/api/v1/patients/{patient_id}/shares",
+        json={
+            "caregiver_name": "Fatima Bello",
+            "relationship_type": "Sister",
+            "scope": "view_summary",
+            "expires_in_days": 14,
+        },
+        headers=clinician_hdr,
+    )
+    assert create_resp.status_code == 201
+    created_data = create_resp.json()
+    raw_token = created_data["share_token"]
+    token_preview = created_data["token_preview"]
+    share_id = created_data["id"]
+
+    assert raw_token is not None
+    assert raw_token.startswith("cg_")
+    assert token_preview == f"{raw_token[:5]}...{raw_token[-4:]}"
+
+    # 2. Verify database stores hash and preview, NOT plaintext token
+    with Session(engine) as s:
+        db_share = s.execute(
+            select(CaregiverShare).where(CaregiverShare.id == share_id)
+        ).scalar_one()
+        assert not hasattr(db_share, "share_token")
+        assert db_share.token_hash == hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+        assert db_share.token_preview == token_preview
+
+    # 3. Verify list endpoint NEVER exposes raw token
+    list_resp = client.get(f"/api/v1/patients/{patient_id}/shares", headers=clinician_hdr)
+    assert list_resp.status_code == 200
+    shares = list_resp.json()
+    matching = [sh for sh in shares if sh["id"] == share_id][0]
+    assert matching["share_token"] is None
+    assert matching["token_preview"] == token_preview
+
+    # 4. Bearer token works for companion access
+    comp_resp = client.get(f"/api/v1/companion/share/{raw_token}")
+    assert comp_resp.status_code == 200
+    assert comp_resp.json()["caregiver_name"] == "Fatima Bello"
+
+    # 5. Attacker presenting the hash directly cannot authenticate
+    hash_resp = client.get(f"/api/v1/companion/share/{db_share.token_hash}")
+    assert hash_resp.status_code == 404
+
+
+def test_bad_news_disclosure_request_release_and_relock_p11_a(companion_env):
+    """P11-A: Patient/caregiver request-release, clinician unlock, clinician re-lock."""
+    client, engine = companion_env
+    clinician_hdr = get_token_headers("doc-01", UserRole.CLINICIAN)
+    nurse_hdr = get_token_headers("nurse-01", UserRole.NURSE_CLERK)
+    patient_id = "pat-comp-01"
+    patient_hdr = get_token_headers(patient_id, UserRole.PATIENT)
+    other_patient_hdr = get_token_headers("pat-other-999", UserRole.PATIENT)
+
+    # 0. Cross-patient attack: unauthorized patient cannot request release for another
+    cross_resp = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/request-release",
+        json={"reason": "Attacker trying to poke other patient"},
+        headers=other_patient_hdr,
+    )
+    assert cross_resp.status_code == 403
+
+    # 1. Patient requests clinician release
+    req_resp = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/request-release",
+        json={
+            "reason": "I am feeling ready to review my complete diagnostic findings with family."
+        },
+        headers=patient_hdr,
+    )
+    assert req_resp.status_code == 201
+    task_id = req_resp.json()["task_id"]
+
+    # Verify FollowUpTask in DB
+    with Session(engine) as s:
+        task = s.execute(select(FollowUpTask).where(FollowUpTask.id == task_id)).scalar_one()
+        assert task.task_type == "disclosure_release_request"
+        assert task.status == "pending"
+        audit = s.execute(
+            select(AuditEvent).where(
+                AuditEvent.action == "disclosure.release_requested",
+                AuditEvent.resource_id == task_id,
+            )
+        ).scalar_one()
+        assert audit is not None
+
+    # 2. Caregiver proxy request release
+    share_resp = client.post(
+        f"/api/v1/patients/{patient_id}/shares",
+        json={"caregiver_name": "Tunde", "scope": "full_history", "expires_in_days": 7},
+        headers=clinician_hdr,
+    )
+    cg_token = share_resp.json()["share_token"]
+    cg_req_resp = client.post(
+        f"/api/v1/companion/share/{cg_token}/disclosure/request-release",
+        json={"reason": "Family gathering tomorrow, requesting clinician unlock."},
+    )
+    assert cg_req_resp.status_code == 201
+
+    # 3. Non-clinician unlock rejected
+    nurse_unlock = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/unlock",
+        json={"reason": "nurse attempt"},
+        headers=nurse_hdr,
+    )
+    assert nurse_unlock.status_code in (401, 403)
+
+    # 4. Clinician unlock succeeds
+    clin_unlock = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/unlock",
+        json={"reason": "Clinician post-counseling release"},
+        headers=clinician_hdr,
+    )
+    assert clin_unlock.status_code == 200
+
+    with Session(engine) as s:
+        p = s.execute(select(Patient).where(Patient.id == patient_id)).scalar_one()
+        assert p.disclosure_unlocked_at is not None
+
+    # 5. Clinician re-locks disclosure
+    nurse_lock = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/lock",
+        json={"reason": "nurse lock attempt"},
+        headers=nurse_hdr,
+    )
+    assert nurse_lock.status_code in (401, 403)
+
+    clin_lock = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/lock",
+        json={"reason": "Clinician re-locking after new high-risk observation entered"},
+        headers=clinician_hdr,
+    )
+    assert clin_lock.status_code == 200
+    assert clin_lock.json()["locked"] is True
+
+    with Session(engine) as s:
+        p = s.execute(select(Patient).where(Patient.id == patient_id)).scalar_one()
+        assert p.disclosure_unlocked_at is None
+        lock_audit = s.execute(
+            select(AuditEvent).where(
+                AuditEvent.action == "disclosure.locked",
+                AuditEvent.resource_id == patient_id,
+            )
+        ).scalar_one()
+        assert lock_audit is not None
+
+
+def test_bad_news_disclosure_invariant_on_all_clinical_routes_p11_f(companion_env):
+    """P11-F: Assert every route returning clinical content respects disclosure state."""
+    client, engine = companion_env
+    clinician_hdr = get_token_headers("doc-01", UserRole.CLINICIAN)
+    patient_id = "pat-comp-01"
+
+    # Setup: ensure disclosure is locked
+    with Session(engine) as s:
+        p = s.execute(select(Patient).where(Patient.id == patient_id)).scalar_one()
+        p.disclosure_unlocked_at = None
+        s.commit()
+
+    # Create an escalate observation
+    obs_resp = client.post(
+        f"/api/v1/patients/{patient_id}/observations",
+        json={
+            "analyte_code": "ca_15_3",
+            "value": 58.0,
+            "unit": "U/mL",
+            "specimen_collected_at": datetime.now(timezone.utc).isoformat(),
+        },
+        headers=clinician_hdr,
+    )
+    assert obs_resp.status_code == 201
+    esc_obs_id = obs_resp.json()["observation_id"]
+
+    # Create caregiver share
+    share_resp = client.post(
+        f"/api/v1/patients/{patient_id}/shares",
+        json={"caregiver_name": "Uncle", "scope": "full_history", "expires_in_days": 7},
+        headers=clinician_hdr,
+    )
+    tok = share_resp.json()["share_token"]
+
+    # 1. Patient explainer route MUST withhold
+    pat_exp = client.get(
+        f"/api/v1/patients/{patient_id}/observations/{esc_obs_id}/explainer",
+        headers=clinician_hdr,
+    )
+    assert pat_exp.status_code == 403
+    assert pat_exp.json()["detail"]["code"] == "disclosure_locked"
+
+    # 2. Caregiver explainer route MUST withhold
+    cg_exp = client.get(f"/api/v1/companion/share/{tok}/observations/{esc_obs_id}/explainer")
+    assert cg_exp.status_code == 403
+    assert cg_exp.json()["detail"]["code"] == "disclosure_locked"
+
+    # 3. Caregiver summary MUST withhold escalate interpretation
+    cg_sum = client.get(f"/api/v1/companion/share/{tok}")
+    assert cg_sum.status_code == 200
+    data = cg_sum.json()
+    assert data["latest_risk"]["withheld"] is True
+    assert "score" not in data["latest_risk"]
+
+    # Now unlock as clinician
+    client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/unlock",
+        json={"reason": "counseled"},
+        headers=clinician_hdr,
+    )
+
+    # Both explainer routes now return full content
+    assert (
+        client.get(
+            f"/api/v1/patients/{patient_id}/observations/{esc_obs_id}/explainer",
+            headers=clinician_hdr,
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(f"/api/v1/companion/share/{tok}/observations/{esc_obs_id}/explainer").status_code
+        == 200
+    )
+    cg_sum_unlocked = client.get(f"/api/v1/companion/share/{tok}").json()
+    assert cg_sum_unlocked["latest_risk"].get("withheld") is not True
+    assert "score" in cg_sum_unlocked["latest_risk"]

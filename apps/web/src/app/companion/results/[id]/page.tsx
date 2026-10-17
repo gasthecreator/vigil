@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslation, Button, Card, CardHeader, CardTitle, CardContent, Badge } from "@vigil/ui";
@@ -29,27 +29,55 @@ export default function PlainLanguageExplainerPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadState, setLoadState] = useState<"ok" | "locked" | "error">("ok");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [isSubmittingRelease, setIsSubmittingRelease] = useState<boolean>(false);
+  const [releaseRequested, setReleaseRequested] = useState<boolean>(false);
+
+  const fetchExplainer = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiClient.getObservationExplainer(patientId, obsId);
+      setExplainer(data);
+      setLoadState("ok");
+    } catch (err) {
+      // Never substitute invented content for a real result: show a locked or error state instead.
+      const msg = err instanceof Error ? err.message : String(err);
+      setLoadState(msg.includes("disclosure_locked") ? "locked" : "error");
+      setExplainer(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [patientId, obsId]);
 
   useEffect(() => {
-    async function loadExplainer() {
-      try {
-        const data = await apiClient.getObservationExplainer(patientId, obsId);
-        setExplainer(data);
-      } catch (err) {
-        // Never substitute invented content for a real result: show a locked or error state instead.
-        const msg = err instanceof Error ? err.message : String(err);
-        setLoadState(msg.includes("disclosure_locked") ? "locked" : "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadExplainer();
-  }, [patientId, obsId]);
+    fetchExplainer();
+  }, [fetchExplainer]);
 
   const copyQuestion = (q: string, idx: number) => {
     navigator.clipboard?.writeText(q);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const handleRequestRelease = async () => {
+    setIsSubmittingRelease(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/v1/patients/${patientId}/disclosure/request-release`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Vigil-Role": "patient",
+          "X-Vigil-User-Id": patientId,
+        },
+        body: JSON.stringify({ reason: "Patient requested release." }),
+      });
+      if (res.ok) {
+        setReleaseRequested(true);
+      }
+    } catch (e) {
+      console.error("Failed to request release:", e);
+    } finally {
+      setIsSubmittingRelease(false);
+    }
   };
 
   const getVerdictBadge = (verdict: string) => {
@@ -92,33 +120,57 @@ export default function PlainLanguageExplainerPage() {
 
         <CardContent className="p-6 space-y-6">
           {loadState === "locked" && (
-            <p role="status" data-testid="explainer-locked" className="text-slate-800 text-base">
-              Your care team has this result and will talk it through with you. Please ask them when you
-              are ready.
-            </p>
+            <div className="space-y-4" data-testid="explainer-locked-container">
+              <p role="status" data-testid="explainer-locked" className="text-slate-800 text-base">
+                Your care team has this result and will talk it through with you. Please ask them when you
+                are ready.
+              </p>
+              {releaseRequested ? (
+                <div
+                  data-testid="release-requested-confirmation"
+                  className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm font-medium text-emerald-950 flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Release request submitted. Your care team has been notified to review and release this result.</span>
+                </div>
+              ) : (
+                <Button
+                  data-testid="request-release-button"
+                  variant="outline"
+                  disabled={isSubmittingRelease}
+                  onClick={handleRequestRelease}
+                  className="border-teal-600 text-teal-800 hover:bg-teal-50"
+                >
+                  {isSubmittingRelease ? "Submitting..." : "I am ready — Request Clinician Release"}
+                </Button>
+              )}
+            </div>
           )}
           {loadState === "error" && (
             <p role="alert" data-testid="explainer-error" className="text-slate-800 text-base">
               We could not load this result right now. Please try again, or contact your care team.
             </p>
           )}
-          {/* Verbal Uncertainty Band */}
-          {explainer?.verbal_band && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                  Confidence & Uncertainty Band
-                </span>
-                <p className="text-sm font-medium text-amber-950 mt-0.5">
-                  {explainer.verbal_band}
-                </p>
-                <p className="text-xs text-amber-800 mt-1">
-                  Vigil never shows raw probabilities to families without clinical guidance.
-                </p>
-              </div>
-            </div>
-          )}
+
+          {loadState === "ok" && explainer && (
+            <div data-testid="explainer-content" className="space-y-6">
+              {/* Verbal Uncertainty Band */}
+              {explainer.verbal_band && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                      Confidence & Uncertainty Band
+                    </span>
+                    <p className="text-sm font-medium text-amber-950 mt-0.5">
+                      {explainer.verbal_band}
+                    </p>
+                    <p className="text-xs text-amber-800 mt-1">
+                      Vigil never shows raw probabilities to families without clinical guidance.
+                    </p>
+                  </div>
+                </div>
+              )}
 
           {/* Section: What This Means */}
           <div className="space-y-2">
@@ -202,8 +254,10 @@ export default function PlainLanguageExplainerPage() {
               </Button>
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
+    </CardContent>
+  </Card>
     </div>
   );
 }
