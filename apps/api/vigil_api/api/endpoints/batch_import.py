@@ -19,13 +19,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from vigil_api.api.endpoints.patients import ingest_single_observation_internal
 from vigil_api.auth import require_roles
 from vigil_api.consent import verify_patient_consent
 from vigil_api.database import get_db
-from vigil_api.api.endpoints.patients import ingest_single_observation_internal
 from vigil_api.models.v2 import Observation, Patient, User, UserRole
-from vigil_core.analytes import ANALYTE_REGISTRY, check_plausibility, get_analyte
+from vigil_core.analytes import check_plausibility, get_analyte
 from vigil_core.units import IncompatibleUnitsError, InvalidUnitError, UnitConversionError
 
 router = APIRouter()
@@ -228,7 +227,7 @@ async def batch_import_observations(
         # 3. Check Analyte Registry and Unit Compatibility
         try:
             analyte = get_analyte(analyte_code)
-            plausibility = check_plausibility(analyte.code, value, unit)
+            check_plausibility(analyte.code, value, unit)
         except KeyError:
             rejected_count += 1
             row_reports.append(

@@ -27,7 +27,6 @@ from vigil_api.models.v2 import (
     ConsentRecord,
     FollowUpTask,
     FollowUpTaskType,
-    Patient,
     ReminderReceipt,
 )
 

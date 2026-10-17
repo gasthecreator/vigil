@@ -15,14 +15,11 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-
 import textwrap
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SECRET = "vigil-precision-oncology-secret-key-32bytes-min"
@@ -152,7 +149,7 @@ def main():
     H = {"X-Vigil-Role": "clinician"}
     pid = c.post("/api/v1/patients/", json={"age": 55, "status": "active"}, headers=H).json()["id"]
     c.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=H)
-    
+
     # Tamper with the first audit event row directly via SQL
     con = sqlite3.connect(DB)
     con.execute("UPDATE audit_events SET action = 'tampered_action' WHERE id = (SELECT id FROM audit_events ORDER BY timestamp ASC LIMIT 1)")

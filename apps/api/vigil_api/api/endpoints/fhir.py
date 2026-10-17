@@ -14,12 +14,11 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from vigil_api.api.endpoints.patients import ingest_single_observation_internal
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.consent import verify_patient_consent
 from vigil_api.database import get_db
-from vigil_api.api.endpoints.patients import ingest_single_observation_internal
 from vigil_api.models.v2 import Observation, Patient, User, UserRole
 from vigil_core.fhir import fhir_to_observation, observation_to_fhir
 

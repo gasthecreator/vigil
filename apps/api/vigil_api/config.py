@@ -9,7 +9,6 @@ import os
 
 from pydantic_settings import BaseSettings
 
-
 DEFAULT_INSECURE_SECRET: str = "vigil-precision-oncology-secret-key-32bytes-min"
 
 

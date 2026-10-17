@@ -10,16 +10,22 @@ Tests:
 
 from __future__ import annotations
 
-import io
 from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
-from vigil_api.config import settings
 from vigil_api.database import Base, engine
 from vigil_api.main import app
-from vigil_api.models.v2 import ConsentRecord, FollowUpTask, FollowUpTaskStatus, FollowUpTaskType, Observation, Patient, ReminderReceipt, RiskAssessment, RiskInference
-from vigil_api.reminders import SandboxNotificationProvider, format_privacy_safe_message, run_reminder_cycle
+from vigil_api.models.v2 import (
+    FollowUpTask,
+    FollowUpTaskStatus,
+    FollowUpTaskType,
+)
+from vigil_api.reminders import (
+    SandboxNotificationProvider,
+    format_privacy_safe_message,
+    run_reminder_cycle,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)

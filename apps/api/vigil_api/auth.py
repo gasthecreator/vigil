@@ -10,6 +10,7 @@ Implements Master Plan §9.2, §11, and Phase 5a Auth requirements:
 from __future__ import annotations
 
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Optional
 
@@ -22,8 +23,6 @@ from sqlalchemy.orm import Session
 from vigil_api.config import settings
 from vigil_api.database import get_db
 from vigil_api.models.v2 import User, UserRole
-
-import secrets
 
 # Bearer security scheme (auto_error=False to allow conditional local fallback)
 security = HTTPBearer(auto_error=False)

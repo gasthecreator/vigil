@@ -2,7 +2,15 @@
 
 from fastapi import APIRouter
 
-from vigil_api.api.endpoints import alerts, analytics, audit, batch_import, fhir, follow_up, patients
+from vigil_api.api.endpoints import (
+    alerts,
+    analytics,
+    audit,
+    batch_import,
+    fhir,
+    follow_up,
+    patients,
+)
 
 api_router = APIRouter()
 

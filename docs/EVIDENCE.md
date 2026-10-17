@@ -41,7 +41,7 @@
 * **Limitations:** Assays and schedules differ; many retrospective; high cost and lack of availability in low-resource settings.
 * **Used by:** MASTER_PLAN §2, §6.13.
 
-### E9 — Biological Variation, Analytical Specifications, and RCV — `PRIMARY-VERIFIED`
+### E9 — Biological Variation, Analytical Specifications, and RCV — `SECONDARY`
 * **Dossier:** [`docs/evidence/E9.md`](evidence/E9.md)
 * **Primary Sources:**
   1. Aarsand AK, Díaz-Garrote S, Corte Z, et al. "Within- and between-subject biological variation data for tumor markers based on the European Biological Variation Study." *Clin Chem Lab Med*. 2021;60(2):238–248. doi:[10.1515/cclm-2021-0283](https://doi.org/10.1515/cclm-2021-0283). PMID:[33964202](https://pubmed.ncbi.nlm.nih.gov/33964202/).

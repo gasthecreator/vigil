@@ -15,7 +15,7 @@ from vigil_api.guardian import (
     transition_task,
 )
 from vigil_api.models.v2 import FollowUpTask, ReminderReceipt, User, UserRole
-from vigil_api.reminders import SandboxNotificationProvider, run_reminder_cycle
+from vigil_api.reminders import run_reminder_cycle
 from vigil_api.schemas.v2 import FollowUpTaskResponse, FollowUpTransitionRequest
 
 router = APIRouter()
