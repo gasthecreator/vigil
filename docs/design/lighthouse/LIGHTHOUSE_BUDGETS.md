@@ -1,6 +1,6 @@
 # Lighthouse UX & Accessibility Audit Report
 **Master Plan §9.7 / Condition P9-C / P10-A**
-**Audit Date:** 2026-10-17T21:20:32.176Z
+**Audit Date:** 2026-10-17T21:34:38.035Z
 
 ## Committed Engineering Budgets
 - **Performance Budget:** $\ge 90$
@@ -9,11 +9,11 @@
 
 | Audited View & Exact URL | Performance | Accessibility | TTI | Best Practices | SEO | Status |
 |---|---|---|---|---|---|---|
-| **TRIAGE** (`http://127.0.0.1:3000/`) | **99** | **100** | **2291 ms** | **96** | **100** | ✅ MET |
-| **TIMELINE** (`http://127.0.0.1:3000/patients/PAT-001`) | **98** | **98** | **2191 ms** | **96** | **100** | ✅ MET |
-| **COMPANION** (`http://127.0.0.1:3000/companion`) | **99** | **98** | **1998 ms** | **96** | **100** | ✅ MET |
-| **EXPLAINER** (`http://127.0.0.1:3000/companion/results/obs-001`) | **96** | **98** | **2002 ms** | **96** | **100** | ✅ MET |
-| **SYMPTOMS** (`http://127.0.0.1:3000/companion/symptoms`) | **99** | **94** | **2043 ms** | **96** | **100** | ✅ MET |
+| **TRIAGE** (`http://127.0.0.1:3000/`) | **99** | **100** | **2472 ms** | **96** | **100** | ✅ MET |
+| **TIMELINE** (`http://127.0.0.1:3000/patients/PAT-001`) | **98** | **98** | **2002 ms** | **96** | **100** | ✅ MET |
+| **COMPANION** (`http://127.0.0.1:3000/companion`) | **99** | **98** | **2004 ms** | **96** | **100** | ✅ MET |
+| **EXPLAINER** (`http://127.0.0.1:3000/companion/results/obs-001`) | **96** | **98** | **1960 ms** | **96** | **100** | ✅ MET |
+| **SYMPTOMS** (`http://127.0.0.1:3000/companion/symptoms`) | **100** | **94** | **1811 ms** | **96** | **100** | ✅ MET |
 
 ## Committed Artifacts
 - **TRIAGE View:** [`triage-report.html`](./triage-report.html) / [`triage-report.json`](./triage-report.json)
