@@ -1,3 +1,5 @@
+> **OVERSEER NOTICE 2026-10-17 — THIS EXCERPT IS NOT VERIFIED. Do not cite it.** the paper is not open access (no CC-BY licence), the cited PMCID is wrong (Europe PMC: PMC5708541), and the quoted numbers other than those in the abstract are not retrievable. Run `make audit-evidence`.
+
 # Excerpt: Stage at Diagnosis of Breast Cancer in Sub-Saharan Africa (Jedy-Agba et al. 2016)
 
 **Source:** Jedy-Agba E, McCormack V, Adebamowo C, Dos-Santos-Silva I. "Stage at diagnosis of breast cancer in sub-Saharan Africa: a systematic review and meta-analysis." *Lancet Glob Health*. 2016;4(12):e923–e935.  
