@@ -12,7 +12,7 @@
 | P3B | K2 sequential, K8 conformal (K5 deferred to 3C) | SUBMITTED FOR REVIEW | `feat/phase-3b-k2-k8` | [`docs/progress/PHASE-3B-REPORT.md`](progress/PHASE-3B-REPORT.md) | — |
 | P3C | K4 deep zoo, K5 harmonisation, pre-training, scaling (S4) | NOT STARTED | — | — | — |
 | P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
-| P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | — |
+| P4 | Plausibility, explanation, test ladder | NOT STARTED | — | — | 4a: M3 ACCEPTED-WITH-CONDITIONS; M5 REJECTED (verifier is a blacklist; 18/18 v2 tests fail); E9 numbers downgraded — `VERDICT-P4A.md` |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
