@@ -11,5 +11,10 @@
     "web:dev": "npm --workspace=@vigil/web run dev",
     "web:build": "npm --workspace=@vigil/web run build",
     "web:lint": "npm --workspace=@vigil/web run lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0"
   }
 }

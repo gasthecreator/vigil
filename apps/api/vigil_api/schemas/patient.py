@@ -1,6 +1,5 @@
-"""Pydantic schemas for Patient."""
-
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,6 +7,19 @@ from pydantic import BaseModel, ConfigDict, Field
 class PatientCreate(BaseModel):
     age: int = Field(..., ge=18, le=120, description="Patient age in years")
     status: str = Field(default="active", description="Clinical surveillance status")
+    mrn: Optional[str] = Field(None, description="Medical Record Number (encrypted at rest)")
+    external_id: Optional[str] = Field(
+        None, description="External hospital system identifier (encrypted at rest)"
+    )
+
+
+class PatientUpdate(BaseModel):
+    age: Optional[int] = Field(None, ge=18, le=120, description="Patient age in years")
+    status: Optional[str] = Field(None, description="Clinical surveillance status")
+    mrn: Optional[str] = Field(None, description="Medical Record Number (encrypted at rest)")
+    external_id: Optional[str] = Field(
+        None, description="External hospital system identifier (encrypted at rest)"
+    )
 
 
 class PatientResponse(BaseModel):
@@ -15,5 +27,11 @@ class PatientResponse(BaseModel):
     age: int
     created_at: datetime
     status: str
+    mrn: Optional[str] = None
+    external_id: Optional[str] = None
+    is_masked: bool = Field(
+        default=False,
+        description="True if medical identifiers are redacted due to absence of active consent",
+    )
 
     model_config = ConfigDict(from_attributes=True)

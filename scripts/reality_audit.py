@@ -142,10 +142,16 @@ def scan_file(path: Path, defined_classes: set[str]) -> list[str]:
                         f"{rel}:{node.lineno} [R2] `fit` does not learn anything (sets flags only)"
                     )
             # R2b: training or fit function recording losses must use an optimizer
-            if (node.name == "fit" or node.name.startswith("train")) and not _allowed(lines, node.lineno, "R2b"):
+            if (node.name == "fit" or node.name.startswith("train")) and not _allowed(
+                lines, node.lineno, "R2b"
+            ):
                 records_loss = False
                 for sub in ast.walk(node):
-                    if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and sub.func.attr == "append":
+                    if (
+                        isinstance(sub, ast.Call)
+                        and isinstance(sub.func, ast.Attribute)
+                        and sub.func.attr == "append"
+                    ):
                         try:
                             caller_str = ast.unparse(sub.func.value).lower()
                             if "loss" in caller_str:

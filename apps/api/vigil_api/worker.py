@@ -95,7 +95,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Vigil Background Worker")
     parser.add_argument("--interval", type=float, default=2.0, help="Loop interval in seconds")
     parser.add_argument("--once", action="store_true", help="Run a single cycle and exit")
-    parser.add_argument("--max-cycles", type=int, default=None, help="Maximum number of cycles before exiting")
+    parser.add_argument(
+        "--max-cycles", type=int, default=None, help="Maximum number of cycles before exiting"
+    )
     args = parser.parse_args()
 
     worker = VigilWorker(interval_seconds=args.interval)

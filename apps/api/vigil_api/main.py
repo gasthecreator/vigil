@@ -52,7 +52,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -82,6 +82,7 @@ async def request_id_and_logging_middleware(request: Request, call_next):
     }
     logger.info(json.dumps(log_entry))
     return response
+
 
 # Mount API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)

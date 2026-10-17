@@ -39,7 +39,9 @@ def main():
     ]
 
     for j in journeys:
-        assert j["verification"]["ok"], f"Verification failed for {j['journey_id']}: {j['verification']['violations']}"
+        assert j["verification"]["ok"], (
+            f"Verification failed for {j['journey_id']}: {j['verification']['violations']}"
+        )
         lines.append(f"## {j['title']}")
         lines.append("")
         lines.append(f"**Journey Identifier:** `{j['journey_id']}`  ")
@@ -57,11 +59,13 @@ def main():
                 val_str = f"{val:.4f}"
             else:
                 val_str = str(val)
-            lines.append(f"| `{f['fact_id']}` | `{f['type']}` | **{val_str}** | Derived by Bayesian generative model |")
+            lines.append(
+                f"| `{f['fact_id']}` | `{f['type']}` | **{val_str}** | Derived by Bayesian generative model |"
+            )
         lines.append("")
         lines.append("### Generated Provenance-Verified Narrative (Module M5)")
         lines.append("")
-        lines.append(f"> \"{j['narrative']}\"")
+        lines.append(f'> "{j["narrative"]}"')
         lines.append("")
         lines.append("---")
         lines.append("")

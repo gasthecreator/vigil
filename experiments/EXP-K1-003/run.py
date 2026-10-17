@@ -101,8 +101,14 @@ def main() -> None:
         d_aucs.append(auc_i - auc_b)
         d_briers.append(br_i - br_b)
 
-    delta_auc_ci = [round(float(np.percentile(d_aucs, 2.5)), 4), round(float(np.percentile(d_aucs, 97.5)), 4)]
-    delta_brier_ci = [round(float(np.percentile(d_briers, 2.5)), 4), round(float(np.percentile(d_briers, 97.5)), 4)]
+    delta_auc_ci = [
+        round(float(np.percentile(d_aucs, 2.5)), 4),
+        round(float(np.percentile(d_aucs, 97.5)), 4),
+    ]
+    delta_brier_ci = [
+        round(float(np.percentile(d_briers, 2.5)), 4),
+        round(float(np.percentile(d_briers, 97.5)), 4),
+    ]
     ci_excludes_zero = bool(delta_auc_ci[0] > 0.0 or delta_auc_ci[1] < 0.0)
     confirmed = bool(ci_excludes_zero and delta_auc >= 0.02)
 
@@ -127,7 +133,13 @@ def main() -> None:
         f"EXP-K1-003 Complete: baseline AUC={auc_point:.4f}, cum AUC={auc_cum:.4f}, delta={delta_auc:.4f} 95% CI {delta_auc_ci}"
     )
 
-    verdict_str = "CONFIRMED" if confirmed else "REFUTED (CI includes zero)" if not ci_excludes_zero else "REFUTED (below threshold)"
+    verdict_str = (
+        "CONFIRMED"
+        if confirmed
+        else "REFUTED (CI includes zero)"
+        if not ci_excludes_zero
+        else "REFUTED (below threshold)"
+    )
     report = f"""# EXP-K1-003 Report: Cumulative Burden Integration
 
 - **Baseline ROC-AUC:** {results["baseline_auc"]:.4f}

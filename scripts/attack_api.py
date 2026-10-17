@@ -38,6 +38,7 @@ c = TestClient(app, raise_server_exceptions=False)
 DB = os.environ["DATABASE_URL"].replace("sqlite:///", "")
 """
 
+
 def run_probe(body: str, **env) -> dict:
     with tempfile.TemporaryDirectory() as td:
         db_path = Path(td) / "probe.db"
@@ -73,7 +74,9 @@ def main():
         'print(json.dumps(c.get("/api/v1/patients/", headers={"X-Vigil-Role": "admin"}).status_code))',
         ENVIRONMENT="production",
     )
-    status1 = int(res["stdout"].splitlines()[-1]) if res["stdout"] else (401 if res["rc"] != 0 else -1)
+    status1 = (
+        int(res["stdout"].splitlines()[-1]) if res["stdout"] else (401 if res["rc"] != 0 else -1)
+    )
     blocked1 = status1 in (401, 403) or res["rc"] != 0
     results["attack_1_header_claimed_role"] = {
         "status_code": status1,
@@ -91,7 +94,9 @@ def main():
     print(json.dumps(resp.status_code))
     '''
     res2 = run_probe(body2, ENVIRONMENT="production")
-    status2 = int(res2["stdout"].splitlines()[-1]) if res2["stdout"] else (401 if res2["rc"] != 0 else -1)
+    status2 = (
+        int(res2["stdout"].splitlines()[-1]) if res2["stdout"] else (401 if res2["rc"] != 0 else -1)
+    )
     blocked2 = status2 in (401, 403) or res2["rc"] != 0
     results["attack_2_forged_default_secret"] = {
         "status_code": status2,
@@ -117,7 +122,9 @@ def main():
     """
     res3 = run_probe(body3)
     out3 = json.loads(res3["stdout"].splitlines()[-1])
-    intercepted3 = out3["obs"] >= 1 and (out3["alerts"] >= 1 or out3["tasks"] >= 1) and out3["audit"] >= 1
+    intercepted3 = (
+        out3["obs"] >= 1 and (out3["alerts"] >= 1 or out3["tasks"] >= 1) and out3["audit"] >= 1
+    )
     results["attack_3_legacy_lab_bypass"] = {
         "output": out3,
         "intercepted": intercepted3,
@@ -199,7 +206,9 @@ def main():
         "tail_deletion_detected": out6["tail_deletion_detected"],
         "detail": "Anchor comparison detected row count deficit and missing head hash.",
     }
-    print(f" -> Result: {'TAIL DELETION DETECTED ✅' if out6['tail_deletion_detected'] else 'FAILED ❌'}")
+    print(
+        f" -> Result: {'TAIL DELETION DETECTED ✅' if out6['tail_deletion_detected'] else 'FAILED ❌'}"
+    )
 
     print("\n" + "=" * 70)
     print("🏁 ALL 6 ADVERSARIAL ATTACKS SUCCESSFULLY REPELLED & LOGGED")

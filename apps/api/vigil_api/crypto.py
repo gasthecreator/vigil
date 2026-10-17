@@ -10,6 +10,8 @@ Adheres to MASTER_PLAN.md §9.3 and Phase 5 deliverables:
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import os
 from typing import Any, List, Optional
 
@@ -28,7 +30,12 @@ def get_encryption_keys() -> List[bytes]:
     The first key is the primary encryption key. Subsequent keys are secondary
     keys used for decrypting and rotating data encrypted with previous keys.
     """
-    raw_keys_env = os.getenv("FIELD_ENCRYPTION_KEYS", "").strip()
+    raw_keys_env = (
+        os.getenv("VIGIL_FIELD_ENCRYPTION_KEYS")
+        or os.getenv("FIELD_ENCRYPTION_KEYS")
+        or os.getenv("ENCRYPTION_KEY")
+        or ""
+    ).strip()
 
     if raw_keys_env:
         raw_keys = [k.strip() for k in raw_keys_env.split(",") if k.strip()]
@@ -48,6 +55,16 @@ def get_encryption_keys() -> List[bytes]:
     return byte_keys
 
 
+def compute_blind_index(value: Optional[str]) -> Optional[str]:
+    """Computes an HMAC-SHA256 blind index for exact-match querying over encrypted fields."""
+    if value is None:
+        return None
+    keys = get_encryption_keys()
+    secret = keys[0] if keys else DEFAULT_DEV_ENCRYPTION_KEY.encode("ascii")
+    norm = value.strip().upper().encode("utf-8")
+    return hmac.new(secret, norm, hashlib.sha256).hexdigest()
+
+
 def get_multi_fernet(keys: Optional[List[bytes]] = None) -> MultiFernet:
     """Instantiate a MultiFernet engine with given keys or configured keys."""
     if keys is None:
@@ -58,7 +75,9 @@ def get_multi_fernet(keys: Optional[List[bytes]] = None) -> MultiFernet:
     return MultiFernet(fernets)
 
 
-def encrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = None) -> Optional[str]:
+def encrypt_field(
+    value: Optional[str], multi_fernet: Optional[MultiFernet] = None
+) -> Optional[str]:
     """Encrypt a plaintext string using primary key."""
     if value is None:
         return None
@@ -68,7 +87,9 @@ def encrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = No
     return encrypted_bytes.decode("utf-8")
 
 
-def decrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = None) -> Optional[str]:
+def decrypt_field(
+    value: Optional[str], multi_fernet: Optional[MultiFernet] = None
+) -> Optional[str]:
     """Decrypt a ciphertext string trying all keys in rotation order."""
     if value is None:
         return None
@@ -84,7 +105,9 @@ def decrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = No
         raise
 
 
-def rotate_field_ciphertext(ciphertext: str, multi_fernet: Optional[MultiFernet] = None) -> tuple[str, bool]:
+def rotate_field_ciphertext(
+    ciphertext: str, multi_fernet: Optional[MultiFernet] = None
+) -> tuple[str, bool]:
     """Rotate ciphertext to the primary key.
 
     Returns (new_ciphertext, rotated_bool).
@@ -93,7 +116,7 @@ def rotate_field_ciphertext(ciphertext: str, multi_fernet: Optional[MultiFernet]
     try:
         rotated_bytes = engine.rotate(ciphertext.encode("utf-8"))
         rotated_str = rotated_bytes.decode("utf-8")
-        was_rotated = (rotated_str != ciphertext)
+        was_rotated = rotated_str != ciphertext
         return rotated_str, was_rotated
     except InvalidToken as e:
         raise ValueError("Ciphertext could not be decrypted by any configured key.") from e
@@ -103,6 +126,7 @@ class EncryptedString(TypeDecorator):
     """SQLAlchemy TypeDecorator that transparently encrypts strings on storage
     and decrypts on retrieval.
     """
+
     impl = Text
     cache_ok = True
 

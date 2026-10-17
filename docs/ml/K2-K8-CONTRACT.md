@@ -30,11 +30,17 @@ parameters, must handle irregular spacing and missing values, and must monitor i
 ```python
 class ConformalRiskController:
     def __init__(self, alpha: float): ...
-    def fit(self, scores: np.ndarray, labels: np.ndarray) -> "ConformalRiskController": ...   # calibration set
-    def decide(self, scores: np.ndarray) -> np.ndarray: ...                                  # True = alert
+    def fit(
+        self, scores: np.ndarray, labels: np.ndarray
+    ) -> "ConformalRiskController": ...  # calibration set
+    def decide(self, scores: np.ndarray) -> np.ndarray: ...  # True = alert
+
+
 class OODGate:
     def fit(self, X: np.ndarray) -> "OODGate": ...
     def is_ood(self, X: np.ndarray) -> np.ndarray: ...
+
+
 class AdaptiveConformal:
     def __init__(self, alpha: float, gamma: float = 0.005): ...
     def update(self, covered: bool) -> None: ...

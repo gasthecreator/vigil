@@ -38,12 +38,40 @@ export class VigilApiClient {
   }
 
   // Patients & Surveillance
-  async createPatient(patient: Types.PatientCreate): Promise<Types.PatientSummary> {
+  async listPatients(params?: { status?: string; mrn?: string }): Promise<Types.PatientResponse[]> {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.mrn) query.set('mrn', params.mrn);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request(`/api/v1/patients/${qs}`);
+  }
+
+  async getPatient(patientId: string): Promise<Types.PatientResponse> {
+    return this.request(`/api/v1/patients/${patientId}`);
+  }
+
+  async createPatient(patient: Types.PatientCreate): Promise<Types.PatientResponse> {
     return this.request("/api/v1/patients/", { method: "POST", body: JSON.stringify(patient) });
+  }
+
+  async updatePatient(patientId: string, update: Types.PatientUpdate): Promise<Types.PatientResponse> {
+    return this.request(`/api/v1/patients/${patientId}`, { method: "PATCH", body: JSON.stringify(update) });
+  }
+
+  async grantConsent(patientId: string, consent: Types.ConsentCreateRequest): Promise<Record<string, unknown>> {
+    return this.request(`/api/v1/patients/${patientId}/consent`, { method: "POST", body: JSON.stringify(consent) });
   }
 
   async ingestObservation(patientId: string, obs: Types.ObservationCreateRequest): Promise<Types.ObservationCreateResponse> {
     return this.request(`/api/v1/patients/${patientId}/observations`, { method: "POST", body: JSON.stringify(obs) });
+  }
+
+  async listObservations(patientId: string): Promise<Record<string, any>[]> {
+    return this.request(`/api/v1/patients/${patientId}/observations`);
+  }
+
+  async listRiskHistory(patientId: string): Promise<Types.RiskAssessmentSummary[]> {
+    return this.request(`/api/v1/patients/${patientId}/risk-history`);
   }
 
   // Alerts
@@ -53,6 +81,19 @@ export class VigilApiClient {
 
   async acknowledgeAlert(alertId: string, ack: Types.AlertAcknowledgeRequest): Promise<Types.AlertAcknowledgeResponse> {
     return this.request(`/api/v1/alerts/${alertId}/acknowledge`, { method: "POST", body: JSON.stringify(ack) });
+  }
+
+  // Follow-Up Guardian (M6)
+  async getOutreachList(params?: { facility_id?: string; simulated_now?: string }): Promise<Types.FollowUpTaskResponse[]> {
+    const query = new URLSearchParams();
+    if (params?.facility_id) query.set('facility_id', params.facility_id);
+    if (params?.simulated_now) query.set('simulated_now', params.simulated_now);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request(`/api/v1/follow-up/outreach${qs}`);
+  }
+
+  async transitionFollowUpTask(taskId: string, req: Types.FollowUpTransitionRequest): Promise<Types.FollowUpTaskResponse> {
+    return this.request(`/api/v1/follow-up/${taskId}/transition`, { method: "POST", body: JSON.stringify(req) });
   }
 
   // Offline Sync Replay

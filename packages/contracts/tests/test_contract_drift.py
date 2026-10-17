@@ -89,9 +89,10 @@ def test_typescript_artifacts_exist_and_cover_entities():
         "SyncBatchRequest",
         "SyncBatchResponse",
     ]:
-        assert f"export interface {expected_type}" in types_content or f"export type {expected_type}" in types_content, (
-            f"Expected TypeScript type '{expected_type}' not found in {TS_TYPES_FILE}"
-        )
+        assert (
+            f"export interface {expected_type}" in types_content
+            or f"export type {expected_type}" in types_content
+        ), f"Expected TypeScript type '{expected_type}' not found in {TS_TYPES_FILE}"
 
     # Key client methods must exist
     for expected_method in [

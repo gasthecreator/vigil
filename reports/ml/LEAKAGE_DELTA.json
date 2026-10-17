@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "study": "LEAKAGE_DELTA",
+    "seed": 42,
+    "visit_depth": 10,
+    "n_train": 1000,
+    "n_test": 1000,
+    "n_bootstrap_resamples": 1000,
+    "generated_at": "2026-10-17 17:41:08 UTC"
+  },
+  "models": {
+    "B1_SingleThreshold": {
+      "leaky_auc": 0.7218,
+      "clean_auc": 0.6455,
+      "delta_auc": -0.0764,
+      "delta_ci95": [
+        -0.096,
+        -0.0567
+      ],
+      "direction": "decreased",
+      "interpretation": "Discrimination decreased by 0.0764 AUC points [-0.0960, -0.0567] when unobserved latent values are properly masked to NaN."
+    },
+    "B2_Velocity": {
+      "leaky_auc": 0.5521,
+      "clean_auc": 0.5533,
+      "delta_auc": 0.0012,
+      "delta_ci95": [
+        -0.0085,
+        0.0101
+      ],
+      "direction": "stable",
+      "interpretation": "Discrimination stable by 0.0012 AUC points [-0.0085, 0.0101] when unobserved latent values are properly masked to NaN."
+    },
+    "B3_RegularizedHazard": {
+      "leaky_auc": 0.7701,
+      "clean_auc": 0.7616,
+      "delta_auc": -0.0085,
+      "delta_ci95": [
+        -0.0147,
+        -0.0026
+      ],
+      "direction": "decreased",
+      "interpretation": "Discrimination decreased by 0.0085 AUC points [-0.0147, -0.0026] when unobserved latent values are properly masked to NaN."
+    },
+    "B4_GradientBoosting": {
+      "leaky_auc": 0.8161,
+      "clean_auc": 0.8102,
+      "delta_auc": -0.0059,
+      "delta_ci95": [
+        -0.0126,
+        0.0008
+      ],
+      "direction": "stable",
+      "interpretation": "Discrimination stable by 0.0059 AUC points [-0.0126, 0.0008] when unobserved latent values are properly masked to NaN."
+    },
+    "K3_JointModel": {
+      "leaky_auc": 0.8093,
+      "clean_auc": 0.8027,
+      "delta_auc": -0.0065,
+      "delta_ci95": [
+        -0.0117,
+        -0.0015
+      ],
+      "direction": "decreased",
+      "interpretation": "Discrimination decreased by 0.0065 AUC points [-0.0117, -0.0015] when unobserved latent values are properly masked to NaN."
+    },
+    "K1_Kinetic": {
+      "leaky_auc": 0.5855,
+      "clean_auc": 0.5339,
+      "delta_auc": -0.0517,
+      "delta_ci95": [
+        -0.0684,
+        -0.0327
+      ],
+      "direction": "decreased",
+      "interpretation": "Discrimination decreased by 0.0517 AUC points [-0.0684, -0.0327] when unobserved latent values are properly masked to NaN."
+    }
+  }
+}

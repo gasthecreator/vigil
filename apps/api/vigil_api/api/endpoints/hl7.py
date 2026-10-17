@@ -64,7 +64,9 @@ class HL7MessageRequest(BaseModel):
 async def ingest_hl7_oru_r01(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Processes an HL7 v2 ORU^R01 message containing laboratory observations."""
     content_type = request.headers.get("content-type", "").lower()
@@ -107,7 +109,9 @@ async def ingest_hl7_oru_r01(
         )
 
     # 2. Lookup Patient & Verify Consent
-    patient = db.execute(select(Patient).where(Patient.id == parsed_msg.patient_id)).scalars().first()
+    patient = (
+        db.execute(select(Patient).where(Patient.id == parsed_msg.patient_id)).scalars().first()
+    )
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -167,7 +171,9 @@ async def ingest_hl7_oru_r01(
     record_audit_event(
         db=db,
         actor_id=current_user.id,
-        actor_role=current_user.role if isinstance(current_user.role, str) else current_user.role.value,
+        actor_role=current_user.role
+        if isinstance(current_user.role, str)
+        else current_user.role.value,
         action="hl7_oru_r01_imported",
         resource_type="patient",
         resource_id=patient.id,

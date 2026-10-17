@@ -237,9 +237,7 @@ def check_evidence(check_network: bool = True) -> bool:
                             break
 
                     if matched_pmid:
-                        print(
-                            f"   ✅ [Quote Verified, PMID {matched_pmid}]: \"{clean_q[:65]}...\""
-                        )
+                        print(f'   ✅ [Quote Verified, PMID {matched_pmid}]: "{clean_q[:65]}..."')
                     else:
                         # Check if quote is explicitly non-abstract or full-text
                         is_abstract_quote = "abstract" in dossier_text.lower()
@@ -249,14 +247,14 @@ def check_evidence(check_network: bool = True) -> bool:
                         ):
                             # Quote claimed to be from abstract but didn't match
                             errors.append(
-                                f"[{entry_id}] Abstract quote mismatch with PubMed text: \"{clean_q[:70]}...\""
+                                f'[{entry_id}] Abstract quote mismatch with PubMed text: "{clean_q[:70]}..."'
                             )
                             print(
-                                f"   ❌ [Quote Mismatch]: \"{clean_q[:65]}...\" not in PubMed abstract"
+                                f'   ❌ [Quote Mismatch]: "{clean_q[:65]}..." not in PubMed abstract'
                             )
                         else:
                             print(
-                                f"   ℹ️ [UNVERIFIED-QUOTE]: \"{clean_q[:65]}...\" (Non-abstract or full-text excerpt)"
+                                f'   ℹ️ [UNVERIFIED-QUOTE]: "{clean_q[:65]}..." (Non-abstract or full-text excerpt)'
                             )
 
             elif not pmids and quotes:
@@ -265,7 +263,7 @@ def check_evidence(check_network: bool = True) -> bool:
                     clean_q = normalize_text(q)
                     all_unverified_quotes.append((entry_id, clean_q[:80]))
                     print(
-                        f"   ℹ️ [UNVERIFIED-QUOTE]: \"{clean_q[:65]}...\" (Non-PubMed source / statutory text)"
+                        f'   ℹ️ [UNVERIFIED-QUOTE]: "{clean_q[:65]}..." (Non-PubMed source / statutory text)'
                     )
 
             # Check 2c: Verification of numeric claims against quotes & saved excerpts (Condition Q-2)
@@ -284,7 +282,11 @@ def check_evidence(check_network: bool = True) -> bool:
                     )
 
             verified_corpus = " ".join(quotes) + " " + " ".join(excerpt_texts)
-            verified_corpus += " " + " ".join(pmids) + " 2021 2022 2024 2026 1995 1999 2001 2006 2008 2009 2010 2013 2016 2017"
+            verified_corpus += (
+                " "
+                + " ".join(pmids)
+                + " 2021 2022 2024 2026 1995 1999 2001 2006 2008 2009 2010 2013 2016 2017"
+            )
 
             lines = dossier_text.splitlines()
             in_data_section = False
@@ -299,7 +301,11 @@ def check_evidence(check_network: bool = True) -> bool:
                     in_data_section = False
                     continue
 
-                if in_data_section and not stripped.startswith(">") and not stripped.startswith("#"):
+                if (
+                    in_data_section
+                    and not stripped.startswith(">")
+                    and not stripped.startswith("#")
+                ):
                     is_numeric_assertion = any(
                         term in stripped.lower()
                         for term in [

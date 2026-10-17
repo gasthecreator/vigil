@@ -34,6 +34,7 @@ from vigil_api.models.v2 import (
 @dataclass
 class NotificationResult:
     """Result of a notification delivery attempt."""
+
     success: bool
     provider_message_id: Optional[str] = None
     delivery_status: str = "sent"  # sent, delivered, failed, opted_out
@@ -102,6 +103,7 @@ class SandboxNotificationProvider(NotificationProvider):
 # Master Plan §6.6 / HIPAA Minimal Necessary Rule:
 # Never transmit biomarker names, values, or oncological diagnoses in open transit.
 # ============================================================================
+
 
 def format_privacy_safe_message(task_type: str, escalation_level: int) -> str:
     """Renders privacy-safe notification text without clinical details or diagnoses."""
@@ -188,10 +190,7 @@ def run_reminder_cycle(
 
     # 2. Select active tasks needing outreach
     active_tasks = (
-        db.execute(
-            select(FollowUpTask)
-            .where(FollowUpTask.status.in_(ACTIVE_STATUSES))
-        )
+        db.execute(select(FollowUpTask).where(FollowUpTask.status.in_(ACTIVE_STATUSES)))
         .scalars()
         .all()
     )
@@ -215,7 +214,20 @@ def run_reminder_cycle(
         )
 
         # Do not send if already successfully delivered for this escalation level
-        already_sent = any(r.status == "delivered" and r.delivered_at and (current_time - (r.delivered_at if r.delivered_at.tzinfo else r.delivered_at.replace(tzinfo=timezone.utc))) < timedelta(days=2) for r in existing_receipts)
+        already_sent = any(
+            r.status == "delivered"
+            and r.delivered_at
+            and (
+                current_time
+                - (
+                    r.delivered_at
+                    if r.delivered_at.tzinfo
+                    else r.delivered_at.replace(tzinfo=timezone.utc)
+                )
+            )
+            < timedelta(days=2)
+            for r in existing_receipts
+        )
         if already_sent:
             continue
 

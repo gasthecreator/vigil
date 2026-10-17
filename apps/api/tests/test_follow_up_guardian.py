@@ -55,7 +55,15 @@ def guardian_db(tmp_path):
 
     now = datetime.now(timezone.utc)
     with Session(engine) as session:
-        fac = Facility(id="fac-g", name="Guardian Clinic", code="GC-01", country="NG", tier="tertiary", active=True, created_at=now)
+        fac = Facility(
+            id="fac-g",
+            name="Guardian Clinic",
+            code="GC-01",
+            country="NG",
+            tier="tertiary",
+            active=True,
+            created_at=now,
+        )
         session.add(fac)
 
         pat = Patient(
@@ -138,7 +146,9 @@ def test_escalation_ladder_reachability_with_injectable_clock(guardian_db):
     t_day1 = t0 + timedelta(days=1)
     with Session(engine) as session:
         evaluate_tasks(session, current_time=t_day1)
-        t = session.execute(select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")).scalar_one()
+        t = session.execute(
+            select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")
+        ).scalar_one()
         assert t.escalation_level == 0
         assert t.status == FollowUpTaskStatus.PENDING.value
 
@@ -146,7 +156,9 @@ def test_escalation_ladder_reachability_with_injectable_clock(guardian_db):
     t_day3 = t0 + timedelta(days=3)
     with Session(engine) as session:
         evaluate_tasks(session, current_time=t_day3)
-        t = session.execute(select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")).scalar_one()
+        t = session.execute(
+            select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")
+        ).scalar_one()
         assert t.escalation_level == 1
         assert t.status == FollowUpTaskStatus.ESCALATED.value
 
@@ -154,7 +166,9 @@ def test_escalation_ladder_reachability_with_injectable_clock(guardian_db):
     t_day8 = t0 + timedelta(days=8)
     with Session(engine) as session:
         evaluate_tasks(session, current_time=t_day8)
-        t = session.execute(select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")).scalar_one()
+        t = session.execute(
+            select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")
+        ).scalar_one()
         assert t.escalation_level == 2
         assert t.status == FollowUpTaskStatus.ESCALATED.value
 
@@ -162,7 +176,9 @@ def test_escalation_ladder_reachability_with_injectable_clock(guardian_db):
     t_day15 = t0 + timedelta(days=15)
     with Session(engine) as session:
         evaluate_tasks(session, current_time=t_day15)
-        t = session.execute(select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")).scalar_one()
+        t = session.execute(
+            select(FollowUpTask).where(FollowUpTask.id == "task-escalate-test")
+        ).scalar_one()
         assert t.escalation_level == 3
         assert t.status == FollowUpTaskStatus.ESCALATED.value
 
@@ -233,8 +249,20 @@ def test_hypothesis_no_task_disappears(days_advance: int, num_tasks: int):
     t0 = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     with Session(engine) as session:
-        fac = Facility(id="f", name="Fac", code="F", country="NG", tier="t", active=True, created_at=t0)
-        pat = Patient(id="p", facility_id="f", mrn="M", biological_sex="female", primary_cancer_type="breast", synthetic=True, status="active", created_at=t0, updated_at=t0)
+        fac = Facility(
+            id="f", name="Fac", code="F", country="NG", tier="t", active=True, created_at=t0
+        )
+        pat = Patient(
+            id="p",
+            facility_id="f",
+            mrn="M",
+            biological_sex="female",
+            primary_cancer_type="breast",
+            synthetic=True,
+            status="active",
+            created_at=t0,
+            updated_at=t0,
+        )
         session.add_all([fac, pat])
 
         for i in range(num_tasks):

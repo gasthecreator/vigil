@@ -8,12 +8,21 @@ def rcv(cv_analytical: float, cv_within: float, z: float = 1.96, log_normal: boo
     """Reference change value. log_normal=False -> float sqrt(2)*z*sqrt(cva^2+cvi^2).
     log_normal=True -> (up, down) = (exp(z*sqrt(2)*s)-1, exp(-z*sqrt(2)*s)-1), s = sqrt(ln(1+cva^2)+ln(1+cvi^2))."""
 
-def adjudicate(history: list[tuple[float, float]], new_day: float, new_value: float,
-               cv_analytical: float, cv_within: float, lab_changed: bool = False, inter_lab_cv: float = 0.10,
-               p_error_prior: float = 0.03, p_real_prior: float = 0.20) -> dict:
+
+def adjudicate(
+    history: list[tuple[float, float]],
+    new_day: float,
+    new_value: float,
+    cv_analytical: float,
+    cv_within: float,
+    lab_changed: bool = False,
+    inter_lab_cv: float = 0.10,
+    p_error_prior: float = 0.03,
+    p_real_prior: float = 0.20,
+) -> dict:
     """-> {"p_real", "p_error", "p_stable"  (sum to 1),
-           "action": "explained" | "needs_repeat" | "escalate",
-           "rationale_facts": [ {"fact_id": str, "type": str, "value": float|str, ...}, ... ]}"""
+    "action": "explained" | "needs_repeat" | "escalate",
+    "rationale_facts": [ {"fact_id": str, "type": str, "value": float|str, ...}, ... ]}"""
 ```
 Stated generative model (the model the adjudicator must reason under; the tests simulate from it):
 baseline level L; each measurement = L·exp(ε), ε ~ N(0, cva²+cvi²) (log scale, small-CV approximation); **real change** = persistent increase by factor f ~ logUniform(1.4, 3.0) on top of that noise; **gross error** = one of {value redrawn from the population `exp(N(ln 18, 0.6))`, ×10 decimal shift, ÷10 decimal shift} (equally likely); if `lab_changed`, the new value additionally carries a between-lab multiplicative offset exp(N(0, inter_lab_cv)). The baseline reported in facts is the **geometric mean of the history**.

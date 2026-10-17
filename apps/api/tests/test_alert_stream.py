@@ -98,7 +98,9 @@ def test_sse_stream_patient_role_restrictions(client):
     headers_pat = {"X-Vigil-Role": "patient", "X-Vigil-User-Id": "pat-1"}
 
     # Create patient
-    p_resp = client.post("/api/v1/patients/", json={"age": 49, "status": "active"}, headers=headers_doc)
+    p_resp = client.post(
+        "/api/v1/patients/", json={"age": 49, "status": "active"}, headers=headers_doc
+    )
     pid = p_resp.json()["id"]
 
     # 1. Patient role streaming without patient_id is rejected (400)

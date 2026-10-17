@@ -140,7 +140,11 @@ def measure_latencies(n_iterations: int = 1000) -> Dict[str, Any]:
     # Seed test patient and task
     p_resp = client.post("/api/v1/patients/", json={"age": 50, "status": "active"}, headers=headers)
     pid = p_resp.json()["id"]
-    client.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=headers)
+    client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "clinical_care", "granted": True},
+        headers=headers,
+    )
 
     triage_times = []
     for _ in range(n_iterations):
@@ -206,11 +210,13 @@ def main() -> None:
             f"| `{op}` | {data['p50_ms']} ms | {data['p95_ms']} ms | {data['p99_ms']} ms | < {data['budget_p95_ms']} ms | **{status_str}** |"
         )
 
-    report_lines.extend([
-        "",
-        "## Conclusion",
-        "All inference and endpoint operations strictly satisfy Section 9.5 latency budgets under full N=1,000 sampling.",
-    ])
+    report_lines.extend(
+        [
+            "",
+            "## Conclusion",
+            "All inference and endpoint operations strictly satisfy Section 9.5 latency budgets under full N=1,000 sampling.",
+        ]
+    )
 
     report_path = out_dir / "REPORT.md"
     with open(report_path, "w", encoding="utf-8") as f:
@@ -218,7 +224,9 @@ def main() -> None:
 
     print(f"Latency report committed to {report_path}")
     for op, data in results.items():
-        print(f"[{op}] p50: {data['p50_ms']} ms, p95: {data['p95_ms']} ms, p99: {data['p99_ms']} ms -> PASS: {data['passes_budget']}")
+        print(
+            f"[{op}] p50: {data['p50_ms']} ms, p95: {data['p95_ms']} ms, p99: {data['p99_ms']} ms -> PASS: {data['passes_budget']}"
+        )
 
 
 if __name__ == "__main__":

@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.config import settings
-from vigil_api.consent import verify_patient_consent
+from vigil_api.consent import has_active_consent, verify_patient_consent
+from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
 from vigil_api.ml.detector_helpers import detector_from_dict, detector_to_dict
 from vigil_api.ml.inference import SentinelEngine
@@ -40,7 +41,7 @@ from vigil_api.schemas.inference import (
     TriageQueueItem,
 )
 from vigil_api.schemas.lab import LabResultCreate
-from vigil_api.schemas.patient import PatientCreate, PatientResponse
+from vigil_api.schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from vigil_api.schemas.v2 import (
     AlertSummary,
     ConsentCreateRequest,
@@ -57,6 +58,14 @@ from vigil_ml.m5 import render_clinician_note, verify_narrative
 router = APIRouter()
 
 
+def mask_identifier(val: Optional[str]) -> Optional[str]:
+    """Masks an identifier returning only the last two characters."""
+    if not val:
+        return None
+    val_str = str(val)
+    return f"***{val_str[-2:]}" if len(val_str) >= 2 else "***"
+
+
 @router.post("/", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
 def create_patient(
     payload: PatientCreate,
@@ -65,9 +74,33 @@ def create_patient(
 ):
     """Registers a new patient into the oncology surveillance roster."""
     now = datetime.now(timezone.utc)
+
+    # Enforce ADR 0011: Prohibit duplicate MRN or external_id registration
+    mrn_bidx = compute_blind_index(payload.mrn) if payload.mrn else None
+    if mrn_bidx:
+        existing_mrn = db.query(Patient).filter(Patient.mrn_bidx == mrn_bidx).first()
+        if existing_mrn:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Patient with MRN already registered in surveillance database (ID: {existing_mrn.id}). Duplicate MRNs are prohibited by policy.",
+            )
+
+    ext_bidx = compute_blind_index(payload.external_id) if payload.external_id else None
+    if ext_bidx:
+        existing_ext = db.query(Patient).filter(Patient.external_id_bidx == ext_bidx).first()
+        if existing_ext:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Patient with external_id already registered in surveillance database (ID: {existing_ext.id}).",
+            )
+
     patient = Patient(
         age=payload.age,
         status=payload.status,
+        mrn=payload.mrn,
+        external_id=payload.external_id,
+        mrn_bidx=mrn_bidx,
+        external_id_bidx=ext_bidx,
         synthetic=True,
         created_at=now,
         updated_at=now,
@@ -83,7 +116,7 @@ def create_patient(
         action="patient.created",
         resource_type="Patient",
         resource_id=patient.id,
-        details={"age": patient.age, "status": patient.status},
+        details={"age": patient.age, "status": patient.status, "has_mrn": bool(patient.mrn)},
         timestamp=now,
     )
 
@@ -93,16 +126,74 @@ def create_patient(
 
 
 @router.get("/", response_model=List[PatientResponse])
-def list_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Lists all registered patients."""
-    patients = db.query(Patient).offset(skip).limit(limit).all()
-    return patients
+def list_patients(
+    skip: int = 0,
+    limit: int = 100,
+    mrn: Optional[str] = None,
+    external_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lists all registered patients, optionally filtering by blind-indexed MRN or external_id.
+
+    Redacts identifiers (MRN, external_id) unless active patient consent exists.
+    Blocks searching by MRN/external_id if active consent is not present (Condition P9-D).
+    """
+    query = db.query(Patient)
+    if mrn:
+        bidx = compute_blind_index(mrn)
+        query = query.filter(Patient.mrn_bidx == bidx)
+    if external_id:
+        bidx = compute_blind_index(external_id)
+        query = query.filter(Patient.external_id_bidx == bidx)
+
+    patients = query.offset(skip).limit(limit).all()
+
+    # If caller specifically queries by MRN or external_id:
+    # Block MRN search without consent (prevent existence confirmation / enumeration)
+    if mrn or external_id:
+        consented_results: List[PatientResponse] = []
+        for p in patients:
+            if has_active_consent(p.id, db, current_user):
+                consented_results.append(
+                    PatientResponse(
+                        id=p.id,
+                        age=p.age,
+                        created_at=p.created_at,
+                        status=p.status,
+                        mrn=p.mrn,
+                        external_id=p.external_id,
+                        is_masked=False,
+                    )
+                )
+        return consented_results
+
+    # General list: return all patients, but strip/mask identifiers unless consent is active
+    results: List[PatientResponse] = []
+    for p in patients:
+        consented = has_active_consent(p.id, db, current_user)
+        results.append(
+            PatientResponse(
+                id=p.id,
+                age=p.age,
+                created_at=p.created_at,
+                status=p.status,
+                mrn=p.mrn if consented else mask_identifier(p.mrn),
+                external_id=p.external_id if consented else mask_identifier(p.external_id),
+                is_masked=not consented,
+            )
+        )
+    return results
 
 
 @router.get("/triage", response_model=List[TriageQueueItem])
 def get_triage_queue(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN, UserRole.QUALITY_LEAD)),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN, UserRole.QUALITY_LEAD
+        )
+    ),
 ):
     """
     View 1: Triage Queue.
@@ -189,7 +280,11 @@ def get_triage_queue(
         max_overdue_days = 0.0
         max_escalation = 0
         for task in active_tasks:
-            due = task.due_date if task.due_date.tzinfo else task.due_date.replace(tzinfo=timezone.utc)
+            due = (
+                task.due_date
+                if task.due_date.tzinfo
+                else task.due_date.replace(tzinfo=timezone.utc)
+            )
             overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
             if overdue_days > max_overdue_days:
                 max_overdue_days = overdue_days
@@ -203,7 +298,11 @@ def get_triage_queue(
 
         # 4. Treatment / surveillance delay component (weight 0.15)
         if last_lab and last_lab.date_drawn:
-            lab_date = last_lab.date_drawn if last_lab.date_drawn.tzinfo else last_lab.date_drawn.replace(tzinfo=timezone.utc)
+            lab_date = (
+                last_lab.date_drawn
+                if last_lab.date_drawn.tzinfo
+                else last_lab.date_drawn.replace(tzinfo=timezone.utc)
+            )
             days_since = max(0.0, (now - lab_date).total_seconds() / 86400.0)
             if days_since > 90.0:
                 s_delay = min(1.0, (days_since - 90.0) / 90.0)
@@ -244,7 +343,11 @@ def get_triage_queue(
 
     # Sort strictly descending by action_urgency, breaking ties by latest_risk and recency
     triage_roster.sort(
-        key=lambda x: (x.action_urgency, x.latest_risk, x.last_lab_date.timestamp() if x.last_lab_date else 0.0),
+        key=lambda x: (
+            x.action_urgency,
+            x.latest_risk,
+            x.last_lab_date.timestamp() if x.last_lab_date else 0.0,
+        ),
         reverse=True,
     )
     return triage_roster
@@ -280,6 +383,8 @@ def get_patient_detail(
 
     return {
         "id": patient.id,
+        "mrn": patient.mrn,
+        "external_id": patient.external_id,
         "age": patient.age,
         "status": patient.status,
         "synthetic": patient.synthetic,
@@ -300,6 +405,87 @@ def get_patient_detail(
         "triage_flag": latest_inference.triage_flag if latest_inference else False,
         "latest_justification": latest_inference.justification_text if latest_inference else None,
     }
+
+
+@router.patch("/{id}", response_model=PatientResponse)
+def update_patient(
+    id: str,
+    payload: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
+    """Updates patient demographics or encrypted identifiers."""
+    now = datetime.now(timezone.utc)
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+
+    if payload.age is not None:
+        patient.age = payload.age
+    if payload.status is not None:
+        patient.status = payload.status
+    if payload.mrn is not None:
+        bidx = compute_blind_index(payload.mrn)
+        existing = db.query(Patient).filter(Patient.mrn_bidx == bidx, Patient.id != id).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Patient with MRN already registered in surveillance database (ID: {existing.id}). Duplicate MRNs are prohibited by policy.",
+            )
+        patient.mrn = payload.mrn
+        patient.mrn_bidx = bidx
+    if payload.external_id is not None:
+        ext_bidx = compute_blind_index(payload.external_id)
+        existing_ext = (
+            db.query(Patient).filter(Patient.external_id_bidx == ext_bidx, Patient.id != id).first()
+        )
+        if existing_ext:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Patient with external_id already registered in surveillance database (ID: {existing_ext.id}).",
+            )
+        patient.external_id = payload.external_id
+        patient.external_id_bidx = ext_bidx
+    patient.updated_at = now
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="patient.updated",
+        resource_type="Patient",
+        resource_id=patient.id,
+        details={"updated_fields": list(payload.model_dump(exclude_unset=True).keys())},
+        timestamp=now,
+    )
+    db.commit()
+    db.refresh(patient)
+    return patient
+
+
+@router.post("/rotate-keys", status_code=status.HTTP_200_OK)
+def rotate_patient_keys_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+):
+    """Triggers re-encryption of all patient MRN and external_id ciphertexts to the latest primary key.
+
+    Admin-only global operation. Master Plan §11 / Condition P9-E.
+    """
+    from vigil_api.keyrotation import rotate_patient_keys
+
+    scanned, rotated = rotate_patient_keys(db, dry_run=False)
+    now = datetime.now(timezone.utc)
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="security.keys_rotated",
+        resource_type="PatientEncryption",
+        resource_id="all",
+        details={"scanned": scanned, "rotated": rotated},
+        timestamp=now,
+    )
+    db.commit()
+    return {"status": "success", "scanned": scanned, "rotated": rotated}
 
 
 @router.post("/{id}/baseline", response_model=BaselineResponse)
@@ -417,11 +603,15 @@ def ingest_single_observation_internal(
         specimen_date = specimen_date.replace(tzinfo=timezone.utc)
 
     # 1. Fetch historical observations for this analyte to supply M3
-    history_obs = db.execute(
-        select(Observation)
-        .where(Observation.patient_id == patient.id, Observation.analyte_code == analyte.code)
-        .order_by(Observation.specimen_collected_at.asc())
-    ).scalars().all()
+    history_obs = (
+        db.execute(
+            select(Observation)
+            .where(Observation.patient_id == patient.id, Observation.analyte_code == analyte.code)
+            .order_by(Observation.specimen_collected_at.asc())
+        )
+        .scalars()
+        .all()
+    )
 
     pt_created = patient.created_at
     if pt_created.tzinfo is None:
@@ -498,8 +688,10 @@ def ingest_single_observation_internal(
 
     # 7. Save RiskAssessment
     risk_tier = (
-        "high" if (m3_result["action"] == "escalate" or detector.alert)
-        else "medium" if m3_result["action"] == "needs_repeat"
+        "high"
+        if (m3_result["action"] == "escalate" or detector.alert)
+        else "medium"
+        if m3_result["action"] == "needs_repeat"
         else "low"
     )
     risk = RiskAssessment(
@@ -539,9 +731,12 @@ def ingest_single_observation_internal(
 
     if is_surprising:
         alert_type = (
-            "biomarker_spike" if m3_result["action"] == "escalate"
-            else "lab_error_repeat" if m3_result["action"] == "needs_repeat"
-            else "sequential_divergence" if detector.alert
+            "biomarker_spike"
+            if m3_result["action"] == "escalate"
+            else "lab_error_repeat"
+            if m3_result["action"] == "needs_repeat"
+            else "sequential_divergence"
+            if detector.alert
             else "critical_panic_boundary"
         )
         severity = (
@@ -562,8 +757,10 @@ def ingest_single_observation_internal(
         db.flush()
 
         task_type = (
-            FollowUpTaskType.REPEAT_SPECIMEN.value if m3_result["action"] == "needs_repeat"
-            else FollowUpTaskType.IMAGING_REFERRAL.value if m3_result["action"] == "escalate"
+            FollowUpTaskType.REPEAT_SPECIMEN.value
+            if m3_result["action"] == "needs_repeat"
+            else FollowUpTaskType.IMAGING_REFERRAL.value
+            if m3_result["action"] == "escalate"
             else FollowUpTaskType.CLINICAL_REVIEW.value
         )
         due_days = 2 if severity == AlertSeverity.CRITICAL.value else 7
@@ -862,7 +1059,9 @@ def ingest_observation(
     id: str,
     payload: ObservationCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Unit-safe ingestion validating against Analyte Registry, executing M3 adjudication,
     updating K2 sequential detector, verifying M5 clinical note, and enforcing no-dismissal invariant.
@@ -968,21 +1167,74 @@ def list_patient_observations(
     )
     db.commit()
 
+    res = []
+    for o in obs_list:
+        flags = getattr(o, "quality_flags", None)
+        if not flags and o.risk_assessment:
+            ra = o.risk_assessment
+            unc = ra.uncertainty or {}
+            flags = {
+                "action": ra.adjudicated_action,
+                "p_real": ra.score,
+                "p_error": unc.get("p_error", 0.0),
+                "p_stable": unc.get("p_stable", 0.0),
+                "narrative": ra.clinical_note,
+            }
+        res.append(
+            {
+                "id": o.id,
+                "patient_id": o.patient_id,
+                "analyte_code": o.analyte_code,
+                "value": o.value,
+                "unit": o.unit,
+                "raw_value": o.raw_value,
+                "raw_unit": o.raw_unit,
+                "plausibility_status": o.plausibility_status,
+                "quality_flags": flags,
+                "specimen_collected_at": o.specimen_collected_at.isoformat(),
+                "status": o.status,
+                "synthetic": patient.synthetic,
+            }
+        )
+    return res
+
+
+@router.get(
+    "/{id}/risk-history",
+    response_model=List[RiskAssessmentSummary],
+    status_code=status.HTTP_200_OK,
+    summary="List patient serial risk assessments",
+)
+def list_patient_risk_history(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retrieve risk assessment trajectory for consented patient."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    assessments = (
+        db.execute(
+            select(RiskAssessment)
+            .where(RiskAssessment.patient_id == patient.id)
+            .order_by(RiskAssessment.assessment_date.desc())
+        )
+        .scalars()
+        .all()
+    )
     return [
-        {
-            "id": o.id,
-            "patient_id": o.patient_id,
-            "analyte_code": o.analyte_code,
-            "value": o.value,
-            "unit": o.unit,
-            "raw_value": o.raw_value,
-            "raw_unit": o.raw_unit,
-            "plausibility_status": o.plausibility_status,
-            "specimen_collected_at": o.specimen_collected_at.isoformat(),
-            "status": o.status,
-            "synthetic": patient.synthetic,
-        }
-        for o in obs_list
+        RiskAssessmentSummary(
+            id=a.id,
+            assessment_date=a.assessment_date,
+            model_versions=a.model_versions or {},
+            input_hash=a.input_hash,
+            score=a.score,
+            risk_tier=a.risk_tier,
+            uncertainty=a.uncertainty,
+            adjudicated_action=a.adjudicated_action,
+            clinical_note=a.clinical_note,
+            abstention=a.abstention,
+        )
+        for a in assessments
     ]
 
 
@@ -1000,7 +1252,9 @@ def record_consent(
     expires_at: Optional[datetime] = None,
     withdrawn_at: Optional[datetime] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN, UserRole.NURSE_CLERK)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.ADMIN, UserRole.NURSE_CLERK)
+    ),
 ):
     """Record, revoke, or expire a patient consent record."""
     patient = db.execute(select(Patient).where(Patient.id == id)).scalar_one_or_none()

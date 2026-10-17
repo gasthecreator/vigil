@@ -158,7 +158,7 @@ def run_backup_restore_drill() -> Dict[str, Any]:
         json.dump(manifest, f, indent=2)
 
     backup_duration_sec = time.perf_counter() - backup_t0
-    print(f"Backup created in {backup_duration_sec*1000:.2f} ms with manifest.")
+    print(f"Backup created in {backup_duration_sec * 1000:.2f} ms with manifest.")
 
     # --------------------------------------------------------------------------
     # 3. Simulate Total Catastrophic Disaster
@@ -191,7 +191,9 @@ def run_backup_restore_drill() -> Dict[str, Any]:
     restored_engine = create_engine(db_url)
     with Session(restored_engine) as session:
         restored_audit = verify_audit_chain(session)
-        assert restored_audit["valid"] is True, f"Restored audit verification failed: {restored_audit}"
+        assert restored_audit["valid"] is True, (
+            f"Restored audit verification failed: {restored_audit}"
+        )
         assert restored_audit["total_events"] == manifest["total_events"]
 
         n_pts = len(session.execute(select(Patient)).scalars().all())
@@ -264,7 +266,9 @@ def main() -> None:
         f.write("\n".join(report_lines) + "\n")
 
     print(f"Drill report written to {report_path}")
-    print(f"RPO: {results['rpo_seconds']}s | RTO: {results['rto_ms']}ms | Chain valid: {results['cryptographic_chain_valid']}")
+    print(
+        f"RPO: {results['rpo_seconds']}s | RTO: {results['rto_ms']}ms | Chain valid: {results['cryptographic_chain_valid']}"
+    )
 
 
 if __name__ == "__main__":

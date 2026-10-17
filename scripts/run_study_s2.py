@@ -29,7 +29,9 @@ ROOT = Path(__file__).resolve().parent.parent
 S2_DIR = ROOT / "reports" / "ml" / "S2_SEQUENTIAL"
 
 
-def bootstrap_ci(values: list[float] | np.ndarray, n_boot: int = 1000, seed: int = 42) -> list[float]:
+def bootstrap_ci(
+    values: list[float] | np.ndarray, n_boot: int = 1000, seed: int = 42
+) -> list[float]:
     """Calculate 95% bootstrap confidence interval over patient-level metrics."""
     arr = np.asarray(values, dtype=float)
     if len(arr) == 0:
@@ -63,15 +65,21 @@ def bootstrap_diff_ci(
 
 def calibrate_operating_points(seed: int = 999, n_patients: int = 500) -> dict[str, Any]:
     """Estimate within-patient log-scale noise SD and select matched FAR operating points strictly on calibration cohort (RR11)."""
-    print(f"🔬 Calibrating sigma_log and selecting operating points on calibration cohort (seed={seed}, N={n_patients})...")
-    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(n_patients, duration_days=730.0)
+    print(
+        f"🔬 Calibrating sigma_log and selecting operating points on calibration cohort (seed={seed}, N={n_patients})..."
+    )
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(
+        n_patients, duration_days=730.0
+    )
     obs_df = cohort.to_observations_dataframe()
     pts_df = cohort.to_patients_dataframe()
     null_pts = pts_df[~pts_df["true_recurrence_event"]]
 
     diffs = []
     for pid in null_pts["patient_id"]:
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         vals = p_obs["ca_15_3"].to_numpy(float)
         if len(vals) >= 2:
             log_vals = np.log(np.maximum(vals, 1e-6))
@@ -85,7 +93,9 @@ def calibrate_operating_points(seed: int = 999, n_patients: int = 500) -> dict[s
     frozen_alpha = 0.25
     frozen_thresh = 40.0
     print(f"✅ Calibrated sigma_log: {sigma_log:.4f}")
-    print(f"✅ Frozen operating point: K2 alpha_pt={frozen_alpha}, Static threshold={frozen_thresh} U/mL (matched calibration null FAR=0.0094)")
+    print(
+        f"✅ Frozen operating point: K2 alpha_pt={frozen_alpha}, Static threshold={frozen_thresh} U/mL (matched calibration null FAR=0.0094)"
+    )
 
     return {
         "calibration_seed": seed,
@@ -105,8 +115,12 @@ def run_vigil_sim_study(
     alpha = cal_params["frozen_alpha_pt"]
     thresh = cal_params["frozen_static_thresh"]
 
-    print(f"📊 Evaluating Study S2 on test cohort (seed={seed}, N={n_patients}) at frozen operating point (alpha={alpha}, thresh={thresh})...")
-    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(n_patients, duration_days=730.0)
+    print(
+        f"📊 Evaluating Study S2 on test cohort (seed={seed}, N={n_patients}) at frozen operating point (alpha={alpha}, thresh={thresh})..."
+    )
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(
+        n_patients, duration_days=730.0
+    )
     obs_df = cohort.to_observations_dataframe()
     pts_df = cohort.to_patients_dataframe()
 
@@ -116,7 +130,9 @@ def run_vigil_sim_study(
     # 1. Evaluate K2 on test cohort
     k2_null_flags = []
     for pid in null_pts["patient_id"]:
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         vals = p_obs["ca_15_3"].to_numpy(float)
         days = p_obs["day"].to_numpy(float)
         det = SequentialDetector(alpha_pt=alpha, sigma_log=sigma_log)
@@ -128,7 +144,9 @@ def run_vigil_sim_study(
     for _, p in rec_pts.iterrows():
         pid = p["patient_id"]
         t_rec = p["true_recurrence_day"]
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         vals = p_obs["ca_15_3"].to_numpy(float)
         days = p_obs["day"].to_numpy(float)
         det = SequentialDetector(alpha_pt=alpha, sigma_log=sigma_log)
@@ -144,7 +162,9 @@ def run_vigil_sim_study(
     # 2. Evaluate Static Threshold on test cohort
     static_null_flags = []
     for pid in null_pts["patient_id"]:
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         vals = p_obs["ca_15_3"].to_numpy(float)
         static_null_flags.append(1 if np.any(vals >= thresh) else 0)
 
@@ -152,7 +172,9 @@ def run_vigil_sim_study(
     for _, p in rec_pts.iterrows():
         pid = p["patient_id"]
         t_rec = p["true_recurrence_day"]
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         vals = p_obs["ca_15_3"].to_numpy(float)
         days = p_obs["day"].to_numpy(float)
         hits = (vals >= thresh) & (days >= t_rec)
@@ -187,7 +209,9 @@ def run_vigil_sim_study(
             "null_far_ci": bootstrap_ci(static_null_flags),
             "sensitivity": round(float(np.mean(static_rec_flags)), 4),
             "sensitivity_ci": bootstrap_ci(static_rec_flags),
-            "median_delay_days": round(float(np.median(static_delays)), 1) if static_delays else None,
+            "median_delay_days": round(float(np.median(static_delays)), 1)
+            if static_delays
+            else None,
             "mean_delay_days": round(float(np.mean(static_delays)), 1) if static_delays else None,
         },
         "matched_comparison": {
@@ -203,7 +227,9 @@ def run_acceptance_stress_suite() -> dict[str, Any]:
     import importlib.util
 
     os.environ["VIGIL_ACCEPT_3B"] = "1"
-    spec = importlib.util.spec_from_file_location("test_k2", str(ROOT / "tests" / "acceptance_3b" / "test_k2_contract.py"))
+    spec = importlib.util.spec_from_file_location(
+        "test_k2", str(ROOT / "tests" / "acceptance_3b" / "test_k2_contract.py")
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     _false_alarm_rate = mod._false_alarm_rate
@@ -267,8 +293,8 @@ def evaluate_programmatic_verdicts(v: dict[str, Any], s: dict[str, Any]) -> dict
             f"REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, "
             f"Model K2 pays an empirical power cost of {diff_mean * 100:.2f} percentage points "
             f"[95% CI: {diff_ci[0] * 100:.2f} pp, {diff_ci[1] * 100:.2f} pp] "
-            f"relative to static thresholding (K2 sensitivity: {v['k2_matched']['sensitivity']*100:.1f}%, "
-            f"Static sensitivity: {v['static_matched']['sensitivity']*100:.1f}%) on this simulator."
+            f"relative to static thresholding (K2 sensitivity: {v['k2_matched']['sensitivity'] * 100:.1f}%, "
+            f"Static sensitivity: {v['static_matched']['sensitivity'] * 100:.1f}%) on this simulator."
         )
     elif diff_ci[0] > 0.0:
         h1_verdict = (
@@ -303,13 +329,15 @@ def evaluate_programmatic_verdicts(v: dict[str, Any], s: dict[str, Any]) -> dict
     p60 = s["power_doubling_60d"]
     if p90["valid"] and p60["valid"]:
         h3_verdict = (
-            f"CONFIRMED: Under true kinetic progression streams, K2 achieves {p60['detection_fraction']*100:.1f}% "
+            f"CONFIRMED: Under true kinetic progression streams, K2 achieves {p60['detection_fraction'] * 100:.1f}% "
             f"power on rapid doubling (Td=60d, median delay {p60['median_delay_days']:.1f}d) and "
-            f"{p90['detection_fraction']*100:.1f}% power on moderate doubling "
+            f"{p90['detection_fraction'] * 100:.1f}% power on moderate doubling "
             f"(Td=90d, median delay {p90['median_delay_days']:.1f}d <= 240d)."
         )
     else:
-        h3_verdict = "NOT MET: K2 did not achieve pre-registered power or delay targets on kinetic streams."
+        h3_verdict = (
+            "NOT MET: K2 did not achieve pre-registered power or delay targets on kinetic streams."
+        )
 
     return {
         "H1_matched_far_power": h1_verdict,
@@ -351,31 +379,31 @@ Verdicts generated strictly by code from computed bootstrap confidence intervals
 
 ## 2. Honest Finding: The Cost of an Anytime Guarantee on `vigil-sim`
 
-On the project's simulator (`vigil-sim`), healthy biomarker trajectories are tightly regulated around baseline (~18 U/mL). Consequently, a simple static threshold rule ($CA 15-3 \\ge {v['static_matched']['threshold_u_ml']}$ U/mL) experiences a very low null false-alarm rate ({v['static_matched']['null_far'] * 100:.2f}%) and alerts once a rising trajectory crosses the cutoff.
+On the project's simulator (`vigil-sim`), healthy biomarker trajectories are tightly regulated around baseline (~18 U/mL). Consequently, a simple static threshold rule ($CA 15-3 \\ge {v["static_matched"]["threshold_u_ml"]}$ U/mL) experiences a very low null false-alarm rate ({v["static_matched"]["null_far"] * 100:.2f}%) and alerts once a rising trajectory crosses the cutoff.
 
-Model K2 (`SequentialDetector`), by contrast, computes a sequential mixture e-process. Because it mathematically guarantees bounded false-alarm rates under arbitrary monitoring horizons, autocorrelation, and heavy-tailed noise, it requires cumulative evidence over multiple consecutive looks to cross $1/\\alpha_{{\\text{{pt}}}}$. At the **calibrated matched operating point**, K2 achieves **{v['k2_matched']['sensitivity'] * 100:.1f}% sensitivity** vs **{v['static_matched']['sensitivity'] * 100:.1f}% for the static threshold**, with a median detection delay of **{v['k2_matched']['median_delay_days']} days** vs **{v['static_matched']['median_delay_days']} days**.
+Model K2 (`SequentialDetector`), by contrast, computes a sequential mixture e-process. Because it mathematically guarantees bounded false-alarm rates under arbitrary monitoring horizons, autocorrelation, and heavy-tailed noise, it requires cumulative evidence over multiple consecutive looks to cross $1/\\alpha_{{\\text{{pt}}}}$. At the **calibrated matched operating point**, K2 achieves **{v["k2_matched"]["sensitivity"] * 100:.1f}% sensitivity** vs **{v["static_matched"]["sensitivity"] * 100:.1f}% for the static threshold**, with a median detection delay of **{v["k2_matched"]["median_delay_days"]} days** vs **{v["static_matched"]["median_delay_days"]} days**.
 
-**Conclusion:** K2 delivers a provable patient-level false-alarm guarantee under repeated looks, and on this simulator it pays for that guarantee with an empirical power cost ({v['matched_comparison']['delta_sensitivity'] * 100:.1f} pp sensitivity).
+**Conclusion:** K2 delivers a provable patient-level false-alarm guarantee under repeated looks, and on this simulator it pays for that guarantee with an empirical power cost ({v["matched_comparison"]["delta_sensitivity"] * 100:.1f} pp sensitivity).
 
 ---
 
 ## 3. Matched-FAR Benchmark on `vigil-sim` (Test Seed 42, $N=500$)
 
-Noise parameter $\\sigma_{{\\log}} = {cal['calibrated_sigma_log']}$ and operating points (K2 $\\alpha_{{\\text{{pt}}}} = {cal['frozen_alpha_pt']}$, Static cutoff $= {cal['frozen_static_thresh']}$ U/mL) were frozen on an independent calibration cohort (seed 999, $N=500$ nulls) and evaluated once on the test cohort (seed 42, $N=500$):
+Noise parameter $\\sigma_{{\\log}} = {cal["calibrated_sigma_log"]}$ and operating points (K2 $\\alpha_{{\\text{{pt}}}} = {cal["frozen_alpha_pt"]}$, Static cutoff $= {cal["frozen_static_thresh"]}$ U/mL) were frozen on an independent calibration cohort (seed 999, $N=500$ nulls) and evaluated once on the test cohort (seed 42, $N=500$):
 
 | Method | Matched Null FAR [95% CI] | Sensitivity [95% CI] | Sensitivity $\\Delta$ vs Static [95% CI] | Median Delay | Mean Delay |
 |---|---|---|---|---|---|
-| `M_Static (Threshold >= {v['static_matched']['threshold_u_ml']} U/mL)` | {v["static_matched"]["null_far"]:.4f} [{v["static_matched"]["null_far_ci"][0]:.4f}, {v["static_matched"]["null_far_ci"][1]:.4f}] | {v["static_matched"]["sensitivity"]:.4f} [{v["static_matched"]["sensitivity_ci"][0]:.4f}, {v["static_matched"]["sensitivity_ci"][1]:.4f}] | Ref | {v["static_matched"]["median_delay_days"]}d | {v["static_matched"]["mean_delay_days"]}d |
-| `K2_Sequential (alpha_pt = {v['k2_matched']['alpha_pt']})` | {v["k2_matched"]["null_far"]:.4f} [{v["k2_matched"]["null_far_ci"][0]:.4f}, {v["k2_matched"]["null_far_ci"][1]:.4f}] | {v["k2_matched"]["sensitivity"]:.4f} [{v["k2_matched"]["sensitivity_ci"][0]:.4f}, {v["k2_matched"]["sensitivity_ci"][1]:.4f}] | {v["matched_comparison"]["delta_sensitivity"]:.4f} [{v["matched_comparison"]["delta_sensitivity_ci"][0]:.4f}, {v["matched_comparison"]["delta_sensitivity_ci"][1]:.4f}] | {v["k2_matched"]["median_delay_days"]}d | {v["k2_matched"]["mean_delay_days"]}d |
+| `M_Static (Threshold >= {v["static_matched"]["threshold_u_ml"]} U/mL)` | {v["static_matched"]["null_far"]:.4f} [{v["static_matched"]["null_far_ci"][0]:.4f}, {v["static_matched"]["null_far_ci"][1]:.4f}] | {v["static_matched"]["sensitivity"]:.4f} [{v["static_matched"]["sensitivity_ci"][0]:.4f}, {v["static_matched"]["sensitivity_ci"][1]:.4f}] | Ref | {v["static_matched"]["median_delay_days"]}d | {v["static_matched"]["mean_delay_days"]}d |
+| `K2_Sequential (alpha_pt = {v["k2_matched"]["alpha_pt"]})` | {v["k2_matched"]["null_far"]:.4f} [{v["k2_matched"]["null_far_ci"][0]:.4f}, {v["k2_matched"]["null_far_ci"][1]:.4f}] | {v["k2_matched"]["sensitivity"]:.4f} [{v["k2_matched"]["sensitivity_ci"][0]:.4f}, {v["k2_matched"]["sensitivity_ci"][1]:.4f}] | {v["matched_comparison"]["delta_sensitivity"]:.4f} [{v["matched_comparison"]["delta_sensitivity_ci"][0]:.4f}, {v["matched_comparison"]["delta_sensitivity_ci"][1]:.4f}] | {v["k2_matched"]["median_delay_days"]}d | {v["k2_matched"]["mean_delay_days"]}d |
 
 ---
 
 ## 4. Disjoint Calibration Cohort Protocol (Seed 999)
 
 - **Calibration Cohort Seed:** 999 ($N=500$ patients)
-- **Fitted $\\sigma_{{\\log}}$:** {cal['calibrated_sigma_log']}
-- **Frozen Operating Point:** $\\alpha_{{\\text{{pt}}}} = {cal['frozen_alpha_pt']}$, Static Threshold $= {cal['frozen_static_thresh']}$ U/mL
-- **Target Null FAR on Calibration Cohort:** {cal['calibration_matched_far']:.4f} (~1%)
+- **Fitted $\\sigma_{{\\log}}$:** {cal["calibrated_sigma_log"]}
+- **Frozen Operating Point:** $\\alpha_{{\\text{{pt}}}} = {cal["frozen_alpha_pt"]}$, Static Threshold $= {cal["frozen_static_thresh"]}$ U/mL
+- **Target Null FAR on Calibration Cohort:** {cal["calibration_matched_far"]:.4f} (~1%)
 - **Test Cohort Evaluation:** Single evaluation run on seed 42 (zero post-hoc parameter adjustments).
 
 ---

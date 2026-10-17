@@ -255,11 +255,15 @@ def run_shuffled_label_canary(
         )
         clf.fit(X_train, y_train)
 
-        # Probabilities
+        # Probabilities or risk predictions
         if hasattr(clf, "predict_proba"):
             preds = clf.predict_proba(X_test)[:, 1]
-        else:
+        elif hasattr(clf, "predict_risk"):
+            preds = clf.predict_risk(X_test)
+        elif hasattr(clf, "decision_function"):
             preds = clf.decision_function(X_test)
+        else:
+            preds = clf.predict(X_test)
 
         score = roc_auc_score(y_test, preds)
         auc_scores.append(score)
@@ -309,9 +313,10 @@ def run_latent_column_canary(feature_df: pd.DataFrame) -> None:
     appear in model feature inputs.
     """
     forbidden_prefixes = ("latent_", "true_")
-    violating_cols = [c for c in feature_df.columns if any(c.startswith(p) for p in forbidden_prefixes)]
+    violating_cols = [
+        c for c in feature_df.columns if any(c.startswith(p) for p in forbidden_prefixes)
+    ]
     if violating_cols:
         raise OutcomeDerivedFeatureError(
             f"Latent column canary FAILED! Latent or ground-truth columns leaked into feature matrix: {violating_cols}"
         )
-

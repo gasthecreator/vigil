@@ -38,11 +38,15 @@ def verify_patient_consent(
         )
 
     # 2. Check active consent records
-    consents = db.execute(
-        select(ConsentRecord)
-        .where(ConsentRecord.patient_id == patient_id)
-        .order_by(ConsentRecord.granted_at.desc())
-    ).scalars().all()
+    consents = (
+        db.execute(
+            select(ConsentRecord)
+            .where(ConsentRecord.patient_id == patient_id)
+            .order_by(ConsentRecord.granted_at.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     active_consent: Optional[ConsentRecord] = None
     for c in consents:
@@ -81,10 +85,29 @@ def verify_patient_consent(
 
     elif user.role == UserRole.CAREGIVER.value:
         # Caregiver access requires explicit caregiver consent delegation in scope
-        if "caregiver" not in active_consent.scope.lower() and active_consent.scope.lower() != "full":
+        if (
+            "caregiver" not in active_consent.scope.lower()
+            and active_consent.scope.lower() != "full"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: caregiver delegation is not authorized by patient consent.",
             )
 
     return patient
+
+
+def has_active_consent(
+    patient_id: str,
+    db: Session,
+    user: User,
+    required_scope: str = "surveillance_monitoring",
+) -> bool:
+    """Check whether active patient consent exists without raising an HTTPException."""
+    try:
+        verify_patient_consent(
+            patient_id=patient_id, db=db, user=user, required_scope=required_scope
+        )
+        return True
+    except HTTPException:
+        return False

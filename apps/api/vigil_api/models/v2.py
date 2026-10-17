@@ -35,6 +35,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -128,7 +129,9 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(200), nullable=False)
     role = Column(String(50), default=UserRole.CLINICIAN.value, nullable=False, index=True)
-    facility_id = Column(String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True)
+    facility_id = Column(
+        String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True
+    )
     active = Column(Boolean, default=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
@@ -146,9 +149,13 @@ class Patient(Base):
     __tablename__ = "patients"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    facility_id = Column(String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True, index=True)
-    mrn = Column(EncryptedString(255), nullable=True, index=True)
-    external_id = Column(EncryptedString(255), nullable=True, index=True)
+    facility_id = Column(
+        String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    mrn = Column(EncryptedString(255), nullable=True)
+    external_id = Column(EncryptedString(255), nullable=True)
+    mrn_bidx = Column(String(64), nullable=True, index=True)
+    external_id_bidx = Column(String(64), nullable=True, index=True)
     age = Column(Integer, nullable=True)
     birth_date = Column(DateTime, nullable=True)
     biological_sex = Column(String(20), default="female", nullable=False)
@@ -167,23 +174,48 @@ class Patient(Base):
 
     # Relationships
     facility = relationship("Facility", back_populates="patients")
-    consent_records = relationship("ConsentRecord", back_populates="patient", cascade="all, delete-orphan")
-    observations = relationship("Observation", back_populates="patient", cascade="all, delete-orphan", order_by="Observation.specimen_collected_at")
-    risk_assessments = relationship("RiskAssessment", back_populates="patient", cascade="all, delete-orphan", order_by="RiskAssessment.assessment_date")
+    consent_records = relationship(
+        "ConsentRecord", back_populates="patient", cascade="all, delete-orphan"
+    )
+    observations = relationship(
+        "Observation",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="Observation.specimen_collected_at",
+    )
+    risk_assessments = relationship(
+        "RiskAssessment",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="RiskAssessment.assessment_date",
+    )
     alerts = relationship("Alert", back_populates="patient", cascade="all, delete-orphan")
-    follow_up_tasks = relationship("FollowUpTask", back_populates="patient", cascade="all, delete-orphan")
+    follow_up_tasks = relationship(
+        "FollowUpTask", back_populates="patient", cascade="all, delete-orphan"
+    )
 
     # Legacy prototype relationships for backward compatibility
-    baseline_profile = relationship("BaselineProfile", back_populates="patient", uselist=False, cascade="all, delete-orphan")
-    lab_results = relationship("LabResult", back_populates="patient", cascade="all, delete-orphan", order_by="LabResult.date_drawn")
-    risk_inferences = relationship("RiskInference", back_populates="patient", cascade="all, delete-orphan")
+    baseline_profile = relationship(
+        "BaselineProfile", back_populates="patient", uselist=False, cascade="all, delete-orphan"
+    )
+    lab_results = relationship(
+        "LabResult",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="LabResult.date_drawn",
+    )
+    risk_inferences = relationship(
+        "RiskInference", back_populates="patient", cascade="all, delete-orphan"
+    )
 
 
 class ConsentRecord(Base):
     __tablename__ = "consent_records"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     consent_type = Column(String(100), default="surveillance_monitoring", nullable=False)
     granted = Column(Boolean, default=True, nullable=False)
     granted_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
@@ -207,11 +239,17 @@ class Observation(Base):
     )
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    analyte_code = Column(String(50), nullable=False, index=True)  # validated via vigil_core.analytes
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    analyte_code = Column(
+        String(50), nullable=False, index=True
+    )  # validated via vigil_core.analytes
     value = Column(Float, nullable=False)  # Canonical value in canonical UCUM unit
     unit = Column(String(50), nullable=False)  # Canonical UCUM unit string
-    specimen_collected_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    specimen_collected_at = Column(
+        DateTime(timezone=True), default=utc_now, nullable=False, index=True
+    )
     result_received_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     laboratory_id = Column(String(100), nullable=True)
     lab_changed = Column(Boolean, default=False, nullable=False)
@@ -233,8 +271,12 @@ class RiskAssessment(Base):
     )
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    observation_id = Column(String(36), ForeignKey("observations.id", ondelete="SET NULL"), nullable=True, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    observation_id = Column(
+        String(36), ForeignKey("observations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     assessment_date = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     model_versions = Column(JSON, nullable=False)  # e.g. {"M3": "1.0", "K2": "1.0", "M5": "1.0"}
     input_hash = Column(String(64), nullable=False, index=True)  # SHA-256 of inputs
@@ -243,7 +285,9 @@ class RiskAssessment(Base):
     uncertainty = Column(JSON, nullable=True)  # confidence/credible intervals
     abstention = Column(Boolean, default=False, nullable=False)
     abstention_reason = Column(String(500), nullable=True)
-    adjudicated_action = Column(String(50), nullable=False, default="explained")  # explained, needs_repeat, escalate
+    adjudicated_action = Column(
+        String(50), nullable=False, default="explained"
+    )  # explained, needs_repeat, escalate
     clinical_note = Column(Text, nullable=True)  # Provenance-verified narrative (M5)
     rationale_facts = Column(JSON, nullable=True)  # Structured rationale facts from M3
     k2_state_snapshot = Column(JSON, nullable=True)  # Detector state snapshot
@@ -263,9 +307,18 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    risk_assessment_id = Column(String(36), ForeignKey("risk_assessments.id", ondelete="CASCADE"), nullable=False, index=True)
-    alert_type = Column(String(100), nullable=False, index=True)  # biomarker_spike, lab_error_repeat, sequential_divergence
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    risk_assessment_id = Column(
+        String(36),
+        ForeignKey("risk_assessments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    alert_type = Column(
+        String(100), nullable=False, index=True
+    )  # biomarker_spike, lab_error_repeat, sequential_divergence
     severity = Column(String(50), default=AlertSeverity.WARNING.value, nullable=False, index=True)
     trigger_reason = Column(String(500), nullable=False)
     status = Column(String(50), default=AlertStatus.OPEN.value, nullable=False, index=True)
@@ -273,7 +326,9 @@ class Alert(Base):
 
     patient = relationship("Patient", back_populates="alerts")
     risk_assessment = relationship("RiskAssessment", back_populates="alerts")
-    acknowledgements = relationship("AlertAcknowledgement", back_populates="alert", cascade="all, delete-orphan")
+    acknowledgements = relationship(
+        "AlertAcknowledgement", back_populates="alert", cascade="all, delete-orphan"
+    )
     follow_up_tasks = relationship("FollowUpTask", back_populates="alert")
 
 
@@ -281,9 +336,15 @@ class AlertAcknowledgement(Base):
     __tablename__ = "alert_acknowledgements"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    alert_id = Column(String(36), ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    disposition = Column(String(100), nullable=False)  # confirmed_recurrence, false_alarm, sample_redraw_ordered, clinical_hold, other
+    alert_id = Column(
+        String(36), ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    disposition = Column(
+        String(100), nullable=False
+    )  # confirmed_recurrence, false_alarm, sample_redraw_ordered, clinical_hold, other
     rationale_text = Column(Text, nullable=False)
     acknowledged_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
@@ -295,10 +356,18 @@ class FollowUpTask(Base):
     __tablename__ = "follow_up_tasks"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    alert_id = Column(String(36), ForeignKey("alerts.id", ondelete="SET NULL"), nullable=True, index=True)
-    task_type = Column(String(100), nullable=False, index=True)  # repeat_specimen, imaging_referral, clinical_review, patient_outreach
-    status = Column(String(50), default=FollowUpTaskStatus.PENDING.value, nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    alert_id = Column(
+        String(36), ForeignKey("alerts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    task_type = Column(
+        String(100), nullable=False, index=True
+    )  # repeat_specimen, imaging_referral, clinical_review, patient_outreach
+    status = Column(
+        String(50), default=FollowUpTaskStatus.PENDING.value, nullable=False, index=True
+    )
     due_date = Column(DateTime(timezone=True), nullable=False, index=True)
     escalation_level = Column(Integer, default=0, nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
@@ -322,7 +391,9 @@ class AuditEvent(Base):
     timestamp = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     actor_id = Column(String(100), nullable=False, index=True)
     actor_role = Column(String(50), nullable=False)
-    action = Column(String(100), nullable=False, index=True)  # e.g. "observation.create", "patient.read"
+    action = Column(
+        String(100), nullable=False, index=True
+    )  # e.g. "observation.create", "patient.read"
     resource_type = Column(String(100), nullable=False, index=True)
     resource_id = Column(String(100), nullable=False, index=True)
     details = Column(JSON, nullable=False)
@@ -370,7 +441,13 @@ class BaselineProfile(Base):
     __tablename__ = "baseline_profiles"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     tumor_stage = Column(Integer, nullable=False)
     er_status = Column(Boolean, nullable=False)
     pr_status = Column(Boolean, nullable=False)
@@ -386,7 +463,9 @@ class LabResult(Base):
     __tablename__ = "lab_results"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     date_drawn = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     alt_level = Column(Float, nullable=False)
     ast_level = Column(Float, nullable=False)
@@ -395,15 +474,25 @@ class LabResult(Base):
     wbc_count = Column(Float, nullable=False)
 
     patient = relationship("Patient", back_populates="lab_results")
-    risk_inference = relationship("RiskInference", back_populates="lab_result", uselist=False, cascade="all, delete-orphan")
+    risk_inference = relationship(
+        "RiskInference", back_populates="lab_result", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class RiskInference(Base):
     __tablename__ = "risk_inferences"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    lab_result_id = Column(String(36), ForeignKey("lab_results.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    lab_result_id = Column(
+        String(36),
+        ForeignKey("lab_results.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     calculated_metastasis_risk = Column(Float, nullable=False, index=True)
     triage_flag = Column(Boolean, nullable=False, index=True)
     justification_text = Column(String(1000), nullable=False)
@@ -419,6 +508,7 @@ Index("idx_patient_latest_risk", RiskInference.patient_id, RiskInference.calcula
 
 class AuditAnchor(Base):
     """External head-hash anchor to detect tail deletion of the append-only audit log (Condition S5-3)."""
+
     __tablename__ = "audit_anchors"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
@@ -429,15 +519,22 @@ class AuditAnchor(Base):
 
 class ReminderReceipt(Base):
     """Delivery receipt tracking for privacy-safe patient follow-up notifications (Phase 5b)."""
+
     __tablename__ = "reminder_receipts"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    task_id = Column(String(36), ForeignKey("follow_up_tasks.id", ondelete="CASCADE"), nullable=False, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(
+        String(36), ForeignKey("follow_up_tasks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     channel = Column(String(32), nullable=False, default="sms")
     recipient = Column(String(64), nullable=False)
     message_text = Column(String(500), nullable=False)
-    status = Column(String(32), nullable=False, default="queued")  # queued, sent, delivered, failed, opted_out
+    status = Column(
+        String(32), nullable=False, default="queued"
+    )  # queued, sent, delivered, failed, opted_out
     retry_count = Column(Integer, nullable=False, default=0)
     external_message_id = Column(String(64), nullable=True)
     error_message = Column(String(500), nullable=True)
@@ -447,14 +544,20 @@ class ReminderReceipt(Base):
 
 class IdempotencyRecord(Base):
     """Idempotency record for offline sync replay and API mutation deduplication."""
+
     __tablename__ = "idempotency_records"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    idempotency_key = Column(String(128), unique=True, nullable=False, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    idempotency_key = Column(String(128), nullable=False, index=True)
     entity_type = Column(String(50), nullable=False, index=True)
     entity_id = Column(String(36), nullable=True)
     status = Column(String(50), default="applied", nullable=False)
     response_payload = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-
+    __table_args__ = (
+        UniqueConstraint("patient_id", "idempotency_key", name="uq_patient_idempotency_key"),
+    )

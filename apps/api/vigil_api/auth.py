@@ -175,9 +175,7 @@ def get_current_user(
 
 def require_roles(*allowed_roles: UserRole | str) -> Callable[[User], User]:
     """Dependency factory checking that current user has one of the allowed roles."""
-    normalized_roles = [
-        r.value if isinstance(r, UserRole) else str(r) for r in allowed_roles
-    ]
+    normalized_roles = [r.value if isinstance(r, UserRole) else str(r) for r in allowed_roles]
 
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in normalized_roles:

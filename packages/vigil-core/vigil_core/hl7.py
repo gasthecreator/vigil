@@ -108,11 +108,7 @@ def parse_oru_r01(raw_message: str) -> HL7ORU_R01Message:
     if not raw_message or not raw_message.strip():
         raise HL7ParsingError("Empty HL7 message.")
 
-    lines = [
-        line.strip()
-        for line in re.split(r"[\r\n]+", raw_message.strip())
-        if line.strip()
-    ]
+    lines = [line.strip() for line in re.split(r"[\r\n]+", raw_message.strip()) if line.strip()]
 
     msh_line = next((ln for ln in lines if ln.startswith("MSH")), None)
     if not msh_line:
@@ -245,10 +241,16 @@ def parse_oru_r01(raw_message: str) -> HL7ORU_R01Message:
         if not obs_timestamp:
             obs_timestamp = obr_date or msg_timestamp
 
-        lab_id = obx_fields[15].strip() if len(obx_fields) > 15 and obx_fields[15].strip() else sending_facility
+        lab_id = (
+            obx_fields[15].strip()
+            if len(obx_fields) > 15 and obx_fields[15].strip()
+            else sending_facility
+        )
         ref_range = obx_fields[7].strip() if len(obx_fields) > 7 and obx_fields[7].strip() else None
         abnormal = obx_fields[8].strip() if len(obx_fields) > 8 and obx_fields[8].strip() else None
-        res_status = obx_fields[11].strip() if len(obx_fields) > 11 and obx_fields[11].strip() else None
+        res_status = (
+            obx_fields[11].strip() if len(obx_fields) > 11 and obx_fields[11].strip() else None
+        )
 
         set_id = int(obx_fields[1]) if obx_fields[1].strip().isdigit() else (obx_idx + 1)
 

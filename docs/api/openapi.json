@@ -840,6 +840,30 @@
             "title": "Age",
             "type": "integer"
           },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "External hospital system identifier (encrypted at rest)",
+            "title": "External Id"
+          },
+          "mrn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Medical Record Number (encrypted at rest)",
+            "title": "Mrn"
+          },
           "status": {
             "default": "active",
             "description": "Clinical surveillance status",
@@ -864,9 +888,37 @@
             "title": "Created At",
             "type": "string"
           },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "is_masked": {
+            "default": false,
+            "description": "True if medical identifiers are redacted due to absence of active consent",
+            "title": "Is Masked",
+            "type": "boolean"
+          },
+          "mrn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrn"
           },
           "status": {
             "title": "Status",
@@ -880,6 +932,62 @@
           "status"
         ],
         "title": "PatientResponse",
+        "type": "object"
+      },
+      "PatientUpdate": {
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 18.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Patient age in years",
+            "title": "Age"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "External hospital system identifier (encrypted at rest)",
+            "title": "External Id"
+          },
+          "mrn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Medical Record Number (encrypted at rest)",
+            "title": "Mrn"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clinical surveillance status",
+            "title": "Status"
+          }
+        },
+        "title": "PatientUpdate",
         "type": "object"
       },
       "RiskAssessmentSummary": {
@@ -2959,7 +3067,7 @@
     },
     "/api/v1/patients/": {
       "get": {
-        "description": "Lists all registered patients.",
+        "description": "Lists all registered patients, optionally filtering by blind-indexed MRN or external_id.\n\nRedacts identifiers (MRN, external_id) unless active patient consent exists.\nBlocks searching by MRN/external_id if active consent is not present (Condition P9-D).",
         "operationId": "list_patients_api_v1_patients__get",
         "parameters": [
           {
@@ -2980,6 +3088,70 @@
               "default": 100,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mrn",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mrn"
+            }
+          },
+          {
+            "in": "query",
+            "name": "external_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "External Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -3009,6 +3181,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Patients",
         "tags": [
           "Patients & Surveillance"
@@ -3089,6 +3266,75 @@
           }
         ],
         "summary": "Create Patient",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/rotate-keys": {
+      "post": {
+        "description": "Triggers re-encryption of all patient MRN and external_id ciphertexts to the latest primary key.\n\nAdmin-only global operation. Master Plan \u00a711 / Condition P9-E.",
+        "operationId": "rotate_patient_keys_endpoint_api_v1_patients_rotate_keys_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rotate Patient Keys Endpoint",
         "tags": [
           "Patients & Surveillance"
         ]
@@ -3246,6 +3492,94 @@
           }
         ],
         "summary": "Get Patient Detail",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      },
+      "patch": {
+        "description": "Updates patient demographics or encrypted identifiers.",
+        "operationId": "update_patient_api_v1_patients__id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Patient",
         "tags": [
           "Patients & Surveillance"
         ]
@@ -3758,6 +4092,90 @@
           }
         ],
         "summary": "Unit-safe observation ingestion calling M3, K2, and M5",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/risk-history": {
+      "get": {
+        "description": "Retrieve risk assessment trajectory for consented patient.",
+        "operationId": "list_patient_risk_history_api_v1_patients__id__risk_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiskAssessmentSummary"
+                  },
+                  "title": "Response List Patient Risk History Api V1 Patients  Id  Risk History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List patient serial risk assessments",
         "tags": [
           "Patients & Surveillance"
         ]

@@ -103,19 +103,33 @@ def test_offline_sync_lww_conflict_resolution(client):
     # 1. Create Patient & Consent
     p_resp = client.post("/api/v1/patients/", json={"age": 58, "status": "active"}, headers=headers)
     pid = p_resp.json()["id"]
-    client.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=headers)
+    client.post(
+        f"/api/v1/patients/{pid}/consent",
+        json={"scope": "clinical_care", "granted": True},
+        headers=headers,
+    )
 
     # 2. Ingest baseline then spike to produce an Alert and FollowUpTask
     t0 = datetime.now(timezone.utc) - timedelta(days=5)
     client.post(
         f"/api/v1/patients/{pid}/observations",
-        json={"analyte_code": "ca_15_3", "value": 18.0, "unit": "U/mL", "specimen_collected_at": t0.isoformat()},
+        json={
+            "analyte_code": "ca_15_3",
+            "value": 18.0,
+            "unit": "U/mL",
+            "specimen_collected_at": t0.isoformat(),
+        },
         headers=headers,
     )
     t1 = t0 + timedelta(days=2)
     obs_resp = client.post(
         f"/api/v1/patients/{pid}/observations",
-        json={"analyte_code": "ca_15_3", "value": 85.0, "unit": "U/mL", "specimen_collected_at": t1.isoformat()},
+        json={
+            "analyte_code": "ca_15_3",
+            "value": 85.0,
+            "unit": "U/mL",
+            "specimen_collected_at": t1.isoformat(),
+        },
         headers=headers,
     )
     assert obs_resp.status_code == 201

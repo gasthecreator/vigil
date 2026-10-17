@@ -45,3 +45,5 @@ coverage/
 *.lcov
 reports/temp/
 sbi-logs/
+test-results/
+playwright-report/

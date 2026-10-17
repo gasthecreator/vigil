@@ -46,17 +46,53 @@ def test_env(tmp_path):
     # Create baseline facility and patients
     now = datetime.now(timezone.utc)
     with Session(engine) as session:
-        fac = Facility(id="fac-01", name="Oncology Center", code="ONC-01", country="NG", tier="tertiary", active=True, created_at=now)
+        fac = Facility(
+            id="fac-01",
+            name="Oncology Center",
+            code="ONC-01",
+            country="NG",
+            tier="tertiary",
+            active=True,
+            created_at=now,
+        )
         session.add(fac)
 
         # Patient 1: Target for consent variations
-        p1 = Patient(id="pat-target", facility_id="fac-01", mrn="MRN-TARGET", biological_sex="female", primary_cancer_type="breast", synthetic=True, status="active", created_at=now, updated_at=now)
+        p1 = Patient(
+            id="pat-target",
+            facility_id="fac-01",
+            mrn="MRN-TARGET",
+            biological_sex="female",
+            primary_cancer_type="breast",
+            synthetic=True,
+            status="active",
+            created_at=now,
+            updated_at=now,
+        )
         # Patient 2: Foreign patient for patient role boundary checks
-        p2 = Patient(id="pat-foreign", facility_id="fac-01", mrn="MRN-FOREIGN", biological_sex="female", primary_cancer_type="breast", synthetic=True, status="active", created_at=now, updated_at=now)
+        p2 = Patient(
+            id="pat-foreign",
+            facility_id="fac-01",
+            mrn="MRN-FOREIGN",
+            biological_sex="female",
+            primary_cancer_type="breast",
+            synthetic=True,
+            status="active",
+            created_at=now,
+            updated_at=now,
+        )
         session.add_all([p1, p2])
 
         # Active consent for foreign patient
-        session.add(ConsentRecord(patient_id="pat-foreign", consent_type="surveillance_monitoring", granted=True, granted_at=now, scope="full"))
+        session.add(
+            ConsentRecord(
+                patient_id="pat-foreign",
+                consent_type="surveillance_monitoring",
+                granted=True,
+                granted_at=now,
+                scope="full",
+            )
+        )
 
         # Risk assessment & alert for alert acknowledge tests
         risk = RiskAssessment(
@@ -99,31 +135,37 @@ def set_patient_consent_state(engine, patient_id: str, state: str):
         # Clear existing consent records
         session.query(ConsentRecord).filter(ConsentRecord.patient_id == patient_id).delete()
         if state == "active":
-            session.add(ConsentRecord(
-                patient_id=patient_id,
-                consent_type="surveillance_monitoring",
-                granted=True,
-                granted_at=now,
-                scope="full",
-            ))
+            session.add(
+                ConsentRecord(
+                    patient_id=patient_id,
+                    consent_type="surveillance_monitoring",
+                    granted=True,
+                    granted_at=now,
+                    scope="full",
+                )
+            )
         elif state == "revoked":
-            session.add(ConsentRecord(
-                patient_id=patient_id,
-                consent_type="surveillance_monitoring",
-                granted=True,
-                granted_at=now - timedelta(days=5),
-                withdrawn_at=now - timedelta(days=1),
-                scope="full",
-            ))
+            session.add(
+                ConsentRecord(
+                    patient_id=patient_id,
+                    consent_type="surveillance_monitoring",
+                    granted=True,
+                    granted_at=now - timedelta(days=5),
+                    withdrawn_at=now - timedelta(days=1),
+                    scope="full",
+                )
+            )
         elif state == "expired":
-            session.add(ConsentRecord(
-                patient_id=patient_id,
-                consent_type="surveillance_monitoring",
-                granted=True,
-                granted_at=now - timedelta(days=365),
-                expires_at=now - timedelta(days=1),
-                scope="full",
-            ))
+            session.add(
+                ConsentRecord(
+                    patient_id=patient_id,
+                    consent_type="surveillance_monitoring",
+                    granted=True,
+                    granted_at=now - timedelta(days=365),
+                    expires_at=now - timedelta(days=1),
+                    scope="full",
+                )
+            )
         session.commit()
 
 
@@ -160,10 +202,14 @@ def test_role_x_endpoint_x_consent_matrix(test_env, role: str, consent_state: st
     r_read = client.get("/api/v1/patients/pat-target", headers=headers)
     if consent_state in ("revoked", "expired"):
         # Any patient read must fail with 403 if consent is not active
-        assert r_read.status_code == 403, f"Expected 403 on {role} read with {consent_state} consent, got {r_read.status_code}"
+        assert r_read.status_code == 403, (
+            f"Expected 403 on {role} read with {consent_state} consent, got {r_read.status_code}"
+        )
     else:
         # Active consent
-        assert r_read.status_code == 200, f"Expected 200 on {role} read with active consent, got {r_read.status_code}"
+        assert r_read.status_code == 200, (
+            f"Expected 200 on {role} read with active consent, got {r_read.status_code}"
+        )
 
     # 2. INGEST OBSERVATION: POST /api/v1/patients/pat-target/observations
     obs_payload = {
@@ -171,15 +217,23 @@ def test_role_x_endpoint_x_consent_matrix(test_env, role: str, consent_state: st
         "value": 24.5,
         "unit": "U/mL",
     }
-    r_obs = client.post("/api/v1/patients/pat-target/observations", json=obs_payload, headers=headers)
+    r_obs = client.post(
+        "/api/v1/patients/pat-target/observations", json=obs_payload, headers=headers
+    )
     if consent_state in ("revoked", "expired"):
-        assert r_obs.status_code == 403, f"Expected 403 on observation ingest with {consent_state} consent"
+        assert r_obs.status_code == 403, (
+            f"Expected 403 on observation ingest with {consent_state} consent"
+        )
     else:
         # Active consent: clinician, nurse_clerk, admin allowed
         if role in (UserRole.CLINICIAN.value, UserRole.NURSE_CLERK.value, UserRole.ADMIN.value):
-            assert r_obs.status_code == 201, f"Expected 201 for {role} ingest, got {r_obs.status_code}"
+            assert r_obs.status_code == 201, (
+                f"Expected 201 for {role} ingest, got {r_obs.status_code}"
+            )
         else:
-            assert r_obs.status_code == 403, f"Expected 403 for {role} ingest, got {r_obs.status_code}"
+            assert r_obs.status_code == 403, (
+                f"Expected 403 for {role} ingest, got {r_obs.status_code}"
+            )
 
     # 3. ACKNOWLEDGE ALERT: POST /api/v1/alerts/alert-test/acknowledge
     ack_payload = {
@@ -188,16 +242,24 @@ def test_role_x_endpoint_x_consent_matrix(test_env, role: str, consent_state: st
     }
     r_ack = client.post("/api/v1/alerts/alert-test/acknowledge", json=ack_payload, headers=headers)
     if role in (UserRole.CLINICIAN.value, UserRole.QUALITY_LEAD.value):
-        assert r_ack.status_code == 200, f"Expected 200 for {role} alert acknowledge, got {r_ack.status_code}"
+        assert r_ack.status_code == 200, (
+            f"Expected 200 for {role} alert acknowledge, got {r_ack.status_code}"
+        )
     else:
-        assert r_ack.status_code == 403, f"Expected 403 for {role} alert acknowledge, got {r_ack.status_code}"
+        assert r_ack.status_code == 403, (
+            f"Expected 403 for {role} alert acknowledge, got {r_ack.status_code}"
+        )
 
     # 4. VERIFY AUDIT CHAIN: GET /api/v1/audit/verify
     r_audit = client.get("/api/v1/audit/verify", headers=headers)
     if role in (UserRole.QUALITY_LEAD.value, UserRole.ADMIN.value, UserRole.CLINICIAN.value):
-        assert r_audit.status_code == 200, f"Expected 200 for {role} audit verify, got {r_audit.status_code}"
+        assert r_audit.status_code == 200, (
+            f"Expected 200 for {role} audit verify, got {r_audit.status_code}"
+        )
     else:
-        assert r_audit.status_code == 403, f"Expected 403 for {role} audit verify, got {r_audit.status_code}"
+        assert r_audit.status_code == 403, (
+            f"Expected 403 for {role} audit verify, got {r_audit.status_code}"
+        )
 
 
 def test_unauthenticated_mutating_endpoints_rejected(test_env, monkeypatch):
@@ -206,11 +268,17 @@ def test_unauthenticated_mutating_endpoints_rejected(test_env, monkeypatch):
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
 
     # Observation ingest without auth
-    r1 = client.post("/api/v1/patients/pat-target/observations", json={"analyte_code": "ca_15_3", "value": 20.0, "unit": "U/mL"})
+    r1 = client.post(
+        "/api/v1/patients/pat-target/observations",
+        json={"analyte_code": "ca_15_3", "value": 20.0, "unit": "U/mL"},
+    )
     assert r1.status_code == 401
 
     # Alert acknowledge without auth
-    r2 = client.post("/api/v1/alerts/alert-test/acknowledge", json={"disposition": "false_alarm", "rationale_text": "Not verified"})
+    r2 = client.post(
+        "/api/v1/alerts/alert-test/acknowledge",
+        json={"disposition": "false_alarm", "rationale_text": "Not verified"},
+    )
     assert r2.status_code == 401
 
 

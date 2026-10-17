@@ -86,7 +86,9 @@ def record_audit_event(
         with open(p, "a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 
-    anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    anchor = (
+        db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    )
     if anchor is None:
         anchor = AuditAnchor(
             head_hash=curr_hash,
@@ -142,7 +144,11 @@ def verify_audit_chain(
                 "head_hash": "0" * 64,
                 "anchored_head_hash": ext_anchor.get("head_hash"),
             }
-        anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+        anchor = (
+            db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc()))
+            .scalars()
+            .first()
+        )
         if anchor is not None and anchor.total_events > 0:
             return {
                 "valid": False,
@@ -189,7 +195,9 @@ def verify_audit_chain(
         verified_count += 1
 
     if verified_count != len(events):
-        orphans = [e for e in events if e.curr_hash != expected_prev and e.prev_hash != expected_prev]
+        orphans = [
+            e for e in events if e.curr_hash != expected_prev and e.prev_hash != expected_prev
+        ]
         orphan_id = orphans[0].id if orphans else "unknown"
         return {
             "valid": False,
@@ -214,7 +222,9 @@ def verify_audit_chain(
             }
 
     # Fallback verification against internal anchor table if no external anchor is present
-    anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    anchor = (
+        db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    )
     if anchor is not None and ext_anchor is None:
         target_head = expected_head_hash or anchor.head_hash
         if len(events) < anchor.total_events or expected_prev != target_head:

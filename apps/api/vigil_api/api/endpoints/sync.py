@@ -37,7 +37,9 @@ router = APIRouter()
 
 class SyncMutationItem(BaseModel):
     client_mutation_id: str = Field(..., description="Unique client-generated idempotency key")
-    entity_type: str = Field(..., description="'observation', 'follow_up_task', or 'alert_acknowledgement'")
+    entity_type: str = Field(
+        ..., description="'observation', 'follow_up_task', or 'alert_acknowledgement'"
+    )
     action: str = Field("create", description="'create' or 'update'")
     entity_id: Optional[str] = Field(None, description="Target entity ID if updating")
     patient_id: str = Field(..., description="Target patient UUID")
@@ -47,7 +49,9 @@ class SyncMutationItem(BaseModel):
 
 class SyncBatchRequest(BaseModel):
     sync_id: str = Field(..., description="Unique client batch transaction identifier")
-    client_device_id: Optional[str] = Field(None, description="Originating device or workstation ID")
+    client_device_id: Optional[str] = Field(
+        None, description="Originating device or workstation ID"
+    )
     client_timestamp: datetime = Field(..., description="Timestamp when batch was dispatched")
     mutations: List[SyncMutationItem] = Field(..., description="Array of queued mutations")
 
@@ -95,9 +99,26 @@ def process_sync_batch(
     rejected_count = 0
 
     for item in payload.mutations:
-        # 1. Idempotency Check
+        # 1. Consent & Patient Verification FIRST (P8-B)
+        try:
+            patient = verify_patient_consent(patient_id=item.patient_id, db=db, user=current_user)
+        except HTTPException as e:
+            rejected_count += 1
+            results.append(
+                SyncMutationResult(
+                    client_mutation_id=item.client_mutation_id,
+                    status="rejected",
+                    error=f"Consent/Auth check failed: {e.detail}",
+                )
+            )
+            continue
+
+        # 2. Idempotency Check scoped to (patient_id, client_mutation_id) (P8-B)
         existing_idemp = db.execute(
-            select(IdempotencyRecord).where(IdempotencyRecord.idempotency_key == item.client_mutation_id)
+            select(IdempotencyRecord).where(
+                IdempotencyRecord.patient_id == item.patient_id,
+                IdempotencyRecord.idempotency_key == item.client_mutation_id,
+            )
         ).scalar_one_or_none()
 
         if existing_idemp is not None:
@@ -108,20 +129,6 @@ def process_sync_batch(
                     status="already_applied",
                     entity_id=existing_idemp.entity_id,
                     details=existing_idemp.response_payload,
-                )
-            )
-            continue
-
-        # 2. Consent & Patient Verification
-        try:
-            patient = verify_patient_consent(patient_id=item.patient_id, db=db, user=current_user)
-        except HTTPException as e:
-            rejected_count += 1
-            results.append(
-                SyncMutationResult(
-                    client_mutation_id=item.client_mutation_id,
-                    status="rejected",
-                    error=f"Consent/Auth check failed: {e.detail}",
                 )
             )
             continue
@@ -164,6 +171,7 @@ def process_sync_batch(
 
                 # Record idempotency
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="observation",
                     entity_id=obs.id,
@@ -186,7 +194,9 @@ def process_sync_batch(
 
             elif item.entity_type == "follow_up_task":
                 task_id = item.entity_id or item.payload.get("task_id")
-                task = db.execute(select(FollowUpTask).where(FollowUpTask.id == task_id)).scalar_one_or_none()
+                task = db.execute(
+                    select(FollowUpTask).where(FollowUpTask.id == task_id)
+                ).scalar_one_or_none()
                 if task is None:
                     rejected_count += 1
                     results.append(
@@ -198,7 +208,11 @@ def process_sync_batch(
                     )
                     continue
 
-                server_time = task.updated_at if task.updated_at.tzinfo else task.updated_at.replace(tzinfo=timezone.utc)
+                server_time = (
+                    task.updated_at
+                    if task.updated_at.tzinfo
+                    else task.updated_at.replace(tzinfo=timezone.utc)
+                )
 
                 # Last-Write-Wins (LWW) check
                 if client_time <= server_time:
@@ -223,6 +237,7 @@ def process_sync_batch(
                 db.flush()
 
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="follow_up_task",
                     entity_id=task.id,
@@ -281,6 +296,7 @@ def process_sync_batch(
                 db.flush()
 
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="alert_acknowledgement",
                     entity_id=alert.id,
