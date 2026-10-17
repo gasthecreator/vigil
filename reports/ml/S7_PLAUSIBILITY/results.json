@@ -2,50 +2,50 @@
   "study_id": "S7_PLAUSIBILITY",
   "date": "2026-10-16",
   "protocol_version": "1.0",
-  "execution_time_seconds": 5.16,
+  "execution_time_seconds": 5.36,
   "headline_evaluation": "vigil-sim",
   "vigilsim_cohort": {
     "n_patient_visits_evaluated": 845,
     "auc_real_manifest_elevation": {
-      "point": 0.4828,
+      "point": 0.4961,
       "ci95": [
-        0.4248,
-        0.5427
+        0.4394,
+        0.557
       ]
     },
     "auc_real_all_post_recurrence": {
-      "point": 0.4783,
+      "point": 0.491,
       "ci95": [
-        0.4248,
-        0.5371
+        0.437,
+        0.5474
       ]
     },
     "auc_error": {
-      "point": 0.8448,
+      "point": 0.8583,
       "ci95": [
-        0.78,
-        0.8958
+        0.809,
+        0.9015
       ]
     },
     "ece_real": {
-      "point": 0.2055,
+      "point": 0.2021,
       "ci95": [
-        0.1758,
-        0.2379
+        0.1751,
+        0.2319
       ]
     },
     "ece_error": {
-      "point": 0.4232,
+      "point": 0.396,
       "ci95": [
-        0.3734,
-        0.4779
+        0.3454,
+        0.4494
       ]
     },
     "zero_dismissal_compliance": 1.0,
     "action_distribution": {
       "explained": 484,
-      "needs_repeat": 241,
-      "escalate": 120
+      "needs_repeat": 230,
+      "escalate": 131
     }
   },
   "contract_cohort": {
@@ -96,10 +96,10 @@
     "H1_gross_error_discrimination": {
       "verdict": "CONFIRMED",
       "auroc": {
-        "point": 0.8448,
+        "point": 0.8583,
         "ci95": [
-          0.78,
-          0.8958
+          0.809,
+          0.9015
         ]
       },
       "criterion": "AUROC >= 0.80, CI95 lower >= 0.75 on vigil-sim injected errors"
@@ -107,10 +107,10 @@
     "H2_manifest_elevation_discrimination": {
       "verdict": "NOT MET",
       "auroc": {
-        "point": 0.4828,
+        "point": 0.4961,
         "ci95": [
-          0.4248,
-          0.5427
+          0.4394,
+          0.557
         ]
       },
       "criterion": "AUROC >= 0.85, CI95 lower >= 0.80 on vigil-sim manifest elevations (ratio >= 1.25)"
@@ -118,10 +118,10 @@
     "H3_all_post_recurrence_discrimination": {
       "verdict": "NOT MET",
       "auroc": {
-        "point": 0.4783,
+        "point": 0.491,
         "ci95": [
-          0.4248,
-          0.5371
+          0.437,
+          0.5474
         ]
       },
       "criterion": "AUROC >= 0.85 (NOT MET: single-visit adjudicator is blind to early subclinical microscopic growth)"

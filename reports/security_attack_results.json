@@ -1,0 +1,36 @@
+{
+  "attack_1_header_claimed_role": {
+    "status_code": 401,
+    "blocked": true,
+    "detail": "Production rejected header-claimed role without valid Bearer token."
+  },
+  "attack_2_forged_default_secret": {
+    "status_code": 401,
+    "blocked": true,
+    "detail": "Refused startup or rejected forged token signed with default secret."
+  },
+  "attack_3_legacy_lab_bypass": {
+    "output": {
+      "status": 200,
+      "obs": 5,
+      "alerts": 1,
+      "tasks": 1,
+      "audit": 6
+    },
+    "intercepted": true,
+    "detail": "Surprising lab draw forced through M3, creating observations, alerts, follow-up tasks, and audit logs."
+  },
+  "attack_4_read_without_consent": {
+    "status_code": 403,
+    "blocked": true,
+    "detail": "Clinician blocked with HTTP 403 Forbidden due to absent patient consent record."
+  },
+  "attack_5_audit_row_tampering": {
+    "tamper_detected": true,
+    "detail": "verify_audit_chain detected hash mismatch on modified historical audit row."
+  },
+  "attack_6_tail_deletion": {
+    "tail_deletion_detected": true,
+    "detail": "Anchor comparison detected row count deficit and missing head hash."
+  }
+}

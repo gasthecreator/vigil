@@ -12,8 +12,47 @@
           "Patients & Surveillance"
         ],
         "summary": "Create Patient",
-        "description": "Registers a new patient into the oncology surveillance roster with active consent.",
+        "description": "Registers a new patient into the oncology surveillance roster.",
         "operationId": "create_patient_api_v1_patients__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -110,19 +149,68 @@
           "Patients & Surveillance"
         ],
         "summary": "Get Triage Queue",
-        "description": "View 1: Triage Queue.\nReturns the complete roster of patients dynamically ordered by their latest\ncalculated_metastasis_risk (highest risk at the top).",
+        "description": "View 1: Triage Queue.\nReturns the complete roster of patients dynamically ordered by composite Action Urgency\n(combining risk, uncertainty/abstention, overdue follow-ups, and treatment delay).\nMaster Plan \u00a76.9 (M9) / Phase 5b.",
         "operationId": "get_triage_queue_api_v1_patients_triage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TriageQueueItem"
                   },
-                  "type": "array",
                   "title": "Response Get Triage Queue Api V1 Patients Triage Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -218,8 +306,13 @@
           "Patients & Surveillance"
         ],
         "summary": "Submit Baseline Profile",
-        "description": "Submits primary tumor pathology and comorbidities.\nExecutes Model A (XGBoost) inference to compute target organ susceptibility vector,\nand persists the baseline profile to database.",
+        "description": "Submits primary tumor pathology and comorbidities.",
         "operationId": "submit_baseline_profile_api_v1_patients__id__baseline_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -228,6 +321,38 @@
             "schema": {
               "type": "string",
               "title": "Id"
+            }
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -271,8 +396,13 @@
           "Patients & Surveillance"
         ],
         "summary": "Submit Lab Result",
-        "description": "Submits new lab result draw.\nRetrieves longitudinal lab history + baseline susceptibility.\nTriggers Model B (Attention-LSTM) sequence inference.\nSaves RiskInference with calculated_metastasis_risk, triage_flag, and justification_text.",
+        "description": "Submits new lab result draw.\n\nCondition S5-2 & S5-7: Re-routes all analytes through the canonical observation ingestion\npipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,\nand cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.",
         "operationId": "submit_lab_result_api_v1_patients__id__labs_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -281,6 +411,38 @@
             "schema": {
               "type": "string",
               "title": "Id"
+            }
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -711,12 +873,284 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ConsentCreateRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/observations/batch-import": {
+      "post": {
+        "tags": [
+          "Batch Observation Ingestion"
+        ],
+        "summary": "Batch import observations from CSV or Excel through no-dismissal pipeline",
+        "description": "Processes batch observation rows from CSV, Excel, or JSON.\n\nValidates schema, units, consent, and duplicate presence per row.\nFeeds every accepted row through M3 plausibility, K2 detector, M5 narrative, and audit.\nReturns a comprehensive per-row report.",
+        "operationId": "batch_import_observations_api_v1_observations_batch_import_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BatchImportRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fhir/Observation/{id}": {
+      "get": {
+        "tags": [
+          "HL7 FHIR R4 Interoperability"
+        ],
+        "summary": "Export observation as HL7 FHIR R4 Observation resource",
+        "description": "Retrieves an observation and formats it as an HL7 FHIR R4 Observation resource.",
+        "operationId": "export_fhir_observation_api_v1_fhir_Observation__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Export Fhir Observation Api V1 Fhir Observation  Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fhir/Observation": {
+      "post": {
+        "tags": [
+          "HL7 FHIR R4 Interoperability"
+        ],
+        "summary": "Import HL7 FHIR R4 Observation resource through surveillance pipeline",
+        "description": "Ingests an HL7 FHIR R4 Observation resource into Vigil.\n\nResolves LOINC code to internal analyte, verifies consent, executes M3 plausibility,\nupdates K2 detector, evaluates M5 clinical narrative, and logs audit event.",
+        "operationId": "import_fhir_observation_api_v1_fhir_Observation_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Resource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Import Fhir Observation Api V1 Fhir Observation Post"
+                }
               }
             }
           },
@@ -1148,6 +1582,194 @@
         }
       }
     },
+    "/api/v1/follow-up/reminders/run": {
+      "post": {
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ],
+        "summary": "Execute reminder worker cycle using injectable clock",
+        "description": "Executes a reminder evaluation cycle for active follow-up tasks.",
+        "operationId": "trigger_reminder_cycle_api_v1_follow_up_reminders_run_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "simulated_now",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Injectable clock timestamp",
+              "title": "Simulated Now"
+            },
+            "description": "Injectable clock timestamp"
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/follow-up/reminders/receipts": {
+      "get": {
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ],
+        "summary": "List reminder delivery receipts",
+        "description": "Retrieve reminder delivery receipts with delivery status and retry history.",
+        "operationId": "list_reminder_receipts_api_v1_follow_up_reminders_receipts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patient Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/audit/verify": {
       "get": {
         "tags": [
@@ -1341,8 +1963,13 @@
           "Analytics & Cohort"
         ],
         "summary": "Seed Demo Cohort",
-        "description": "Seeds a clinical demo cohort with diverse risk profiles.\n\nGated strictly to local development environments per ADR-0004 and Defect A6.",
+        "description": "Seeds a clinical demo cohort with diverse risk profiles.\n\nGated strictly to local development environments and admin role per Condition S5-2.",
         "operationId": "seed_demo_cohort_api_v1_analytics_seed_demo_cohort_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "num_patients",
@@ -1352,6 +1979,38 @@
               "type": "integer",
               "default": 12,
               "title": "Num Patients"
+            }
+          },
+          {
+            "name": "X-Vigil-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "name": "X-Vigil-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -1420,16 +2079,33 @@
             "description": "Disposition code from AlertDisposition"
           },
           "rationale_text": {
-            "type": "string",
-            "minLength": 5,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Rationale Text",
             "description": "Clinician justification for alert disposition"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Clinician note or justification"
           }
         },
         "type": "object",
         "required": [
-          "disposition",
-          "rationale_text"
+          "disposition"
         ],
         "title": "AlertAcknowledgeRequest"
       },
@@ -1669,6 +2345,178 @@
           "target_organ_susceptibility_vector"
         ],
         "title": "BaselineResponse"
+      },
+      "BatchImportRequest": {
+        "properties": {
+          "rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BatchImportRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "csv_data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csv Data"
+          }
+        },
+        "type": "object",
+        "title": "BatchImportRequest"
+      },
+      "BatchImportResponse": {
+        "properties": {
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "imported_count": {
+            "type": "integer",
+            "title": "Imported Count"
+          },
+          "duplicate_count": {
+            "type": "integer",
+            "title": "Duplicate Count"
+          },
+          "rejected_count": {
+            "type": "integer",
+            "title": "Rejected Count"
+          },
+          "row_reports": {
+            "items": {
+              "$ref": "#/components/schemas/RowReport"
+            },
+            "type": "array",
+            "title": "Row Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_rows",
+          "imported_count",
+          "duplicate_count",
+          "rejected_count",
+          "row_reports"
+        ],
+        "title": "BatchImportResponse"
+      },
+      "BatchImportRow": {
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "title": "Patient Id"
+          },
+          "analyte_code": {
+            "type": "string",
+            "title": "Analyte Code"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "specimen_collected_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specimen Collected At"
+          },
+          "laboratory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Laboratory Id"
+          },
+          "lab_changed": {
+            "type": "boolean",
+            "title": "Lab Changed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "patient_id",
+          "analyte_code",
+          "value",
+          "unit"
+        ],
+        "title": "BatchImportRow"
+      },
+      "ConsentCreateRequest": {
+        "properties": {
+          "consent_type": {
+            "type": "string",
+            "title": "Consent Type",
+            "description": "Type of clinical consent",
+            "default": "surveillance_monitoring"
+          },
+          "granted": {
+            "type": "boolean",
+            "title": "Granted",
+            "description": "Whether consent is granted",
+            "default": true
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "description": "Consent scope e.g. clinical_care, full",
+            "default": "full"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "description": "Expiration date"
+          },
+          "withdrawn_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdrawn At",
+            "description": "Withdrawal date"
+          }
+        },
+        "type": "object",
+        "title": "ConsentCreateRequest"
       },
       "FollowUpTaskResponse": {
         "properties": {
@@ -2187,6 +3035,95 @@
         ],
         "title": "RiskInferenceResponse"
       },
+      "RowReport": {
+        "properties": {
+          "row_index": {
+            "type": "integer",
+            "title": "Row Index"
+          },
+          "patient_id": {
+            "type": "string",
+            "title": "Patient Id"
+          },
+          "analyte_code": {
+            "type": "string",
+            "title": "Analyte Code"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "adjudicated_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjudicated Action"
+          },
+          "observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Id"
+          },
+          "alert_created": {
+            "type": "boolean",
+            "title": "Alert Created",
+            "default": false
+          },
+          "task_created": {
+            "type": "boolean",
+            "title": "Task Created",
+            "default": false
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_index",
+          "patient_id",
+          "analyte_code",
+          "status"
+        ],
+        "title": "RowReport"
+      },
       "SimulationRequest": {
         "properties": {
           "hypothetical_lab": {
@@ -2446,6 +3383,25 @@
             "type": "integer",
             "title": "Total Labs",
             "default": 0
+          },
+          "action_urgency": {
+            "type": "number",
+            "title": "Action Urgency",
+            "default": 0.0
+          },
+          "urgency_breakdown": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Breakdown"
           }
         },
         "type": "object",

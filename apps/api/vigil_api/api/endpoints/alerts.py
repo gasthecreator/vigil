@@ -73,11 +73,13 @@ def acknowledge_alert(
             detail=f"Invalid disposition '{payload.disposition}'. Allowed: {sorted(list(valid_dispositions))}",
         )
 
+    rationale = payload.rationale_text or payload.note or "Clinical disposition recorded"
+
     ack = AlertAcknowledgement(
         alert_id=alert.id,
         user_id=current_user.id,
         disposition=payload.disposition,
-        rationale_text=payload.rationale_text,
+        rationale_text=rationale,
         acknowledged_at=now,
     )
     db.add(ack)
@@ -90,12 +92,12 @@ def acknowledge_alert(
         db=db,
         actor_id=current_user.id,
         actor_role=current_user.role,
-        action="alert.acknowledge",
-        resource_type="alert",
+        action="alert.acknowledged",
+        resource_type="Alert",
         resource_id=alert.id,
         details={
             "disposition": payload.disposition,
-            "rationale_text": payload.rationale_text,
+            "rationale_text": rationale,
             "patient_id": alert.patient_id,
         },
         timestamp=now,

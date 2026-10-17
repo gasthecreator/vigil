@@ -9,11 +9,13 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
+from vigil_api.auth import require_roles
 from vigil_api.config import settings
 from vigil_api.database import get_db
 from vigil_api.ml.inference import VigilEngine
 from vigil_api.ml.synthetic_generator import generate_longitudinal_labs, generate_patient_baseline
 from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
+from vigil_api.models.v2 import User, UserRole
 
 router = APIRouter()
 
@@ -74,10 +76,14 @@ def get_cohort_analytics(db: Session = Depends(get_db)):
 
 
 @router.post("/seed-demo-cohort", status_code=status.HTTP_201_CREATED)
-def seed_demo_cohort(num_patients: int = 12, db: Session = Depends(get_db)):
+def seed_demo_cohort(
+    num_patients: int = 12,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+):
     """Seeds a clinical demo cohort with diverse risk profiles.
 
-    Gated strictly to local development environments per ADR-0004 and Defect A6.
+    Gated strictly to local development environments and admin role per Condition S5-2.
     """
     if settings.ENVIRONMENT != "local":
         raise HTTPException(

@@ -10,6 +10,7 @@ Implements Master Plan §9.2, §11, and Phase 5a Auth requirements:
 from __future__ import annotations
 
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Optional
 
@@ -27,14 +28,28 @@ from vigil_api.models.v2 import User, UserRole
 security = HTTPBearer(auto_error=False)
 
 
-def hash_password(password: str) -> str:
-    """Deterministic password hashing using salted SHA-256."""
-    salt = "vigil_oncology_salt_"
-    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+def hash_password(password: str, salt: Optional[bytes] = None) -> str:
+    """Hash password using scrypt with per-user salt (RFC 7914 / NIST SP 800-63B)."""
+    if salt is None:
+        salt = secrets.token_bytes(16)
+    dk = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=16384, r=8, p=1)
+    return f"scrypt$16384$8$1${salt.hex()}${dk.hex()}"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return hash_password(plain_password) == hashed_password
+    if not hashed_password or not plain_password:
+        return False
+    try:
+        parts = hashed_password.split("$")
+        if len(parts) == 6 and parts[0] == "scrypt":
+            n, r, p = int(parts[1]), int(parts[2]), int(parts[3])
+            salt = bytes.fromhex(parts[4])
+            expected_dk = bytes.fromhex(parts[5])
+            dk = hashlib.scrypt(plain_password.encode("utf-8"), salt=salt, n=n, r=r, p=p)
+            return secrets.compare_digest(dk, expected_dk)
+    except Exception:
+        return False
+    return False
 
 
 def create_access_token(
@@ -98,9 +113,9 @@ def get_current_user(
 ) -> User:
     """FastAPI dependency for extracting the authenticated user.
 
-    If REQUIRE_AUTH is active, requires a valid JWT token.
-    If REQUIRE_AUTH is false and no token is present, supports local dev emulation
-    via headers or defaults to clinician.
+    In non-local profiles or when REQUIRE_AUTH is active, requires a valid JWT token
+    and resolves the active user from the database.
+    Header-claimed roles (X-Vigil-Role) are strictly rejected outside 'local' environment.
     """
     if auth and auth.credentials:
         payload = decode_token(auth.credentials)
@@ -110,6 +125,13 @@ def get_current_user(
 
         user = db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
         if user is None:
+            if settings.ENVIRONMENT != "local":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User account not found or inactive",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            # Local dev only: create/return user if not present
             user = User(
                 id=user_id,
                 username=user_id,
@@ -120,13 +142,19 @@ def get_current_user(
                 active=True,
                 hashed_password="",
             )
+        elif not user.active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is inactive",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         user.patient_id = payload.get("patient_id")
         return user
 
-    if settings.REQUIRE_AUTH:
+    if settings.ENVIRONMENT != "local" or settings.REQUIRE_AUTH:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authentication credentials",
+            detail="Missing authentication credentials. Header-claimed roles are forbidden in non-local environments.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
