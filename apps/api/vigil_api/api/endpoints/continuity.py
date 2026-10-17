@@ -18,7 +18,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
-from vigil_api.consent import verify_patient_consent
+from vigil_api.consent import has_active_consent, verify_patient_consent
 from vigil_api.database import get_db
 from vigil_api.models.v2 import (
     CourseStatus,
@@ -169,6 +169,15 @@ def list_radiotherapy_courses(
     stmt = stmt.order_by(RadiotherapyCourse.prescribed_start_date)
 
     courses = db.execute(stmt).scalars().all()
+    # Every read of patient data requires active consent (MASTER_PLAN section 6.0): drop the rest
+    consent_cache: dict[str, bool] = {}
+    courses = [
+        c
+        for c in courses
+        if consent_cache.setdefault(
+            c.patient_id, has_active_consent(c.patient_id, db, current_user)
+        )
+    ]
     now = datetime.now(timezone.utc)
 
     results = []
@@ -495,26 +504,70 @@ def confirm_radiotherapy_schedule(
     - Records hash-chained audit event continuity.schedule_confirmed
     """
     now = datetime.now(timezone.utc)
-    entries_created = 0
 
+    # Validate every assignment BEFORE writing anything (atomic): the client may only choose
+    # course, machine and date; patient identity, delay and harm are derived on the server.
+    seen_courses: set[str] = set()
+    validated = []
     for a in payload.assignments:
+        if a.course_id in seen_courses:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Duplicate assignment for course '{a.course_id}'.",
+            )
+        seen_courses.add(a.course_id)
+
         course = db.execute(
             select(RadiotherapyCourse).where(RadiotherapyCourse.id == a.course_id)
         ).scalar_one_or_none()
-        if not course:
-            continue
+        if course is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Course '{a.course_id}' not found.",
+            )
+        if a.patient_id != course.patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Assignment patient does not match course '{a.course_id}'.",
+            )
+        verify_patient_consent(patient_id=course.patient_id, db=db, user=current_user)
+        machine = db.execute(
+            select(LinacMachine).where(LinacMachine.id == a.machine_id)
+        ).scalar_one_or_none()
+        if machine is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Machine '{a.machine_id}' not found.",
+            )
+        prescribed = (
+            course.prescribed_start_date
+            if course.prescribed_start_date.tzinfo
+            else course.prescribed_start_date.replace(tzinfo=timezone.utc)
+        )
+        sched = (
+            a.scheduled_date
+            if a.scheduled_date.tzinfo
+            else a.scheduled_date.replace(tzinfo=timezone.utc)
+        )
+        delay_days = max(0, (sched.date() - prescribed.date()).days)
+        try:
+            harm = _HARM_MODEL.compute_harm(course.clinical_context, delay_days).expected_harm
+        except (ValueError, KeyError):
+            harm = 0.0
+        validated.append((a, course, delay_days, harm))
 
+    entries_created = 0
+    for a, course, delay_days, harm in validated:
         prev_date = course.scheduled_start_date
         course.scheduled_start_date = a.scheduled_date
         course.assigned_machine_id = a.machine_id
 
-        # Record DelayLedgerEntry
         ledger_entry = DelayLedgerEntry(
-            patient_id=a.patient_id,
+            patient_id=course.patient_id,
             course_id=course.id,
-            delay_days=a.delay_days,
+            delay_days=delay_days,
             reason=payload.reason or "Clinician confirmed schedule optimization",
-            marginal_harm=a.marginal_harm,
+            marginal_harm=round(harm, 5),
             moved_from_date=prev_date,
             moved_to_date=a.scheduled_date,
             clinician_overridden=False,
@@ -573,6 +626,14 @@ def get_delay_ledger(
     stmt = stmt.order_by(desc(DelayLedgerEntry.created_at))
 
     entries = db.execute(stmt).scalars().all()
+    consent_cache: dict[str, bool] = {}
+    entries = [
+        e
+        for e in entries
+        if consent_cache.setdefault(
+            e.patient_id, has_active_consent(e.patient_id, db, current_user)
+        )
+    ]
     return [
         DelayLedgerEntryResponse(
             id=e.id,
