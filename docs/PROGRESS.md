@@ -14,7 +14,7 @@
 | P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
 | P4a | M3 plausibility, M5 verified narrative (Plan v1.3) | SUBMITTED FOR REVIEW | `e65d375` | [`docs/progress/PHASE-4A-REPORT.md`](progress/PHASE-4A-REPORT.md) | M3 ACCEPTED-WITH-CONDITIONS; **M5 REJECTED** (verifier is a blacklist; 0/18 contract-v2 tests pass); E9 numeric values downgraded — `docs/progress/VERDICT-P4A.md` |
 | P4b | M4 test escalation ladder | NOT STARTED | — | — | — (needs verified imaging sensitivity/specificity sources first) |
-| P5 | Platform backend v2 | NOT STARTED | — | — | — |
+| P5 | Platform backend v2 (Phase 5a platform core) | SUBMITTED FOR REVIEW | `feat/phase-5a-platform-core` | [`docs/progress/PHASE-5A-REPORT.md`](progress/PHASE-5A-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | NOT STARTED | — | — | — |
@@ -62,6 +62,12 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | **B-4** | Acceptance Tests Invariance | Verified `tests/acceptance_k1` (17 tests) and `tests/acceptance_3b` (13 tests) remain strictly unmodified (0-line git diff). | **CLOSED** |
 | **P4A-M3** | M3 Plausibility Adjudicator | Implemented `vigil_ml/m3.py` with RCV (closed forms), 3-way Bayesian generative mixture model (stable, real change convolved uniform, 3 error modes), personalized geometric-mean baseline, lab change handling, and strict zero-dismissal safety policy (`explained`, `needs_repeat`, `escalate`). Verified by `tests/acceptance_p4/test_m3_contract.py` (7/7 passing). Pre-registered and executed Study S7 (`reports/ml/S7_PLAUSIBILITY/`). | **CLOSED** |
 | **P4A-M5** | M5 Verified Narrative Engine | Implemented `vigil_ml/m5.py` with deterministic template generator (`render_clinician_note`) and independent semantic verifier (`verify_narrative`). Enforced zero LLM on critical path, forbidden-claim rejection, untraced number detection, swap detection across clauses, and monotonic sub-narrative validity. Delivered 3 worked clinical journeys (`reports/ml/M5_JOURNEYS.md`). Verified by `tests/acceptance_p4/test_m5_contract.py` (8/8 passing). | **CLOSED** |
+| **Q-1** | M5 Semantic Verifier & Template Derivation Engine | Replaced phrase blacklist with strict template-derivation verifier in `vigil_ml/m5.py`. Passed `tests/acceptance_p4` v1+v2 (33/33 tests). Added 7 adversarial cases in `packages/vigil-ml/tests/test_m3_m5.py`. Added `VIGIL_CONTRACT_P4V2: "1"` to CI. | **CLOSED** |
+| **Q-2** | E9 Biological Variation Source Excerpts | Retrieved verbatim public table values for CA 15-3 ($CV_i=6.1\%$) and CEA ($CV_i=12.7\%$) from Westgard/Ricós database. Created saved excerpts in `docs/evidence/excerpts/`. Added `evidence_status` to `vigil_core.analytes.ANALYTE_REGISTRY`. Extended `scripts/check_evidence.py` to audit excerpts. | **CLOSED** |
+| **Q-3** | Study S7 Plausibility Evaluation Redo | Created `reports/ml/S7_PLAUSIBILITY/TRIAGE.md` per ML_PROGRAM §10. Refactored `scripts/run_study_s7.py` with `vigil-sim` cohort as primary headline (gross error AUROC 0.8448 [0.7800, 0.8958], manifest rise 0.4828). Documented mathematical diagnosis of single-visit M3 bounds on gradual kinetics. | **CLOSED** |
+| **Q-4** | Study S2 Sequential Detection Protocol 1.3 Redo | Calibrated $\hat{\sigma}_{\log}=0.0621, \alpha_{\text{pt}}=0.25$, threshold $40.0$ U/mL strictly on independent calibration cohort (`seed=999`). Evaluated once on test cohort (`seed=42`). 1,000-bootstrap CIs confirm H1 honestly refuted ($\Delta = -10.65$ pp [-14.78, -6.53]). | **CLOSED** |
+| **Q-5** | STUBS Registry & Reality Audit | Registered `# reality: allow(R1)` exception as entry S-012 in `docs/STUBS.md`. Zero findings in `scripts/reality_audit.py`. | **CLOSED** |
+| **P5A** | Platform Core (Phase 5a) | Data model v2 with migrations & DB-level check constraints (`status != 'dismissed'`); Auth, RBAC & Consent engine (20/20 Cartesian matrix test); Hash-chained audit trail with tamper detection; Unit-safe observation ingestion pipeline (`POST /api/v1/patients/{id}/observations`) with M3, K2, M5, and synthetic flag; Follow-Up Guardian (M6) state machine, escalation ladder, and property tests; OpenAPI spec committed (`docs/api/openapi.json`); ADR-0008 and ADR-0009 committed. | **CLOSED** |
 
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
@@ -82,9 +88,8 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 - ADR-0005: Proposal process (`docs/proposals/PROP-0000-template.md`)
 - ADR-0006: K3 Bayesian joint model architecture and landmark logistic regression
 - ADR-0007: Model K1 designated as research inference module; K3/B4 shipped surveillance baselines
-
-## Verdict history (overseer)
-_None yet._
+- ADR-0008: Self-Contained JWT Bearer Authentication with Keycloak / OIDC Federation (`docs/adr/0008-auth-provider.md`)
+- ADR-0009: Postgres-Native Transactional Outbox with ARQ Async Worker (`docs/adr/0009-async-queue.md`)
 
 ## Verdict history (overseer)
 _None yet._

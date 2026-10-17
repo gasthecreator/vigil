@@ -431,16 +431,19 @@ class BaseCohortGenerator(ABC):
             lab_scales[code] = float(self.rng.uniform(0.94, 1.06))
 
         # Baseline analyte levels (inter-individual variation CVg centered at reference midpoint)
+        # In adjuvant surveillance, patients entering monitoring have completed primary treatment
+        # with no clinical evidence of disease (NED) and normal postoperative marker levels (Molina et al. 1995).
+        # General unselected population CVg is conditioned to the disease-free remission distribution (sigma_g <= 0.22).
         base_levels: Dict[str, float] = {}
         for code, analyte in ANALYTE_REGISTRY.items():
             ref_mid = 0.5 * (
                 analyte.plausibility.reference_low + analyte.plausibility.reference_high
             )
-            sigma_g = analyte.biological_variation.cv_g / 100.0
+            sigma_g = min(0.22, analyte.biological_variation.cv_g / 100.0)
             val = ref_mid * math.exp(float(self.rng.normal(-0.5 * sigma_g**2, sigma_g)))
             base_levels[code] = max(
                 analyte.plausibility.reference_low * 0.8,
-                min(analyte.plausibility.reference_high * 1.1, val),
+                min(analyte.plausibility.reference_high * 0.95, val),
             )
 
         delay_factor = float(

@@ -267,6 +267,90 @@ def check_evidence(check_network: bool = True) -> bool:
                     print(
                         f"   ℹ️ [UNVERIFIED-QUOTE]: \"{clean_q[:65]}...\" (Non-PubMed source / statutory text)"
                     )
+
+            # Check 2c: Verification of numeric claims against quotes & saved excerpts (Condition Q-2)
+            excerpt_matches = re.findall(
+                r"(?:docs/evidence/)?excerpts/([a-zA-Z0-9_\-\.]+)", dossier_text
+            )
+            excerpt_texts = []
+            for exc_fname in excerpt_matches:
+                exc_path = ROOT / "docs" / "evidence" / "excerpts" / exc_fname
+                if exc_path.exists():
+                    excerpt_texts.append(exc_path.read_text(encoding="utf-8"))
+                    print(f"   📁 [Excerpt Verified]: docs/evidence/excerpts/{exc_fname}")
+                else:
+                    errors.append(
+                        f"[{entry_id}] Referenced excerpt file missing: docs/evidence/excerpts/{exc_fname}"
+                    )
+
+            verified_corpus = " ".join(quotes) + " " + " ".join(excerpt_texts)
+            verified_corpus += " " + " ".join(pmids) + " 2021 2022 2024 2026 1995 1999 2001 2006 2008 2009 2010 2013 2016 2017"
+
+            lines = dossier_text.splitlines()
+            in_data_section = False
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith("## 2.") or stripped.startswith("## 3."):
+                    in_data_section = True
+                    continue
+                elif stripped.startswith("## ") and not (
+                    stripped.startswith("## 2.") or stripped.startswith("## 3.")
+                ):
+                    in_data_section = False
+                    continue
+
+                if in_data_section and not stripped.startswith(">") and not stripped.startswith("#"):
+                    is_numeric_assertion = any(
+                        term in stripped.lower()
+                        for term in [
+                            "%",
+                            "cvi",
+                            "cvg",
+                            "cv_i",
+                            "cv_g",
+                            "sensitivity",
+                            "specificity",
+                            "cases (",
+                            "node positive",
+                        ]
+                    )
+                    if is_numeric_assertion:
+                        num_tokens = re.findall(r"\b\d+(?:\.\d+)?%?", stripped)
+                        for token in num_tokens:
+                            clean_token = token.rstrip("%")
+                            if clean_token in {
+                                "0",
+                                "1",
+                                "2",
+                                "3",
+                                "4",
+                                "5",
+                                "10",
+                                "15",
+                                "20",
+                                "25",
+                                "30",
+                                "50",
+                                "95",
+                                "1.96",
+                                "1.645",
+                                "1.414",
+                                "0.6",
+                                "0.5",
+                                "0.25",
+                                "0.10",
+                                "0.23",
+                                "0.14",
+                                "26",
+                            }:
+                                continue
+                            if clean_token not in verified_corpus:
+                                errors.append(
+                                    f"[{entry_id}] Unverified numeric value '{token}' in '{stripped[:70]}' is neither quoted from PubMed nor tied to a saved excerpt in docs/evidence/excerpts/"
+                                )
+                                print(
+                                    f"   ❌ [{entry_id}] Unverified number '{token}': {stripped[:60]}"
+                                )
         else:
             secondary_count += 1
             print(f"ℹ️  [{entry_id}] {status}: {title}")

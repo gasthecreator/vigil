@@ -82,3 +82,46 @@ def test_m5_sub_narrative_monotonicity():
     shortened = ". ".join(sentences[:3]) + "."
     res = verify_narrative(shortened, facts)
     assert res["ok"] is True
+
+
+def test_m5_adversarial_rejections():
+    """Verify that verifier rejects diverse adversarial hallucinations, paraphrases, and extrapolations."""
+    facts = [
+        {"type": "p_real", "value": 0.50},
+        {"type": "p_error", "value": 0.05},
+        {"type": "p_stable", "value": 0.45},
+        {"type": "rcv", "value": 0.31},
+        {"type": "observed_change", "value": 1.45},
+        {"type": "action", "value": "needs_repeat"},
+    ]
+    base_note = render_clinician_note(facts)
+    assert verify_narrative(base_note, facts)["ok"] is True
+
+    adversarial_cases = [
+        # 1. Actionable diagnostic extrapolation / clinical hallucination
+        "Recommend ordering an FDG-PET scan immediately to assess distant metastasis.",
+        # 2. Subtle reassurance / conversational drift
+        "The elevation is reassuringly mild and clinically insignificant.",
+        # 3. Fabricated clinical finding
+        "The patient has 3 new suspicious pulmonary nodules.",
+        # 4. Sycophantic assistant filler
+        "Based on comprehensive review of your oncology panel, here are the findings.",
+        # 5. Inverted negation of verified fact
+        "The calculated probability of true progression is not 50%.",
+        # 6. Subtle single-word substitution
+        "The calculated probability of false progression is 50%.",
+        # 7. Altered units / nonsensical metric
+        "The biological reference change value threshold is 31 ng/mL.",
+    ]
+
+    for adv in adversarial_cases:
+        # Case alone
+        res_solo = verify_narrative(adv, facts)
+        assert res_solo["ok"] is False, f"Adversarial case accepted alone: {adv}"
+        assert len(res_solo["violations"]) > 0
+
+        # Appended to valid narrative
+        res_appended = verify_narrative(f"{base_note} {adv}", facts)
+        assert res_appended["ok"] is False, f"Adversarial case accepted when appended: {adv}"
+        assert len(res_appended["violations"]) > 0
+

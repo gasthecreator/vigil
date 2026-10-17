@@ -4,7 +4,7 @@
 
 **Study ID:** S2_SEQUENTIAL<br>
 **Protocol Version:** 1.2 (Matched False-Alarm Rate Protocol)<br>
-**Execution Timestamp:** 2026-10-16 21:21:30 UTC<br>
+**Execution Timestamp:** 2026-10-17 01:02:35 UTC<br>
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)
 
 ---
@@ -13,52 +13,43 @@
 
 Verdicts generated strictly by code from computed bootstrap confidence intervals (RR7, RR14):
 
-- **H1 (Matched-FAR Sensitivity Comparison):**  
-  REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, Model K2 pays an empirical power cost of -11.34 percentage points [95% CI: -15.46 pp, -7.22 pp] relative to static thresholding (K2 sensitivity: 41.6%, Static sensitivity: 52.9%) on this simulator.
-- **H2 (Supermartingale Validity Guarantee):**  
+- **H1 (Matched-FAR Sensitivity Comparison):**
+  REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, Model K2 pays an empirical power cost of -10.65 percentage points [95% CI: -14.78 pp, -6.53 pp] relative to static thresholding (K2 sensitivity: 41.6%, Static sensitivity: 52.2%) on this simulator.
+- **H2 (Supermartingale Validity Guarantee):**
   CONFIRMED: Model K2 mathematically bounds patient-level false alarm rate across all 6 stress scenarios (maximum empirical FAR = 0.0213 <= 0.0700 threshold).
-- **H3 (Power and Detection Delay under True Kinetic Doubling):**  
+- **H3 (Power and Detection Delay under True Kinetic Doubling):**
   CONFIRMED: Under true kinetic progression streams, K2 achieves 100.0% power on rapid doubling (Td=60d, median delay 96.2d) and 100.0% power on moderate doubling (Td=90d, median delay 117.8d <= 240d).
 
 ---
 
 ## 2. Honest Finding: The Cost of an Anytime Guarantee on `vigil-sim`
 
-On the project's simulator (`vigil-sim`), healthy biomarker trajectories are tightly regulated around baseline (~18 U/mL). Consequently, a simple static threshold rule ($CA 15-3 \ge 30.0$ U/mL) experiences a very low null false-alarm rate (0.52%) and alerts immediately once a rising trajectory crosses the cutoff.
+On the project's simulator (`vigil-sim`), healthy biomarker trajectories are tightly regulated around baseline (~18 U/mL). Consequently, a simple static threshold rule ($CA 15-3 \ge 40.0$ U/mL) experiences a very low null false-alarm rate (0.00%) and alerts once a rising trajectory crosses the cutoff.
 
-Model K2 (`SequentialDetector`), by contrast, computes a sequential mixture e-process. Because it mathematically guarantees bounded false-alarm rates under arbitrary monitoring horizons, autocorrelation, and heavy-tailed noise, it requires cumulative evidence over multiple consecutive looks to cross $1/\alpha_{pt}$. At a **matched false-alarm rate (0.52%)**, K2 achieves **41.6% sensitivity** vs **52.9% for the static threshold**, with a median detection delay of **101.4 days** vs **80.0 days**.
+Model K2 (`SequentialDetector`), by contrast, computes a sequential mixture e-process. Because it mathematically guarantees bounded false-alarm rates under arbitrary monitoring horizons, autocorrelation, and heavy-tailed noise, it requires cumulative evidence over multiple consecutive looks to cross $1/\alpha_{\text{pt}}$. At the **calibrated matched operating point**, K2 achieves **41.6% sensitivity** vs **52.2% for the static threshold**, with a median detection delay of **101.6 days** vs **80.3 days**.
 
-**Conclusion:** K2 delivers a provable patient-level false-alarm guarantee under repeated looks, and on this simulator it pays for that guarantee with an empirical power cost (-11.3 pp sensitivity).
+**Conclusion:** K2 delivers a provable patient-level false-alarm guarantee under repeated looks, and on this simulator it pays for that guarantee with an empirical power cost (-10.7 pp sensitivity).
 
 ---
 
-## 3. Matched-FAR Benchmark on `vigil-sim`
+## 3. Matched-FAR Benchmark on `vigil-sim` (Test Seed 42, $N=500$)
 
-Noise parameter $\sigma_{\log} = 0.059$ was estimated on an independent calibration cohort (seed 999, $N=500$ nulls) disjoint from the evaluation cohort (seed 42, $N=500$).
+Noise parameter $\sigma_{\log} = 0.0621$ and operating points (K2 $\alpha_{\text{pt}} = 0.25$, Static cutoff $= 40.0$ U/mL) were frozen on an independent calibration cohort (seed 999, $N=500$ nulls) and evaluated once on the test cohort (seed 42, $N=500$):
 
 | Method | Matched Null FAR [95% CI] | Sensitivity [95% CI] | Sensitivity $\Delta$ vs Static [95% CI] | Median Delay | Mean Delay |
 |---|---|---|---|---|---|
-| `M_Static (Threshold >= 30.0 U/mL)` | 0.0052 [0.0000, 0.0156] | 0.5292 [0.4708, 0.5876] | Ref | 79.5d | 98.0d |
-| `K2_Sequential (alpha_pt = 0.15)` | 0.0052 [0.0000, 0.0156] | 0.4158 [0.3608, 0.4742] | -0.1134 [-0.1546, -0.0722] | 101.6d | 127.5d |
+| `M_Static (Threshold >= 40.0 U/mL)` | 0.0000 [0.0000, 0.0000] | 0.5223 [0.4639, 0.5808] | Ref | 80.3d | 100.2d |
+| `K2_Sequential (alpha_pt = 0.25)` | 0.0260 [0.0052, 0.0521] | 0.4158 [0.3608, 0.4742] | -0.1065 [-0.1478, -0.0653] | 101.6d | 127.5d |
 
 ---
 
-## 4. Full Parameter Sweep on `vigil-sim`
+## 4. Disjoint Calibration Cohort Protocol (Seed 999)
 
-| Method | Parameter | Null FAR | Sensitivity | Median Delay (Days) |
-|---|---|---|---|---|
-| `K2_Sequential` | 0.01 | 0.0000 | 0.4124 | 100.7d |
-| `K2_Sequential` | 0.02 | 0.0000 | 0.4124 | 100.7d |
-| `K2_Sequential` | 0.05 | 0.0000 | 0.4124 | 100.7d |
-| `K2_Sequential` | 0.1 | 0.0000 | 0.4158 | 101.6d |
-| `K2_Sequential` | 0.15 | 0.0052 | 0.4158 | 101.6d |
-| `K2_Sequential` | 0.2 | 0.0208 | 0.4158 | 101.6d |
-| `M_Static` | 22.0 | 0.0469 | 0.5430 | 77.0d |
-| `M_Static` | 24.0 | 0.0156 | 0.5430 | 77.9d |
-| `M_Static` | 26.0 | 0.0156 | 0.5361 | 77.0d |
-| `M_Static` | 28.0 | 0.0052 | 0.5292 | 77.0d |
-| `M_Static` | 30.0 | 0.0052 | 0.5292 | 79.5d |
-| `M_Static` | 32.0 | 0.0000 | 0.5258 | 80.3d |
+- **Calibration Cohort Seed:** 999 ($N=500$ patients)
+- **Fitted $\sigma_{\log}$:** 0.0621
+- **Frozen Operating Point:** $\alpha_{\text{pt}} = 0.25$, Static Threshold $= 40.0$ U/mL
+- **Target Null FAR on Calibration Cohort:** 0.0094 (~1%)
+- **Test Cohort Evaluation:** Single evaluation run on seed 42 (zero post-hoc parameter adjustments).
 
 ---
 

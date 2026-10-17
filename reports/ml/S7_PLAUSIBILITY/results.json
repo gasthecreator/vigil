@@ -2,7 +2,52 @@
   "study_id": "S7_PLAUSIBILITY",
   "date": "2026-10-16",
   "protocol_version": "1.0",
-  "execution_time_seconds": 4.72,
+  "execution_time_seconds": 5.16,
+  "headline_evaluation": "vigil-sim",
+  "vigilsim_cohort": {
+    "n_patient_visits_evaluated": 845,
+    "auc_real_manifest_elevation": {
+      "point": 0.4828,
+      "ci95": [
+        0.4248,
+        0.5427
+      ]
+    },
+    "auc_real_all_post_recurrence": {
+      "point": 0.4783,
+      "ci95": [
+        0.4248,
+        0.5371
+      ]
+    },
+    "auc_error": {
+      "point": 0.8448,
+      "ci95": [
+        0.78,
+        0.8958
+      ]
+    },
+    "ece_real": {
+      "point": 0.2055,
+      "ci95": [
+        0.1758,
+        0.2379
+      ]
+    },
+    "ece_error": {
+      "point": 0.4232,
+      "ci95": [
+        0.3734,
+        0.4779
+      ]
+    },
+    "zero_dismissal_compliance": 1.0,
+    "action_distribution": {
+      "explained": 484,
+      "needs_repeat": 241,
+      "escalate": 120
+    }
+  },
   "contract_cohort": {
     "n_cases": 3000,
     "auc_real_vs_stable": {
@@ -46,79 +91,40 @@
       "escalate": 596
     }
   },
-  "vigilsim_cohort": {
-    "n_patient_visits_evaluated": 845,
-    "auc_real": {
-      "point": 0.4912,
-      "ci95": [
-        0.437,
-        0.5476
-      ]
-    },
-    "auc_error": {
-      "point": 0.8587,
-      "ci95": [
-        0.8101,
-        0.9013
-      ]
-    },
-    "ece_real": {
-      "point": 0.2021,
-      "ci95": [
-        0.1751,
-        0.2315
-      ]
-    },
-    "ece_error": {
-      "point": 0.3959,
-      "ci95": [
-        0.3455,
-        0.4494
-      ]
-    }
-  },
-  "hypotheses": {
-    "H1_real_discrimination": {
+  "contract_triage_note": "Documented in reports/ml/S7_PLAUSIBILITY/TRIAGE.md (near-perfect synthetic contract performance triage per ML_PROGRAM \u00a710)",
+  "hypotheses_vigilsim": {
+    "H1_gross_error_discrimination": {
       "verdict": "CONFIRMED",
       "auroc": {
-        "point": 0.9961,
+        "point": 0.8448,
         "ci95": [
-          0.9937,
-          0.9977
+          0.78,
+          0.8958
         ]
       },
-      "criterion": "AUROC >= 0.85, CI95 lower >= 0.80"
+      "criterion": "AUROC >= 0.80, CI95 lower >= 0.75 on vigil-sim injected errors"
     },
-    "H2_error_discrimination": {
-      "verdict": "CONFIRMED",
+    "H2_manifest_elevation_discrimination": {
+      "verdict": "NOT MET",
       "auroc": {
-        "point": 0.9487,
+        "point": 0.4828,
         "ci95": [
-          0.9114,
-          0.977
+          0.4248,
+          0.5427
         ]
       },
-      "criterion": "AUROC >= 0.80, CI95 lower >= 0.75"
+      "criterion": "AUROC >= 0.85, CI95 lower >= 0.80 on vigil-sim manifest elevations (ratio >= 1.25)"
     },
-    "H3_calibration": {
-      "verdict": "CONFIRMED",
-      "ece_real": {
-        "point": 0.0023,
+    "H3_all_post_recurrence_discrimination": {
+      "verdict": "NOT MET",
+      "auroc": {
+        "point": 0.4783,
         "ci95": [
-          0.0016,
-          0.0087
+          0.4248,
+          0.5371
         ]
       },
-      "ece_error": {
-        "point": 0.0025,
-        "ci95": [
-          0.0022,
-          0.0067
-        ]
-      },
-      "brier_real_ratio": 0.1121,
-      "brier_error_ratio": 0.2353,
-      "criterion": "ECE <= 0.06, Brier ratio <= 0.85"
+      "criterion": "AUROC >= 0.85 (NOT MET: single-visit adjudicator is blind to early subclinical microscopic growth)"
     },
     "H4_zero_dismissal_safety": {
       "verdict": "CONFIRMED",
@@ -129,15 +135,17 @@
   "biological_variation_citations": {
     "ca_15_3": {
       "cv_within": 0.061,
-      "cv_between": 0.431,
+      "cv_between": 0.629,
+      "index_of_individuality": 0.1,
       "status": "PRIMARY-VERIFIED",
-      "source": "Aarsand et al. 2021 (EuBIVAS), PMID 33964202 (Evidence E9)"
+      "source": "Ric\u00f3s et al. 1999 / Westgard QC Biological Variation Database (Evidence E9, docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)"
     },
     "cea": {
       "cv_within": 0.127,
-      "cv_between": 0.554,
+      "cv_between": 0.556,
+      "index_of_individuality": 0.23,
       "status": "PRIMARY-VERIFIED",
-      "source": "Aarsand et al. 2021 (EuBIVAS), PMID 33964202 (Evidence E9)"
+      "source": "Ric\u00f3s et al. 1999 / Westgard QC Biological Variation Database (Evidence E9, docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)"
     },
     "secondary_analytes": {
       "status": "SECONDARY",

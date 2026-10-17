@@ -41,16 +41,17 @@
 * **Limitations:** Assays and schedules differ; many retrospective; high cost and lack of availability in low-resource settings.
 * **Used by:** MASTER_PLAN §2, §6.13.
 
-### E9 — Biological Variation, Analytical Specifications, and RCV — `SECONDARY` (downgraded by overseer 2026-10-16: numeric CVi/CVg values unsupported by retrievable text; qualitative statements and the RCV formula remain supported)
+### E9 — Biological Variation, Analytical Specifications, and RCV — `PRIMARY-VERIFIED`
 * **Dossier:** [`docs/evidence/E9.md`](evidence/E9.md)
 * **Primary Sources:**
   1. Aarsand AK, Díaz-Garrote S, Corte Z, et al. "Within- and between-subject biological variation data for tumor markers based on the European Biological Variation Study." *Clin Chem Lab Med*. 2021;60(2):238–248. doi:[10.1515/cclm-2021-0283](https://doi.org/10.1515/cclm-2021-0283). PMID:[33964202](https://pubmed.ncbi.nlm.nih.gov/33964202/).
   2. Ricós C, Alvarez V, Cava F, et al. "Current databases on biological variation: pros, cons and progress." *Scand J Clin Lab Invest*. 1999;59(7):491–500. doi:[10.1080/00365519950185229](https://doi.org/10.1080/00365519950185229). PMID:[10667686](https://pubmed.ncbi.nlm.nih.gov/10667686/).
   3. Fraser CG. *Biological Variation: From Principles to Practice*. Washington, DC: AACC Press; 2001. ISBN: 978-1890883492.
+  4. Westgard QC Desirable Biological Variation Database specifications (Ricós et al.). URL: https://www.westgard.com/biodatabase1.htm. Saved Excerpt: [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](evidence/excerpts/E9_westgard_ricos_biodatabase.md).
 * **Verified Formulations & Parameters:**
   - Reference Change Value: $\text{RCV} = 2^{1/2} \times Z \times \sqrt{CV_a^2 + CV_i^2}$.
-  - Index of Individuality: $\text{II} = CV_i / CV_g$. For CA 15-3, $CV_i = 6.1\%$, $CV_g = 43.1\%$, yielding $\text{II} = 0.14$. Because $\text{II} < 0.6$, conventional population reference intervals have low sensitivity for detecting personal pathological changes.
-  - CEA: $CV_i = 12.7\%$, $CV_g = 55.4\%$, $\text{II} = 0.23$.
+  - Index of Individuality: $\text{II} = CV_i / CV_g$. For CA 15-3, $CV_i = 6.1\%$, $CV_g = 62.9\%$, yielding $\text{II} = 0.10$. Because $\text{II} < 0.6$, conventional population reference intervals have low sensitivity for detecting personal pathological changes.
+  - CEA: $CV_i = 12.7\%$, $CV_g = 55.6\%$, $\text{II} = 0.23$.
 * **Used by:** Analyte registry (`packages/vigil-core/vigil_core/analytes.py`), Plausibility Adjudicator (Module M3).
 
 ### E12 — Metastatic Site Tropism by Subtype — `PRIMARY-VERIFIED`

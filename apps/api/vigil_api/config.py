@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     # Synthetic data labeling: all current data and mock profiles are synthetic (Principle 1)
     IS_SYNTHETIC_DATA: bool = True
 
+    # JWT & Auth Security (Master Plan §9.2)
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "vigil-precision-oncology-secret-key-32bytes-min")
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    REQUIRE_AUTH: bool = os.getenv("REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")
+
     # Disclaimer text required on API root
     DISCLAIMER: str = (
         "Vigil is a research prototype and decision-support aid. It is not a medical device, "
