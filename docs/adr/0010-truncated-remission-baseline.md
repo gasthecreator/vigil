@@ -46,9 +46,7 @@ Chosen option: **Option 3: Conditioned Remission Distribution with Truncation**.
 # Baseline analyte levels conditioned to the disease-free remission distribution (NED)
 base_levels: Dict[str, float] = {}
 for code, analyte in ANALYTE_REGISTRY.items():
-    ref_mid = 0.5 * (
-        analyte.plausibility.reference_low + analyte.plausibility.reference_high
-    )
+    ref_mid = 0.5 * (analyte.plausibility.reference_low + analyte.plausibility.reference_high)
     sigma_g = min(0.22, analyte.biological_variation.cv_g / 100.0)
     val = ref_mid * math.exp(float(self.rng.normal(-0.5 * sigma_g**2, sigma_g)))
     base_levels[code] = max(

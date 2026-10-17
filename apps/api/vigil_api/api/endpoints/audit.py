@@ -22,7 +22,9 @@ router = APIRouter()
 )
 def verify_audit_log(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.QUALITY_LEAD, UserRole.ADMIN, UserRole.CLINICIAN)),
+    current_user: User = Depends(
+        require_roles(UserRole.QUALITY_LEAD, UserRole.ADMIN, UserRole.CLINICIAN)
+    ),
 ):
     """Iterates through all audit events, verifying backlink hashes and payload signatures.
 

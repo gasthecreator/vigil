@@ -36,7 +36,11 @@ def list_alerts(
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.QUALITY_LEAD, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CLINICIAN, UserRole.QUALITY_LEAD, UserRole.NURSE_CLERK, UserRole.ADMIN
+        )
+    ),
 ):
     """Retrieve surveillance alerts filtered by status."""
     query = select(Alert).offset(skip).limit(limit)
@@ -66,7 +70,9 @@ def acknowledge_alert(
 
     alert = db.execute(select(Alert).where(Alert.id == alert_id)).scalar_one_or_none()
     if alert is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Alert '{alert_id}' not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Alert '{alert_id}' not found."
+        )
 
     # Validate disposition value
     valid_dispositions = {d.value for d in AlertDisposition}
@@ -176,16 +182,18 @@ def stream_alerts(
                 except HTTPException:
                     continue
 
-            data = json.dumps({
-                "id": alert.id,
-                "patient_id": alert.patient_id,
-                "risk_assessment_id": alert.risk_assessment_id,
-                "alert_type": alert.alert_type,
-                "severity": alert.severity,
-                "status": alert.status,
-                "trigger_reason": alert.trigger_reason,
-                "created_at": alert.created_at.isoformat() if alert.created_at else None,
-            })
+            data = json.dumps(
+                {
+                    "id": alert.id,
+                    "patient_id": alert.patient_id,
+                    "risk_assessment_id": alert.risk_assessment_id,
+                    "alert_type": alert.alert_type,
+                    "severity": alert.severity,
+                    "status": alert.status,
+                    "trigger_reason": alert.trigger_reason,
+                    "created_at": alert.created_at.isoformat() if alert.created_at else None,
+                }
+            )
             yield f"event: alert\ndata: {data}\n\n"
             emitted += 1
 
@@ -200,4 +208,3 @@ def stream_alerts(
             "X-Accel-Buffering": "no",
         },
     )
-

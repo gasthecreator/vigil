@@ -31,7 +31,9 @@ def main() -> None:
 
     AMORTIZED_WEIGHTS_PATH.parent.mkdir(parents=True, exist_ok=True)
     save_file(model.state_dict(), str(AMORTIZED_WEIGHTS_PATH))
-    print(f"✅ Saved trained weights to {AMORTIZED_WEIGHTS_PATH} ({AMORTIZED_WEIGHTS_PATH.stat().st_size} bytes)")
+    print(
+        f"✅ Saved trained weights to {AMORTIZED_WEIGHTS_PATH} ({AMORTIZED_WEIGHTS_PATH.stat().st_size} bytes)"
+    )
 
 
 if __name__ == "__main__":

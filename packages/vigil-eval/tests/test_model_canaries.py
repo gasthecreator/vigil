@@ -13,11 +13,9 @@ Enforces leakage canaries across all model families and their inputs:
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 import pytest
 from sklearn.metrics import roc_auc_score
 from vigil_eval.leakage import (
-    CanaryTestFailedError,
     check_outcome_derived_features,
     run_latent_column_canary,
     run_shuffled_label_canary,
@@ -34,7 +32,7 @@ from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_ml.m3 import adjudicate
-from vigil_ml.sequential_k2 import AlertTier, SequentialEProcessK2
+from vigil_ml.sequential_k2 import SequentialEProcessK2
 from vigil_sim.generators import GeneratorType, get_generator
 
 
@@ -56,11 +54,15 @@ def test_b1_to_b4_canaries(synthetic_cohort):
 
     # 1. Unobserved-value canary on raw observations
     unobserved_counts = run_unobserved_value_canary(obs_df)
-    assert unobserved_counts.get("ca_15_3", 0) > 0, "Expected some unobserved CA 15-3 in synthetic cohort"
+    assert unobserved_counts.get("ca_15_3", 0) > 0, (
+        "Expected some unobserved CA 15-3 in synthetic cohort"
+    )
 
     # 2. Extract features
     extractor = WindowedFeatureExtractor()
-    X, y, t, d = extractor.transform_cohort(patients_df=pts_df, observations_df=obs_df, horizon_days=365.0)
+    X, y, t, d = extractor.transform_cohort(
+        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0
+    )
 
     # 3. Latent-column canary
     run_latent_column_canary(X)
@@ -74,10 +76,14 @@ def test_b1_to_b4_canaries(synthetic_cohort):
     auc_b2 = run_shuffled_label_canary(X, y, model_factory=VelocityBaseline, seed=42)
     assert auc_b2 <= 0.60, f"B2 shuffled-label canary failed: AUC = {auc_b2}"
 
-    auc_b3 = run_shuffled_label_canary(X, y, model_factory=lambda: RegularizedCoxHazardBaseline(C=0.5), seed=42)
+    auc_b3 = run_shuffled_label_canary(
+        X, y, model_factory=lambda: RegularizedCoxHazardBaseline(C=0.5), seed=42
+    )
     assert auc_b3 <= 0.60, f"B3 shuffled-label canary failed: AUC = {auc_b3}"
 
-    auc_b4 = run_shuffled_label_canary(X, y, model_factory=lambda: GradientBoostingBaseline(max_depth=3, n_estimators=50), seed=42)
+    auc_b4 = run_shuffled_label_canary(
+        X, y, model_factory=lambda: GradientBoostingBaseline(max_depth=3, n_estimators=50), seed=42
+    )
     assert auc_b4 <= 0.60, f"B4 shuffled-label canary failed: AUC = {auc_b4}"
 
 
@@ -112,12 +118,16 @@ def test_k1_kinetic_canaries(synthetic_cohort):
     times_arr = np.array(times)
     for _ in range(5):
         shuffled_labels = rng.permutation(labels)
-        auc = float(ipcw_time_dependent_roc_auc(preds, times_arr, shuffled_labels, horizon_time=365.0))
+        auc = float(
+            ipcw_time_dependent_roc_auc(preds, times_arr, shuffled_labels, horizon_time=365.0)
+        )
         shuffled_aucs.append(auc)
 
     mean_shuffled_auc = float(np.mean(shuffled_aucs))
     # Discrimination under shuffled labels must be near chance (<= 0.60)
-    assert mean_shuffled_auc <= 0.60, f"K1 shuffled label canary failed: mean AUC = {mean_shuffled_auc:.4f}"
+    assert mean_shuffled_auc <= 0.60, (
+        f"K1 shuffled label canary failed: mean AUC = {mean_shuffled_auc:.4f}"
+    )
 
 
 def test_k2_sequential_canaries():
@@ -150,7 +160,9 @@ def test_k3_joint_model_canaries(synthetic_cohort):
     pts_df = synthetic_cohort.to_patients_dataframe()
 
     extractor = WindowedFeatureExtractor()
-    X, y, t, d = extractor.transform_cohort(patients_df=pts_df, observations_df=obs_df, horizon_days=365.0)
+    X, y, t, d = extractor.transform_cohort(
+        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0
+    )
 
     # Latent-column canary
     run_latent_column_canary(X)

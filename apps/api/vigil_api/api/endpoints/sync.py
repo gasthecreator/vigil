@@ -37,7 +37,9 @@ router = APIRouter()
 
 class SyncMutationItem(BaseModel):
     client_mutation_id: str = Field(..., description="Unique client-generated idempotency key")
-    entity_type: str = Field(..., description="'observation', 'follow_up_task', or 'alert_acknowledgement'")
+    entity_type: str = Field(
+        ..., description="'observation', 'follow_up_task', or 'alert_acknowledgement'"
+    )
     action: str = Field("create", description="'create' or 'update'")
     entity_id: Optional[str] = Field(None, description="Target entity ID if updating")
     patient_id: str = Field(..., description="Target patient UUID")
@@ -47,7 +49,9 @@ class SyncMutationItem(BaseModel):
 
 class SyncBatchRequest(BaseModel):
     sync_id: str = Field(..., description="Unique client batch transaction identifier")
-    client_device_id: Optional[str] = Field(None, description="Originating device or workstation ID")
+    client_device_id: Optional[str] = Field(
+        None, description="Originating device or workstation ID"
+    )
     client_timestamp: datetime = Field(..., description="Timestamp when batch was dispatched")
     mutations: List[SyncMutationItem] = Field(..., description="Array of queued mutations")
 
@@ -190,7 +194,9 @@ def process_sync_batch(
 
             elif item.entity_type == "follow_up_task":
                 task_id = item.entity_id or item.payload.get("task_id")
-                task = db.execute(select(FollowUpTask).where(FollowUpTask.id == task_id)).scalar_one_or_none()
+                task = db.execute(
+                    select(FollowUpTask).where(FollowUpTask.id == task_id)
+                ).scalar_one_or_none()
                 if task is None:
                     rejected_count += 1
                     results.append(
@@ -202,7 +208,11 @@ def process_sync_batch(
                     )
                     continue
 
-                server_time = task.updated_at if task.updated_at.tzinfo else task.updated_at.replace(tzinfo=timezone.utc)
+                server_time = (
+                    task.updated_at
+                    if task.updated_at.tzinfo
+                    else task.updated_at.replace(tzinfo=timezone.utc)
+                )
 
                 # Last-Write-Wins (LWW) check
                 if client_time <= server_time:

@@ -192,22 +192,26 @@ def test_shuffled_label_canary_detects_leaked_target_in_features():
 
 def test_unobserved_value_canary_passes_on_masked_data():
     """Clean data with unobserved values as NaN passes canary check."""
-    df = pd.DataFrame({
-        "observed_ca_15_3": [True, False, True],
-        "latent_ca_15_3": [25.0, 30.0, 35.0],
-        "ca_15_3": [25.0, np.nan, 35.0],
-    })
+    df = pd.DataFrame(
+        {
+            "observed_ca_15_3": [True, False, True],
+            "latent_ca_15_3": [25.0, 30.0, 35.0],
+            "ca_15_3": [25.0, np.nan, 35.0],
+        }
+    )
     counts = run_unobserved_value_canary(df)
     assert counts == {"ca_15_3": 1}
 
 
 def test_unobserved_value_canary_detects_leaked_values():
     """Data where unobserved rows leak non-NaN values fails canary check."""
-    df = pd.DataFrame({
-        "observed_ca_15_3": [True, False, True],
-        "latent_ca_15_3": [25.0, 30.0, 35.0],
-        "ca_15_3": [25.0, 30.0, 35.0],  # Leaked value when observed is False!
-    })
+    df = pd.DataFrame(
+        {
+            "observed_ca_15_3": [True, False, True],
+            "latent_ca_15_3": [25.0, 30.0, 35.0],
+            "ca_15_3": [25.0, 30.0, 35.0],  # Leaked value when observed is False!
+        }
+    )
     with pytest.raises(UnobservedValueLeakageError, match="Unobserved-value canary FAILED"):
         run_unobserved_value_canary(df)
 
@@ -220,4 +224,3 @@ def test_latent_column_canary():
     leaky_X = pd.DataFrame({"ca_15_3_curr": [25.0, 26.0], "latent_ca_15_3": [25.0, 26.0]})
     with pytest.raises(OutcomeDerivedFeatureError, match="Latent column canary FAILED"):
         run_latent_column_canary(leaky_X)
-

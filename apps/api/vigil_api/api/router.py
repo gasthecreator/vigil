@@ -17,7 +17,9 @@ from vigil_api.api.endpoints import (
 api_router = APIRouter()
 
 api_router.include_router(patients.router, prefix="/patients", tags=["Patients & Surveillance"])
-api_router.include_router(batch_import.router, prefix="/observations", tags=["Batch Observation Ingestion"])
+api_router.include_router(
+    batch_import.router, prefix="/observations", tags=["Batch Observation Ingestion"]
+)
 api_router.include_router(fhir.router, prefix="/fhir", tags=["HL7 FHIR R4 Interoperability"])
 api_router.include_router(hl7.router, prefix="/hl7", tags=["HL7 v2 ORU^R01 Interoperability"])
 api_router.include_router(sync.router, prefix="/sync", tags=["Offline Batch Sync"])
@@ -25,4 +27,3 @@ api_router.include_router(alerts.router, prefix="/alerts", tags=["Alerts & Ackno
 api_router.include_router(follow_up.router, prefix="/follow-up", tags=["Follow-Up Guardian (M6)"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Cryptographic Audit Trail"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics & Cohort"])
-

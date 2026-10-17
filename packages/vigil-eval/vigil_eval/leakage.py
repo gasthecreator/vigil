@@ -313,9 +313,10 @@ def run_latent_column_canary(feature_df: pd.DataFrame) -> None:
     appear in model feature inputs.
     """
     forbidden_prefixes = ("latent_", "true_")
-    violating_cols = [c for c in feature_df.columns if any(c.startswith(p) for p in forbidden_prefixes)]
+    violating_cols = [
+        c for c in feature_df.columns if any(c.startswith(p) for p in forbidden_prefixes)
+    ]
     if violating_cols:
         raise OutcomeDerivedFeatureError(
             f"Latent column canary FAILED! Latent or ground-truth columns leaked into feature matrix: {violating_cols}"
         )
-

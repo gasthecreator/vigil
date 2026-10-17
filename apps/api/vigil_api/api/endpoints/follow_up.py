@@ -40,9 +40,15 @@ def _parse_simulated_clock(simulated_now: Optional[str]) -> datetime:
 )
 def get_prioritized_outreach_list(
     facility_id: Optional[str] = Query(None, description="Optional facility ID filter"),
-    simulated_now: Optional[str] = Query(None, description="Injectable clock timestamp for evaluation"),
+    simulated_now: Optional[str] = Query(
+        None, description="Injectable clock timestamp for evaluation"
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.QUALITY_LEAD, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.QUALITY_LEAD, UserRole.ADMIN
+        )
+    ),
 ):
     """Retrieve prioritized list of patients due or overdue for surveillance follow-up.
 
@@ -64,7 +70,9 @@ def transition_follow_up_task(
     payload: FollowUpTransitionRequest,
     simulated_now: Optional[str] = Query(None, description="Injectable clock timestamp"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.QUALITY_LEAD)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.QUALITY_LEAD)
+    ),
 ):
     """Transitions a FollowUpTask to a new status (e.g. completed, declined_with_reason).
 
@@ -74,7 +82,9 @@ def transition_follow_up_task(
 
     task = db.execute(select(FollowUpTask).where(FollowUpTask.id == task_id)).scalar_one_or_none()
     if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Follow-up task '{task_id}' not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Follow-up task '{task_id}' not found."
+        )
 
     try:
         updated_task = transition_task(
@@ -123,7 +133,9 @@ def transition_follow_up_task(
 def trigger_reminder_cycle(
     simulated_now: Optional[str] = Query(None, description="Injectable clock timestamp"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Executes a reminder evaluation cycle for active follow-up tasks."""
     clock = _parse_simulated_clock(simulated_now)
@@ -156,7 +168,9 @@ def list_reminder_receipts(
     patient_id: Optional[str] = Query(None),
     task_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Retrieve reminder delivery receipts with delivery status and retry history."""
     query = select(ReminderReceipt).order_by(ReminderReceipt.created_at.desc())
@@ -183,4 +197,3 @@ def list_reminder_receipts(
         }
         for r in receipts
     ]
-

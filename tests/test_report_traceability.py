@@ -56,7 +56,9 @@ def test_benchmark_report_traceability():
         lead_time = float(m.group(6))
         latency = float(m.group(7))
 
-        assert model_id in leaderboard, f"Model ID `{model_id}` in report table not found in results.json"
+        assert model_id in leaderboard, (
+            f"Model ID `{model_id}` in report table not found in results.json"
+        )
         expected = leaderboard[model_id]
 
         assert abs(auc - expected["ipcw_roc_auc"]) < 1e-3, (
@@ -88,4 +90,6 @@ def test_reality_audit_zero_findings():
         capture_output=True,
         text=True,
     )
-    assert res.returncode == 0, f"reality_audit.py failed with findings:\n{res.stdout}\n{res.stderr}"
+    assert res.returncode == 0, (
+        f"reality_audit.py failed with findings:\n{res.stdout}\n{res.stderr}"
+    )

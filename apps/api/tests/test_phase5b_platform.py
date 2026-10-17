@@ -60,6 +60,7 @@ def _create_consented_patient(client, age: int = 50) -> str:
 # 1. Batch CSV and Excel Import Tests
 # ============================================================================
 
+
 def test_batch_csv_import_success_and_reporting(client):
     """Verifies valid CSV rows are ingested through M3/K2 pipeline with full per-row report."""
     pid = _create_consented_patient(client, age=48)
@@ -127,14 +128,21 @@ def test_batch_import_strict_validation_rejection(client):
     headers = {"X-Vigil-Role": "clinician"}
 
     # Patient without consent
-    p_unconsented = client.post("/api/v1/patients/", json={"age": 60, "status": "active"}, headers=headers).json()["id"]
+    p_unconsented = client.post(
+        "/api/v1/patients/", json={"age": 60, "status": "active"}, headers=headers
+    ).json()["id"]
 
     payload = {
         "rows": [
             # Incompatible unit for CA 15-3 (e.g. mg/dL instead of U/mL)
             {"patient_id": pid, "analyte_code": "ca_15_3", "value": 25.0, "unit": "mg/dL"},
             # Unknown analyte code
-            {"patient_id": pid, "analyte_code": "fictional_biomarker", "value": 10.0, "unit": "U/mL"},
+            {
+                "patient_id": pid,
+                "analyte_code": "fictional_biomarker",
+                "value": 10.0,
+                "unit": "U/mL",
+            },
             # Unconsented patient
             {"patient_id": p_unconsented, "analyte_code": "ca_15_3", "value": 20.0, "unit": "U/mL"},
         ]
@@ -148,7 +156,10 @@ def test_batch_import_strict_validation_rejection(client):
     assert data["imported_count"] == 0
     assert data["rejected_count"] == 3
 
-    assert any("dimension" in err.lower() or "incompatible" in err.lower() for err in data["row_reports"][0]["errors"])
+    assert any(
+        "dimension" in err.lower() or "incompatible" in err.lower()
+        for err in data["row_reports"][0]["errors"]
+    )
     assert any("not recognized" in err.lower() for err in data["row_reports"][1]["errors"])
     assert any("consent" in err.lower() for err in data["row_reports"][2]["errors"])
 
@@ -156,6 +167,7 @@ def test_batch_import_strict_validation_rejection(client):
 # ============================================================================
 # 2. HL7 FHIR R4 Observation Export and Import Tests
 # ============================================================================
+
 
 def test_fhir_r4_observation_round_trip(client):
     """Verifies that an observation can be exported to FHIR R4 and re-imported with LOINC and UCUM."""
@@ -225,6 +237,7 @@ def test_fhir_r4_observation_round_trip(client):
 # 3. Triage Queue Action Urgency Tests (Orderings Differ)
 # ============================================================================
 
+
 def test_triage_queue_action_urgency_ordering_differs_from_risk(client):
     """Proves that Triage Queue sorts by composite Action Urgency and differs from risk alone.
 
@@ -251,19 +264,34 @@ def test_triage_queue_action_urgency_ordering_differs_from_risk(client):
     # Record labs for Patient A: CA 15-3 spike -> Risk = 0.65
     client.post(
         f"/api/v1/patients/{p_high_risk}/labs",
-        json={"date_drawn": now.isoformat(), "ca_15_3": 65.0, "alt_level": 25.0, "ast_level": 20.0, "creatinine": 0.9, "wbc_count": 6.0},
+        json={
+            "date_drawn": now.isoformat(),
+            "ca_15_3": 65.0,
+            "alt_level": 25.0,
+            "ast_level": 20.0,
+            "creatinine": 0.9,
+            "wbc_count": 6.0,
+        },
         headers=headers,
     )
 
     # Record labs for Patient B: CA 15-3 moderate -> Risk = 0.40
     client.post(
         f"/api/v1/patients/{p_overdue}/labs",
-        json={"date_drawn": (now - timedelta(days=120)).isoformat(), "ca_15_3": 32.0, "alt_level": 22.0, "ast_level": 19.0, "creatinine": 0.85, "wbc_count": 5.8},
+        json={
+            "date_drawn": (now - timedelta(days=120)).isoformat(),
+            "ca_15_3": 32.0,
+            "alt_level": 22.0,
+            "ast_level": 19.0,
+            "creatinine": 0.85,
+            "wbc_count": 5.8,
+        },
         headers=headers,
     )
 
     # Inject an overdue FollowUpTask for Patient B (16 days overdue, escalation level 3)
     from vigil_api.database import SessionLocal
+
     db = SessionLocal()
     try:
         task = FollowUpTask(
@@ -309,6 +337,7 @@ def test_triage_queue_action_urgency_ordering_differs_from_risk(client):
 # 4. Reminder Worker Tests (Sandbox, Privacy, Opt-Out, Escalation)
 # ============================================================================
 
+
 def test_reminder_worker_privacy_safe_templates():
     """Verifies that notification text contains ZERO biomarker values, analyte names, or oncological diagnoses."""
     msg1 = format_privacy_safe_message(FollowUpTaskType.REPEAT_SPECIMEN.value, escalation_level=1)
@@ -316,13 +345,24 @@ def test_reminder_worker_privacy_safe_templates():
     msg3 = format_privacy_safe_message(FollowUpTaskType.IMAGING_REFERRAL.value, escalation_level=0)
 
     forbidden_substrings = [
-        "ca 15-3", "ca153", "biomarker", "tumor", "metastasis", "cancer",
-        "u/ml", "u/l", "spike", "recurrence", "malignan",
+        "ca 15-3",
+        "ca153",
+        "biomarker",
+        "tumor",
+        "metastasis",
+        "cancer",
+        "u/ml",
+        "u/l",
+        "spike",
+        "recurrence",
+        "malignan",
     ]
     for msg in (msg1, msg2, msg3):
         lower = msg.lower()
         for forbidden in forbidden_substrings:
-            assert forbidden not in lower, f"Privacy violation: found '{forbidden}' in message: {msg}"
+            assert forbidden not in lower, (
+                f"Privacy violation: found '{forbidden}' in message: {msg}"
+            )
 
 
 def test_reminder_worker_dispatch_and_receipts(client):
@@ -332,6 +372,7 @@ def test_reminder_worker_dispatch_and_receipts(client):
 
     # Create task due 4 days ago (Escalation level 1)
     from vigil_api.database import SessionLocal
+
     db = SessionLocal()
     now = datetime.now(timezone.utc)
     try:
@@ -383,6 +424,7 @@ def test_reminder_worker_honours_patient_opt_out(client):
     )
 
     from vigil_api.database import SessionLocal
+
     db = SessionLocal()
     now = datetime.now(timezone.utc)
     try:
@@ -417,6 +459,7 @@ def test_reminder_worker_honours_patient_opt_out(client):
 # ============================================================================
 # 5. Request ID Middleware & Structured JSON Logging Tests
 # ============================================================================
+
 
 def test_request_id_middleware_and_propagation(client):
     """Verifies that X-Request-ID is generated and returned on all requests."""

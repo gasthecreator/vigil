@@ -87,7 +87,9 @@ def compute_brier(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     return float(np.mean((p - y) ** 2))
 
 
-def simulate_contract_case(rng: np.random.Generator, lab_changed: bool = False, force: str | None = None):
+def simulate_contract_case(
+    rng: np.random.Generator, lab_changed: bool = False, force: str | None = None
+):
     level = math.exp(rng.normal(math.log(18.0), 0.3))
     n = int(rng.integers(3, 8))
     days = np.cumsum(rng.uniform(50, 90, n))
@@ -149,7 +151,9 @@ def run_contract_cohort(n_cases: int = 3000, seed: int = 42) -> Dict[str, Any]:
     auc_err, auc_err_ci = bootstrap_metric_ci(y_err, p_errors, roc_auc_score, seed=seed)
 
     # 3. Calibration & Brier
-    ece_real, ece_real_ci = bootstrap_metric_ci((kinds == "real").astype(int), p_reals, compute_ece, seed=seed)
+    ece_real, ece_real_ci = bootstrap_metric_ci(
+        (kinds == "real").astype(int), p_reals, compute_ece, seed=seed
+    )
     ece_err, ece_err_ci = bootstrap_metric_ci(y_err, p_errors, compute_ece, seed=seed)
 
     brier_real = compute_brier((kinds == "real").astype(int), p_reals)
@@ -169,7 +173,9 @@ def run_contract_cohort(n_cases: int = 3000, seed: int = 42) -> Dict[str, Any]:
         elif pe >= 0.30 and act != "needs_repeat":
             policy_violations += 1
 
-    action_counts = {a: int(np.sum(np.array(actions) == a)) for a in ["explained", "needs_repeat", "escalate"]}
+    action_counts = {
+        a: int(np.sum(np.array(actions) == a)) for a in ["explained", "needs_repeat", "escalate"]
+    }
 
     return {
         "n_cases": n_cases,
@@ -189,8 +195,12 @@ def run_contract_cohort(n_cases: int = 3000, seed: int = 42) -> Dict[str, Any]:
 
 
 def run_vigilsim_cohort(n_patients: int = 500, seed: int = 42) -> Dict[str, Any]:
-    print(f"🔬 Running M3 over vigil-sim cohort with injected pre-analytical errors (N={n_patients}, seed={seed})...")
-    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(n_patients, duration_days=730.0)
+    print(
+        f"🔬 Running M3 over vigil-sim cohort with injected pre-analytical errors (N={n_patients}, seed={seed})..."
+    )
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=seed).generate_cohort(
+        n_patients, duration_days=730.0
+    )
     obs_df = cohort.to_observations_dataframe()
     pts_df = cohort.to_patients_dataframe()
 
@@ -203,7 +213,9 @@ def run_vigilsim_cohort(n_patients: int = 500, seed: int = 42) -> Dict[str, Any]
     rec_day_dict = dict(zip(pts_df["patient_id"], pts_df["true_recurrence_day"]))
 
     for pid in pts_df["patient_id"]:
-        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(subset=["ca_15_3"])
+        p_obs = obs_df[(obs_df["patient_id"] == pid) & obs_df["observed_ca_15_3"]].dropna(
+            subset=["ca_15_3"]
+        )
         days = p_obs["day"].to_numpy(float)
         vals = p_obs["ca_15_3"].to_numpy(float)
 
@@ -270,15 +282,9 @@ def run_vigilsim_cohort(n_patients: int = 500, seed: int = 42) -> Dict[str, Any]
     auc_real_all, auc_real_all_ci = bootstrap_metric_ci(
         is_true_rec, p_reals, roc_auc_score, seed=seed
     )
-    auc_err, auc_err_ci = bootstrap_metric_ci(
-        is_injected_err, p_errors, roc_auc_score, seed=seed
-    )
-    ece_real, ece_real_ci = bootstrap_metric_ci(
-        is_true_rec, p_reals, compute_ece, seed=seed
-    )
-    ece_err, ece_err_ci = bootstrap_metric_ci(
-        is_injected_err, p_errors, compute_ece, seed=seed
-    )
+    auc_err, auc_err_ci = bootstrap_metric_ci(is_injected_err, p_errors, roc_auc_score, seed=seed)
+    ece_real, ece_real_ci = bootstrap_metric_ci(is_true_rec, p_reals, compute_ece, seed=seed)
+    ece_err, ece_err_ci = bootstrap_metric_ci(is_injected_err, p_errors, compute_ece, seed=seed)
 
     zero_dismissal_count = sum(1 for a in actions if a != "dismissed")
 
@@ -310,12 +316,20 @@ def main():
     # H1: Gross Error Discrimination on vigil-sim
     h1_point = sim_res["auc_error"]["point"]
     h1_low = sim_res["auc_error"]["ci95"][0]
-    h1_verdict = "CONFIRMED" if (h1_point >= 0.80 and h1_low >= 0.75) else ("PARTIAL" if h1_point >= 0.75 else "NOT MET")
+    h1_verdict = (
+        "CONFIRMED"
+        if (h1_point >= 0.80 and h1_low >= 0.75)
+        else ("PARTIAL" if h1_point >= 0.75 else "NOT MET")
+    )
 
     # H2: Real Manifest Elevation Discrimination on vigil-sim (ratio >= 1.25)
     h2_point = sim_res["auc_real_manifest_elevation"]["point"]
     h2_low = sim_res["auc_real_manifest_elevation"]["ci95"][0]
-    h2_verdict = "CONFIRMED" if (h2_point >= 0.85 and h2_low >= 0.80) else ("PARTIAL" if h2_point >= 0.80 else "NOT MET")
+    h2_verdict = (
+        "CONFIRMED"
+        if (h2_point >= 0.85 and h2_low >= 0.80)
+        else ("PARTIAL" if h2_point >= 0.80 else "NOT MET")
+    )
 
     # H3: All Post-Recurrence Discrimination on vigil-sim (including gradual/microscopic)
     h3_point = sim_res["auc_real_all_post_recurrence"]["point"]
@@ -398,14 +412,14 @@ def main():
 
 ## 1. Executive Summary: `vigil-sim` Headline Results
 
-All headline hypothesis verdicts are evaluated on the project simulator (`vigil-sim`, $N=500$ patients, {sim_res['n_patient_visits_evaluated']} visits) using 1,000-sample bootstrap confidence intervals without narrative overrides (RR7, RR14).
+All headline hypothesis verdicts are evaluated on the project simulator (`vigil-sim`, $N=500$ patients, {sim_res["n_patient_visits_evaluated"]} visits) using 1,000-sample bootstrap confidence intervals without narrative overrides (RR7, RR14).
 
 | Hypothesis / Task | Cohort | Target Metric | Observed Value [95% CI] | Verdict |
 |---|---|---|---|---|
-| **H1 (Gross Error Detection)** | `vigil-sim` | AUROC $\\ge 0.80$ | {sim_res['auc_error']['point']:.4f} [{sim_res['auc_error']['ci95'][0]:.4f}, {sim_res['auc_error']['ci95'][1]:.4f}] | **{h1_verdict}** |
-| **H2 (Manifest Recurrence Rise)** | `vigil-sim` ($\text{{ratio}} \\ge 1.25$) | AUROC $\\ge 0.85$ | {sim_res['auc_real_manifest_elevation']['point']:.4f} [{sim_res['auc_real_manifest_elevation']['ci95'][0]:.4f}, {sim_res['auc_real_manifest_elevation']['ci95'][1]:.4f}] | **{h2_verdict}** |
-| **H3 (All Post-Recurrence Visits)** | `vigil-sim` (all $t \\ge t_{{\\text{{rec}}}}$) | AUROC $\\ge 0.85$ | {sim_res['auc_real_all_post_recurrence']['point']:.4f} [{sim_res['auc_real_all_post_recurrence']['ci95'][0]:.4f}, {sim_res['auc_real_all_post_recurrence']['ci95'][1]:.4f}] | **{h3_verdict}** (Blind to gradual microscopic growth) |
-| **H4 (Zero-Dismissal Safety Policy)** | `vigil-sim` | 100% Policy Compliance | {sim_res['zero_dismissal_compliance'] * 100:.2f}% | **{h4_verdict}** |
+| **H1 (Gross Error Detection)** | `vigil-sim` | AUROC $\\ge 0.80$ | {sim_res["auc_error"]["point"]:.4f} [{sim_res["auc_error"]["ci95"][0]:.4f}, {sim_res["auc_error"]["ci95"][1]:.4f}] | **{h1_verdict}** |
+| **H2 (Manifest Recurrence Rise)** | `vigil-sim` ($\text{{ratio}} \\ge 1.25$) | AUROC $\\ge 0.85$ | {sim_res["auc_real_manifest_elevation"]["point"]:.4f} [{sim_res["auc_real_manifest_elevation"]["ci95"][0]:.4f}, {sim_res["auc_real_manifest_elevation"]["ci95"][1]:.4f}] | **{h2_verdict}** |
+| **H3 (All Post-Recurrence Visits)** | `vigil-sim` (all $t \\ge t_{{\\text{{rec}}}}$) | AUROC $\\ge 0.85$ | {sim_res["auc_real_all_post_recurrence"]["point"]:.4f} [{sim_res["auc_real_all_post_recurrence"]["ci95"][0]:.4f}, {sim_res["auc_real_all_post_recurrence"]["ci95"][1]:.4f}] | **{h3_verdict}** (Blind to gradual microscopic growth) |
+| **H4 (Zero-Dismissal Safety Policy)** | `vigil-sim` | 100% Policy Compliance | {sim_res["zero_dismissal_compliance"] * 100:.2f}% | **{h4_verdict}** |
 
 ---
 
@@ -414,41 +428,41 @@ All headline hypothesis verdicts are evaluated on the project simulator (`vigil-
 > **Performance Triage Note:** As documented in [`TRIAGE.md`](TRIAGE.md), the contract cohort evaluates M3 on synthetic data drawn from the exact parametric distribution assumed by its likelihood ($f \\sim \\text{{LogUniform}}(1.4, 3.0)$ with log-normal noise). Near-perfect performance here demonstrates mathematical correctness of the closed-form Bayesian integrator, but does NOT represent clinical performance on physiological kinetics.
 
 - **Discrimination (AUROC):**
-  - **Real Recurrence vs Stable Baseline:** AUROC = **{contract_res['auc_real_vs_stable']['point']:.4f}** [95% CI: {contract_res['auc_real_vs_stable']['ci95'][0]:.4f}, {contract_res['auc_real_vs_stable']['ci95'][1]:.4f}]
-  - **Gross Laboratory Error vs Rest:** AUROC = **{contract_res['auc_error_vs_rest']['point']:.4f}** [95% CI: {contract_res['auc_error_vs_rest']['ci95'][0]:.4f}, {contract_res['auc_error_vs_rest']['ci95'][1]:.4f}]
+  - **Real Recurrence vs Stable Baseline:** AUROC = **{contract_res["auc_real_vs_stable"]["point"]:.4f}** [95% CI: {contract_res["auc_real_vs_stable"]["ci95"][0]:.4f}, {contract_res["auc_real_vs_stable"]["ci95"][1]:.4f}]
+  - **Gross Laboratory Error vs Rest:** AUROC = **{contract_res["auc_error_vs_rest"]["point"]:.4f}** [95% CI: {contract_res["auc_error_vs_rest"]["ci95"][0]:.4f}, {contract_res["auc_error_vs_rest"]["ci95"][1]:.4f}]
 - **Posterior Calibration:**
-  - $p_{{\\text{{real}}}}$ ECE = **{contract_res['ece_real']['point']:.4f}** [95% CI: {contract_res['ece_real']['ci95'][0]:.4f}, {contract_res['ece_real']['ci95'][1]:.4f}]
-  - $p_{{\\text{{error}}}}$ ECE = **{contract_res['ece_error']['point']:.4f}** [95% CI: {contract_res['ece_error']['ci95'][0]:.4f}, {contract_res['ece_error']['ci95'][1]:.4f}]
-  - $p_{{\\text{{real}}}}$ Brier Score = **{contract_res['brier_real']:.4f}** vs prior baseline {contract_res['brier_real_base']:.4f} (Ratio: **{contract_res['brier_real_ratio']:.4f}**)
-  - $p_{{\\text{{error}}}}$ Brier Score = **{contract_res['brier_error']:.4f}** vs prior baseline {contract_res['brier_error_base']:.4f} (Ratio: **{contract_res['brier_error_ratio']:.4f}**)
+  - $p_{{\\text{{real}}}}$ ECE = **{contract_res["ece_real"]["point"]:.4f}** [95% CI: {contract_res["ece_real"]["ci95"][0]:.4f}, {contract_res["ece_real"]["ci95"][1]:.4f}]
+  - $p_{{\\text{{error}}}}$ ECE = **{contract_res["ece_error"]["point"]:.4f}** [95% CI: {contract_res["ece_error"]["ci95"][0]:.4f}, {contract_res["ece_error"]["ci95"][1]:.4f}]
+  - $p_{{\\text{{real}}}}$ Brier Score = **{contract_res["brier_real"]:.4f}** vs prior baseline {contract_res["brier_real_base"]:.4f} (Ratio: **{contract_res["brier_real_ratio"]:.4f}**)
+  - $p_{{\\text{{error}}}}$ Brier Score = **{contract_res["brier_error"]:.4f}** vs prior baseline {contract_res["brier_error_base"]:.4f} (Ratio: **{contract_res["brier_error_ratio"]:.4f}**)
 - **Safety Policy Compliance:**
-  - Zero results were classified as "dismissed" (compliance: **{contract_res['zero_dismissal_compliance'] * 100:.2f}%**).
-  - Action distribution: `explained`: {contract_res['action_distribution']['explained']}, `needs_repeat`: {contract_res['action_distribution']['needs_repeat']}, `escalate`: {contract_res['action_distribution']['escalate']}.
+  - Zero results were classified as "dismissed" (compliance: **{contract_res["zero_dismissal_compliance"] * 100:.2f}%**).
+  - Action distribution: `explained`: {contract_res["action_distribution"]["explained"]}, `needs_repeat`: {contract_res["action_distribution"]["needs_repeat"]}, `escalate`: {contract_res["action_distribution"]["escalate"]}.
 
 ---
 
 ## 3. Project Simulator (`vigil-sim`) Detailed Evaluation ($N=500$ Patients)
 
-Evaluated across {sim_res['n_patient_visits_evaluated']} sequential surveillance visits with 3% injected gross errors:
+Evaluated across {sim_res["n_patient_visits_evaluated"]} sequential surveillance visits with 3% injected gross errors:
 
 - **Empirical Discrimination on `vigil-sim`:**
-  - **AUROC ($p_{{\\text{{error}}}}$ vs Injected Gross Errors):** **{sim_res['auc_error']['point']:.4f}** [95% CI: {sim_res['auc_error']['ci95'][0]:.4f}, {sim_res['auc_error']['ci95'][1]:.4f}]
-  - **AUROC ($p_{{\\text{{real}}}}$ vs Manifest Recurrence Elevation $\\ge 1.25\\times$):** **{sim_res['auc_real_manifest_elevation']['point']:.4f}** [95% CI: {sim_res['auc_real_manifest_elevation']['ci95'][0]:.4f}, {sim_res['auc_real_manifest_elevation']['ci95'][1]:.4f}]
-  - **AUROC ($p_{{\\text{{real}}}}$ vs All Post-Recurrence Visits):** **{sim_res['auc_real_all_post_recurrence']['point']:.4f}** [95% CI: {sim_res['auc_real_all_post_recurrence']['ci95'][0]:.4f}, {sim_res['auc_real_all_post_recurrence']['ci95'][1]:.4f}]
-  - **ECE ($p_{{\\text{{real}}}}$ on `vigil-sim`):** **{sim_res['ece_real']['point']:.4f}** [95% CI: {sim_res['ece_real']['ci95'][0]:.4f}, {sim_res['ece_real']['ci95'][1]:.4f}]
-  - **ECE ($p_{{\\text{{error}}}}$ on `vigil-sim`):** **{sim_res['ece_error']['point']:.4f}** [95% CI: {sim_res['ece_error']['ci95'][0]:.4f}, {sim_res['ece_error']['ci95'][1]:.4f}]
+  - **AUROC ($p_{{\\text{{error}}}}$ vs Injected Gross Errors):** **{sim_res["auc_error"]["point"]:.4f}** [95% CI: {sim_res["auc_error"]["ci95"][0]:.4f}, {sim_res["auc_error"]["ci95"][1]:.4f}]
+  - **AUROC ($p_{{\\text{{real}}}}$ vs Manifest Recurrence Elevation $\\ge 1.25\\times$):** **{sim_res["auc_real_manifest_elevation"]["point"]:.4f}** [95% CI: {sim_res["auc_real_manifest_elevation"]["ci95"][0]:.4f}, {sim_res["auc_real_manifest_elevation"]["ci95"][1]:.4f}]
+  - **AUROC ($p_{{\\text{{real}}}}$ vs All Post-Recurrence Visits):** **{sim_res["auc_real_all_post_recurrence"]["point"]:.4f}** [95% CI: {sim_res["auc_real_all_post_recurrence"]["ci95"][0]:.4f}, {sim_res["auc_real_all_post_recurrence"]["ci95"][1]:.4f}]
+  - **ECE ($p_{{\\text{{real}}}}$ on `vigil-sim`):** **{sim_res["ece_real"]["point"]:.4f}** [95% CI: {sim_res["ece_real"]["ci95"][0]:.4f}, {sim_res["ece_real"]["ci95"][1]:.4f}]
+  - **ECE ($p_{{\\text{{error}}}}$ on `vigil-sim`):** **{sim_res["ece_error"]["point"]:.4f}** [95% CI: {sim_res["ece_error"]["ci95"][0]:.4f}, {sim_res["ece_error"]["ci95"][1]:.4f}]
 
 ---
 
 ## 4. What M3 Can and Cannot Do (Sim-to-Contract Gap Analysis)
 
 1. **What M3 CAN Do:**
-   - **Isolate Gross Laboratory Errors:** M3 robustly detects decimal shifts, sample mix-ups, and unphysiological jumps (AUROC = {sim_res['auc_error']['point']:.4f}), routing them to `needs_repeat` with 0% dismissal.
-   - **Flag Single-Visit Excursions:** When a marker rises substantially above baseline ($\\ge 25\\text{{--}}30\\%$), M3 correctly concludes that within-subject biological variation ($CV_i$) is an improbable explanation and escalates for confirmation (AUROC = {sim_res['auc_real_manifest_elevation']['point']:.4f}).
+   - **Isolate Gross Laboratory Errors:** M3 robustly detects decimal shifts, sample mix-ups, and unphysiological jumps (AUROC = {sim_res["auc_error"]["point"]:.4f}), routing them to `needs_repeat` with 0% dismissal.
+   - **Flag Single-Visit Excursions:** When a marker rises substantially above baseline ($\\ge 25\\text{{--}}30\\%$), M3 correctly concludes that within-subject biological variation ($CV_i$) is an improbable explanation and escalates for confirmation (AUROC = {sim_res["auc_real_manifest_elevation"]["point"]:.4f}).
    - **Enforce Zero-Dismissal Safety:** 100% of measurements are routed to auditable clinical actions; no surprising result is ever silently dropped.
 
 2. **What M3 CANNOT Do:**
-   - **Cannot Detect Subclinical Microscopic Recurrence:** Under continuous Gompertzian tumor doubling, early post-recurrence visits exhibit subtle marker rises ($5\\%\text{{--}}15\\%$) well within biological variation ($CV_i = 6.1\\%$). M3 evaluates each visit in isolation and correctly outputs $p_{{\\text{{stable}}}} \\approx 0.90$. Consequently, its discrimination across all post-recurrence visits is chance (AUROC = {sim_res['auc_real_all_post_recurrence']['point']:.4f}).
+   - **Cannot Detect Subclinical Microscopic Recurrence:** Under continuous Gompertzian tumor doubling, early post-recurrence visits exhibit subtle marker rises ($5\\%\text{{--}}15\\%$) well within biological variation ($CV_i = 6.1\\%$). M3 evaluates each visit in isolation and correctly outputs $p_{{\\text{{stable}}}} \\approx 0.90$. Consequently, its discrimination across all post-recurrence visits is chance (AUROC = {sim_res["auc_real_all_post_recurrence"]["point"]:.4f}).
    - **Cannot Replace Trajectory Tracking:** Multi-visit tracking over time is the domain of sequential models (Model K2 anytime-valid e-detector and Model K3 velocity tracker). M3 serves as a single-visit plausibility filter, not a standalone longitudinal early detection model.
 
 ---

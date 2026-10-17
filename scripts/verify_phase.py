@@ -443,7 +443,9 @@ def verify_phase_3() -> bool:
 
     # 2. Run phase 3 unit tests
     print("\n[Step 2/6] Running Phase 3 model test suite...")
-    code, out = run_cmd([uv_bin, "run", "pytest", "packages/vigil-ml/tests/test_phase3_models.py", "-v"])
+    code, out = run_cmd(
+        [uv_bin, "run", "pytest", "packages/vigil-ml/tests/test_phase3_models.py", "-v"]
+    )
     if code != 0:
         print(f"❌ Phase 3 model tests failed:\n{out}")
         return False
@@ -458,8 +460,11 @@ def verify_phase_3() -> bool:
     print("✅ Benchmark report traceability passed (100% verified against results.json).")
 
     # 4. Anti-degeneracy check across all studies
-    print("\n[Step 4/6] Verifying anti-degeneracy stop-and-think triggers (all AUC in [0.50, 0.97])...")
+    print(
+        "\n[Step 4/6] Verifying anti-degeneracy stop-and-think triggers (all AUC in [0.50, 0.97])..."
+    )
     import json
+
     for s_path in (ROOT / "reports" / "ml").glob("**/results.json"):
         with open(s_path) as f:
             data = json.load(f)
@@ -468,7 +473,12 @@ def verify_phase_3() -> bool:
                 if isinstance(obj, dict):
                     for k, v in obj.items():
                         if "auc" in k.lower() and isinstance(v, (int, float)):
-                            if v > 0.97 or (v < 0.45 and "drop" not in k.lower() and "gain" not in k.lower() and "delta" not in k.lower()):
+                            if v > 0.97 or (
+                                v < 0.45
+                                and "drop" not in k.lower()
+                                and "gain" not in k.lower()
+                                and "delta" not in k.lower()
+                            ):
                                 raise ValueError(f"Degenerate AUC {v} for key '{k}' in {s_path}")
                         check_auc(v)
                 elif isinstance(obj, list):

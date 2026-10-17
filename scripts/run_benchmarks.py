@@ -554,12 +554,14 @@ def render_s2_markdown(results: Dict[str, Any], path: Path) -> None:
         lines.append(
             f"| `{sc_name}` | {sc_name.replace('null_', '').replace('_', ' ').title()} | {sc_data['empirical_patient_level_far']:.4f} | <= {sc_data['nominal_alpha'] + 0.02:.4f} | **{st}** |"
         )
-    lines.extend([
-        "",
-        "## 4. Decision Record",
-        "- **Adopt K2 E-Process for Sequential Alerting:** Static single-visit thresholds are clinically disqualified for serial surveillance due to uncontrolled multi-testing error inflation.",
-        "- **Deploy Calibrated Alert Tiers:** Watch (alpha=0.20), Review (alpha=0.05), and Urgent (alpha=0.01) based on exact Ville thresholding.",
-    ])
+    lines.extend(
+        [
+            "",
+            "## 4. Decision Record",
+            "- **Adopt K2 E-Process for Sequential Alerting:** Static single-visit thresholds are clinically disqualified for serial surveillance due to uncontrolled multi-testing error inflation.",
+            "- **Deploy Calibrated Alert Tiers:** Watch (alpha=0.20), Review (alpha=0.05), and Urgent (alpha=0.01) based on exact Ville thresholding.",
+        ]
+    )
     path.write_text("\n".join(lines))
 
 
@@ -585,8 +587,8 @@ def render_s4_markdown(results: Dict[str, Any], path: Path) -> None:
         "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
         "",
         "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Label Efficiency):** CONFIRMED. Self-supervised pre-training improved IPCW ROC-AUC at N=50 from {wo[0]:.3f} to {w[0]:.3f} (+{w[0]-wo[0]:.3f} gain).",
-        f"- **H2 (Convergence at Scale):** CONFIRMED. At N=1,000 labeled patients, the gap contracted to {w[-1]-wo[-1]:.3f} AUC, confirming diminishing returns of pre-training in data-rich regimes.",
+        f"- **H1 (Label Efficiency):** CONFIRMED. Self-supervised pre-training improved IPCW ROC-AUC at N=50 from {wo[0]:.3f} to {w[0]:.3f} (+{w[0] - wo[0]:.3f} gain).",
+        f"- **H2 (Convergence at Scale):** CONFIRMED. At N=1,000 labeled patients, the gap contracted to {w[-1] - wo[-1]:.3f} AUC, confirming diminishing returns of pre-training in data-rich regimes.",
         "- **H3 (Diminishing Returns of Model Scale):** CONFIRMED. Medium architecture (64 hidden dim, ~85k params) dominates the compute-accuracy frontier. Large scale (128 hidden) yields negligible gain (+0.002 AUC at N=1000) while nearly tripling inference latency.",
         "",
         "## 2. Label-Efficiency Learning Curves",
@@ -596,19 +598,21 @@ def render_s4_markdown(results: Dict[str, Any], path: Path) -> None:
     ]
     for n, auc_wo, auc_w in zip(sizes, wo, w):
         lines.append(f"| N={n} | {auc_wo:.4f} | {auc_w:.4f} | **{auc_w - auc_wo:+.4f}** |")
-    lines.extend([
-        "",
-        "## 3. Parameter Scaling & Latency Trade-Off",
-        "",
-        "| Architecture Scale | Parameters | Latency (CPU ms) | AUC (N=100) | AUC (N=1,000) | Selected |",
-        "|---|---|---|---|---|---|",
-        f"| `Small (32 hidden)` | {scale['small_32']['params']:,} | {scale['small_32']['latency_ms']:.1f} ms | {scale['small_32']['auc_n100']:.4f} | {scale['small_32']['auc_n1000']:.4f} | No |",
-        f"| `Medium (64 hidden)` | {scale['medium_64']['params']:,} | {scale['medium_64']['latency_ms']:.1f} ms | {scale['medium_64']['auc_n100']:.4f} | {scale['medium_64']['auc_n1000']:.4f} | **YES (Pareto Optimal)** |",
-        f"| `Large (128 hidden)` | {scale['large_128']['params']:,} | {scale['large_128']['latency_ms']:.1f} ms | {scale['large_128']['auc_n100']:.4f} | {scale['large_128']['auc_n1000']:.4f} | No (Compute Inefficient) |",
-        "",
-        "## 4. Decision Record",
-        "- **Deploy Medium GRU-D / CT-Transformer with Pre-Training:** Pre-training is retained for low-resource deployments where clinical labeled cohorts are small.",
-    ])
+    lines.extend(
+        [
+            "",
+            "## 3. Parameter Scaling & Latency Trade-Off",
+            "",
+            "| Architecture Scale | Parameters | Latency (CPU ms) | AUC (N=100) | AUC (N=1,000) | Selected |",
+            "|---|---|---|---|---|---|",
+            f"| `Small (32 hidden)` | {scale['small_32']['params']:,} | {scale['small_32']['latency_ms']:.1f} ms | {scale['small_32']['auc_n100']:.4f} | {scale['small_32']['auc_n1000']:.4f} | No |",
+            f"| `Medium (64 hidden)` | {scale['medium_64']['params']:,} | {scale['medium_64']['latency_ms']:.1f} ms | {scale['medium_64']['auc_n100']:.4f} | {scale['medium_64']['auc_n1000']:.4f} | **YES (Pareto Optimal)** |",
+            f"| `Large (128 hidden)` | {scale['large_128']['params']:,} | {scale['large_128']['latency_ms']:.1f} ms | {scale['large_128']['auc_n100']:.4f} | {scale['large_128']['auc_n1000']:.4f} | No (Compute Inefficient) |",
+            "",
+            "## 4. Decision Record",
+            "- **Deploy Medium GRU-D / CT-Transformer with Pre-Training:** Pre-training is retained for low-resource deployments where clinical labeled cohorts are small.",
+        ]
+    )
     path.write_text("\n".join(lines))
 
 
@@ -743,16 +747,18 @@ def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
         lines.append(
             f"| `{clean_name}` | {s_dat['n_patients']:,} | {s_dat['local_auc']:.4f} | {s_dat['centralized_auc']:.4f} | {s_dat['federated_auc']:.4f} | **+{gain:+.4f}** |"
         )
-    lines.extend([
-        "",
-        "## 3. Consortium Summary Metrics",
-        f"- **Mean Centralized AUC:** {summ['mean_centralized_auc']:.4f}",
-        f"- **Mean Federated AUC:** {summ['mean_federated_auc']:.4f}",
-        rf"- **Utility Penalty ($\Delta$ AUC):** {summ['utility_drop_delta_auc']:.4f} (Threshold: $\le 0.030$ -> **PASSED**)",
-        "",
-        "## 4. Decision Record",
-        "- **Approve M12 Federated Training Architecture:** Federated empirical Bayes training preserves privacy while lifting under-resourced hospital performance to near-tertiary accuracy.",
-    ])
+    lines.extend(
+        [
+            "",
+            "## 3. Consortium Summary Metrics",
+            f"- **Mean Centralized AUC:** {summ['mean_centralized_auc']:.4f}",
+            f"- **Mean Federated AUC:** {summ['mean_federated_auc']:.4f}",
+            rf"- **Utility Penalty ($\Delta$ AUC):** {summ['utility_drop_delta_auc']:.4f} (Threshold: $\le 0.030$ -> **PASSED**)",
+            "",
+            "## 4. Decision Record",
+            "- **Approve M12 Federated Training Architecture:** Federated empirical Bayes training preserves privacy while lifting under-resourced hospital performance to near-tertiary accuracy.",
+        ]
+    )
     path.write_text("\n".join(lines))
 
 
@@ -845,16 +851,34 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             for _, row in X_test_in.iterrows():
                 pid = row["patient_id"]
                 eval_d = row.get("eval_day", 730.0)
-                p_obs = test_in_obs[(test_in_obs["patient_id"] == pid) & (test_in_obs["day"] <= eval_d) & (test_in_obs["ca_15_3"].notna())]
-                obs_list_in.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
+                p_obs = test_in_obs[
+                    (test_in_obs["patient_id"] == pid)
+                    & (test_in_obs["day"] <= eval_d)
+                    & (test_in_obs["ca_15_3"].notna())
+                ]
+                obs_list_in.append(
+                    K1Observations(
+                        days=p_obs["day"].to_numpy(float),
+                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
+                    )
+                )
             preds_in = m.predict_risk(obs_list_in)
 
             obs_list_g3 = []
             for _, row in X_test_g3.iterrows():
                 pid = row["patient_id"]
                 eval_d = row.get("eval_day", 730.0)
-                p_obs = test_g3_obs[(test_g3_obs["patient_id"] == pid) & (test_g3_obs["day"] <= eval_d) & (test_g3_obs["ca_15_3"].notna())]
-                obs_list_g3.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
+                p_obs = test_g3_obs[
+                    (test_g3_obs["patient_id"] == pid)
+                    & (test_g3_obs["day"] <= eval_d)
+                    & (test_g3_obs["ca_15_3"].notna())
+                ]
+                obs_list_g3.append(
+                    K1Observations(
+                        days=p_obs["day"].to_numpy(float),
+                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
+                    )
+                )
             preds_g3 = m.predict_risk(obs_list_g3)
         else:
             preds_in = m.predict_risk(X_test_in)

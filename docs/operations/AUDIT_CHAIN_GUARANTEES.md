@@ -79,7 +79,9 @@ from vigil_api.database import SessionLocal
 db = SessionLocal()
 try:
     result = verify_audit_chain(db)
-    print(f"Audit chain verified: {result['total_events']} events, head hash: {result['head_hash']}")
+    print(
+        f"Audit chain verified: {result['total_events']} events, head hash: {result['head_hash']}"
+    )
 finally:
     db.close()
 ```

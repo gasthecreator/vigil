@@ -205,6 +205,8 @@ export interface PatientResponse {
   created_at: string /* ISO 8601 */;
   external_id?: string | null;
   id: string;
+  /** True if medical identifiers are redacted due to absence of active consent */
+  is_masked?: boolean;
   mrn?: string | null;
   status: string;
 }

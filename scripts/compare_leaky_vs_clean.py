@@ -26,7 +26,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
-import pandas as pd
 import torch
 
 torch.set_num_threads(1)
@@ -94,7 +93,6 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
     # Test event indicators and times are identical across leaky and clean because patients & event days are identical
     t_test = t_test_clean
     d_test = d_test_clean
-    n_test = len(t_test)
 
     # Models under comparison
     model_configs = [
@@ -142,8 +140,7 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
     # Pre-cluster by patient for patient-level bootstrap
     unique_patients = X_test_clean["patient_id"].unique()
     patient_to_indices = {
-        pid: np.where(X_test_clean["patient_id"].values == pid)[0]
-        for pid in unique_patients
+        pid: np.where(X_test_clean["patient_id"].values == pid)[0] for pid in unique_patients
     }
     n_unique = len(unique_patients)
 
@@ -151,14 +148,22 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
         print(f"Evaluating {name}...")
         # Fit on leaky
         m_leaky = factory()
-        preds_leaky = get_preds(m_leaky, name, X_train_leaky, y_train_leaky, X_test_leaky, test_obs_leaky_sliced)
+        preds_leaky = get_preds(
+            m_leaky, name, X_train_leaky, y_train_leaky, X_test_leaky, test_obs_leaky_sliced
+        )
 
         # Fit on clean
         m_clean = factory()
-        preds_clean = get_preds(m_clean, name, X_train_clean, y_train_clean, X_test_clean, test_obs_clean_sliced)
+        preds_clean = get_preds(
+            m_clean, name, X_train_clean, y_train_clean, X_test_clean, test_obs_clean_sliced
+        )
 
-        auc_leaky = float(ipcw_time_dependent_roc_auc(preds_leaky, t_test, d_test, horizon_time=365.0))
-        auc_clean = float(ipcw_time_dependent_roc_auc(preds_clean, t_test, d_test, horizon_time=365.0))
+        auc_leaky = float(
+            ipcw_time_dependent_roc_auc(preds_leaky, t_test, d_test, horizon_time=365.0)
+        )
+        auc_clean = float(
+            ipcw_time_dependent_roc_auc(preds_clean, t_test, d_test, horizon_time=365.0)
+        )
         delta_auc = auc_clean - auc_leaky
 
         # Paired patient-cluster bootstrap (1,000 resamples)
@@ -170,10 +175,16 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
             if len(np.unique(d_test[sampled_idx])) < 2:
                 continue
             b_leaky = ipcw_time_dependent_roc_auc(
-                preds_leaky[sampled_idx], t_test[sampled_idx], d_test[sampled_idx], horizon_time=365.0
+                preds_leaky[sampled_idx],
+                t_test[sampled_idx],
+                d_test[sampled_idx],
+                horizon_time=365.0,
             )
             b_clean = ipcw_time_dependent_roc_auc(
-                preds_clean[sampled_idx], t_test[sampled_idx], d_test[sampled_idx], horizon_time=365.0
+                preds_clean[sampled_idx],
+                t_test[sampled_idx],
+                d_test[sampled_idx],
+                horizon_time=365.0,
             )
             boot_deltas.append(b_clean - b_leaky)
 
@@ -181,7 +192,9 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
         ci_lower = float(np.percentile(boot_deltas_arr, 2.5))
         ci_upper = float(np.percentile(boot_deltas_arr, 97.5))
 
-        direction = "decreased" if ci_upper < -0.0005 else ("increased" if ci_lower > 0.0005 else "stable")
+        direction = (
+            "decreased" if ci_upper < -0.0005 else ("increased" if ci_lower > 0.0005 else "stable")
+        )
 
         results["models"][name] = {
             "leaky_auc": round(auc_leaky, 4),
@@ -194,7 +207,9 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
                 f"when unobserved latent values are properly masked to NaN."
             ),
         }
-        print(f"  {name}: Leaky={auc_leaky:.4f}, Clean={auc_clean:.4f}, Delta={delta_auc:+.4f} [{ci_lower:+.4f}, {ci_upper:+.4f}] ({direction})")
+        print(
+            f"  {name}: Leaky={auc_leaky:.4f}, Clean={auc_clean:.4f}, Delta={delta_auc:+.4f} [{ci_lower:+.4f}, {ci_upper:+.4f}] ({direction})"
+        )
 
     out_file = ROOT / "reports" / "ml" / "LEAKAGE_DELTA.json"
     out_file.parent.mkdir(parents=True, exist_ok=True)

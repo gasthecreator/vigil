@@ -39,6 +39,7 @@ ACTIVE_STATUSES: Set[str] = {
 
 class InvalidStateTransitionError(ValueError):
     """Raised when attempting an invalid transition on a FollowUpTask."""
+
     pass
 
 
@@ -52,7 +53,9 @@ def transition_task(
     if current_time is None:
         current_time = datetime.now(timezone.utc)
 
-    target_str = target_status.value if isinstance(target_status, FollowUpTaskStatus) else str(target_status)
+    target_str = (
+        target_status.value if isinstance(target_status, FollowUpTaskStatus) else str(target_status)
+    )
 
     # Invariant: Terminal states are absorbing
     if task.status in TERMINAL_STATUSES:
@@ -69,7 +72,9 @@ def transition_task(
     if reason:
         existing_notes = task.notes or ""
         separator = " | " if existing_notes else ""
-        task.notes = f"{existing_notes}{separator}[{current_time.isoformat()}] {target_str}: {reason}"
+        task.notes = (
+            f"{existing_notes}{separator}[{current_time.isoformat()}] {target_str}: {reason}"
+        )
 
     return task
 
@@ -93,9 +98,11 @@ def evaluate_tasks(
     if current_time.tzinfo is None:
         current_time = current_time.replace(tzinfo=timezone.utc)
 
-    active_tasks = db.execute(
-        select(FollowUpTask).where(FollowUpTask.status.in_(ACTIVE_STATUSES))
-    ).scalars().all()
+    active_tasks = (
+        db.execute(select(FollowUpTask).where(FollowUpTask.status.in_(ACTIVE_STATUSES)))
+        .scalars()
+        .all()
+    )
 
     updated_tasks: List[FollowUpTask] = []
 
@@ -120,7 +127,11 @@ def evaluate_tasks(
             task.status = FollowUpTaskStatus.ESCALATED.value
             task.updated_at = current_time
             existing = task.notes or ""
-            task.notes = f"{existing} | Escalated to level {new_level} at {current_time.isoformat()}".strip(" | ")
+            task.notes = (
+                f"{existing} | Escalated to level {new_level} at {current_time.isoformat()}".strip(
+                    " | "
+                )
+            )
             updated_tasks.append(task)
         elif new_level == 0 and task.status == FollowUpTaskStatus.ESCALATED.value:
             # If due date was extended into the future
@@ -167,20 +178,22 @@ def get_outreach_list(
 
         days_overdue = max(0.0, (current_time - due).total_seconds() / 86400.0)
 
-        outreach_items.append({
-            "task_id": task.id,
-            "patient_id": patient.id,
-            "facility_id": patient.facility_id,
-            "mrn": patient.mrn,
-            "synthetic": patient.synthetic,
-            "task_type": task.task_type,
-            "status": task.status,
-            "escalation_level": task.escalation_level,
-            "due_date": task.due_date.isoformat(),
-            "days_overdue": round(days_overdue, 2),
-            "alert_id": task.alert_id,
-            "notes": task.notes,
-        })
+        outreach_items.append(
+            {
+                "task_id": task.id,
+                "patient_id": patient.id,
+                "facility_id": patient.facility_id,
+                "mrn": patient.mrn,
+                "synthetic": patient.synthetic,
+                "task_type": task.task_type,
+                "status": task.status,
+                "escalation_level": task.escalation_level,
+                "due_date": task.due_date.isoformat(),
+                "days_overdue": round(days_overdue, 2),
+                "alert_id": task.alert_id,
+                "notes": task.notes,
+            }
+        )
 
     # Sort by urgency: escalation level desc, days overdue desc
     outreach_items.sort(

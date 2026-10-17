@@ -12,13 +12,14 @@ import os
 import sys
 from typing import Tuple
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 # Add apps/api to path if needed
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "api")))
 
-from vigil_api.config import settings
-from vigil_api.crypto import get_multi_fernet, rotate_field_ciphertext
+from vigil_api.config import settings  # noqa: E402
+from vigil_api.keyrotation import rotate_patient_keys as rotate_patient_keys_session  # noqa: E402
 
 
 def rotate_patient_keys(db_url: str, dry_run: bool = False) -> Tuple[int, int]:
@@ -27,53 +28,18 @@ def rotate_patient_keys(db_url: str, dry_run: bool = False) -> Tuple[int, int]:
     Returns (total_scanned, total_rotated).
     """
     engine = create_engine(db_url)
-    multi_fernet = get_multi_fernet()
-
-    total_scanned = 0
-    total_rotated = 0
-
-    with engine.begin() as conn:
-        rows = conn.execute(text("SELECT id, mrn, external_id FROM patients")).fetchall()
-        for row in rows:
-            p_id, raw_mrn, raw_ext_id = row[0], row[1], row[2]
-            total_scanned += 1
-
-            new_mrn, mrn_rotated = None, False
-            if raw_mrn:
-                try:
-                    new_mrn, mrn_rotated = rotate_field_ciphertext(raw_mrn, multi_fernet)
-                except Exception as e:
-                    print(f"Warning: Failed to rotate mrn for patient {p_id}: {e}", file=sys.stderr)
-
-            new_ext, ext_rotated = None, False
-            if raw_ext_id:
-                try:
-                    new_ext, ext_rotated = rotate_field_ciphertext(raw_ext_id, multi_fernet)
-                except Exception as e:
-                    print(f"Warning: Failed to rotate external_id for patient {p_id}: {e}", file=sys.stderr)
-
-            if mrn_rotated or ext_rotated:
-                total_rotated += 1
-                if not dry_run:
-                    updates = {}
-                    if mrn_rotated:
-                        updates["mrn"] = new_mrn
-                    if ext_rotated:
-                        updates["external_id"] = new_ext
-                    set_clauses = ", ".join([f"{k} = :{k}" for k in updates.keys()])
-                    updates["id"] = p_id
-                    conn.execute(
-                        text(f"UPDATE patients SET {set_clauses} WHERE id = :id"),
-                        updates,
-                    )
-
-    return total_scanned, total_rotated
+    with Session(engine) as session:
+        return rotate_patient_keys_session(session, dry_run=dry_run)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Rotate field-level encryption keys for Vigil.")
-    parser.add_argument("--db-url", default=settings.DATABASE_URL, help="Database URL to connect to")
-    parser.add_argument("--dry-run", action="store_true", help="Scan and report without updating database")
+    parser.add_argument(
+        "--db-url", default=settings.DATABASE_URL, help="Database URL to connect to"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Scan and report without updating database"
+    )
     args = parser.parse_args()
 
     print(f"Connecting to database: {args.db_url}")

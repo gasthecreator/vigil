@@ -87,7 +87,9 @@ def export_fhir_observation(
 def import_fhir_observation(
     resource: Dict[str, Any],
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Ingests an HL7 FHIR R4 Observation resource into Vigil.
 
@@ -141,7 +143,9 @@ def import_fhir_observation(
     effective_dt = None
     if parsed.get("effective_datetime"):
         try:
-            effective_dt = datetime.fromisoformat(parsed["effective_datetime"].replace("Z", "+00:00"))
+            effective_dt = datetime.fromisoformat(
+                parsed["effective_datetime"].replace("Z", "+00:00")
+            )
         except Exception:
             pass
 

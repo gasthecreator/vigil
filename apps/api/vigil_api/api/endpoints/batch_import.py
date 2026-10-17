@@ -74,7 +74,11 @@ def _parse_tabular_input(body_bytes: bytes, content_type: str) -> List[Dict[str,
         return []
 
     # Check for Excel
-    if "excel" in content_type or "spreadsheetml" in content_type or body_bytes[:4] == b"PK\x03\x04":
+    if (
+        "excel" in content_type
+        or "spreadsheetml" in content_type
+        or body_bytes[:4] == b"PK\x03\x04"
+    ):
         df = pd.read_excel(io.BytesIO(body_bytes))
         return df.to_dict(orient="records")
 
@@ -101,7 +105,9 @@ def _parse_tabular_input(body_bytes: bytes, content_type: str) -> List[Dict[str,
 async def batch_import_observations(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Processes batch observation rows from CSV, Excel, or JSON.
 
@@ -159,7 +165,9 @@ async def batch_import_observations(
         analyte_code = str(row.get("analyte_code") or row.get("analyte") or "").strip().lower()
         val_str = row.get("value") or row.get("result")
         unit = str(row.get("unit") or "").strip()
-        specimen_date_str = row.get("specimen_collected_at") or row.get("date_drawn") or row.get("date")
+        specimen_date_str = (
+            row.get("specimen_collected_at") or row.get("date_drawn") or row.get("date")
+        )
         lab_id = row.get("laboratory_id")
 
         lab_changed_val = row.get("lab_changed", False)
@@ -193,7 +201,9 @@ async def batch_import_observations(
         specimen_date = None
         if specimen_date_str:
             try:
-                specimen_date = datetime.fromisoformat(str(specimen_date_str).replace("Z", "+00:00"))
+                specimen_date = datetime.fromisoformat(
+                    str(specimen_date_str).replace("Z", "+00:00")
+                )
             except Exception:
                 errors.append(f"Invalid ISO-8601 specimen date: '{specimen_date_str}'.")
         else:
@@ -283,8 +293,7 @@ async def batch_import_observations(
 
         # 4. Duplicate Detection (patient, analyte, exact timestamp)
         existing = db.execute(
-            select(Observation)
-            .where(
+            select(Observation).where(
                 Observation.patient_id == patient.id,
                 Observation.analyte_code == analyte_code,
                 Observation.specimen_collected_at == specimen_date,
@@ -302,7 +311,9 @@ async def batch_import_observations(
                     unit=unit,
                     status="duplicate",
                     observation_id=existing.id,
-                    errors=[f"Duplicate observation with ID '{existing.id}' already exists at this timestamp."],
+                    errors=[
+                        f"Duplicate observation with ID '{existing.id}' already exists at this timestamp."
+                    ],
                 )
             )
             continue

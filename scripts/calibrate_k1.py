@@ -46,12 +46,14 @@ def calibrate_k1(seed: int = 999, n_patients: int = 500) -> dict:
         obs = simulate_patient(p, SCHEDULE, rng)
         vals = obs.values["ca153"]
         y_obs_list.append(vals)
-        true_params_list.append([
-            p.doubling_time_days,
-            p.shedding_ca153,
-            p.clearance_ca153,
-            p.onset_day,
-        ])
+        true_params_list.append(
+            [
+                p.doubling_time_days,
+                p.shedding_ca153,
+                p.clearance_ca153,
+                p.onset_day,
+            ]
+        )
 
     y_arr = np.array(y_obs_list, dtype=np.float32)
     true_arr = np.array(true_params_list, dtype=np.float64)

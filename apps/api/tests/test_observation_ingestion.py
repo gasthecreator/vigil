@@ -48,7 +48,15 @@ def ingestion_db(tmp_path):
 
     now = datetime.now(timezone.utc)
     with Session(engine) as session:
-        fac = Facility(id="fac-onc", name="Lagos Oncology", code="LAG-01", country="NG", tier="tertiary", active=True, created_at=now)
+        fac = Facility(
+            id="fac-onc",
+            name="Lagos Oncology",
+            code="LAG-01",
+            country="NG",
+            tier="tertiary",
+            active=True,
+            created_at=now,
+        )
         session.add(fac)
 
         pat = Patient(
@@ -108,7 +116,10 @@ def test_unit_safe_ingestion_rejection(ingestion_db, clinician_auth_headers):
         headers=clinician_auth_headers,
     )
     assert r_dim.status_code == 422
-    assert "Incompatible" in r_dim.json()["detail"] or "Unit validation failed" in r_dim.json()["detail"]
+    assert (
+        "Incompatible" in r_dim.json()["detail"]
+        or "Unit validation failed" in r_dim.json()["detail"]
+    )
 
     # 3. Negative value (unphysiological error)
     r_neg = client.post(
@@ -173,7 +184,9 @@ def test_normal_observation_ingestion_and_k2_update(ingestion_db, clinician_auth
         assert len(pat.detector_state["history"]) == 1
 
 
-def test_surprising_observation_enforces_no_dismissal_invariant(ingestion_db, clinician_auth_headers):
+def test_surprising_observation_enforces_no_dismissal_invariant(
+    ingestion_db, clinician_auth_headers
+):
     """Verify that surprising results (e.g. gross error 10x spike) yield an Alert and FollowUpTask."""
     client, engine = ingestion_db
 

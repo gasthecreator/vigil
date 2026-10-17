@@ -9,13 +9,15 @@ import sqlite3
 
 import pytest
 from cryptography.fernet import Fernet
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from vigil_api.crypto import (
     decrypt_field,
     encrypt_field,
 )
-from vigil_api.database import Base
+from vigil_api.database import Base, get_db
+from vigil_api.main import app
 from vigil_api.models.v2 import Patient
 
 from scripts.rotate_encryption_keys import rotate_patient_keys
@@ -155,7 +157,12 @@ def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
         # 1. Create patient with MRN via HTTP API
         resp = client.post(
             "/api/v1/patients/",
-            json={"age": 52, "status": "active", "mrn": "MRN-CONFIDENTIAL-001", "external_id": "EXT-999"},
+            json={
+                "age": 52,
+                "status": "active",
+                "mrn": "MRN-CONFIDENTIAL-001",
+                "external_id": "EXT-999",
+            },
             headers=headers,
         )
         assert resp.status_code == 201
@@ -165,7 +172,9 @@ def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
 
         # 2. Verify raw SQLite contains ciphertext, NOT plaintext
         conn = sqlite3.connect(db_file)
-        row = conn.execute("SELECT mrn, external_id, mrn_bidx FROM patients WHERE id = ?", (pid,)).fetchone()
+        row = conn.execute(
+            "SELECT mrn, external_id, mrn_bidx FROM patients WHERE id = ?", (pid,)
+        ).fetchone()
         conn.close()
         raw_mrn, raw_ext, bidx = row
         assert raw_mrn.startswith("gAAAAA")
@@ -174,7 +183,11 @@ def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
         assert len(bidx) == 64
 
         # 3. Grant consent and read back decrypted MRN
-        client.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=headers)
+        client.post(
+            f"/api/v1/patients/{pid}/consent",
+            json={"scope": "clinical_care", "granted": True},
+            headers=headers,
+        )
         get_resp = client.get(f"/api/v1/patients/{pid}", headers=headers)
         assert get_resp.status_code == 200
         assert get_resp.json()["mrn"] == "MRN-CONFIDENTIAL-001"
@@ -197,7 +210,9 @@ def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
 
         # Verify updated raw ciphertext in DB
         conn = sqlite3.connect(db_file)
-        upd_raw_mrn, upd_bidx = conn.execute("SELECT mrn, mrn_bidx FROM patients WHERE id = ?", (pid,)).fetchone()
+        upd_raw_mrn, upd_bidx = conn.execute(
+            "SELECT mrn, mrn_bidx FROM patients WHERE id = ?", (pid,)
+        ).fetchone()
         conn.close()
         assert upd_raw_mrn.startswith("gAAAAA")
         assert "MRN-UPDATED-002" not in upd_raw_mrn
@@ -214,5 +229,70 @@ def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
         get_rot = client.get(f"/api/v1/patients/{pid}", headers=headers)
         assert get_rot.status_code == 200
         assert get_rot.json()["mrn"] == "MRN-UPDATED-002"
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+def test_duplicate_mrn_rejected_by_policy(tmp_path, monkeypatch):
+    """Enforces ADR 0011 / Condition P9-F: Duplicate MRNs are prohibited by policy with 409 Conflict."""
+    db_file = tmp_path / "dup_test.db"
+    engine = create_engine(f"sqlite:///{db_file}")
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = TestingSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    headers = {"X-Vigil-Role": "clinician"}
+
+    try:
+        # 1. Register first patient with MRN
+        r1 = client.post(
+            "/api/v1/patients/",
+            json={"age": 50, "status": "active", "mrn": "MRN-UNIQUE-001"},
+            headers=headers,
+        )
+        assert r1.status_code == 201
+        assert "id" in r1.json()
+
+        # 2. Attempt duplicate MRN registration
+        r2 = client.post(
+            "/api/v1/patients/",
+            json={"age": 52, "status": "active", "mrn": "MRN-UNIQUE-001"},
+            headers=headers,
+        )
+        assert r2.status_code == 409
+        assert "Duplicate MRNs are prohibited by policy" in r2.json()["detail"]
+
+        # 3. Register second patient with distinct MRN
+        r3 = client.post(
+            "/api/v1/patients/",
+            json={"age": 52, "status": "active", "mrn": "MRN-UNIQUE-002"},
+            headers=headers,
+        )
+        assert r3.status_code == 201
+        p2_id = r3.json()["id"]
+
+        # Grant consent to p2 so update can proceed
+        client.post(
+            f"/api/v1/patients/{p2_id}/consent",
+            json={"granted": True, "scope": "surveillance_monitoring"},
+            headers=headers,
+        )
+
+        # 4. Attempt update of second patient to duplicate first patient's MRN
+        r4 = client.patch(
+            f"/api/v1/patients/{p2_id}",
+            json={"mrn": "MRN-UNIQUE-001"},
+            headers=headers,
+        )
+        assert r4.status_code == 409
+        assert "already registered" in r4.json()["detail"]
     finally:
         app.dependency_overrides.pop(get_db, None)

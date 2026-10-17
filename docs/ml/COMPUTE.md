@@ -18,6 +18,7 @@ All deep learning and state-space models in `vigil-ml` utilize an explicit devic
 ```python
 import torch
 
+
 def resolve_device(preferred: str | None = None) -> torch.device:
     if preferred:
         return torch.device(preferred)

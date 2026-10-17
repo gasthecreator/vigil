@@ -17,6 +17,7 @@ prior_min = torch.tensor([40.0, 0.05, 0.05, 30.0])
 prior_max = torch.tensor([160.0, 0.35, 0.20, 240.0])
 prior = BoxUniform(low=prior_min, high=prior_max)
 
+
 def simulator(theta):
     N = theta.shape[0]
     out = np.zeros((N, len(SCHEDULE)))
@@ -27,10 +28,13 @@ def simulator(theta):
         t_onset = float(theta[i, 3])
         g = np.log(2.0) / T_d
         dt = np.maximum(0.0, SCHEDULE - t_onset)
-        elev = np.where(SCHEDULE >= t_onset, (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)), 0.0)
+        elev = np.where(
+            SCHEDULE >= t_onset, (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)), 0.0
+        )
         mu = 18.0 + elev
         out[i] = mu + np.random.normal(0, 1.5, size=len(SCHEDULE))
     return torch.tensor(out, dtype=torch.float32)
+
 
 print("Simulating 5000 training pairs for K1 NPE...")
 torch.manual_seed(42)

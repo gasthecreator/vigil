@@ -5,6 +5,7 @@ Revises: 4188f88c97cc
 Create Date: 2026-10-17 12:45:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -39,15 +40,21 @@ def upgrade() -> None:
         )
         batch_op.create_index("ix_idempotency_records_patient_id", ["patient_id"], unique=False)
         batch_op.drop_index("ix_idempotency_records_idempotency_key")
-        batch_op.create_index("ix_idempotency_records_idempotency_key", ["idempotency_key"], unique=False)
-        batch_op.create_unique_constraint("uq_patient_idempotency_key", ["patient_id", "idempotency_key"])
+        batch_op.create_index(
+            "ix_idempotency_records_idempotency_key", ["idempotency_key"], unique=False
+        )
+        batch_op.create_unique_constraint(
+            "uq_patient_idempotency_key", ["patient_id", "idempotency_key"]
+        )
 
 
 def downgrade() -> None:
     with op.batch_alter_table("idempotency_records", schema=None) as batch_op:
         batch_op.drop_constraint("uq_patient_idempotency_key", type_="unique")
         batch_op.drop_index("ix_idempotency_records_idempotency_key")
-        batch_op.create_index("ix_idempotency_records_idempotency_key", ["idempotency_key"], unique=True)
+        batch_op.create_index(
+            "ix_idempotency_records_idempotency_key", ["idempotency_key"], unique=True
+        )
         batch_op.drop_index("ix_idempotency_records_patient_id")
         batch_op.drop_constraint("fk_idempotency_records_patient_id", type_="foreignkey")
         batch_op.drop_column("patient_id")

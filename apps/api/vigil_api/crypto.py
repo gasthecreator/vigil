@@ -10,11 +10,10 @@ Adheres to MASTER_PLAN.md §9.3 and Phase 5 deliverables:
 from __future__ import annotations
 
 import base64
-import os
-from typing import Any, List, Optional
-
 import hashlib
 import hmac
+import os
+from typing import Any, List, Optional
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from sqlalchemy import Text, TypeDecorator
@@ -76,7 +75,9 @@ def get_multi_fernet(keys: Optional[List[bytes]] = None) -> MultiFernet:
     return MultiFernet(fernets)
 
 
-def encrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = None) -> Optional[str]:
+def encrypt_field(
+    value: Optional[str], multi_fernet: Optional[MultiFernet] = None
+) -> Optional[str]:
     """Encrypt a plaintext string using primary key."""
     if value is None:
         return None
@@ -86,7 +87,9 @@ def encrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = No
     return encrypted_bytes.decode("utf-8")
 
 
-def decrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = None) -> Optional[str]:
+def decrypt_field(
+    value: Optional[str], multi_fernet: Optional[MultiFernet] = None
+) -> Optional[str]:
     """Decrypt a ciphertext string trying all keys in rotation order."""
     if value is None:
         return None
@@ -102,7 +105,9 @@ def decrypt_field(value: Optional[str], multi_fernet: Optional[MultiFernet] = No
         raise
 
 
-def rotate_field_ciphertext(ciphertext: str, multi_fernet: Optional[MultiFernet] = None) -> tuple[str, bool]:
+def rotate_field_ciphertext(
+    ciphertext: str, multi_fernet: Optional[MultiFernet] = None
+) -> tuple[str, bool]:
     """Rotate ciphertext to the primary key.
 
     Returns (new_ciphertext, rotated_bool).
@@ -111,7 +116,7 @@ def rotate_field_ciphertext(ciphertext: str, multi_fernet: Optional[MultiFernet]
     try:
         rotated_bytes = engine.rotate(ciphertext.encode("utf-8"))
         rotated_str = rotated_bytes.decode("utf-8")
-        was_rotated = (rotated_str != ciphertext)
+        was_rotated = rotated_str != ciphertext
         return rotated_str, was_rotated
     except InvalidToken as e:
         raise ValueError("Ciphertext could not be decrypted by any configured key.") from e
@@ -121,6 +126,7 @@ class EncryptedString(TypeDecorator):
     """SQLAlchemy TypeDecorator that transparently encrypts strings on storage
     and decrypts on retrieval.
     """
+
     impl = Text
     cache_ok = True
 

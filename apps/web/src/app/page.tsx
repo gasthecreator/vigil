@@ -86,7 +86,10 @@ export default function ClinicianWorkstation() {
 
       // Default select latest observation if present
       if (obsList.length > 0) {
-        setSelectedObservation(obsList[0]);
+        const sorted = [...obsList].sort(
+          (a, b) => new Date(b.specimen_collected_at).getTime() - new Date(a.specimen_collected_at).getTime()
+        );
+        setSelectedObservation(sorted[0]);
       } else {
         setSelectedObservation(null);
       }

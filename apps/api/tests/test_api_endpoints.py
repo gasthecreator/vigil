@@ -152,10 +152,14 @@ def test_demo_seeding_gating(client, monkeypatch):
     """Verifies that seed-demo-cohort is blocked outside 'local' environment (Defect A6) and requires admin (S5-2)."""
     # In local environment (default), it succeeds for admin
     monkeypatch.setattr(settings, "ENVIRONMENT", "local")
-    r_local = client.post("/api/v1/analytics/seed-demo-cohort?num_patients=2", headers={"X-Vigil-Role": "admin"})
+    r_local = client.post(
+        "/api/v1/analytics/seed-demo-cohort?num_patients=2", headers={"X-Vigil-Role": "admin"}
+    )
     assert r_local.status_code == 201
 
     # In production environment, it is forbidden/unauthorized (HTTP 401 or 403)
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
-    r_prod = client.post("/api/v1/analytics/seed-demo-cohort?num_patients=2", headers={"X-Vigil-Role": "admin"})
+    r_prod = client.post(
+        "/api/v1/analytics/seed-demo-cohort?num_patients=2", headers={"X-Vigil-Role": "admin"}
+    )
     assert r_prod.status_code in (401, 403)

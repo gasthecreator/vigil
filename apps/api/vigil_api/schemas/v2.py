@@ -9,12 +9,18 @@ from pydantic import BaseModel, Field
 
 
 class ObservationCreateRequest(BaseModel):
-    analyte_code: str = Field(..., description="Analyte code from vigil_core.analytes (e.g. 'ca_15_3', 'cea')")
+    analyte_code: str = Field(
+        ..., description="Analyte code from vigil_core.analytes (e.g. 'ca_15_3', 'cea')"
+    )
     value: float = Field(..., description="Observed raw numeric value")
     unit: str = Field(..., description="Input unit string (e.g. 'U/mL', 'kU/L', '[iU]/mL')")
-    specimen_collected_at: Optional[datetime] = Field(None, description="Timestamp when specimen was drawn")
+    specimen_collected_at: Optional[datetime] = Field(
+        None, description="Timestamp when specimen was drawn"
+    )
     laboratory_id: Optional[str] = Field(None, description="Identifier of executing laboratory")
-    lab_changed: bool = Field(False, description="Flag indicating if analyzer/lab changed from previous draw")
+    lab_changed: bool = Field(
+        False, description="Flag indicating if analyzer/lab changed from previous draw"
+    )
 
 
 class RiskAssessmentSummary(BaseModel):
@@ -67,7 +73,9 @@ class ObservationCreateResponse(BaseModel):
 
 class AlertAcknowledgeRequest(BaseModel):
     disposition: str = Field(..., description="Disposition code from AlertDisposition")
-    rationale_text: Optional[str] = Field(None, description="Clinician justification for alert disposition")
+    rationale_text: Optional[str] = Field(
+        None, description="Clinician justification for alert disposition"
+    )
     note: Optional[str] = Field(None, description="Clinician note or justification")
 
 
@@ -91,7 +99,9 @@ class ConsentCreateRequest(BaseModel):
 
 class FollowUpTransitionRequest(BaseModel):
     target_status: str = Field(..., description="Target status from FollowUpTaskStatus")
-    reason: Optional[str] = Field(None, description="Optional clinical note explaining state transition")
+    reason: Optional[str] = Field(
+        None, description="Optional clinical note explaining state transition"
+    )
 
 
 class FollowUpTaskResponse(BaseModel):

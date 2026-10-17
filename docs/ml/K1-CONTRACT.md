@@ -11,33 +11,41 @@ Purpose: the builder must not grade its own work. These tests define "real" at t
 ```python
 @dataclass(frozen=True)
 class K1Params:
-    doubling_time_days: float      # tumour doubling time
-    shedding_ca153: float          # marker shedding rate per unit burden
-    clearance_ca153: float         # marker clearance rate
-    onset_day: float               # recurrence seeding day (>0)
+    doubling_time_days: float  # tumour doubling time
+    shedding_ca153: float  # marker shedding rate per unit burden
+    clearance_ca153: float  # marker clearance rate
+    onset_day: float  # recurrence seeding day (>0)
 
-PARAM_NAMES: tuple[str, ...]       # exactly the four field names above (extra names allowed, tested too)
+
+PARAM_NAMES: tuple[str, ...]  # exactly the four field names above (extra names allowed, tested too)
+
 
 def sample_prior(rng: np.random.Generator) -> K1Params: ...
 
-class K1Observations:              # whatever you need, but must expose:
-    days: np.ndarray               # visit days (increasing)
+
+class K1Observations:  # whatever you need, but must expose:
+    days: np.ndarray  # visit days (increasing)
     values: dict[str, np.ndarray]  # analyte -> observed values (NaN = not measured)
 
-def simulate_patient(params: K1Params, schedule_days: Sequence[float],
-                     rng: np.random.Generator) -> K1Observations:
+
+def simulate_patient(
+    params: K1Params, schedule_days: Sequence[float], rng: np.random.Generator
+) -> K1Observations:
     """Forward-simulate observed analytes with measurement noise using the SAME dynamics the
     inference routes assume (the model's own ODE + observation model)."""
 
-ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]]
-    # route(obs, rng, n_draws) -> {param_name: np.ndarray of n_draws posterior samples}
-    # Required keys: "amortized", "ukf", "nuts", "npe"   (particle filter optional)
-    #   amortized : the trained recognition network (no per-patient optimisation at inference)
-    #   ukf       : unscented/particle filter posterior from sequential filtering over the visits
-    #   nuts      : reference gold-standard MCMC (PyMC / NumPyro NUTS) on the same likelihood
-    #   npe       : neural posterior estimation / simulation-based inference (sbi or equivalent)
 
-def risk_from_posterior(samples: dict[str, np.ndarray], horizon_days: float) -> float: ...
+ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]]
+# route(obs, rng, n_draws) -> {param_name: np.ndarray of n_draws posterior samples}
+# Required keys: "amortized", "ukf", "nuts", "npe"   (particle filter optional)
+#   amortized : the trained recognition network (no per-patient optimisation at inference)
+#   ukf       : unscented/particle filter posterior from sequential filtering over the visits
+#   nuts      : reference gold-standard MCMC (PyMC / NumPyro NUTS) on the same likelihood
+#   npe       : neural posterior estimation / simulation-based inference (sbi or equivalent)
+
+
+def risk_from_posterior(samples: dict[str, np.ndarray], horizon_days: float) -> float:
+    ...
     # recurrence probability within horizon, derived ONLY from posterior samples via the dynamics
 ```
 
