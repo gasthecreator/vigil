@@ -63,18 +63,18 @@ def test_analyte_registry_specifications():
 
 
 def test_rcv_calculation_matches_analytical_formula():
-    # CA 15-3: CVi = 5.8%, desirable CVa = 2.9%
-    # Normal 95% bidirectional: RCV = sqrt(2) * 1.96 * sqrt(2.9^2 + 5.8^2)
+    # CA 15-3: CVi = 6.1%, desirable CVa = 3.05%
+    # Normal 95% bidirectional: RCV = sqrt(2) * 1.96 * sqrt(3.05^2 + 6.1^2)
     # sqrt(2)*1.96 = 2.7718585...
-    # sqrt(8.41 + 33.64) = sqrt(42.05) = 6.484597...
-    # RCV = 2.7718585 * 6.484597 = 17.974%
+    # sqrt(9.3025 + 37.21) = sqrt(46.5125) = 6.82...
+    # RCV = 2.7718585 * 6.82 = 18.904%
     rcv_ca153 = calculate_rcv("ca_15_3", confidence=0.95, two_sided=True, log_normal=False)
-    assert rcv_ca153 == pytest.approx(17.974, rel=1e-3)
+    assert rcv_ca153 == pytest.approx(18.904, rel=1e-3)
 
     # 99% confidence bidirectional (Z = 2.576)
     rcv_ca153_99 = calculate_rcv("ca_15_3", confidence=0.99, two_sided=True, log_normal=False)
     assert rcv_ca153_99 > rcv_ca153
-    expected_99 = 1.41421356 * 2.576 * 6.484597
+    expected_99 = 1.41421356 * 2.576 * 6.82
     assert rcv_ca153_99 == pytest.approx(expected_99, rel=1e-3)
 
     # Log-normal RCV for skewed analytes

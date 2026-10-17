@@ -46,6 +46,10 @@ class BiologicalVariation(BaseModel):
     cv_g: float = Field(..., description="Between-subject biological coefficient of variation (%)")
     index_of_individuality: float = Field(..., description="II = CVi / CVg")
     citation: str = Field(..., description="Literature source / EFLM database DOI")
+    evidence_status: str = Field(
+        default="SECONDARY",
+        description="Evidence status: PRIMARY-VERIFIED (backed by saved public excerpt) or SECONDARY",
+    )
 
 
 class AnalyticalSpecification(BaseModel):
@@ -110,14 +114,15 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
         canonical_unit="[iU]/mL",
         supported_units=["[iU]/mL", "U/mL", "kU/L"],
         biological_variation=BiologicalVariation(
-            cv_i=5.8,
-            cv_g=22.0,
-            index_of_individuality=0.26,  # High individuality: population reference poorly sensitive
-            citation="EFLM Biological Variation Database 2024 / Duffy MJ Clin Chem 2006",
+            cv_i=6.1,
+            cv_g=62.9,
+            index_of_individuality=0.10,  # High individuality (II < 0.6)
+            citation="Ricós C et al. Scand J Clin Lab Invest 1999; Westgard Biodatabase (docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)",
+            evidence_status="PRIMARY-VERIFIED",
         ),
         analytical_spec=AnalyticalSpecification(
-            cv_a_desirable=2.9,  # 0.5 * CVi
-            bias_max_desirable=5.7,
+            cv_a_desirable=3.05,  # 0.5 * CVi
+            bias_max_desirable=15.8,
         ),
         plausibility=PlausibilityBounds(
             physiological_min=0.0,
@@ -140,6 +145,7 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
             cv_g=24.5,
             index_of_individuality=0.25,
             citation="EFLM Biological Variation Database 2024",
+            evidence_status="SECONDARY",
         ),
         analytical_spec=AnalyticalSpecification(
             cv_a_desirable=3.1,
@@ -163,9 +169,10 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
         supported_units=["ug/L", "ng/mL"],
         biological_variation=BiologicalVariation(
             cv_i=12.7,
-            cv_g=58.2,
-            index_of_individuality=0.22,
-            citation="EFLM Biological Variation Database 2024",
+            cv_g=55.6,
+            index_of_individuality=0.23,
+            citation="Ricós C et al. Scand J Clin Lab Invest 1999; Westgard Biodatabase (docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)",
+            evidence_status="PRIMARY-VERIFIED",
         ),
         analytical_spec=AnalyticalSpecification(
             cv_a_desirable=6.35,

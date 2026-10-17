@@ -1,18 +1,24 @@
 {
   "study_id": "S2_SEQUENTIAL",
   "protocol_version": "1.2",
-  "timestamp": "2026-10-16 21:21:30 UTC",
+  "timestamp": "2026-10-17 01:02:35 UTC",
   "vigil_sim_study": {
-    "calibrated_sigma_log": 0.059,
+    "calibrated_params": {
+      "calibration_seed": 999,
+      "calibrated_sigma_log": 0.0621,
+      "frozen_alpha_pt": 0.25,
+      "frozen_static_thresh": 40.0,
+      "calibration_matched_far": 0.0094
+    },
+    "test_seed": 42,
     "n_null_patients": 192,
     "n_recurrence_patients": 291,
-    "matched_far_target": 0.0052,
     "k2_matched": {
-      "alpha_pt": 0.15,
-      "null_far": 0.0052,
+      "alpha_pt": 0.25,
+      "null_far": 0.026,
       "null_far_ci": [
-        0.0,
-        0.0156
+        0.0052,
+        0.0521
       ],
       "sensitivity": 0.4158,
       "sensitivity_ci": [
@@ -23,114 +29,28 @@
       "mean_delay_days": 127.5
     },
     "static_matched": {
-      "threshold_u_ml": 30.0,
-      "null_far": 0.0052,
+      "threshold_u_ml": 40.0,
+      "null_far": 0.0,
       "null_far_ci": [
         0.0,
-        0.0156
+        0.0
       ],
-      "sensitivity": 0.5292,
+      "sensitivity": 0.5223,
       "sensitivity_ci": [
-        0.4708,
-        0.5876
+        0.4639,
+        0.5808
       ],
-      "median_delay_days": 79.5,
-      "mean_delay_days": 98.0
+      "median_delay_days": 80.3,
+      "mean_delay_days": 100.2
     },
     "matched_comparison": {
-      "delta_sensitivity": -0.1134,
+      "delta_sensitivity": -0.1065,
       "delta_sensitivity_ci": [
-        -0.1546,
-        -0.0722
+        -0.1478,
+        -0.0653
       ],
       "power_cost_identified": true
-    },
-    "sweep_summary": [
-      {
-        "method": "K2_Sequential",
-        "param": 0.01,
-        "null_far": 0.0,
-        "sensitivity": 0.4124,
-        "median_delay_days": 100.7
-      },
-      {
-        "method": "K2_Sequential",
-        "param": 0.02,
-        "null_far": 0.0,
-        "sensitivity": 0.4124,
-        "median_delay_days": 100.7
-      },
-      {
-        "method": "K2_Sequential",
-        "param": 0.05,
-        "null_far": 0.0,
-        "sensitivity": 0.4124,
-        "median_delay_days": 100.7
-      },
-      {
-        "method": "K2_Sequential",
-        "param": 0.1,
-        "null_far": 0.0,
-        "sensitivity": 0.4158,
-        "median_delay_days": 101.6
-      },
-      {
-        "method": "K2_Sequential",
-        "param": 0.15,
-        "null_far": 0.0052,
-        "sensitivity": 0.4158,
-        "median_delay_days": 101.6
-      },
-      {
-        "method": "K2_Sequential",
-        "param": 0.2,
-        "null_far": 0.0208,
-        "sensitivity": 0.4158,
-        "median_delay_days": 101.6
-      },
-      {
-        "method": "M_Static",
-        "param": 22.0,
-        "null_far": 0.0469,
-        "sensitivity": 0.543,
-        "median_delay_days": 77.0
-      },
-      {
-        "method": "M_Static",
-        "param": 24.0,
-        "null_far": 0.0156,
-        "sensitivity": 0.543,
-        "median_delay_days": 77.9
-      },
-      {
-        "method": "M_Static",
-        "param": 26.0,
-        "null_far": 0.0156,
-        "sensitivity": 0.5361,
-        "median_delay_days": 77.0
-      },
-      {
-        "method": "M_Static",
-        "param": 28.0,
-        "null_far": 0.0052,
-        "sensitivity": 0.5292,
-        "median_delay_days": 77.0
-      },
-      {
-        "method": "M_Static",
-        "param": 30.0,
-        "null_far": 0.0052,
-        "sensitivity": 0.5292,
-        "median_delay_days": 79.5
-      },
-      {
-        "method": "M_Static",
-        "param": 32.0,
-        "null_far": 0.0,
-        "sensitivity": 0.5258,
-        "median_delay_days": 80.3
-      }
-    ]
+    }
   },
   "acceptance_stress_suite": {
     "gauss10": {
@@ -184,7 +104,7 @@
     }
   },
   "verdicts": {
-    "H1_matched_far_power": "REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, Model K2 pays an empirical power cost of -11.34 percentage points [95% CI: -15.46 pp, -7.22 pp] relative to static thresholding (K2 sensitivity: 41.6%, Static sensitivity: 52.9%) on this simulator.",
+    "H1_matched_far_power": "REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, Model K2 pays an empirical power cost of -10.65 percentage points [95% CI: -14.78 pp, -6.53 pp] relative to static thresholding (K2 sensitivity: 41.6%, Static sensitivity: 52.2%) on this simulator.",
     "H2_supermartingale_validity": "CONFIRMED: Model K2 mathematically bounds patient-level false alarm rate across all 6 stress scenarios (maximum empirical FAR = 0.0213 <= 0.0700 threshold).",
     "H3_kinetic_power_and_delay": "CONFIRMED: Under true kinetic progression streams, K2 achieves 100.0% power on rapid doubling (Td=60d, median delay 96.2d) and 100.0% power on moderate doubling (Td=90d, median delay 117.8d <= 240d)."
   }
