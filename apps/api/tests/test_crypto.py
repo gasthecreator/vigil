@@ -296,3 +296,120 @@ def test_duplicate_mrn_rejected_by_policy(tmp_path, monkeypatch):
         assert "already registered" in r4.json()["detail"]
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+def test_http_key_rotation_with_two_keys_and_retired_old_key(tmp_path, monkeypatch):
+    """Enforce Condition P10-C: HTTP-level rotation with two keys, re-encryption and retirement of old key.
+
+    1. Ingest patient via HTTP POST /patients/ under key_old.
+    2. Confirm ciphertext in DB is decryptable with key_old, NOT key_new.
+    3. Reconfigure FIELD_ENCRYPTION_KEYS to '{key_new},{key_old}' and trigger POST /rotate-keys via HTTP.
+    4. Confirm rotated count >= 1 and DB ciphertext changed to key_new.
+    5. Retire key_old completely (FIELD_ENCRYPTION_KEYS='{key_new}') and read back via HTTP GET /patients/{id}.
+    6. Confirm patient decrypts with key_new alone; key_old cannot decrypt the updated record.
+    """
+    key_old = Fernet.generate_key().decode()
+    key_new = Fernet.generate_key().decode()
+
+    # Step 1: Initialize server with key_old only
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", key_old)
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEYS", key_old)
+
+    db_file = tmp_path / "rotation_http_test.db"
+    engine = create_engine(f"sqlite:///{db_file}")
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = TestingSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    clinician_headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-rot"}
+    admin_headers = {"X-Vigil-Role": "admin", "X-Vigil-User-Id": "admin-rot"}
+
+    try:
+        # Create patient via HTTP
+        p_resp = client.post(
+            "/api/v1/patients/",
+            json={
+                "age": 48,
+                "status": "active",
+                "mrn": "MRN-ROTATE-ME-99",
+                "external_id": "EXT-ROTATE-88",
+            },
+            headers=clinician_headers,
+        )
+        assert p_resp.status_code == 201
+        pid = p_resp.json()["id"]
+
+        # Grant consent so full unmasked record is readable
+        c_resp = client.post(
+            f"/api/v1/patients/{pid}/consent",
+            json={"granted": True, "scope": "surveillance_monitoring"},
+            headers=clinician_headers,
+        )
+        assert c_resp.status_code in (200, 201)
+
+        # Step 2: Verify in DB that raw ciphertext is encrypted with key_old, not key_new
+        conn = sqlite3.connect(db_file)
+        raw_mrn, raw_ext = conn.execute(
+            "SELECT mrn, external_id FROM patients WHERE id = ?", (pid,)
+        ).fetchone()
+        conn.close()
+
+        assert Fernet(key_old.encode()).decrypt(raw_mrn.encode()).decode() == "MRN-ROTATE-ME-99"
+        with pytest.raises(Exception):
+            Fernet(key_new.encode()).decrypt(raw_mrn.encode())
+
+        # Step 3: Configure dual keys (key_new primary, key_old secondary)
+        monkeypatch.setenv("FIELD_ENCRYPTION_KEYS", f"{key_new},{key_old}")
+        monkeypatch.setenv("FIELD_ENCRYPTION_KEY", key_new)
+
+        # Trigger HTTP rotation endpoint
+        rot_resp = client.post("/api/v1/patients/rotate-keys", headers=admin_headers)
+        assert rot_resp.status_code == 200
+        data = rot_resp.json()
+        assert data["status"] == "success"
+        assert data["scanned"] == 1
+        assert data["rotated"] == 1
+
+        # Step 4: Verify DB ciphertext changed and is now encrypted with key_new
+        conn = sqlite3.connect(db_file)
+        new_raw_mrn, new_raw_ext = conn.execute(
+            "SELECT mrn, external_id FROM patients WHERE id = ?", (pid,)
+        ).fetchone()
+        conn.close()
+
+        assert new_raw_mrn != raw_mrn
+        assert Fernet(key_new.encode()).decrypt(new_raw_mrn.encode()).decode() == "MRN-ROTATE-ME-99"
+        assert Fernet(key_new.encode()).decrypt(new_raw_ext.encode()).decode() == "EXT-ROTATE-88"
+
+        # Step 5: Retire key_old completely
+        monkeypatch.setenv("FIELD_ENCRYPTION_KEYS", key_new)
+        monkeypatch.setenv("FIELD_ENCRYPTION_KEY", key_new)
+
+        # Read back patient through HTTP API
+        get_resp = client.get(f"/api/v1/patients/{pid}", headers=clinician_headers)
+        assert get_resp.status_code == 200
+        patient_data = get_resp.json()
+        assert patient_data["mrn"] == "MRN-ROTATE-ME-99"
+        assert patient_data["external_id"] == "EXT-ROTATE-88"
+
+        # Also confirm via list endpoint that is_masked is False (active consent)
+        list_resp = client.get("/api/v1/patients/", headers=clinician_headers)
+        assert list_resp.status_code == 200
+        p_in_list = next(p for p in list_resp.json() if p["id"] == pid)
+        assert p_in_list["mrn"] == "MRN-ROTATE-ME-99"
+        assert p_in_list["is_masked"] is False
+
+        # Confirm old key cannot decrypt updated record
+        with pytest.raises(Exception):
+            Fernet(key_old.encode()).decrypt(new_raw_mrn.encode())
+
+    finally:
+        app.dependency_overrides.pop(get_db, None)

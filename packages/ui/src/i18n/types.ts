@@ -88,4 +88,24 @@ export interface TranslationDictionary {
     submitObservation: string;
     offlineSavedNotice: string;
   };
+  companion: {
+    title: string;
+    subtitle: string;
+    explainerTitle: string;
+    secondLookTitle: string;
+    symptomDiaryTitle: string;
+    caregiverSharingTitle: string;
+    badNewsModeTitle: string;
+    badNewsWarning: string;
+    unlockResults: string;
+    emergencyNotice: string;
+    disclaimer: string;
+    requestSecondLook: string;
+    logSymptom: string;
+    voiceInput: string;
+    listening: string;
+    recordVoice: string;
+    shareWithFamily: string;
+    offlineSyncNotice: string;
+  };
 }

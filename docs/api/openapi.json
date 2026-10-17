@@ -312,6 +312,112 @@
         "title": "BatchImportResponse",
         "type": "object"
       },
+      "CaregiverShareCreateRequest": {
+        "properties": {
+          "caregiver_name": {
+            "description": "Name of the family caregiver",
+            "title": "Caregiver Name",
+            "type": "string"
+          },
+          "expires_in_days": {
+            "default": 30,
+            "description": "Validity period in days",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "relationship_type": {
+            "default": "caregiver",
+            "description": "Relationship (e.g. daughter, spouse, sibling)",
+            "title": "Relationship Type",
+            "type": "string"
+          },
+          "scope": {
+            "default": "view_summary",
+            "description": "Access scope: view_summary or full_history",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "caregiver_name"
+        ],
+        "title": "CaregiverShareCreateRequest",
+        "type": "object"
+      },
+      "CaregiverShareResponse": {
+        "properties": {
+          "caregiver_name": {
+            "title": "Caregiver Name",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "relationship_type": {
+            "title": "Relationship Type",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "share_token": {
+            "title": "Share Token",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "share_token",
+          "caregiver_name",
+          "relationship_type",
+          "scope",
+          "status",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "CaregiverShareResponse",
+        "type": "object"
+      },
       "ConsentCreateRequest": {
         "properties": {
           "consent_type": {
@@ -360,6 +466,54 @@
           }
         },
         "title": "ConsentCreateRequest",
+        "type": "object"
+      },
+      "DisclosureUnlockRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "patient_opt_in_reveal",
+            "description": "Reason for unlocking bad news / sensitive result",
+            "title": "Reason"
+          }
+        },
+        "title": "DisclosureUnlockRequest",
+        "type": "object"
+      },
+      "DisclosureUnlockResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "unlocked": {
+            "title": "Unlocked",
+            "type": "boolean"
+          },
+          "unlocked_at": {
+            "format": "date-time",
+            "title": "Unlocked At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "unlocked",
+          "unlocked_at",
+          "message"
+        ],
+        "title": "DisclosureUnlockResponse",
         "type": "object"
       },
       "FollowUpTaskResponse": {
@@ -880,8 +1034,15 @@
       "PatientResponse": {
         "properties": {
           "age": {
-            "title": "Age",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
           },
           "created_at": {
             "format": "date-time",
@@ -927,7 +1088,6 @@
         },
         "required": [
           "id",
-          "age",
           "created_at",
           "status"
         ],
@@ -988,6 +1148,82 @@
           }
         },
         "title": "PatientUpdate",
+        "type": "object"
+      },
+      "PlainLanguageExplainerResponse": {
+        "properties": {
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "flesch_kincaid_grade_level": {
+            "title": "Flesch Kincaid Grade Level",
+            "type": "number"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "observation_id": {
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "questions_to_ask_your_doctor": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Questions To Ask Your Doctor",
+            "type": "array"
+          },
+          "recommended_action": {
+            "title": "Recommended Action",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "verbal_band": {
+            "title": "Verbal Band",
+            "type": "string"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          },
+          "verified": {
+            "default": true,
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "what_this_means": {
+            "title": "What This Means",
+            "type": "string"
+          },
+          "word_count": {
+            "title": "Word Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observation_id",
+          "patient_id",
+          "analyte_code",
+          "verdict",
+          "verbal_band",
+          "headline",
+          "what_this_means",
+          "recommended_action",
+          "questions_to_ask_your_doctor",
+          "flesch_kincaid_grade_level",
+          "word_count"
+        ],
+        "title": "PlainLanguageExplainerResponse",
         "type": "object"
       },
       "RiskAssessmentSummary": {
@@ -1200,6 +1436,115 @@
         "title": "RowReport",
         "type": "object"
       },
+      "SecondLookCreateRequest": {
+        "properties": {
+          "observation_id": {
+            "description": "ID of observation to be re-evaluated",
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "patient_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Questions or context from patient/caregiver",
+            "title": "Patient Notes"
+          },
+          "requested_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "repeat_lab_review",
+            "description": "Requested clinical review action",
+            "title": "Requested Action"
+          }
+        },
+        "required": [
+          "observation_id"
+        ],
+        "title": "SecondLookCreateRequest",
+        "type": "object"
+      },
+      "SecondLookResponse": {
+        "properties": {
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "observation_id": {
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "plausibility_status": {
+            "title": "Plausibility Status",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "task_id",
+          "observation_id",
+          "patient_id",
+          "analyte_code",
+          "value",
+          "unit",
+          "plausibility_status",
+          "status",
+          "created_at"
+        ],
+        "title": "SecondLookResponse",
+        "type": "object"
+      },
       "SimulationRequest": {
         "properties": {
           "hypothetical_lab": {
@@ -1242,6 +1587,120 @@
           "delta_risk"
         ],
         "title": "SimulationResponse",
+        "type": "object"
+      },
+      "SymptomCreateRequest": {
+        "properties": {
+          "input_modality": {
+            "default": "text",
+            "description": "Input modality e.g. text or voice",
+            "title": "Input Modality",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Patient/caregiver description or notes",
+            "title": "Notes"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timestamp of symptom experience",
+            "title": "Recorded At"
+          },
+          "severity": {
+            "default": 1,
+            "description": "Severity grade (1=Mild, 2=Moderate, 3=Severe, 4=Very Severe)",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Severity",
+            "type": "integer"
+          },
+          "symptom_name": {
+            "description": "Name/category of symptom (e.g. bone_pain, fatigue)",
+            "title": "Symptom Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symptom_name"
+        ],
+        "title": "SymptomCreateRequest",
+        "type": "object"
+      },
+      "SymptomResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_modality": {
+            "default": "text",
+            "title": "Input Modality",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "integer"
+          },
+          "symptom_name": {
+            "title": "Symptom Name",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "symptom_name",
+          "severity",
+          "recorded_at",
+          "created_at"
+        ],
+        "title": "SymptomResponse",
         "type": "object"
       },
       "SyncBatchRequest": {
@@ -2345,6 +2804,152 @@
         "summary": "Verify cryptographic integrity of the audit log chain",
         "tags": [
           "Cryptographic Audit Trail"
+        ]
+      }
+    },
+    "/api/v1/companion/share/{share_token}": {
+      "get": {
+        "description": "Retrieves patient summary accessible to an authorized family caregiver.\n\nSecurity & Attack Mitigations:\n- Rejects invalid / non-existent tokens with HTTP 404.\n- Rejects revoked tokens with HTTP 403 Forbidden.\n- Rejects expired tokens with HTTP 403 Forbidden.\n- Rejects access if patient has withdrawn active clinical consent with HTTP 403 Forbidden.\n- Strictly limits disclosed fields according to granted scope ('view_summary' vs 'full_history').\n- Hash-chained audit event recorded for every caregiver access.",
+        "operationId": "get_caregiver_shared_summary_api_v1_companion_share__share_token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "share_token",
+            "required": true,
+            "schema": {
+              "title": "Share Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Access patient summary via scoped caregiver share token",
+        "tags": [
+          "Family & Patient Companion (M8)"
+        ]
+      }
+    },
+    "/api/v1/companion/share/{share_token}/observations/{obs_id}/explainer": {
+      "get": {
+        "description": "Retrieves verified plain-language result explainer accessible to an authorized caregiver.",
+        "operationId": "get_caregiver_observation_explainer_api_v1_companion_share__share_token__observations__obs_id__explainer_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "share_token",
+            "required": true,
+            "schema": {
+              "title": "Share Token",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "obs_id",
+            "required": true,
+            "schema": {
+              "title": "Obs Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlainLanguageExplainerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Access plain-language observation explainer via caregiver share token",
+        "tags": [
+          "Family & Patient Companion (M8)"
+        ]
+      }
+    },
+    "/api/v1/companion/share/{share_token}/symptoms": {
+      "post": {
+        "description": "Allows an authorized caregiver to record a symptom in the patient's diary.",
+        "operationId": "record_caregiver_symptom_api_v1_companion_share__share_token__symptoms_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "share_token",
+            "required": true,
+            "schema": {
+              "title": "Share Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymptomCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SymptomResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record patient symptom on behalf of patient via caregiver share token",
+        "tags": [
+          "Family & Patient Companion (M8)"
         ]
       }
     },
@@ -3834,6 +4439,96 @@
         ]
       }
     },
+    "/api/v1/patients/{id}/disclosure/unlock": {
+      "post": {
+        "description": "Records patient opt-in unlock event for sensitive / bad-news results with audit tracking.",
+        "operationId": "unlock_patient_disclosure_api_v1_patients__id__disclosure_unlock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisclosureUnlockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisclosureUnlockResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unlock Patient Disclosure",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
     "/api/v1/patients/{id}/labs": {
       "post": {
         "description": "Submits new lab result draw.\n\nCondition S5-2 & S5-7: Re-routes all analytes through the canonical observation ingestion\npipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,\nand cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.",
@@ -4097,6 +4792,95 @@
         ]
       }
     },
+    "/api/v1/patients/{id}/observations/{obs_id}/explainer": {
+      "get": {
+        "description": "Returns an M5-verified plain-language result explainer with FKGL <= 8.0,\nuncertainty verbal band, and questions to ask doctor.",
+        "operationId": "get_observation_explainer_api_v1_patients__id__observations__obs_id__explainer_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "obs_id",
+            "required": true,
+            "schema": {
+              "title": "Obs Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlainLanguageExplainerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get verified plain-language result explainer for patient/family",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
     "/api/v1/patients/{id}/risk-history": {
       "get": {
         "description": "Retrieve risk assessment trajectory for consented patient.",
@@ -4181,6 +4965,357 @@
         ]
       }
     },
+    "/api/v1/patients/{id}/second-look": {
+      "post": {
+        "description": "Submits a patient-initiated Second-Look Request to the clinical care team.",
+        "operationId": "submit_second_look_request_api_v1_patients__id__second_look_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecondLookCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecondLookResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Submit Second Look Request",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/shares": {
+      "get": {
+        "description": "Lists caregiver shares for a consented patient.",
+        "operationId": "list_caregiver_shares_api_v1_patients__id__shares_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CaregiverShareResponse"
+                  },
+                  "title": "Response List Caregiver Shares Api V1 Patients  Id  Shares Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Caregiver Shares",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      },
+      "post": {
+        "description": "Generates a scoped, revocable caregiver access authorization token.",
+        "operationId": "create_caregiver_share_api_v1_patients__id__shares_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaregiverShareCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaregiverShareResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Caregiver Share",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/shares/{share_id}": {
+      "delete": {
+        "description": "Revokes an active caregiver share.",
+        "operationId": "revoke_caregiver_share_api_v1_patients__id__shares__share_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "share_id",
+            "required": true,
+            "schema": {
+              "title": "Share Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaregiverShareResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Caregiver Share",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
     "/api/v1/patients/{id}/simulate": {
       "post": {
         "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory.",
@@ -4229,6 +5364,178 @@
           }
         },
         "summary": "Simulate Future Lab",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/symptoms": {
+      "get": {
+        "description": "Lists symptom history for a consented patient.",
+        "operationId": "list_patient_symptoms_api_v1_patients__id__symptoms_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SymptomResponse"
+                  },
+                  "title": "Response List Patient Symptoms Api V1 Patients  Id  Symptoms Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Patient Symptoms",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      },
+      "post": {
+        "description": "Records a structured patient symptom in the diary (Master Plan \u00a76.8).",
+        "operationId": "record_patient_symptom_api_v1_patients__id__symptoms_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymptomCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SymptomResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Patient Symptom",
         "tags": [
           "Patients & Surveillance"
         ]

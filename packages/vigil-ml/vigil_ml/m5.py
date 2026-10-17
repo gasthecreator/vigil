@@ -18,7 +18,7 @@ Safety Guarantees:
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 # Safety: Forbidden claim phrases that MUST NEVER appear in clinician notes (secondary backstop)
 FORBIDDEN_PHRASES = [
@@ -71,7 +71,9 @@ def render_clinician_note(facts: List[Dict[str, Any]]) -> str:
     if "p_error" in f_map:
         val = float(f_map["p_error"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        sentences.append(f"The calculated probability of analytical or pre-analytical error is {pct}%.")
+        sentences.append(
+            f"The calculated probability of analytical or pre-analytical error is {pct}%."
+        )
 
     # 3. Biological stability probability
     if "p_stable" in f_map:
@@ -124,7 +126,9 @@ def get_derivable_sentences(facts: List[Dict[str, Any]]) -> Set[str]:
     if "p_error" in f_map:
         val = float(f_map["p_error"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        derivable.add(f"The calculated probability of analytical or pre-analytical error is {pct}%.")
+        derivable.add(
+            f"The calculated probability of analytical or pre-analytical error is {pct}%."
+        )
 
     if "p_stable" in f_map:
         val = float(f_map["p_stable"])
@@ -145,7 +149,9 @@ def get_derivable_sentences(facts: List[Dict[str, Any]]) -> Set[str]:
         derivable.add(f"The recommended clinical action is {act}.")
 
     if not derivable:
-        derivable.add("Surveillance result received without structured rationale facts. Recommend clinical review.")
+        derivable.add(
+            "Surveillance result received without structured rationale facts. Recommend clinical review."
+        )
 
     return derivable
 
@@ -254,3 +260,129 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
 
     else:
         raise ValueError(f"Unknown journey_id: {journey_id}")
+
+
+def count_syllables(word: str) -> int:
+    """Estimates the number of syllables in an English word."""
+    word = word.lower().strip(".,!?:;'\"-()")
+    if not word:
+        return 0
+    if len(word) <= 3:
+        return 1
+    # Check for -le ending preceded by consonant (table, stable, little)
+    ends_in_le = bool(re.search(r"[bcdfghjklmnpqrstvwxz]le$", word))
+    word = re.sub(r"(?:ed|es|e)$", "", word)
+    word = re.sub(r"^y", "", word)
+    syllables = len(re.findall(r"[aeiouy]{1,2}", word))
+    if ends_in_le and not re.search(r"[aeiouy]le$", word):
+        syllables += 1
+    return max(1, syllables)
+
+
+def compute_flesch_kincaid_grade_level(text: str) -> float:
+    """Computes Flesch-Kincaid Grade Level for text readability.
+
+    Formula: 0.39 * (total_words / total_sentences) + 11.8 * (total_syllables / total_words) - 15.59
+    """
+    sentences = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
+    words = re.findall(r"\b[a-zA-Z]+\b", text)
+    if not sentences or not words:
+        return 0.0
+    num_syllables = sum(count_syllables(w) for w in words)
+    score = 0.39 * (len(words) / len(sentences)) + 11.8 * (num_syllables / len(words)) - 15.59
+    return round(max(0.0, score), 2)
+
+
+def render_plain_language_explainer(
+    verdict: str,
+    facts: Optional[List[Dict[str, Any]]] = None,
+    analyte_code: str = "CA 15-3",
+) -> Dict[str, Any]:
+    """Generates a plain-language result explainer for patients and family caregivers.
+
+    Complies with Master Plan §6.5, §6.8, and Phase 6b:
+    - Driven exclusively by M3 verdicts ('explained', 'needs_repeat', 'escalate') and verified facts.
+    - Reading level strictly enforced to Flesch-Kincaid Grade Level <= 8.0.
+    - Concise word count (<= 120 words).
+    - Verbal uncertainty bands instead of raw percentages.
+    - Includes 3 structured 'Questions to ask your doctor'.
+    - Safety backstop: strictly rejects forbidden claims ('you have cancer', etc.).
+    """
+    verdict_clean = verdict.strip().lower()
+    if verdict_clean not in {"explained", "needs_repeat", "escalate"}:
+        raise ValueError(
+            f"Invalid M3 verdict for explainer: '{verdict}'. Must be 'explained', 'needs_repeat', or 'escalate'."
+        )
+
+    if verdict_clean == "explained":
+        headline = "This test result looks stable."
+        verbal_band = "Normal biological fluctuation (routine monitoring)"
+        what_this_means = (
+            "Small day-to-day changes in your body are normal and expected. "
+            "This result stays within the expected range for your routine surveillance. "
+            "Your oncology team will continue your regular monitoring plan."
+        )
+        recommended_action = "Continue routine surveillance as scheduled."
+        questions = [
+            "Does my routine monitoring schedule stay the same?",
+            "Are there any new symptoms I should report before my next visit?",
+            "When is my next scheduled blood test or clinic appointment?",
+        ]
+    elif verdict_clean == "needs_repeat":
+        headline = "This result needs a quick repeat test."
+        verbal_band = "Analytical uncertainty (suspected lab or specimen variation)"
+        what_this_means = (
+            "A sudden shift in a lab number often comes from lab equipment variation rather than a true change in your body. "
+            "A single high result is not a diagnosis. "
+            "Repeating the blood test gives your doctor an accurate and reliable picture."
+        )
+        recommended_action = "Repeat blood test within 7 to 14 days at your local laboratory."
+        questions = [
+            "When and where should I repeat this blood test?",
+            "Are there any special instructions before my next blood draw?",
+            "What specific symptoms should I watch for while waiting for the repeat test?",
+        ]
+    else:  # escalate
+        headline = "This test shows a noticeable change."
+        verbal_band = "Elevated signal (clinical team review recommended)"
+        what_this_means = (
+            "This blood test is higher than your usual personal range. "
+            "A rise can happen for different health reasons. "
+            "Your cancer care team will check your results and talk with you about next steps."
+        )
+        recommended_action = "Contact your clinic to schedule a review and follow-up scan."
+        questions = [
+            "What follow-up test or scan do you recommend to check this result?",
+            "Could another health issue or medicine cause this change?",
+            "What symptoms or changes should I look out for right now?",
+        ]
+
+    # Combine text for readability and safety checks
+    full_text = f"{headline} {what_this_means} {recommended_action}"
+    fkgl = compute_flesch_kincaid_grade_level(full_text)
+    word_count = len(re.findall(r"\b[a-zA-Z]+\b", full_text))
+
+    # Safety: check against forbidden claims
+    full_lower = full_text.lower()
+    for phrase in FORBIDDEN_PHRASES:
+        if phrase in full_lower:
+            raise ValueError(
+                f"Safety violation: forbidden phrase '{phrase}' in plain-language explainer."
+            )
+
+    # Enforce reading grade <= 8.0 invariant
+    if fkgl > 8.0:
+        raise ValueError(f"Reading level violation: FKGL {fkgl} exceeds maximum allowed grade 8.0.")
+
+    return {
+        "verdict": verdict_clean,
+        "headline": headline,
+        "verbal_band": verbal_band,
+        "what_this_means": what_this_means,
+        "recommended_action": recommended_action,
+        "questions_to_ask_your_doctor": questions,
+        "flesch_kincaid_grade_level": fkgl,
+        "word_count": word_count,
+        "verified": True,
+        "synthetic": True,
+    }

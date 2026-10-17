@@ -193,6 +193,15 @@ class Patient(Base):
     follow_up_tasks = relationship(
         "FollowUpTask", back_populates="patient", cascade="all, delete-orphan"
     )
+    symptoms = relationship(
+        "Symptom",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        order_by="Symptom.recorded_at",
+    )
+    caregiver_shares = relationship(
+        "CaregiverShare", back_populates="patient", cascade="all, delete-orphan"
+    )
 
     # Legacy prototype relationships for backward compatibility
     baseline_profile = relationship(
@@ -561,3 +570,45 @@ class IdempotencyRecord(Base):
     __table_args__ = (
         UniqueConstraint("patient_id", "idempotency_key", name="uq_patient_idempotency_key"),
     )
+
+
+class Symptom(Base):
+    """Patient-reported symptom tracking for the Family & Patient Companion (M8)."""
+
+    __tablename__ = "symptoms"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    symptom_name = Column(String(100), nullable=False, index=True)
+    severity = Column(Integer, nullable=False, default=1)  # 1 to 4
+    notes = Column(Text, nullable=True)
+    input_modality = Column(String(20), default="text", nullable=False)  # text | voice
+    recorded_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    patient = relationship("Patient", back_populates="symptoms")
+
+
+class CaregiverShare(Base):
+    """Scoped, revocable caregiver access authorization record (M8)."""
+
+    __tablename__ = "caregiver_shares"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    share_token = Column(String(64), unique=True, nullable=False, index=True)
+    caregiver_name = Column(String(100), nullable=False)
+    relationship_type = Column(String(50), nullable=False, default="caregiver")
+    scope = Column(
+        String(50), nullable=False, default="view_summary"
+    )  # view_summary | full_history
+    status = Column(String(20), nullable=False, default="active")  # active | revoked
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    patient = relationship("Patient", back_populates="caregiver_shares")

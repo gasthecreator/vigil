@@ -16,7 +16,7 @@ export type ObservationItem = Record<string, any>;
 export interface TriagePatientViewModel {
   id: string;
   mrn?: string | null;
-  age: number;
+  age?: number | null;
   status: string;
   stage?: string | null;
   subtype?: string | null;

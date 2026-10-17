@@ -7,6 +7,7 @@ from vigil_api.api.endpoints import (
     analytics,
     audit,
     batch_import,
+    companion,
     fhir,
     follow_up,
     hl7,
@@ -17,6 +18,9 @@ from vigil_api.api.endpoints import (
 api_router = APIRouter()
 
 api_router.include_router(patients.router, prefix="/patients", tags=["Patients & Surveillance"])
+api_router.include_router(
+    companion.router, prefix="/companion", tags=["Family & Patient Companion (M8)"]
+)
 api_router.include_router(
     batch_import.router, prefix="/observations", tags=["Batch Observation Ingestion"]
 )
