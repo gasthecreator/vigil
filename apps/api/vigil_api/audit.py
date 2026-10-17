@@ -5,9 +5,10 @@ Implements Master Plan §11 and Phase 5a Audit requirements:
 - Verification engine detecting broken links or altered event contents.
 """
 
-from __future__ import annotations
-
+import json
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from sqlalchemy import select
@@ -71,8 +72,20 @@ def record_audit_event(
     db.add(event)
     db.flush()
 
-    # Update or persist external head-hash anchor (Condition S5-3)
+    # Update or persist external head-hash anchor (Condition S5-3 / P7-D)
     total_events = len(db.execute(select(AuditEvent)).scalars().all())
+    anchor_path = os.environ.get("VIGIL_AUDIT_ANCHOR_PATH")
+    if anchor_path:
+        p = Path(anchor_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "timestamp": timestamp.isoformat(),
+            "total_events": total_events,
+            "head_hash": curr_hash,
+        }
+        with open(p, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+
     anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
     if anchor is None:
         anchor = AuditAnchor(
@@ -98,10 +111,37 @@ def verify_audit_chain(
 
     Checks:
     1. Cryptographic SHA-256 payload and linkage from genesis (0*64) to head.
-    2. Consistency against the external AuditAnchor to detect tail deletion attacks.
+    2. Consistency against the external AuditAnchor (VIGIL_AUDIT_ANCHOR_PATH) to detect tail deletion attacks,
+       even if the database and its internal tables are completely rewritten.
     """
+    anchor_path = os.environ.get("VIGIL_AUDIT_ANCHOR_PATH")
+    ext_anchor = None
+    if anchor_path and os.path.exists(anchor_path) and os.path.getsize(anchor_path) > 0:
+        with open(anchor_path, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f if line.strip()]
+        if lines:
+            try:
+                ext_anchor = json.loads(lines[-1])
+            except Exception:
+                parts = lines[-1].split(",")
+                if len(parts) >= 3:
+                    ext_anchor = {
+                        "timestamp": parts[0],
+                        "total_events": int(parts[1]),
+                        "head_hash": parts[2],
+                    }
+
     events = db.execute(select(AuditEvent)).scalars().all()
     if not events:
+        if ext_anchor is not None and int(ext_anchor.get("total_events", 0)) > 0:
+            return {
+                "valid": False,
+                "error": f"Tail deletion detected: audit ledger is empty but external anchor records {ext_anchor.get('total_events')} events.",
+                "verified_events": 0,
+                "total_events": 0,
+                "head_hash": "0" * 64,
+                "anchored_head_hash": ext_anchor.get("head_hash"),
+            }
         anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
         if anchor is not None and anchor.total_events > 0:
             return {
@@ -159,9 +199,23 @@ def verify_audit_chain(
             "total_events": len(events),
         }
 
-    # Verify against external anchor (detect tail row deletion)
+    # Verify against external anchor (detect tail row deletion even if entire DB is rewritten)
+    if ext_anchor is not None:
+        target_head = expected_head_hash or ext_anchor.get("head_hash")
+        ext_total = int(ext_anchor.get("total_events", 0))
+        if len(events) < ext_total or expected_prev != target_head:
+            return {
+                "valid": False,
+                "error": f"Tail deletion detected: chain ends at count {len(events)} with head '{expected_prev}', but external anchor records {ext_total} events with head '{ext_anchor.get('head_hash')}'.",
+                "verified_events": verified_count,
+                "total_events": len(events),
+                "head_hash": expected_prev,
+                "anchored_head_hash": ext_anchor.get("head_hash"),
+            }
+
+    # Fallback verification against internal anchor table if no external anchor is present
     anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
-    if anchor is not None:
+    if anchor is not None and ext_anchor is None:
         target_head = expected_head_hash or anchor.head_hash
         if len(events) < anchor.total_events or expected_prev != target_head:
             return {

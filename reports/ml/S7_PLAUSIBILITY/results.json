@@ -2,7 +2,7 @@
   "study_id": "S7_PLAUSIBILITY",
   "date": "2026-10-16",
   "protocol_version": "1.0",
-  "execution_time_seconds": 5.36,
+  "execution_time_seconds": 5.67,
   "headline_evaluation": "vigil-sim",
   "vigilsim_cohort": {
     "n_patient_visits_evaluated": 845,

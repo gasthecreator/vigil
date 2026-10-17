@@ -24,6 +24,14 @@ from vigil_core.fhir import (
     observation_to_fhir,
     patient_to_fhir,
 )
+from vigil_core.hl7 import (
+    HL7ObservationResult,
+    HL7ORU_R01Message,
+    HL7ParsingError,
+    generate_oru_r01,
+    parse_hl7_timestamp,
+    parse_oru_r01,
+)
 from vigil_core.units import (
     IncompatibleUnitsError,
     InvalidUnitError,
@@ -61,4 +69,11 @@ __all__ = [
     "observation_to_fhir",
     "fhir_to_observation",
     "bundle_to_fhir",
+    "HL7ParsingError",
+    "HL7ObservationResult",
+    "HL7ORU_R01Message",
+    "parse_hl7_timestamp",
+    "parse_oru_r01",
+    "generate_oru_r01",
 ]
+

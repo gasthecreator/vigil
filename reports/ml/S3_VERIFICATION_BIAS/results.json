@@ -1,26 +1,26 @@
 {
   "oracle_ground_truth": {
-    "sensitivity": 0.7398,
-    "specificity": 0.9979,
+    "sensitivity": 0.6916,
+    "specificity": 0.999,
     "verification_rate": 0.5796,
     "n_patients": 2500
   },
   "complete_case_estimator": {
-    "sensitivity": 0.9084,
+    "sensitivity": 0.8556,
     "specificity": 1.0,
-    "bias_sensitivity": 0.1687,
-    "bias_specificity": 0.0021
+    "bias_sensitivity": 0.164,
+    "bias_specificity": 0.001
   },
   "ipw_estimator": {
-    "sensitivity": 0.7361,
+    "sensitivity": 0.6501,
     "specificity": 1.0,
-    "bias_sensitivity": -0.0036,
-    "bias_specificity": 0.0021
+    "bias_sensitivity": -0.0415,
+    "bias_specificity": 0.001
   },
   "latent_class_em_estimator": {
-    "sensitivity": 0.7161,
-    "specificity": 0.9983,
-    "bias_sensitivity": -0.0237,
-    "bias_specificity": 0.0004
+    "sensitivity": 0.6344,
+    "specificity": 0.9982,
+    "bias_sensitivity": -0.0572,
+    "bias_specificity": -0.0008
   }
 }

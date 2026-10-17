@@ -392,6 +392,8 @@ def _route_amortized(
     net = _get_or_load_amortized_model()
     if len(vals_arr) == len(SCHEDULE):
         y_vec = vals_arr
+    elif len(vals_arr) == 0:
+        y_vec = np.full(len(SCHEDULE), 18.0)
     else:
         y_vec = np.interp(SCHEDULE, days_arr, vals_arr)
 
@@ -492,6 +494,8 @@ def _route_npe(
     y_raw = obs.values["ca153"]
     if len(y_raw) == len(SCHEDULE):
         y_vec = np.array(y_raw, dtype=float)
+    elif len(y_raw) == 0:
+        y_vec = np.full(len(SCHEDULE), 18.0)
     else:
         y_vec = np.interp(SCHEDULE, obs.days, y_raw)
 

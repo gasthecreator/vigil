@@ -38,6 +38,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from vigil_api.crypto import EncryptedString
 from vigil_api.database import Base
 
 
@@ -146,8 +147,8 @@ class Patient(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
     facility_id = Column(String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True, index=True)
-    mrn = Column(String(100), nullable=True, index=True)
-    external_id = Column(String(100), nullable=True, index=True)
+    mrn = Column(EncryptedString(255), nullable=True, index=True)
+    external_id = Column(EncryptedString(255), nullable=True, index=True)
     age = Column(Integer, nullable=True)
     birth_date = Column(DateTime, nullable=True)
     biological_sex = Column(String(20), default="female", nullable=False)
@@ -213,6 +214,7 @@ class Observation(Base):
     specimen_collected_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     result_received_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     laboratory_id = Column(String(100), nullable=True)
+    lab_changed = Column(Boolean, default=False, nullable=False)
     plausibility_status = Column(String(50), nullable=False, default="valid_normal")
     raw_value = Column(Float, nullable=False)
     raw_unit = Column(String(50), nullable=False)
@@ -441,4 +443,18 @@ class ReminderReceipt(Base):
     error_message = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     delivered_at = Column(DateTime, nullable=True)
+
+
+class IdempotencyRecord(Base):
+    """Idempotency record for offline sync replay and API mutation deduplication."""
+    __tablename__ = "idempotency_records"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    idempotency_key = Column(String(128), unique=True, nullable=False, index=True)
+    entity_type = Column(String(50), nullable=False, index=True)
+    entity_id = Column(String(36), nullable=True)
+    status = Column(String(50), default="applied", nullable=False)
+    response_payload = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
 

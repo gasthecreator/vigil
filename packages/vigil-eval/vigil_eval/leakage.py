@@ -61,6 +61,12 @@ class CanaryTestFailedError(LeakageError):
     pass
 
 
+class UnobservedValueLeakageError(LeakageError):
+    """Raised when unmeasured/unobserved analyte values leak into observation exports or features."""
+
+    pass
+
+
 DEFAULT_FORBIDDEN_TOKENS = [
     "is_anomaly",
     "anomaly",
@@ -267,3 +273,45 @@ def run_shuffled_label_canary(
         )
 
     return mean_auc
+
+
+def run_unobserved_value_canary(observations_df: pd.DataFrame) -> dict[str, int]:
+    """
+    Leakage canary test verifying that unobserved values are strictly NaN in observation exports.
+    Latent ground truth must never leak into model-visible analyte columns.
+    Raises UnobservedValueLeakageError if any unmeasured observation contains non-NaN data.
+    """
+    masks = [c for c in observations_df.columns if c.startswith("observed_")]
+    if not masks:
+        return {}
+
+    checked_counts: dict[str, int] = {}
+    for m in masks:
+        col = m[len("observed_") :]
+        if col not in observations_df.columns:
+            continue
+        unobs = ~observations_df[m].astype(bool)
+        unobs_count = int(unobs.sum())
+        checked_counts[col] = unobs_count
+        leaked = int(observations_df.loc[unobs, col].notna().sum())
+        if leaked > 0:
+            raise UnobservedValueLeakageError(
+                f"Unobserved-value canary FAILED! {leaked} unmeasured observations in '{col}' "
+                f"contain non-NaN values (out of {unobs_count} unobserved instances)."
+            )
+
+    return checked_counts
+
+
+def run_latent_column_canary(feature_df: pd.DataFrame) -> None:
+    """
+    Verifies that no ground-truth latent state columns or raw target indicators
+    appear in model feature inputs.
+    """
+    forbidden_prefixes = ("latent_", "true_")
+    violating_cols = [c for c in feature_df.columns if any(c.startswith(p) for p in forbidden_prefixes)]
+    if violating_cols:
+        raise OutcomeDerivedFeatureError(
+            f"Latent column canary FAILED! Latent or ground-truth columns leaked into feature matrix: {violating_cols}"
+        )
+

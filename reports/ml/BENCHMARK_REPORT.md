@@ -4,7 +4,7 @@
 > This benchmark was conducted exclusively on **SYNTHETIC DATA** (Tiers G1, G2, G3). All metrics, lead times, and calibration curves reflect synthetic cohort properties and simulator dynamics. They DO NOT represent clinical evidence of patient benefit, diagnostic accuracy, or regulatory validation.
 
 **Benchmark Version:** VigilBench 2.0 (Phase 2 & 3 Core)  
-**Execution Timestamp:** 2026-10-17 06:38:43 UTC  
+**Execution Timestamp:** 2026-10-17 08:12:30 UTC  
 **Governing Documents:** `docs/MASTER_PLAN.md` §14 WP2.1-WP2.4, WP3.0-WP3.5; `docs/ML_PROGRAM.md` §3, §4, §6, §9  
 
 ---
@@ -16,12 +16,12 @@ Evaluated on N=1,000 held-out synthetic patients with prospective horizon $\tau 
 | Model ID | Family | IPCW ROC-AUC (V=10) | Brier Score | ECE | Lead Time (Conditional) | Latency (p95 CPU) |
 |---|---|---|---|---|---|---|
 | `B0_PREVALENCE` | Heuristic | 0.5000 | 0.2113 | 0.0199 | 0.0 days | 0.00 ms |
-| `B1_SINGLE_THRESHOLD` | Clinical Rule | 0.7218 | 0.1464 | 0.0432 | 36.7 days | 0.01 ms |
-| `B2_VELOCITY_RULE` | Kinetic Rule | 0.5521 | 0.1966 | 0.0581 | 117.0 days | 0.02 ms |
-| `B3_REGULARIZED_HAZARD` | Discrete Survival | 0.7701 | 0.1401 | 0.0211 | 57.3 days | 1.64 ms |
-| `B4_GRADIENT_BOOSTING` | Non-linear Tree | 0.8161 | 0.1310 | 0.0340 | 65.6 days | 1.66 ms |
-| `K3_FAST_LANDMARK` | Bayesian Joint | 0.8093 | 0.1390 | 0.0218 | 56.2 days | 0.24 ms |
-| `K1_KINETIC` | Mechanistic State-Space | 0.5855 | 0.2133 | 0.0504 | 83.6 days | 0.28 ms |
+| `B1_SINGLE_THRESHOLD` | Clinical Rule | 0.6455 | 0.1737 | 0.0719 | 51.3 days | 0.01 ms |
+| `B2_VELOCITY_RULE` | Kinetic Rule | 0.5533 | 0.1994 | 0.0533 | 120.1 days | 0.02 ms |
+| `B3_REGULARIZED_HAZARD` | Discrete Survival | 0.7616 | 0.1431 | 0.0216 | 57.2 days | 0.64 ms |
+| `B4_GRADIENT_BOOSTING` | Non-linear Tree | 0.8102 | 0.1333 | 0.0355 | 61.2 days | 1.34 ms |
+| `K3_FAST_LANDMARK` | Bayesian Joint | 0.8027 | 0.1405 | 0.0206 | 56.6 days | 0.19 ms |
+| `K1_KINETIC` | Mechanistic State-Space | 0.5703 | 0.2161 | 0.0550 | 106.5 days | 0.10 ms |
 
 ---
 

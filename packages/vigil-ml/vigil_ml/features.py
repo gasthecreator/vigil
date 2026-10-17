@@ -18,7 +18,7 @@ windowed feature vectors containing:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -244,3 +244,26 @@ class WindowedFeatureExtractor:
         y = pd.Series(labels_list, name=f"recurrence_within_{int(horizon_days)}d")
 
         return X, y, np.array(follow_up_times), np.array(event_indicators)
+
+
+def build_landmark_features(
+    observations_df: pd.DataFrame,
+    patients_df: Optional[pd.DataFrame] = None,
+    horizon_days: float = 365.0,
+) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
+    """Module-level entrypoint for building landmark feature matrix."""
+    extractor = WindowedFeatureExtractor()
+    if patients_df is None:
+        # Default empty patient baseline dataframe if not provided
+        pt_ids = observations_df["patient_id"].unique()
+        patients_df = pd.DataFrame({"patient_id": pt_ids})
+    return extractor.transform_cohort(
+        patients_df=patients_df,
+        observations_df=observations_df,
+        horizon_days=horizon_days,
+    )
+
+
+build_features = build_landmark_features
+
+

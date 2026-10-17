@@ -1,28 +1,1711 @@
 {
-  "openapi": "3.1.0",
+  "components": {
+    "schemas": {
+      "AlertAcknowledgeRequest": {
+        "properties": {
+          "disposition": {
+            "description": "Disposition code from AlertDisposition",
+            "title": "Disposition",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clinician note or justification",
+            "title": "Note"
+          },
+          "rationale_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clinician justification for alert disposition",
+            "title": "Rationale Text"
+          }
+        },
+        "required": [
+          "disposition"
+        ],
+        "title": "AlertAcknowledgeRequest",
+        "type": "object"
+      },
+      "AlertAcknowledgeResponse": {
+        "properties": {
+          "acknowledged_at": {
+            "format": "date-time",
+            "title": "Acknowledged At",
+            "type": "string"
+          },
+          "acknowledged_by": {
+            "title": "Acknowledged By",
+            "type": "string"
+          },
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "disposition": {
+            "title": "Disposition",
+            "type": "string"
+          },
+          "rationale_text": {
+            "title": "Rationale Text",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "alert_id",
+          "status",
+          "disposition",
+          "rationale_text",
+          "acknowledged_at",
+          "acknowledged_by"
+        ],
+        "title": "AlertAcknowledgeResponse",
+        "type": "object"
+      },
+      "AlertSummary": {
+        "properties": {
+          "alert_type": {
+            "title": "Alert Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trigger_reason": {
+            "title": "Trigger Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "alert_type",
+          "severity",
+          "trigger_reason",
+          "status",
+          "created_at"
+        ],
+        "title": "AlertSummary",
+        "type": "object"
+      },
+      "AuditVerifyResponse": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "head_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Hash"
+          },
+          "tampered_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tampered Event Id"
+          },
+          "total_events": {
+            "title": "Total Events",
+            "type": "integer"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "verified_events": {
+            "title": "Verified Events",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "valid",
+          "verified_events",
+          "total_events"
+        ],
+        "title": "AuditVerifyResponse",
+        "type": "object"
+      },
+      "BaselineCreate": {
+        "properties": {
+          "er_status": {
+            "description": "Estrogen Receptor status (ER+/-)",
+            "title": "Er Status",
+            "type": "boolean"
+          },
+          "has_hypertension": {
+            "default": false,
+            "description": "Hypertension comorbidity",
+            "title": "Has Hypertension",
+            "type": "boolean"
+          },
+          "her2_status": {
+            "description": "HER2 receptor amplification status (HER2+/-)",
+            "title": "Her2 Status",
+            "type": "boolean"
+          },
+          "pr_status": {
+            "description": "Progesterone Receptor status (PR+/-)",
+            "title": "Pr Status",
+            "type": "boolean"
+          },
+          "renal_history": {
+            "default": false,
+            "description": "Chronic renal disease history",
+            "title": "Renal History",
+            "type": "boolean"
+          },
+          "tumor_stage": {
+            "description": "Primary tumor stage (1-4)",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Tumor Stage",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tumor_stage",
+          "er_status",
+          "pr_status",
+          "her2_status"
+        ],
+        "title": "BaselineCreate",
+        "type": "object"
+      },
+      "BaselineResponse": {
+        "properties": {
+          "er_status": {
+            "title": "Er Status",
+            "type": "boolean"
+          },
+          "has_hypertension": {
+            "title": "Has Hypertension",
+            "type": "boolean"
+          },
+          "her2_status": {
+            "title": "Her2 Status",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "pr_status": {
+            "title": "Pr Status",
+            "type": "boolean"
+          },
+          "renal_history": {
+            "title": "Renal History",
+            "type": "boolean"
+          },
+          "target_organ_susceptibility_vector": {
+            "$ref": "#/components/schemas/TargetOrganVector"
+          },
+          "tumor_stage": {
+            "title": "Tumor Stage",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "tumor_stage",
+          "er_status",
+          "pr_status",
+          "her2_status",
+          "has_hypertension",
+          "renal_history",
+          "target_organ_susceptibility_vector"
+        ],
+        "title": "BaselineResponse",
+        "type": "object"
+      },
+      "BatchImportResponse": {
+        "properties": {
+          "duplicate_count": {
+            "title": "Duplicate Count",
+            "type": "integer"
+          },
+          "imported_count": {
+            "title": "Imported Count",
+            "type": "integer"
+          },
+          "rejected_count": {
+            "title": "Rejected Count",
+            "type": "integer"
+          },
+          "row_reports": {
+            "items": {
+              "$ref": "#/components/schemas/RowReport"
+            },
+            "title": "Row Reports",
+            "type": "array"
+          },
+          "total_rows": {
+            "title": "Total Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_rows",
+          "imported_count",
+          "duplicate_count",
+          "rejected_count",
+          "row_reports"
+        ],
+        "title": "BatchImportResponse",
+        "type": "object"
+      },
+      "ConsentCreateRequest": {
+        "properties": {
+          "consent_type": {
+            "default": "surveillance_monitoring",
+            "description": "Type of clinical consent",
+            "title": "Consent Type",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Expiration date",
+            "title": "Expires At"
+          },
+          "granted": {
+            "default": true,
+            "description": "Whether consent is granted",
+            "title": "Granted",
+            "type": "boolean"
+          },
+          "scope": {
+            "default": "full",
+            "description": "Consent scope e.g. clinical_care, full",
+            "title": "Scope",
+            "type": "string"
+          },
+          "withdrawn_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Withdrawal date",
+            "title": "Withdrawn At"
+          }
+        },
+        "title": "ConsentCreateRequest",
+        "type": "object"
+      },
+      "FollowUpTaskResponse": {
+        "properties": {
+          "due_date": {
+            "format": "date-time",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "escalation_level": {
+            "title": "Escalation Level",
+            "type": "integer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "task_type": {
+            "title": "Task Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "patient_id",
+          "task_type",
+          "status",
+          "due_date",
+          "escalation_level"
+        ],
+        "title": "FollowUpTaskResponse",
+        "type": "object"
+      },
+      "FollowUpTaskSummary": {
+        "properties": {
+          "due_date": {
+            "format": "date-time",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "escalation_level": {
+            "title": "Escalation Level",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_type": {
+            "title": "Task Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_type",
+          "status",
+          "due_date",
+          "escalation_level"
+        ],
+        "title": "FollowUpTaskSummary",
+        "type": "object"
+      },
+      "FollowUpTransitionRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional clinical note explaining state transition",
+            "title": "Reason"
+          },
+          "target_status": {
+            "description": "Target status from FollowUpTaskStatus",
+            "title": "Target Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_status"
+        ],
+        "title": "FollowUpTransitionRequest",
+        "type": "object"
+      },
+      "HL7ORUImportResponse": {
+        "properties": {
+          "imported_count": {
+            "title": "Imported Count",
+            "type": "integer"
+          },
+          "message_control_id": {
+            "title": "Message Control Id",
+            "type": "string"
+          },
+          "observation_reports": {
+            "items": {
+              "$ref": "#/components/schemas/HL7ObservationImportReport"
+            },
+            "title": "Observation Reports",
+            "type": "array"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "rejected_count": {
+            "title": "Rejected Count",
+            "type": "integer"
+          },
+          "total_observations": {
+            "title": "Total Observations",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "message_control_id",
+          "patient_id",
+          "total_observations",
+          "imported_count",
+          "rejected_count",
+          "observation_reports"
+        ],
+        "title": "HL7ORUImportResponse",
+        "type": "object"
+      },
+      "HL7ObservationImportReport": {
+        "properties": {
+          "adjudicated_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjudicated Action"
+          },
+          "alert_created": {
+            "default": false,
+            "title": "Alert Created",
+            "type": "boolean"
+          },
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "loinc_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loinc Code"
+          },
+          "observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Id"
+          },
+          "set_id": {
+            "title": "Set Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_created": {
+            "default": false,
+            "title": "Task Created",
+            "type": "boolean"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "set_id",
+          "analyte_code",
+          "value",
+          "unit",
+          "status"
+        ],
+        "title": "HL7ObservationImportReport",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LabResultCreate": {
+        "properties": {
+          "alt_level": {
+            "description": "Alanine Transaminase (U/L)",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Alt Level",
+            "type": "number"
+          },
+          "ast_level": {
+            "description": "Aspartate Transaminase (U/L)",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Ast Level",
+            "type": "number"
+          },
+          "ca_15_3": {
+            "description": "Cancer Antigen 15-3 (U/mL)",
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Ca 15 3",
+            "type": "number"
+          },
+          "creatinine": {
+            "description": "Serum Creatinine (mg/dL)",
+            "maximum": 20.0,
+            "minimum": 0.1,
+            "title": "Creatinine",
+            "type": "number"
+          },
+          "date_drawn": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date and time blood specimen was drawn",
+            "title": "Date Drawn"
+          },
+          "wbc_count": {
+            "description": "White Blood Cell count (x10^9/L)",
+            "maximum": 100.0,
+            "minimum": 0.2,
+            "title": "Wbc Count",
+            "type": "number"
+          }
+        },
+        "required": [
+          "alt_level",
+          "ast_level",
+          "creatinine",
+          "ca_15_3",
+          "wbc_count"
+        ],
+        "title": "LabResultCreate",
+        "type": "object"
+      },
+      "ObservationCreateRequest": {
+        "properties": {
+          "analyte_code": {
+            "description": "Analyte code from vigil_core.analytes (e.g. 'ca_15_3', 'cea')",
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "lab_changed": {
+            "default": false,
+            "description": "Flag indicating if analyzer/lab changed from previous draw",
+            "title": "Lab Changed",
+            "type": "boolean"
+          },
+          "laboratory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identifier of executing laboratory",
+            "title": "Laboratory Id"
+          },
+          "specimen_collected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timestamp when specimen was drawn",
+            "title": "Specimen Collected At"
+          },
+          "unit": {
+            "description": "Input unit string (e.g. 'U/mL', 'kU/L', '[iU]/mL')",
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "description": "Observed raw numeric value",
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "analyte_code",
+          "value",
+          "unit"
+        ],
+        "title": "ObservationCreateRequest",
+        "type": "object"
+      },
+      "ObservationCreateResponse": {
+        "properties": {
+          "adjudicated_action": {
+            "title": "Adjudicated Action",
+            "type": "string"
+          },
+          "alert": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "canonical_unit": {
+            "title": "Canonical Unit",
+            "type": "string"
+          },
+          "canonical_value": {
+            "title": "Canonical Value",
+            "type": "number"
+          },
+          "follow_up_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowUpTaskSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observation_id": {
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "plausibility_status": {
+            "title": "Plausibility Status",
+            "type": "string"
+          },
+          "raw_unit": {
+            "title": "Raw Unit",
+            "type": "string"
+          },
+          "raw_value": {
+            "title": "Raw Value",
+            "type": "number"
+          },
+          "risk_assessment": {
+            "$ref": "#/components/schemas/RiskAssessmentSummary"
+          },
+          "specimen_collected_at": {
+            "format": "date-time",
+            "title": "Specimen Collected At",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "observation_id",
+          "patient_id",
+          "analyte_code",
+          "canonical_value",
+          "canonical_unit",
+          "raw_value",
+          "raw_unit",
+          "specimen_collected_at",
+          "plausibility_status",
+          "adjudicated_action",
+          "risk_assessment"
+        ],
+        "title": "ObservationCreateResponse",
+        "type": "object"
+      },
+      "PatientCreate": {
+        "properties": {
+          "age": {
+            "description": "Patient age in years",
+            "maximum": 120.0,
+            "minimum": 18.0,
+            "title": "Age",
+            "type": "integer"
+          },
+          "status": {
+            "default": "active",
+            "description": "Clinical surveillance status",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "age"
+        ],
+        "title": "PatientCreate",
+        "type": "object"
+      },
+      "PatientResponse": {
+        "properties": {
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "age",
+          "created_at",
+          "status"
+        ],
+        "title": "PatientResponse",
+        "type": "object"
+      },
+      "RiskAssessmentSummary": {
+        "properties": {
+          "abstention": {
+            "default": false,
+            "title": "Abstention",
+            "type": "boolean"
+          },
+          "adjudicated_action": {
+            "title": "Adjudicated Action",
+            "type": "string"
+          },
+          "assessment_date": {
+            "format": "date-time",
+            "title": "Assessment Date",
+            "type": "string"
+          },
+          "clinical_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Note"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_hash": {
+            "title": "Input Hash",
+            "type": "string"
+          },
+          "model_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Model Versions",
+            "type": "object"
+          },
+          "risk_tier": {
+            "title": "Risk Tier",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "uncertainty": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty"
+          }
+        },
+        "required": [
+          "id",
+          "assessment_date",
+          "model_versions",
+          "input_hash",
+          "score",
+          "risk_tier",
+          "adjudicated_action"
+        ],
+        "title": "RiskAssessmentSummary",
+        "type": "object"
+      },
+      "RiskInferenceResponse": {
+        "properties": {
+          "calculated_metastasis_risk": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Calculated Metastasis Risk",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "justification_text": {
+            "title": "Justification Text",
+            "type": "string"
+          },
+          "lab_result_id": {
+            "title": "Lab Result Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "triage_flag": {
+            "title": "Triage Flag",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "lab_result_id",
+          "calculated_metastasis_risk",
+          "triage_flag",
+          "justification_text",
+          "created_at"
+        ],
+        "title": "RiskInferenceResponse",
+        "type": "object"
+      },
+      "RowReport": {
+        "properties": {
+          "adjudicated_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjudicated Action"
+          },
+          "alert_created": {
+            "default": false,
+            "title": "Alert Created",
+            "type": "boolean"
+          },
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Id"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "row_index": {
+            "title": "Row Index",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task_created": {
+            "default": false,
+            "title": "Task Created",
+            "type": "boolean"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "row_index",
+          "patient_id",
+          "analyte_code",
+          "status"
+        ],
+        "title": "RowReport",
+        "type": "object"
+      },
+      "SimulationRequest": {
+        "properties": {
+          "hypothetical_lab": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Hypothetical Lab",
+            "type": "object"
+          }
+        },
+        "required": [
+          "hypothetical_lab"
+        ],
+        "title": "SimulationRequest",
+        "type": "object"
+      },
+      "SimulationResponse": {
+        "properties": {
+          "delta_risk": {
+            "title": "Delta Risk",
+            "type": "number"
+          },
+          "justification_text": {
+            "title": "Justification Text",
+            "type": "string"
+          },
+          "projected_risk": {
+            "title": "Projected Risk",
+            "type": "number"
+          },
+          "triage_flag": {
+            "title": "Triage Flag",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "projected_risk",
+          "triage_flag",
+          "justification_text",
+          "delta_risk"
+        ],
+        "title": "SimulationResponse",
+        "type": "object"
+      },
+      "SyncBatchRequest": {
+        "properties": {
+          "client_device_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Originating device or workstation ID",
+            "title": "Client Device Id"
+          },
+          "client_timestamp": {
+            "description": "Timestamp when batch was dispatched",
+            "format": "date-time",
+            "title": "Client Timestamp",
+            "type": "string"
+          },
+          "mutations": {
+            "description": "Array of queued mutations",
+            "items": {
+              "$ref": "#/components/schemas/SyncMutationItem"
+            },
+            "title": "Mutations",
+            "type": "array"
+          },
+          "sync_id": {
+            "description": "Unique client batch transaction identifier",
+            "title": "Sync Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sync_id",
+          "client_timestamp",
+          "mutations"
+        ],
+        "title": "SyncBatchRequest",
+        "type": "object"
+      },
+      "SyncBatchResponse": {
+        "properties": {
+          "already_applied_count": {
+            "title": "Already Applied Count",
+            "type": "integer"
+          },
+          "applied_count": {
+            "title": "Applied Count",
+            "type": "integer"
+          },
+          "conflict_count": {
+            "title": "Conflict Count",
+            "type": "integer"
+          },
+          "processed_at": {
+            "title": "Processed At",
+            "type": "string"
+          },
+          "rejected_count": {
+            "title": "Rejected Count",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SyncMutationResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "sync_id": {
+            "title": "Sync Id",
+            "type": "string"
+          },
+          "total_mutations": {
+            "title": "Total Mutations",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sync_id",
+          "total_mutations",
+          "applied_count",
+          "already_applied_count",
+          "conflict_count",
+          "rejected_count",
+          "results",
+          "processed_at"
+        ],
+        "title": "SyncBatchResponse",
+        "type": "object"
+      },
+      "SyncMutationItem": {
+        "properties": {
+          "action": {
+            "default": "create",
+            "description": "'create' or 'update'",
+            "title": "Action",
+            "type": "string"
+          },
+          "client_mutation_id": {
+            "description": "Unique client-generated idempotency key",
+            "title": "Client Mutation Id",
+            "type": "string"
+          },
+          "client_updated_at": {
+            "description": "Client timestamp when mutation occurred",
+            "format": "date-time",
+            "title": "Client Updated At",
+            "type": "string"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Target entity ID if updating",
+            "title": "Entity Id"
+          },
+          "entity_type": {
+            "description": "'observation', 'follow_up_task', or 'alert_acknowledgement'",
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "patient_id": {
+            "description": "Target patient UUID",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "description": "Mutation payload",
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "client_mutation_id",
+          "entity_type",
+          "patient_id",
+          "client_updated_at",
+          "payload"
+        ],
+        "title": "SyncMutationItem",
+        "type": "object"
+      },
+      "SyncMutationResult": {
+        "properties": {
+          "client_mutation_id": {
+            "title": "Client Mutation Id",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "server_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Updated At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_mutation_id",
+          "status"
+        ],
+        "title": "SyncMutationResult",
+        "type": "object"
+      },
+      "TargetOrganVector": {
+        "properties": {
+          "bone": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Bone",
+            "type": "number"
+          },
+          "brain": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Brain",
+            "type": "number"
+          },
+          "liver": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Liver",
+            "type": "number"
+          },
+          "lung": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Lung",
+            "type": "number"
+          }
+        },
+        "required": [
+          "bone",
+          "liver",
+          "lung",
+          "brain"
+        ],
+        "title": "TargetOrganVector",
+        "type": "object"
+      },
+      "TrajectoryPoint": {
+        "properties": {
+          "alt_level": {
+            "title": "Alt Level",
+            "type": "number"
+          },
+          "alt_velocity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "title": "Alt Velocity Pct"
+          },
+          "ast_level": {
+            "title": "Ast Level",
+            "type": "number"
+          },
+          "ca153_velocity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "title": "Ca153 Velocity Pct"
+          },
+          "ca_15_3": {
+            "title": "Ca 15 3",
+            "type": "number"
+          },
+          "calculated_metastasis_risk": {
+            "title": "Calculated Metastasis Risk",
+            "type": "number"
+          },
+          "ci_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "title": "Ci Lower"
+          },
+          "ci_upper": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1.0,
+            "title": "Ci Upper"
+          },
+          "creatinine": {
+            "title": "Creatinine",
+            "type": "number"
+          },
+          "date_drawn": {
+            "format": "date-time",
+            "title": "Date Drawn",
+            "type": "string"
+          },
+          "justification_text": {
+            "title": "Justification Text",
+            "type": "string"
+          },
+          "lab_id": {
+            "title": "Lab Id",
+            "type": "string"
+          },
+          "triage_flag": {
+            "title": "Triage Flag",
+            "type": "boolean"
+          },
+          "wbc_count": {
+            "title": "Wbc Count",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lab_id",
+          "date_drawn",
+          "alt_level",
+          "ast_level",
+          "creatinine",
+          "ca_15_3",
+          "wbc_count",
+          "calculated_metastasis_risk",
+          "triage_flag",
+          "justification_text"
+        ],
+        "title": "TrajectoryPoint",
+        "type": "object"
+      },
+      "TriageQueueItem": {
+        "properties": {
+          "action_urgency": {
+            "default": 0.0,
+            "title": "Action Urgency",
+            "type": "number"
+          },
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "last_lab_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Lab Date"
+          },
+          "latest_justification": {
+            "title": "Latest Justification",
+            "type": "string"
+          },
+          "latest_risk": {
+            "title": "Latest Risk",
+            "type": "number"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subtype": {
+            "default": "Unknown",
+            "title": "Subtype",
+            "type": "string"
+          },
+          "target_organ_susceptibility_vector": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Organ Susceptibility Vector"
+          },
+          "total_labs": {
+            "default": 0,
+            "title": "Total Labs",
+            "type": "integer"
+          },
+          "triage_flag": {
+            "title": "Triage Flag",
+            "type": "boolean"
+          },
+          "tumor_stage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tumor Stage"
+          },
+          "urgency_breakdown": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Breakdown"
+          }
+        },
+        "required": [
+          "patient_id",
+          "age",
+          "status",
+          "latest_risk",
+          "triage_flag",
+          "latest_justification"
+        ],
+        "title": "TriageQueueItem",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
   "info": {
-    "title": "Vigil",
     "description": "Vigil: Continuous Multimodal Oncology Surveillance & Decision-Support Aid. Research prototype \u2014 not a medical device.",
+    "title": "Vigil",
     "version": "0.1.0-alpha"
   },
+  "openapi": "3.1.0",
   "paths": {
-    "/api/v1/patients/": {
-      "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Create Patient",
-        "description": "Registers a new patient into the oncology surveillance roster.",
-        "operationId": "create_patient_api_v1_patients__post",
-        "security": [
-          {
-            "HTTPBearer": []
+    "/": {
+      "get": {
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
           }
-        ],
+        },
+        "summary": "Root"
+      }
+    },
+    "/api/v1/alerts/": {
+      "get": {
+        "description": "Retrieve surveillance alerts filtered by status.",
+        "operationId": "list_alerts_api_v1_alerts__get",
         "parameters": [
           {
-            "name": "X-Vigil-Role",
+            "in": "query",
+            "name": "status_filter",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "title": "Status Filter",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -37,8 +1720,203 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertSummary"
+                  },
+                  "title": "Response List Alerts Api V1 Alerts  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List active surveillance alerts",
+        "tags": [
+          "Alerts & Acknowledgement"
+        ]
+      }
+    },
+    "/api/v1/alerts/stream": {
+      "get": {
+        "description": "Server-Sent Events (SSE) stream for real-time alert delivery.\n\nAdheres to Master Plan \u00a79.2 and Phase 5 deliverables.\nEnforces active patient consent check and RBAC boundaries before streaming.",
+        "operationId": "stream_alerts_api_v1_alerts_stream_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "patient_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patient Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_events",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Events"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status_filter",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "title": "Status Filter",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Server-Sent Events (SSE) stream for real-time alert updates",
+        "tags": [
+          "Alerts & Acknowledgement"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}/acknowledge": {
+      "post": {
+        "description": "Mandatory acknowledgement disposition for alerts.\n\nPrevents silent dismissal of clinical alerts per MASTER_PLAN \u00a76.6.",
+        "operationId": "acknowledge_alert_api_v1_alerts__alert_id__acknowledge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -54,112 +1932,1176 @@
           }
         ],
         "requestBody": {
-          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertAcknowledgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertAcknowledgeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Acknowledge alert with mandatory clinical disposition",
+        "tags": [
+          "Alerts & Acknowledgement"
+        ]
+      }
+    },
+    "/api/v1/analytics/cohort": {
+      "get": {
+        "description": "Provides population-level surveillance KPIs and organ tropism distribution.",
+        "operationId": "get_cohort_analytics_api_v1_analytics_cohort_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Cohort Analytics",
+        "tags": [
+          "Analytics & Cohort"
+        ]
+      }
+    },
+    "/api/v1/analytics/seed-demo-cohort": {
+      "post": {
+        "description": "Seeds a clinical demo cohort with diverse risk profiles.\n\nGated strictly to local development environments and admin role per Condition S5-2.",
+        "operationId": "seed_demo_cohort_api_v1_analytics_seed_demo_cohort_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "num_patients",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "title": "Num Patients",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Seed Demo Cohort",
+        "tags": [
+          "Analytics & Cohort"
+        ]
+      }
+    },
+    "/api/v1/audit/events": {
+      "get": {
+        "description": "Retrieve recent cryptographically chained audit events.",
+        "operationId": "list_audit_events_api_v1_audit_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Audit Events Api V1 Audit Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List recent audit events",
+        "tags": [
+          "Cryptographic Audit Trail"
+        ]
+      }
+    },
+    "/api/v1/audit/verify": {
+      "get": {
+        "description": "Iterates through all audit events, verifying backlink hashes and payload signatures.\n\nReturns 200 with valid=True if unbroken, or valid=False with tampered_event_id.",
+        "operationId": "verify_audit_log_api_v1_audit_verify_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditVerifyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify cryptographic integrity of the audit log chain",
+        "tags": [
+          "Cryptographic Audit Trail"
+        ]
+      }
+    },
+    "/api/v1/fhir/Observation": {
+      "post": {
+        "description": "Ingests an HL7 FHIR R4 Observation resource into Vigil.\n\nResolves LOINC code to internal analyte, verifies consent, executes M3 plausibility,\nupdates K2 detector, evaluates M5 clinical narrative, and logs audit event.",
+        "operationId": "import_fhir_observation_api_v1_fhir_Observation_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Resource",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Import Fhir Observation Api V1 Fhir Observation Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Import HL7 FHIR R4 Observation resource through surveillance pipeline",
+        "tags": [
+          "HL7 FHIR R4 Interoperability"
+        ]
+      }
+    },
+    "/api/v1/fhir/Observation/{id}": {
+      "get": {
+        "description": "Retrieves an observation and formats it as an HL7 FHIR R4 Observation resource.",
+        "operationId": "export_fhir_observation_api_v1_fhir_Observation__id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Export Fhir Observation Api V1 Fhir Observation  Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export observation as HL7 FHIR R4 Observation resource",
+        "tags": [
+          "HL7 FHIR R4 Interoperability"
+        ]
+      }
+    },
+    "/api/v1/follow-up/outreach": {
+      "get": {
+        "description": "Retrieve prioritized list of patients due or overdue for surveillance follow-up.\n\nSupports injectable simulated clock for deterministic testing and escalation checking.",
+        "operationId": "get_prioritized_outreach_list_api_v1_follow_up_outreach_get",
+        "parameters": [
+          {
+            "description": "Optional facility ID filter",
+            "in": "query",
+            "name": "facility_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional facility ID filter",
+              "title": "Facility Id"
+            }
+          },
+          {
+            "description": "Injectable clock timestamp for evaluation",
+            "in": "query",
+            "name": "simulated_now",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Injectable clock timestamp for evaluation",
+              "title": "Simulated Now"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Get Prioritized Outreach List Api V1 Follow Up Outreach Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export prioritized outreach list for clinic staff",
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ]
+      }
+    },
+    "/api/v1/follow-up/reminders/receipts": {
+      "get": {
+        "description": "Retrieve reminder delivery receipts with delivery status and retry history.",
+        "operationId": "list_reminder_receipts_api_v1_follow_up_reminders_receipts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "patient_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patient Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "task_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List reminder delivery receipts",
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ]
+      }
+    },
+    "/api/v1/follow-up/reminders/run": {
+      "post": {
+        "description": "Executes a reminder evaluation cycle for active follow-up tasks.",
+        "operationId": "trigger_reminder_cycle_api_v1_follow_up_reminders_run_post",
+        "parameters": [
+          {
+            "description": "Injectable clock timestamp",
+            "in": "query",
+            "name": "simulated_now",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Injectable clock timestamp",
+              "title": "Simulated Now"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Execute reminder worker cycle using injectable clock",
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ]
+      }
+    },
+    "/api/v1/follow-up/{task_id}/transition": {
+      "post": {
+        "description": "Transitions a FollowUpTask to a new status (e.g. completed, declined_with_reason).\n\nEnforces terminal absorbing state invariant.",
+        "operationId": "transition_follow_up_task_api_v1_follow_up__task_id__transition_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Injectable clock timestamp",
+            "in": "query",
+            "name": "simulated_now",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Injectable clock timestamp",
+              "title": "Simulated Now"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpTransitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transition follow-up task status in state machine",
+        "tags": [
+          "Follow-Up Guardian (M6)"
+        ]
+      }
+    },
+    "/api/v1/hl7/oru-r01": {
+      "post": {
+        "description": "Processes an HL7 v2 ORU^R01 message containing laboratory observations.",
+        "operationId": "ingest_hl7_oru_r01_api_v1_hl7_oru_r01_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HL7ORUImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ingest HL7 v2 ORU^R01 unsolicited laboratory result message",
+        "tags": [
+          "HL7 v2 ORU^R01 Interoperability"
+        ]
+      }
+    },
+    "/api/v1/observations/batch-import": {
+      "post": {
+        "description": "Processes batch observation rows from CSV, Excel, or JSON.\n\nValidates schema, units, consent, and duplicate presence per row.\nFeeds every accepted row through M3 plausibility, K2 detector, M5 narrative, and audit.\nReturns a comprehensive per-row report.",
+        "operationId": "batch_import_observations_api_v1_observations_batch_import_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Batch import observations from CSV or Excel through no-dismissal pipeline",
+        "tags": [
+          "Batch Observation Ingestion"
+        ]
+      }
+    },
+    "/api/v1/patients/": {
+      "get": {
+        "description": "Lists all registered patients.",
+        "operationId": "list_patients_api_v1_patients__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PatientResponse"
+                  },
+                  "title": "Response List Patients Api V1 Patients  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Patients",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      },
+      "post": {
+        "description": "Registers a new patient into the oncology surveillance roster.",
+        "operationId": "create_patient_api_v1_patients__post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PatientCreate"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatientResponse"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      },
-      "get": {
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Patient",
         "tags": [
           "Patients & Surveillance"
-        ],
-        "summary": "List Patients",
-        "description": "Lists all registered patients.",
-        "operationId": "list_patients_api_v1_patients__get",
-        "parameters": [
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "title": "Skip"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 100,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PatientResponse"
-                  },
-                  "title": "Response List Patients Api V1 Patients  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/api/v1/patients/triage": {
       "get": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Get Triage Queue",
         "description": "View 1: Triage Queue.\nReturns the complete roster of patients dynamically ordered by composite Action Urgency\n(combining risk, uncertainty/abstention, overdue follow-ups, and treatment delay).\nMaster Plan \u00a76.9 (M9) / Phase 5b.",
         "operationId": "get_triage_queue_api_v1_patients_triage_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -174,8 +3116,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -192,58 +3134,58 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TriageQueueItem"
                   },
-                  "title": "Response Get Triage Queue Api V1 Patients Triage Get"
+                  "title": "Response Get Triage Queue Api V1 Patients Triage Get",
+                  "type": "array"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Triage Queue",
+        "tags": [
+          "Patients & Surveillance"
+        ]
       }
     },
     "/api/v1/patients/{id}": {
       "get": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Get Patient Detail",
         "description": "Retrieves single patient details, baseline profile, and latest risk inference.",
         "operationId": "get_patient_detail_api_v1_patients__id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
-            "name": "id",
             "in": "path",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "Id"
+              "title": "Id",
+              "type": "string"
             }
           },
           {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -258,8 +3200,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -276,56 +3218,56 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Patient Detail Api V1 Patients  Id  Get"
+                  "title": "Response Get Patient Detail Api V1 Patients  Id  Get",
+                  "type": "object"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/api/v1/patients/{id}/baseline": {
-      "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Submit Baseline Profile",
-        "description": "Submits primary tumor pathology and comorbidities.",
-        "operationId": "submit_baseline_profile_api_v1_patients__id__baseline_post",
+        },
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "summary": "Get Patient Detail",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/baseline": {
+      "post": {
+        "description": "Submits primary tumor pathology and comorbidities.",
+        "operationId": "submit_baseline_profile_api_v1_patients__id__baseline_post",
         "parameters": [
           {
-            "name": "id",
             "in": "path",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "Id"
+              "title": "Id",
+              "type": "string"
             }
           },
           {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -340,8 +3282,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -357,464 +3299,101 @@
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BaselineCreate"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BaselineResponse"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/api/v1/patients/{id}/labs": {
-      "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Submit Lab Result",
-        "description": "Submits new lab result draw.\n\nCondition S5-2 & S5-7: Re-routes all analytes through the canonical observation ingestion\npipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,\nand cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.",
-        "operationId": "submit_lab_result_api_v1_patients__id__labs_post",
+        },
         "security": [
           {
             "HTTPBearer": []
           }
         ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Id"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LabResultCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RiskInferenceResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/patients/{id}/trajectory": {
-      "get": {
+        "summary": "Submit Baseline Profile",
         "tags": [
           "Patients & Surveillance"
-        ],
-        "summary": "Get Patient Trajectory",
-        "description": "Returns full longitudinal surveillance trajectory for a patient, joining\neach lab draw with its corresponding calculated_metastasis_risk, triage_flag,\nand clinical justification_text.",
-        "operationId": "get_patient_trajectory_api_v1_patients__id__trajectory_get",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TrajectoryPoint"
-                  },
-                  "title": "Response Get Patient Trajectory Api V1 Patients  Id  Trajectory Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/patients/{id}/simulate": {
-      "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Simulate Future Lab",
-        "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory.",
-        "operationId": "simulate_future_lab_api_v1_patients__id__simulate_post",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SimulationRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SimulationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/patients/{id}/observations": {
-      "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Unit-safe observation ingestion calling M3, K2, and M5",
-        "description": "Unit-safe ingestion validating against Analyte Registry, executing M3 adjudication,\nupdating K2 sequential detector, verifying M5 clinical note, and enforcing no-dismissal invariant.",
-        "operationId": "ingest_observation_api_v1_patients__id__observations_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Id"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ObservationCreateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ObservationCreateResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "List patient clinical observations",
-        "description": "Retrieve observations for consented patient.",
-        "operationId": "list_patient_observations_api_v1_patients__id__observations_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Id"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": true
-                  },
-                  "title": "Response List Patient Observations Api V1 Patients  Id  Observations Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/api/v1/patients/{id}/consent": {
       "post": {
-        "tags": [
-          "Patients & Surveillance"
-        ],
-        "summary": "Update or grant patient consent record",
         "description": "Record, revoke, or expire a patient consent record.",
         "operationId": "record_consent_api_v1_patients__id__consent_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
-            "name": "id",
             "in": "path",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "Id"
+              "title": "Id",
+              "type": "string"
             }
           },
           {
+            "in": "query",
             "name": "consent_type",
-            "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
               "default": "surveillance_monitoring",
-              "title": "Consent Type"
+              "title": "Consent Type",
+              "type": "string"
             }
           },
           {
+            "in": "query",
             "name": "granted",
-            "in": "query",
             "required": false,
             "schema": {
-              "type": "boolean",
               "default": true,
-              "title": "Granted"
+              "title": "Granted",
+              "type": "boolean"
             }
           },
           {
-            "name": "scope",
             "in": "query",
+            "name": "scope",
             "required": false,
             "schema": {
-              "type": "string",
               "default": "full",
-              "title": "Scope"
+              "title": "Scope",
+              "type": "string"
             }
           },
           {
-            "name": "expires_at",
             "in": "query",
+            "name": "expires_at",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "type": "string"
                 },
                 {
                   "type": "null"
@@ -824,14 +3403,14 @@
             }
           },
           {
-            "name": "withdrawn_at",
             "in": "query",
+            "name": "withdrawn_at",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "type": "string"
                 },
                 {
                   "type": "null"
@@ -841,8 +3420,8 @@
             }
           },
           {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -857,8 +3436,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -892,140 +3471,52 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/observations/batch-import": {
-      "post": {
-        "tags": [
-          "Batch Observation Ingestion"
-        ],
-        "summary": "Batch import observations from CSV or Excel through no-dismissal pipeline",
-        "description": "Processes batch observation rows from CSV, Excel, or JSON.\n\nValidates schema, units, consent, and duplicate presence per row.\nFeeds every accepted row through M3 plausibility, K2 detector, M5 narrative, and audit.\nReturns a comprehensive per-row report.",
-        "operationId": "batch_import_observations_api_v1_observations_batch_import_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/BatchImportRequest"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Payload"
-              }
-            }
+            },
+            "description": "Validation Error"
           }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BatchImportResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/fhir/Observation/{id}": {
-      "get": {
-        "tags": [
-          "HL7 FHIR R4 Interoperability"
-        ],
-        "summary": "Export observation as HL7 FHIR R4 Observation resource",
-        "description": "Retrieves an observation and formats it as an HL7 FHIR R4 Observation resource.",
-        "operationId": "export_fhir_observation_api_v1_fhir_Observation__id__get",
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "summary": "Update or grant patient consent record",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/labs": {
+      "post": {
+        "description": "Submits new lab result draw.\n\nCondition S5-2 & S5-7: Re-routes all analytes through the canonical observation ingestion\npipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,\nand cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.",
+        "operationId": "submit_lab_result_api_v1_patients__id__labs_post",
         "parameters": [
           {
+            "in": "path",
             "name": "id",
-            "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "Id"
+              "title": "Id",
+              "type": "string"
             }
           },
           {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1040,8 +3531,98 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabResultCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskInferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Submit Lab Result",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/observations": {
+      "get": {
+        "description": "Retrieve observations for consented patient.",
+        "operationId": "list_patient_observations_api_v1_patients__id__observations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1058,47 +3639,57 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Export Fhir Observation Api V1 Fhir Observation  Id  Get"
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Patient Observations Api V1 Patients  Id  Observations Get",
+                  "type": "array"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/api/v1/fhir/Observation": {
-      "post": {
-        "tags": [
-          "HL7 FHIR R4 Interoperability"
-        ],
-        "summary": "Import HL7 FHIR R4 Observation resource through surveillance pipeline",
-        "description": "Ingests an HL7 FHIR R4 Observation resource into Vigil.\n\nResolves LOINC code to internal analyte, verifies consent, executes M3 plausibility,\nupdates K2 detector, evaluates M5 clinical narrative, and logs audit event.",
-        "operationId": "import_fhir_observation_api_v1_fhir_Observation_post",
+        },
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "summary": "List patient clinical observations",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      },
+      "post": {
+        "description": "Unit-safe ingestion validating against Analyte Registry, executing M3 adjudication,\nupdating K2 sequential detector, verifying M5 clinical note, and enforcing no-dismissal invariant.",
+        "operationId": "ingest_observation_api_v1_patients__id__observations_post",
         "parameters": [
           {
-            "name": "X-Vigil-Role",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1113,8 +3704,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1130,174 +3721,156 @@
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Resource"
+                "$ref": "#/components/schemas/ObservationCreateRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Import Fhir Observation Api V1 Fhir Observation Post"
+                  "$ref": "#/components/schemas/ObservationCreateResponse"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/api/v1/alerts/": {
-      "get": {
-        "tags": [
-          "Alerts & Acknowledgement"
-        ],
-        "summary": "List active surveillance alerts",
-        "description": "Retrieve surveillance alerts filtered by status.",
-        "operationId": "list_alerts_api_v1_alerts__get",
+        },
         "security": [
           {
             "HTTPBearer": []
           }
         ],
+        "summary": "Unit-safe observation ingestion calling M3, K2, and M5",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/simulate": {
+      "post": {
+        "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory.",
+        "operationId": "simulate_future_lab_api_v1_patients__id__simulate_post",
         "parameters": [
           {
-            "name": "status_filter",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "name": "id",
+            "required": true,
             "schema": {
-              "type": "string",
-              "default": "open",
-              "title": "Status Filter"
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
             }
           },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "title": "Skip"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 50,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResponse"
                 }
-              ],
-              "title": "X-Vigil-Role"
-            }
+              }
+            },
+            "description": "Successful Response"
           },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
-              ],
-              "title": "X-Vigil-User-Id"
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simulate Future Lab",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/trajectory": {
+      "get": {
+        "description": "Returns full longitudinal surveillance trajectory for a patient, joining\neach lab draw with its corresponding calculated_metastasis_risk, triage_flag,\nand clinical justification_text.",
+        "operationId": "get_patient_trajectory_api_v1_patients__id__trajectory_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AlertSummary"
+                    "$ref": "#/components/schemas/TrajectoryPoint"
                   },
-                  "title": "Response List Alerts Api V1 Alerts  Get"
+                  "title": "Response Get Patient Trajectory Api V1 Patients  Id  Trajectory Get",
+                  "type": "array"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
+        },
+        "summary": "Get Patient Trajectory",
+        "tags": [
+          "Patients & Surveillance"
+        ]
       }
     },
-    "/api/v1/alerts/{alert_id}/acknowledge": {
+    "/api/v1/sync/batch": {
       "post": {
-        "tags": [
-          "Alerts & Acknowledgement"
-        ],
-        "summary": "Acknowledge alert with mandatory clinical disposition",
-        "description": "Mandatory acknowledgement disposition for alerts.\n\nPrevents silent dismissal of clinical alerts per MASTER_PLAN \u00a76.6.",
-        "operationId": "acknowledge_alert_api_v1_alerts__alert_id__acknowledge_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
+        "description": "Replays queued client mutations accumulated during offline clinic operations.",
+        "operationId": "process_sync_batch_api_v1_sync_batch_post",
         "parameters": [
           {
-            "name": "alert_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Alert Id"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
             "in": "header",
+            "name": "X-Vigil-Role",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1312,8 +3885,8 @@
             }
           },
           {
-            "name": "X-Vigil-User-Id",
             "in": "header",
+            "name": "X-Vigil-User-Id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -1329,2137 +3902,62 @@
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AlertAcknowledgeRequest"
+                "$ref": "#/components/schemas/SyncBatchRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AlertAcknowledgeResponse"
+                  "$ref": "#/components/schemas/SyncBatchResponse"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/follow-up/outreach": {
-      "get": {
-        "tags": [
-          "Follow-Up Guardian (M6)"
-        ],
-        "summary": "Export prioritized outreach list for clinic staff",
-        "description": "Retrieve prioritized list of patients due or overdue for surveillance follow-up.\n\nSupports injectable simulated clock for deterministic testing and escalation checking.",
-        "operationId": "get_prioritized_outreach_list_api_v1_follow_up_outreach_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "facility_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Optional facility ID filter",
-              "title": "Facility Id"
             },
-            "description": "Optional facility ID filter"
-          },
-          {
-            "name": "simulated_now",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Injectable clock timestamp for evaluation",
-              "title": "Simulated Now"
-            },
-            "description": "Injectable clock timestamp for evaluation"
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": true
-                  },
-                  "title": "Response Get Prioritized Outreach List Api V1 Follow Up Outreach Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/follow-up/{task_id}/transition": {
-      "post": {
-        "tags": [
-          "Follow-Up Guardian (M6)"
-        ],
-        "summary": "Transition follow-up task status in state machine",
-        "description": "Transitions a FollowUpTask to a new status (e.g. completed, declined_with_reason).\n\nEnforces terminal absorbing state invariant.",
-        "operationId": "transition_follow_up_task_api_v1_follow_up__task_id__transition_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Task Id"
-            }
-          },
-          {
-            "name": "simulated_now",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Injectable clock timestamp",
-              "title": "Simulated Now"
-            },
-            "description": "Injectable clock timestamp"
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FollowUpTransitionRequest"
-              }
-            }
+            "description": "Validation Error"
           }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FollowUpTaskResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/follow-up/reminders/run": {
-      "post": {
-        "tags": [
-          "Follow-Up Guardian (M6)"
-        ],
-        "summary": "Execute reminder worker cycle using injectable clock",
-        "description": "Executes a reminder evaluation cycle for active follow-up tasks.",
-        "operationId": "trigger_reminder_cycle_api_v1_follow_up_reminders_run_post",
         "security": [
           {
             "HTTPBearer": []
           }
         ],
-        "parameters": [
-          {
-            "name": "simulated_now",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Injectable clock timestamp",
-              "title": "Simulated Now"
-            },
-            "description": "Injectable clock timestamp"
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/follow-up/reminders/receipts": {
-      "get": {
+        "summary": "Process offline sync batch replay with idempotency and LWW conflict resolution",
         "tags": [
-          "Follow-Up Guardian (M6)"
-        ],
-        "summary": "List reminder delivery receipts",
-        "description": "Retrieve reminder delivery receipts with delivery status and retry history.",
-        "operationId": "list_reminder_receipts_api_v1_follow_up_reminders_receipts_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "patient_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Patient Id"
-            }
-          },
-          {
-            "name": "task_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Task Id"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/audit/verify": {
-      "get": {
-        "tags": [
-          "Cryptographic Audit Trail"
-        ],
-        "summary": "Verify cryptographic integrity of the audit log chain",
-        "description": "Iterates through all audit events, verifying backlink hashes and payload signatures.\n\nReturns 200 with valid=True if unbroken, or valid=False with tampered_event_id.",
-        "operationId": "verify_audit_log_api_v1_audit_verify_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditVerifyResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/audit/events": {
-      "get": {
-        "tags": [
-          "Cryptographic Audit Trail"
-        ],
-        "summary": "List recent audit events",
-        "description": "Retrieve recent cryptographically chained audit events.",
-        "operationId": "list_audit_events_api_v1_audit_events_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "title": "Skip"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 50,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": true
-                  },
-                  "title": "Response List Audit Events Api V1 Audit Events Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analytics/cohort": {
-      "get": {
-        "tags": [
-          "Analytics & Cohort"
-        ],
-        "summary": "Get Cohort Analytics",
-        "description": "Provides population-level surveillance KPIs and organ tropism distribution.",
-        "operationId": "get_cohort_analytics_api_v1_analytics_cohort_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/analytics/seed-demo-cohort": {
-      "post": {
-        "tags": [
-          "Analytics & Cohort"
-        ],
-        "summary": "Seed Demo Cohort",
-        "description": "Seeds a clinical demo cohort with diverse risk profiles.\n\nGated strictly to local development environments and admin role per Condition S5-2.",
-        "operationId": "seed_demo_cohort_api_v1_analytics_seed_demo_cohort_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "num_patients",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 12,
-              "title": "Num Patients"
-            }
-          },
-          {
-            "name": "X-Vigil-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-Role"
-            }
-          },
-          {
-            "name": "X-Vigil-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Vigil-User-Id"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/": {
-      "get": {
-        "summary": "Root",
-        "operationId": "root__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
+          "Offline Batch Sync"
+        ]
       }
     },
     "/health": {
       "get": {
-        "summary": "Health Check",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "AlertAcknowledgeRequest": {
-        "properties": {
-          "disposition": {
-            "type": "string",
-            "title": "Disposition",
-            "description": "Disposition code from AlertDisposition"
-          },
-          "rationale_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rationale Text",
-            "description": "Clinician justification for alert disposition"
-          },
-          "note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Note",
-            "description": "Clinician note or justification"
-          }
-        },
-        "type": "object",
-        "required": [
-          "disposition"
-        ],
-        "title": "AlertAcknowledgeRequest"
-      },
-      "AlertAcknowledgeResponse": {
-        "properties": {
-          "alert_id": {
-            "type": "string",
-            "title": "Alert Id"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "disposition": {
-            "type": "string",
-            "title": "Disposition"
-          },
-          "rationale_text": {
-            "type": "string",
-            "title": "Rationale Text"
-          },
-          "acknowledged_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Acknowledged At"
-          },
-          "acknowledged_by": {
-            "type": "string",
-            "title": "Acknowledged By"
-          },
-          "synthetic": {
-            "type": "boolean",
-            "title": "Synthetic",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "alert_id",
-          "status",
-          "disposition",
-          "rationale_text",
-          "acknowledged_at",
-          "acknowledged_by"
-        ],
-        "title": "AlertAcknowledgeResponse"
-      },
-      "AlertSummary": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "alert_type": {
-            "type": "string",
-            "title": "Alert Type"
-          },
-          "severity": {
-            "type": "string",
-            "title": "Severity"
-          },
-          "trigger_reason": {
-            "type": "string",
-            "title": "Trigger Reason"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "alert_type",
-          "severity",
-          "trigger_reason",
-          "status",
-          "created_at"
-        ],
-        "title": "AlertSummary"
-      },
-      "AuditVerifyResponse": {
-        "properties": {
-          "valid": {
-            "type": "boolean",
-            "title": "Valid"
-          },
-          "verified_events": {
-            "type": "integer",
-            "title": "Verified Events"
-          },
-          "total_events": {
-            "type": "integer",
-            "title": "Total Events"
-          },
-          "head_hash": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Head Hash"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          },
-          "tampered_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tampered Event Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "valid",
-          "verified_events",
-          "total_events"
-        ],
-        "title": "AuditVerifyResponse"
-      },
-      "BaselineCreate": {
-        "properties": {
-          "tumor_stage": {
-            "type": "integer",
-            "maximum": 4.0,
-            "minimum": 1.0,
-            "title": "Tumor Stage",
-            "description": "Primary tumor stage (1-4)"
-          },
-          "er_status": {
-            "type": "boolean",
-            "title": "Er Status",
-            "description": "Estrogen Receptor status (ER+/-)"
-          },
-          "pr_status": {
-            "type": "boolean",
-            "title": "Pr Status",
-            "description": "Progesterone Receptor status (PR+/-)"
-          },
-          "her2_status": {
-            "type": "boolean",
-            "title": "Her2 Status",
-            "description": "HER2 receptor amplification status (HER2+/-)"
-          },
-          "has_hypertension": {
-            "type": "boolean",
-            "title": "Has Hypertension",
-            "description": "Hypertension comorbidity",
-            "default": false
-          },
-          "renal_history": {
-            "type": "boolean",
-            "title": "Renal History",
-            "description": "Chronic renal disease history",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "tumor_stage",
-          "er_status",
-          "pr_status",
-          "her2_status"
-        ],
-        "title": "BaselineCreate"
-      },
-      "BaselineResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "tumor_stage": {
-            "type": "integer",
-            "title": "Tumor Stage"
-          },
-          "er_status": {
-            "type": "boolean",
-            "title": "Er Status"
-          },
-          "pr_status": {
-            "type": "boolean",
-            "title": "Pr Status"
-          },
-          "her2_status": {
-            "type": "boolean",
-            "title": "Her2 Status"
-          },
-          "has_hypertension": {
-            "type": "boolean",
-            "title": "Has Hypertension"
-          },
-          "renal_history": {
-            "type": "boolean",
-            "title": "Renal History"
-          },
-          "target_organ_susceptibility_vector": {
-            "$ref": "#/components/schemas/TargetOrganVector"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "patient_id",
-          "tumor_stage",
-          "er_status",
-          "pr_status",
-          "her2_status",
-          "has_hypertension",
-          "renal_history",
-          "target_organ_susceptibility_vector"
-        ],
-        "title": "BaselineResponse"
-      },
-      "BatchImportRequest": {
-        "properties": {
-          "rows": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/BatchImportRow"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rows"
-          },
-          "csv_data": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csv Data"
-          }
-        },
-        "type": "object",
-        "title": "BatchImportRequest"
-      },
-      "BatchImportResponse": {
-        "properties": {
-          "total_rows": {
-            "type": "integer",
-            "title": "Total Rows"
-          },
-          "imported_count": {
-            "type": "integer",
-            "title": "Imported Count"
-          },
-          "duplicate_count": {
-            "type": "integer",
-            "title": "Duplicate Count"
-          },
-          "rejected_count": {
-            "type": "integer",
-            "title": "Rejected Count"
-          },
-          "row_reports": {
-            "items": {
-              "$ref": "#/components/schemas/RowReport"
             },
-            "type": "array",
-            "title": "Row Reports"
+            "description": "Successful Response"
           }
         },
-        "type": "object",
-        "required": [
-          "total_rows",
-          "imported_count",
-          "duplicate_count",
-          "rejected_count",
-          "row_reports"
-        ],
-        "title": "BatchImportResponse"
-      },
-      "BatchImportRow": {
-        "properties": {
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "analyte_code": {
-            "type": "string",
-            "title": "Analyte Code"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "unit": {
-            "type": "string",
-            "title": "Unit"
-          },
-          "specimen_collected_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Specimen Collected At"
-          },
-          "laboratory_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Laboratory Id"
-          },
-          "lab_changed": {
-            "type": "boolean",
-            "title": "Lab Changed",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "patient_id",
-          "analyte_code",
-          "value",
-          "unit"
-        ],
-        "title": "BatchImportRow"
-      },
-      "ConsentCreateRequest": {
-        "properties": {
-          "consent_type": {
-            "type": "string",
-            "title": "Consent Type",
-            "description": "Type of clinical consent",
-            "default": "surveillance_monitoring"
-          },
-          "granted": {
-            "type": "boolean",
-            "title": "Granted",
-            "description": "Whether consent is granted",
-            "default": true
-          },
-          "scope": {
-            "type": "string",
-            "title": "Scope",
-            "description": "Consent scope e.g. clinical_care, full",
-            "default": "full"
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At",
-            "description": "Expiration date"
-          },
-          "withdrawn_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Withdrawn At",
-            "description": "Withdrawal date"
-          }
-        },
-        "type": "object",
-        "title": "ConsentCreateRequest"
-      },
-      "FollowUpTaskResponse": {
-        "properties": {
-          "task_id": {
-            "type": "string",
-            "title": "Task Id"
-          },
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "task_type": {
-            "type": "string",
-            "title": "Task Type"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "due_date": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Due Date"
-          },
-          "escalation_level": {
-            "type": "integer",
-            "title": "Escalation Level"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "synthetic": {
-            "type": "boolean",
-            "title": "Synthetic",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "task_id",
-          "patient_id",
-          "task_type",
-          "status",
-          "due_date",
-          "escalation_level"
-        ],
-        "title": "FollowUpTaskResponse"
-      },
-      "FollowUpTaskSummary": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "task_type": {
-            "type": "string",
-            "title": "Task Type"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "due_date": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Due Date"
-          },
-          "escalation_level": {
-            "type": "integer",
-            "title": "Escalation Level"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "task_type",
-          "status",
-          "due_date",
-          "escalation_level"
-        ],
-        "title": "FollowUpTaskSummary"
-      },
-      "FollowUpTransitionRequest": {
-        "properties": {
-          "target_status": {
-            "type": "string",
-            "title": "Target Status",
-            "description": "Target status from FollowUpTaskStatus"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "Optional clinical note explaining state transition"
-          }
-        },
-        "type": "object",
-        "required": [
-          "target_status"
-        ],
-        "title": "FollowUpTransitionRequest"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "LabResultCreate": {
-        "properties": {
-          "date_drawn": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Drawn",
-            "description": "Date and time blood specimen was drawn"
-          },
-          "alt_level": {
-            "type": "number",
-            "maximum": 1000.0,
-            "minimum": 1.0,
-            "title": "Alt Level",
-            "description": "Alanine Transaminase (U/L)"
-          },
-          "ast_level": {
-            "type": "number",
-            "maximum": 1000.0,
-            "minimum": 1.0,
-            "title": "Ast Level",
-            "description": "Aspartate Transaminase (U/L)"
-          },
-          "creatinine": {
-            "type": "number",
-            "maximum": 20.0,
-            "minimum": 0.1,
-            "title": "Creatinine",
-            "description": "Serum Creatinine (mg/dL)"
-          },
-          "ca_15_3": {
-            "type": "number",
-            "maximum": 2000.0,
-            "minimum": 1.0,
-            "title": "Ca 15 3",
-            "description": "Cancer Antigen 15-3 (U/mL)"
-          },
-          "wbc_count": {
-            "type": "number",
-            "maximum": 100.0,
-            "minimum": 0.2,
-            "title": "Wbc Count",
-            "description": "White Blood Cell count (x10^9/L)"
-          }
-        },
-        "type": "object",
-        "required": [
-          "alt_level",
-          "ast_level",
-          "creatinine",
-          "ca_15_3",
-          "wbc_count"
-        ],
-        "title": "LabResultCreate"
-      },
-      "ObservationCreateRequest": {
-        "properties": {
-          "analyte_code": {
-            "type": "string",
-            "title": "Analyte Code",
-            "description": "Analyte code from vigil_core.analytes (e.g. 'ca_15_3', 'cea')"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value",
-            "description": "Observed raw numeric value"
-          },
-          "unit": {
-            "type": "string",
-            "title": "Unit",
-            "description": "Input unit string (e.g. 'U/mL', 'kU/L', '[iU]/mL')"
-          },
-          "specimen_collected_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Specimen Collected At",
-            "description": "Timestamp when specimen was drawn"
-          },
-          "laboratory_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Laboratory Id",
-            "description": "Identifier of executing laboratory"
-          },
-          "lab_changed": {
-            "type": "boolean",
-            "title": "Lab Changed",
-            "description": "Flag indicating if analyzer/lab changed from previous draw",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "analyte_code",
-          "value",
-          "unit"
-        ],
-        "title": "ObservationCreateRequest"
-      },
-      "ObservationCreateResponse": {
-        "properties": {
-          "observation_id": {
-            "type": "string",
-            "title": "Observation Id"
-          },
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "analyte_code": {
-            "type": "string",
-            "title": "Analyte Code"
-          },
-          "canonical_value": {
-            "type": "number",
-            "title": "Canonical Value"
-          },
-          "canonical_unit": {
-            "type": "string",
-            "title": "Canonical Unit"
-          },
-          "raw_value": {
-            "type": "number",
-            "title": "Raw Value"
-          },
-          "raw_unit": {
-            "type": "string",
-            "title": "Raw Unit"
-          },
-          "specimen_collected_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Specimen Collected At"
-          },
-          "plausibility_status": {
-            "type": "string",
-            "title": "Plausibility Status"
-          },
-          "adjudicated_action": {
-            "type": "string",
-            "title": "Adjudicated Action"
-          },
-          "risk_assessment": {
-            "$ref": "#/components/schemas/RiskAssessmentSummary"
-          },
-          "alert": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AlertSummary"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "follow_up_task": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FollowUpTaskSummary"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "synthetic": {
-            "type": "boolean",
-            "title": "Synthetic",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "observation_id",
-          "patient_id",
-          "analyte_code",
-          "canonical_value",
-          "canonical_unit",
-          "raw_value",
-          "raw_unit",
-          "specimen_collected_at",
-          "plausibility_status",
-          "adjudicated_action",
-          "risk_assessment"
-        ],
-        "title": "ObservationCreateResponse"
-      },
-      "PatientCreate": {
-        "properties": {
-          "age": {
-            "type": "integer",
-            "maximum": 120.0,
-            "minimum": 18.0,
-            "title": "Age",
-            "description": "Patient age in years"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "description": "Clinical surveillance status",
-            "default": "active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "age"
-        ],
-        "title": "PatientCreate"
-      },
-      "PatientResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "age": {
-            "type": "integer",
-            "title": "Age"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "age",
-          "created_at",
-          "status"
-        ],
-        "title": "PatientResponse"
-      },
-      "RiskAssessmentSummary": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "assessment_date": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Assessment Date"
-          },
-          "model_versions": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Model Versions"
-          },
-          "input_hash": {
-            "type": "string",
-            "title": "Input Hash"
-          },
-          "score": {
-            "type": "number",
-            "title": "Score"
-          },
-          "risk_tier": {
-            "type": "string",
-            "title": "Risk Tier"
-          },
-          "uncertainty": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uncertainty"
-          },
-          "adjudicated_action": {
-            "type": "string",
-            "title": "Adjudicated Action"
-          },
-          "clinical_note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Clinical Note"
-          },
-          "abstention": {
-            "type": "boolean",
-            "title": "Abstention",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "assessment_date",
-          "model_versions",
-          "input_hash",
-          "score",
-          "risk_tier",
-          "adjudicated_action"
-        ],
-        "title": "RiskAssessmentSummary"
-      },
-      "RiskInferenceResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "lab_result_id": {
-            "type": "string",
-            "title": "Lab Result Id"
-          },
-          "calculated_metastasis_risk": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Calculated Metastasis Risk"
-          },
-          "triage_flag": {
-            "type": "boolean",
-            "title": "Triage Flag"
-          },
-          "justification_text": {
-            "type": "string",
-            "title": "Justification Text"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "patient_id",
-          "lab_result_id",
-          "calculated_metastasis_risk",
-          "triage_flag",
-          "justification_text",
-          "created_at"
-        ],
-        "title": "RiskInferenceResponse"
-      },
-      "RowReport": {
-        "properties": {
-          "row_index": {
-            "type": "integer",
-            "title": "Row Index"
-          },
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "analyte_code": {
-            "type": "string",
-            "title": "Analyte Code"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "unit": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "adjudicated_action": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Adjudicated Action"
-          },
-          "observation_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Observation Id"
-          },
-          "alert_created": {
-            "type": "boolean",
-            "title": "Alert Created",
-            "default": false
-          },
-          "task_created": {
-            "type": "boolean",
-            "title": "Task Created",
-            "default": false
-          },
-          "errors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Errors"
-          }
-        },
-        "type": "object",
-        "required": [
-          "row_index",
-          "patient_id",
-          "analyte_code",
-          "status"
-        ],
-        "title": "RowReport"
-      },
-      "SimulationRequest": {
-        "properties": {
-          "hypothetical_lab": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object",
-            "title": "Hypothetical Lab"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hypothetical_lab"
-        ],
-        "title": "SimulationRequest"
-      },
-      "SimulationResponse": {
-        "properties": {
-          "projected_risk": {
-            "type": "number",
-            "title": "Projected Risk"
-          },
-          "triage_flag": {
-            "type": "boolean",
-            "title": "Triage Flag"
-          },
-          "justification_text": {
-            "type": "string",
-            "title": "Justification Text"
-          },
-          "delta_risk": {
-            "type": "number",
-            "title": "Delta Risk"
-          }
-        },
-        "type": "object",
-        "required": [
-          "projected_risk",
-          "triage_flag",
-          "justification_text",
-          "delta_risk"
-        ],
-        "title": "SimulationResponse"
-      },
-      "TargetOrganVector": {
-        "properties": {
-          "bone": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Bone"
-          },
-          "liver": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Liver"
-          },
-          "lung": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Lung"
-          },
-          "brain": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Brain"
-          }
-        },
-        "type": "object",
-        "required": [
-          "bone",
-          "liver",
-          "lung",
-          "brain"
-        ],
-        "title": "TargetOrganVector"
-      },
-      "TrajectoryPoint": {
-        "properties": {
-          "lab_id": {
-            "type": "string",
-            "title": "Lab Id"
-          },
-          "date_drawn": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Date Drawn"
-          },
-          "alt_level": {
-            "type": "number",
-            "title": "Alt Level"
-          },
-          "ast_level": {
-            "type": "number",
-            "title": "Ast Level"
-          },
-          "creatinine": {
-            "type": "number",
-            "title": "Creatinine"
-          },
-          "ca_15_3": {
-            "type": "number",
-            "title": "Ca 15 3"
-          },
-          "wbc_count": {
-            "type": "number",
-            "title": "Wbc Count"
-          },
-          "calculated_metastasis_risk": {
-            "type": "number",
-            "title": "Calculated Metastasis Risk"
-          },
-          "ci_lower": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ci Lower",
-            "default": 0.0
-          },
-          "ci_upper": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ci Upper",
-            "default": 1.0
-          },
-          "ca153_velocity_pct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ca153 Velocity Pct",
-            "default": 0.0
-          },
-          "alt_velocity_pct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Alt Velocity Pct",
-            "default": 0.0
-          },
-          "triage_flag": {
-            "type": "boolean",
-            "title": "Triage Flag"
-          },
-          "justification_text": {
-            "type": "string",
-            "title": "Justification Text"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lab_id",
-          "date_drawn",
-          "alt_level",
-          "ast_level",
-          "creatinine",
-          "ca_15_3",
-          "wbc_count",
-          "calculated_metastasis_risk",
-          "triage_flag",
-          "justification_text"
-        ],
-        "title": "TrajectoryPoint"
-      },
-      "TriageQueueItem": {
-        "properties": {
-          "patient_id": {
-            "type": "string",
-            "title": "Patient Id"
-          },
-          "age": {
-            "type": "integer",
-            "title": "Age"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "tumor_stage": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tumor Stage"
-          },
-          "subtype": {
-            "type": "string",
-            "title": "Subtype",
-            "default": "Unknown"
-          },
-          "latest_risk": {
-            "type": "number",
-            "title": "Latest Risk"
-          },
-          "triage_flag": {
-            "type": "boolean",
-            "title": "Triage Flag"
-          },
-          "latest_justification": {
-            "type": "string",
-            "title": "Latest Justification"
-          },
-          "target_organ_susceptibility_vector": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Organ Susceptibility Vector"
-          },
-          "last_lab_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Lab Date"
-          },
-          "total_labs": {
-            "type": "integer",
-            "title": "Total Labs",
-            "default": 0
-          },
-          "action_urgency": {
-            "type": "number",
-            "title": "Action Urgency",
-            "default": 0.0
-          },
-          "urgency_breakdown": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Urgency Breakdown"
-          }
-        },
-        "type": "object",
-        "required": [
-          "patient_id",
-          "age",
-          "status",
-          "latest_risk",
-          "triage_flag",
-          "latest_justification"
-        ],
-        "title": "TriageQueueItem"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
-    },
-    "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
+        "summary": "Health Check"
       }
     }
   }

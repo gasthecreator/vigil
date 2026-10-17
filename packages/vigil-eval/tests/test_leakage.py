@@ -15,11 +15,14 @@ from vigil_eval.leakage import (
     PatientSplitLeakageError,
     PreprocessingLeakageError,
     TemporalLeakageError,
+    UnobservedValueLeakageError,
     check_outcome_derived_features,
     check_patient_split_leakage,
     check_scaler_fit_leakage,
     check_temporal_future_leakage,
+    run_latent_column_canary,
     run_shuffled_label_canary,
+    run_unobserved_value_canary,
 )
 
 
@@ -185,3 +188,36 @@ def test_shuffled_label_canary_detects_leaked_target_in_features():
     # If canary max_tolerated_auc is set low (e.g., 0.40) or model fails to collapse
     with pytest.raises(CanaryTestFailedError):
         run_shuffled_label_canary(X, y, max_tolerated_auc=0.40, seed=42)
+
+
+def test_unobserved_value_canary_passes_on_masked_data():
+    """Clean data with unobserved values as NaN passes canary check."""
+    df = pd.DataFrame({
+        "observed_ca_15_3": [True, False, True],
+        "latent_ca_15_3": [25.0, 30.0, 35.0],
+        "ca_15_3": [25.0, np.nan, 35.0],
+    })
+    counts = run_unobserved_value_canary(df)
+    assert counts == {"ca_15_3": 1}
+
+
+def test_unobserved_value_canary_detects_leaked_values():
+    """Data where unobserved rows leak non-NaN values fails canary check."""
+    df = pd.DataFrame({
+        "observed_ca_15_3": [True, False, True],
+        "latent_ca_15_3": [25.0, 30.0, 35.0],
+        "ca_15_3": [25.0, 30.0, 35.0],  # Leaked value when observed is False!
+    })
+    with pytest.raises(UnobservedValueLeakageError, match="Unobserved-value canary FAILED"):
+        run_unobserved_value_canary(df)
+
+
+def test_latent_column_canary():
+    """Features containing latent_ or true_ prefixes are caught."""
+    clean_X = pd.DataFrame({"ca_15_3_curr": [25.0, 26.0], "age": [45.0, 52.0]})
+    run_latent_column_canary(clean_X)
+
+    leaky_X = pd.DataFrame({"ca_15_3_curr": [25.0, 26.0], "latent_ca_15_3": [25.0, 26.0]})
+    with pytest.raises(OutcomeDerivedFeatureError, match="Latent column canary FAILED"):
+        run_latent_column_canary(leaky_X)
+
