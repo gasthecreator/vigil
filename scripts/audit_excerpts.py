@@ -21,17 +21,24 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-UA = {"User-Agent": "vigil-evidence-audit/1.0"}
+UA = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 NUM = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)*(?![\w])")
 
 
-def _get(url: str) -> str:
-    time.sleep(1.0)
-    return (
-        urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=40)
-        .read()
-        .decode("utf8", "ignore")
-    )
+def _get(url: str, retries: int = 3) -> str:
+    for attempt in range(retries):
+        try:
+            time.sleep(1.0)
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=40) as resp:
+                return resp.read().decode("utf8", "ignore")
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(2.0 * (attempt + 1))
+    return ""
 
 
 def _strip(html: str) -> str:
