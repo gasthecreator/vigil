@@ -10,6 +10,9 @@ import os
 from pydantic_settings import BaseSettings
 
 
+DEFAULT_INSECURE_SECRET: str = "vigil-precision-oncology-secret-key-32bytes-min"
+
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Vigil"
     VERSION: str = "0.1.0-alpha"
@@ -22,8 +25,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./vigil_dev.db")
 
     # Clinical Alert Threshold (Defect A7)
-    # Default demonstration threshold; replaced by conformal risk control operating point
-    # in validated profiles per MASTER_PLAN §8.6.
     CLINICAL_ALERT_THRESHOLD: float = float(os.getenv("CLINICAL_ALERT_THRESHOLD", "0.75"))
 
     # CORS configuration: strict whitelist, NO wildcard '*' permitted (Defect A5)
@@ -36,8 +37,8 @@ class Settings(BaseSettings):
     # Synthetic data labeling: all current data and mock profiles are synthetic (Principle 1)
     IS_SYNTHETIC_DATA: bool = True
 
-    # JWT & Auth Security (Master Plan §9.2)
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "vigil-precision-oncology-secret-key-32bytes-min")
+    # JWT & Auth Security (Master Plan §9.2, Condition S5-1)
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     REQUIRE_AUTH: bool = os.getenv("REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")
@@ -48,5 +49,22 @@ class Settings(BaseSettings):
         "does not diagnose or treat any condition, and must not replace the judgement of a qualified clinician."
     )
 
+    def model_post_init(self, __context) -> None:
+        if self.ENVIRONMENT != "local":
+            self.REQUIRE_AUTH = True
+            if (
+                not self.JWT_SECRET_KEY
+                or self.JWT_SECRET_KEY == DEFAULT_INSECURE_SECRET
+                or len(self.JWT_SECRET_KEY) < 32
+            ):
+                raise ValueError(
+                    f"In environment '{self.ENVIRONMENT}', JWT_SECRET_KEY must be explicitly set to a "
+                    f"secure secret (>= 32 chars) and cannot match the known default development secret."
+                )
+        else:
+            if not self.JWT_SECRET_KEY:
+                self.JWT_SECRET_KEY = DEFAULT_INSECURE_SECRET
+
 
 settings = Settings()
+

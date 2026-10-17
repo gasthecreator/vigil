@@ -1,9 +1,14 @@
 """Vigil FastAPI Application Entrypoint."""
 
+import json
+import logging
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure single threaded OpenMP on macOS to prevent fork segfaults
@@ -50,6 +55,33 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+logger = logging.getLogger("vigil.api.access")
+
+
+@app.middleware("http")
+async def request_id_and_logging_middleware(request: Request, call_next):
+    """Generates/propagates X-Request-ID and emits structured JSON access logs."""
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    response.headers["X-Request-ID"] = request_id
+
+    log_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "request_id": request_id,
+        "method": request.method,
+        "path": request.url.path,
+        "status_code": response.status_code,
+        "duration_ms": duration_ms,
+        "client_ip": request.client.host if request.client else "unknown",
+    }
+    logger.info(json.dumps(log_entry))
+    return response
 
 # Mount API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)

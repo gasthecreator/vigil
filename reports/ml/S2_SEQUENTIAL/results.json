@@ -1,111 +1,51 @@
 {
-  "study_id": "S2_SEQUENTIAL",
-  "protocol_version": "1.2",
-  "timestamp": "2026-10-17 01:02:35 UTC",
-  "vigil_sim_study": {
-    "calibrated_params": {
-      "calibration_seed": 999,
-      "calibrated_sigma_log": 0.0621,
-      "frozen_alpha_pt": 0.25,
-      "frozen_static_thresh": 40.0,
-      "calibration_matched_far": 0.0094
-    },
-    "test_seed": 42,
-    "n_null_patients": 192,
-    "n_recurrence_patients": 291,
-    "k2_matched": {
-      "alpha_pt": 0.25,
-      "null_far": 0.026,
-      "null_far_ci": [
-        0.0052,
-        0.0521
-      ],
-      "sensitivity": 0.4158,
-      "sensitivity_ci": [
-        0.3608,
-        0.4742
-      ],
-      "median_delay_days": 101.6,
-      "mean_delay_days": 127.5
-    },
-    "static_matched": {
-      "threshold_u_ml": 40.0,
-      "null_far": 0.0,
-      "null_far_ci": [
-        0.0,
-        0.0
-      ],
-      "sensitivity": 0.5223,
-      "sensitivity_ci": [
-        0.4639,
-        0.5808
-      ],
-      "median_delay_days": 80.3,
-      "mean_delay_days": 100.2
-    },
-    "matched_comparison": {
-      "delta_sensitivity": -0.1065,
-      "delta_sensitivity_ci": [
-        -0.1478,
-        -0.0653
-      ],
-      "power_cost_identified": true
+  "null_stress_suite": {
+    "all_passed": true,
+    "nominal_alpha": 0.05,
+    "scenarios": {
+      "null_1_standard_biological_variation": {
+        "empirical_patient_level_far": 0.035,
+        "nominal_alpha": 0.05,
+        "passed": true
+      },
+      "null_2_heavy_tailed_student_t": {
+        "empirical_patient_level_far": 0.04,
+        "nominal_alpha": 0.05,
+        "passed": true
+      },
+      "null_3_inter_lab_batch_shift": {
+        "empirical_patient_level_far": 0.04,
+        "nominal_alpha": 0.05,
+        "passed": true
+      },
+      "null_4_therapy_hepatotoxicity_spikes": {
+        "empirical_patient_level_far": 0.02,
+        "nominal_alpha": 0.05,
+        "passed": true
+      },
+      "null_5_severe_mnar_missingness": {
+        "empirical_patient_level_far": 0.005,
+        "nominal_alpha": 0.05,
+        "passed": true
+      }
     }
   },
-  "acceptance_stress_suite": {
-    "gauss10": {
-      "scenario": "gauss10",
-      "empirical_far": 0.0033,
-      "target_bound": 0.07,
-      "valid": true
+  "comparative_detection": {
+    "M_Static": {
+      "patient_level_null_far": 0.085,
+      "expected_detection_delay_days": 104.4
     },
-    "gauss12": {
-      "scenario": "gauss12",
-      "empirical_far": 0.0153,
-      "target_bound": 0.07,
-      "valid": true
+    "M_CUSUM": {
+      "patient_level_null_far": 0.295,
+      "expected_detection_delay_days": 100.8
     },
-    "heavy": {
-      "scenario": "heavy",
-      "empirical_far": 0.0087,
-      "target_bound": 0.07,
-      "valid": true
+    "M_Shiryaev": {
+      "patient_level_null_far": 0.355,
+      "expected_detection_delay_days": 117.9
     },
-    "ar1": {
-      "scenario": "ar1",
-      "empirical_far": 0.0213,
-      "target_bound": 0.07,
-      "valid": true
-    },
-    "anytime_60_visits": {
-      "scenario": "anytime_60_visits",
-      "empirical_far": 0.006,
-      "target_bound": 0.07,
-      "valid": true
-    },
-    "missing_30_percent": {
-      "scenario": "missing_30_percent",
-      "empirical_far": 0.0037,
-      "target_bound": 0.07,
-      "valid": true
-    },
-    "power_doubling_90d": {
-      "detection_fraction": 1.0,
-      "target_fraction": 0.75,
-      "median_delay_days": 117.8,
-      "target_delay_days": 240.0,
-      "valid": true
-    },
-    "power_doubling_60d": {
-      "detection_fraction": 1.0,
-      "target_fraction": 0.85,
-      "median_delay_days": 96.2,
-      "valid": true
+    "K2_EProcess": {
+      "patient_level_null_far": 0.035,
+      "expected_detection_delay_days": 418.5
     }
-  },
-  "verdicts": {
-    "H1_matched_far_power": "REFUTED (Expected Power Cost): At a matched null false-alarm rate of 0.52%, Model K2 pays an empirical power cost of -10.65 percentage points [95% CI: -14.78 pp, -6.53 pp] relative to static thresholding (K2 sensitivity: 41.6%, Static sensitivity: 52.2%) on this simulator.",
-    "H2_supermartingale_validity": "CONFIRMED: Model K2 mathematically bounds patient-level false alarm rate across all 6 stress scenarios (maximum empirical FAR = 0.0213 <= 0.0700 threshold).",
-    "H3_kinetic_power_and_delay": "CONFIRMED: Under true kinetic progression streams, K2 achieves 100.0% power on rapid doubling (Td=60d, median delay 96.2d) and 100.0% power on moderate doubling (Td=90d, median delay 117.8d <= 240d)."
   }
 }

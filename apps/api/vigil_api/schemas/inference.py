@@ -49,6 +49,8 @@ class TriageQueueItem(BaseModel):
     target_organ_susceptibility_vector: Optional[dict[str, float]] = None
     last_lab_date: Optional[datetime] = None
     total_labs: int = 0
+    action_urgency: float = 0.0
+    urgency_breakdown: Optional[dict[str, float]] = None
 
 
 class SimulationRequest(BaseModel):

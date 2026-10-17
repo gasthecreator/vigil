@@ -75,6 +75,7 @@ class AlertDisposition(str, enum.Enum):
     CONFIRMED_RECURRENCE = "confirmed_recurrence"
     FALSE_ALARM = "false_alarm"
     SAMPLE_REDRAW_ORDERED = "sample_redraw_ordered"
+    REPEAT_ORDERED = "repeat_ordered"
     CLINICAL_HOLD = "clinical_hold"
     OTHER = "other"
 
@@ -412,3 +413,32 @@ class RiskInference(Base):
 
 # Compound index for fast triage sorting and lookups
 Index("idx_patient_latest_risk", RiskInference.patient_id, RiskInference.calculated_metastasis_risk)
+
+
+class AuditAnchor(Base):
+    """External head-hash anchor to detect tail deletion of the append-only audit log (Condition S5-3)."""
+    __tablename__ = "audit_anchors"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    head_hash = Column(String(64), nullable=False)
+    total_events = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class ReminderReceipt(Base):
+    """Delivery receipt tracking for privacy-safe patient follow-up notifications (Phase 5b)."""
+    __tablename__ = "reminder_receipts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    task_id = Column(String(36), ForeignKey("follow_up_tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    channel = Column(String(32), nullable=False, default="sms")
+    recipient = Column(String(64), nullable=False)
+    message_text = Column(String(500), nullable=False)
+    status = Column(String(32), nullable=False, default="queued")  # queued, sent, delivered, failed, opted_out
+    retry_count = Column(Integer, nullable=False, default=0)
+    external_message_id = Column(String(64), nullable=True)
+    error_message = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    delivered_at = Column(DateTime, nullable=True)
+

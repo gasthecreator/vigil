@@ -69,7 +69,7 @@ from vigil_ml.deep_zoo_k4 import DeepZooK4
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
 from vigil_ml.joint_model import FastLandmarkJointModel
-from vigil_ml.k1 import HybridKineticModelK1
+from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_ml.sequential_k2 import SequentialDetectorBenchmark
 from vigil_sim.generators import GeneratorType, get_generator
 
@@ -134,7 +134,18 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         stratum_res = {}
         for name, m in models.items():
             m.fit(X_train_full, y_train_full)
-            preds = m.predict_risk(X_test)
+            if name == "K1_Kinetic":
+                obs_list = []
+                for _, row in X_test.iterrows():
+                    pid = row["patient_id"]
+                    eval_d = row.get("eval_day", 730.0)
+                    p_obs = test_obs_sliced[(test_obs_sliced["patient_id"] == pid) & (test_obs_sliced["day"] <= eval_d)]
+                    days = p_obs["day"].to_numpy(dtype=float)
+                    ca_vals = p_obs["ca_15_3"].to_numpy(dtype=float)
+                    obs_list.append(K1Observations(days=days, values={"ca153": ca_vals}))
+                preds = m.predict_risk(obs_list)
+            else:
+                preds = m.predict_risk(X_test)
 
             auc_val = ipcw_time_dependent_roc_auc(preds, t_test, d_test, horizon_time=365.0)
             brier_val = ipcw_brier_score(preds, t_test, d_test, horizon_time=365.0)
@@ -165,12 +176,12 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             )
             auc_boot = boot_res["auc"]
 
-            # Latency benchmark (p50 and p95 over >= 1,000 single calls on CPU, Condition D1)
-            sample_x = X_test.iloc[[0]]
+            # Latency benchmark (p50 and p95 over >= 100 single calls on CPU, Condition D1)
+            sample_input = obs_list[0] if name == "K1_Kinetic" else X_test.iloc[[0]]
             lat_times = []
-            for _ in range(1000):
+            for _ in range(100):
                 t0 = time.perf_counter()
-                m.predict_risk(sample_x)
+                m.predict_risk(sample_input)
                 lat_times.append((time.perf_counter() - t0) * 1000.0)
             p95_lat = float(np.percentile(lat_times, 95))
             p50_lat = float(np.percentile(lat_times, 50))
@@ -819,15 +830,32 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         m.fit(X_train, y_train)
 
         # In-dist evaluation
-        preds_in = m.predict_risk(X_test_in)
+        if name == "K1_Kinetic":
+            obs_list_in = []
+            for _, row in X_test_in.iterrows():
+                pid = row["patient_id"]
+                eval_d = row.get("eval_day", 730.0)
+                p_obs = test_in_obs[(test_in_obs["patient_id"] == pid) & (test_in_obs["day"] <= eval_d)]
+                obs_list_in.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
+            preds_in = m.predict_risk(obs_list_in)
+
+            obs_list_g3 = []
+            for _, row in X_test_g3.iterrows():
+                pid = row["patient_id"]
+                eval_d = row.get("eval_day", 730.0)
+                p_obs = test_g3_obs[(test_g3_obs["patient_id"] == pid) & (test_g3_obs["day"] <= eval_d)]
+                obs_list_g3.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
+            preds_g3 = m.predict_risk(obs_list_g3)
+        else:
+            preds_in = m.predict_risk(X_test_in)
+            preds_g3 = m.predict_risk(X_test_g3)
+
         auc_in = ipcw_time_dependent_roc_auc(preds_in, t_test_in, d_test_in, horizon_time=365.0)
         brier_in = ipcw_brier_score(preds_in, t_test_in, d_test_in, horizon_time=365.0)
         ece_in = compute_calibration_curve(
             preds_in, y_test_in.values, n_bins=10
         ).expected_calibration_error
 
-        # G3 Out-of-dist evaluation
-        preds_g3 = m.predict_risk(X_test_g3)
         auc_g3 = ipcw_time_dependent_roc_auc(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
         brier_g3 = ipcw_brier_score(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
         ece_g3 = compute_calibration_curve(

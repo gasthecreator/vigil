@@ -3,7 +3,7 @@
 > **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.
 
 **Study ID:** S3_VERIFICATION_BIAS  
-**Date Executed:** 2026-10-15 22:54:55 UTC  
+**Date Executed:** 2026-10-17 06:38:35 UTC  
 **Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  
 
 ## 1. Executive Summary & Findings
@@ -15,10 +15,10 @@
 
 | Estimator | Estimated Sensitivity | Sens Bias vs Oracle | Estimated Specificity | Spec Bias vs Oracle |
 |---|---|---|---|---|
-| **Oracle Ground Truth** | 0.7411 | 0.0000 | 0.9979 | 0.0000 |
-| `Complete-Case (Naive)` | 0.9092 | +0.1682 | 1.0000 | +0.0021 |
-| `IPW (Propensity Adjusted)` | 0.7371 | -0.0039 | 1.0000 | +0.0021 |
-| `Latent-Class EM` | 0.7175 | -0.0236 | 0.9982 | +0.0003 |
+| **Oracle Ground Truth** | 0.7398 | 0.0000 | 0.9979 | 0.0000 |
+| `Complete-Case (Naive)` | 0.9084 | +0.1687 | 1.0000 | +0.0021 |
+| `IPW (Propensity Adjusted)` | 0.7361 | -0.0036 | 1.0000 | +0.0021 |
+| `Latent-Class EM` | 0.7161 | -0.0237 | 0.9983 | +0.0004 |
 
 ## 3. Decision Record
 - **Adopt IPW as Default Evaluation Harness:** `vigil-eval` incorporates IPW adjustment when evaluating retrospective hospital datasets (T-R tier) where imaging is selective.

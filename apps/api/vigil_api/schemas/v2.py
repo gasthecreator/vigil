@@ -67,7 +67,8 @@ class ObservationCreateResponse(BaseModel):
 
 class AlertAcknowledgeRequest(BaseModel):
     disposition: str = Field(..., description="Disposition code from AlertDisposition")
-    rationale_text: str = Field(..., min_length=5, description="Clinician justification for alert disposition")
+    rationale_text: Optional[str] = Field(None, description="Clinician justification for alert disposition")
+    note: Optional[str] = Field(None, description="Clinician note or justification")
 
 
 class AlertAcknowledgeResponse(BaseModel):
@@ -78,6 +79,14 @@ class AlertAcknowledgeResponse(BaseModel):
     acknowledged_at: datetime
     acknowledged_by: str
     synthetic: bool = True
+
+
+class ConsentCreateRequest(BaseModel):
+    consent_type: str = Field("surveillance_monitoring", description="Type of clinical consent")
+    granted: bool = Field(True, description="Whether consent is granted")
+    scope: str = Field("full", description="Consent scope e.g. clinical_care, full")
+    expires_at: Optional[datetime] = Field(None, description="Expiration date")
+    withdrawn_at: Optional[datetime] = Field(None, description="Withdrawal date")
 
 
 class FollowUpTransitionRequest(BaseModel):

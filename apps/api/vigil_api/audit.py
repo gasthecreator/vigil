@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from vigil_api.models.v2 import AuditEvent, calculate_audit_hash
+from vigil_api.models.v2 import AuditAnchor, AuditEvent, calculate_audit_hash
 
 
 def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
@@ -70,13 +70,48 @@ def record_audit_event(
     )
     db.add(event)
     db.flush()
+
+    # Update or persist external head-hash anchor (Condition S5-3)
+    total_events = len(db.execute(select(AuditEvent)).scalars().all())
+    anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    if anchor is None:
+        anchor = AuditAnchor(
+            head_hash=curr_hash,
+            total_events=total_events,
+            created_at=timestamp,
+        )
+        db.add(anchor)
+    else:
+        anchor.head_hash = curr_hash
+        anchor.total_events = total_events
+        anchor.created_at = timestamp
+    db.flush()
+
     return event
 
 
-def verify_audit_chain(db: Session) -> Dict[str, Any]:
-    """Verify cryptographic integrity of the entire audit event chain."""
+def verify_audit_chain(
+    db: Session,
+    expected_head_hash: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Verify cryptographic integrity of the entire audit event chain.
+
+    Checks:
+    1. Cryptographic SHA-256 payload and linkage from genesis (0*64) to head.
+    2. Consistency against the external AuditAnchor to detect tail deletion attacks.
+    """
     events = db.execute(select(AuditEvent)).scalars().all()
     if not events:
+        anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+        if anchor is not None and anchor.total_events > 0:
+            return {
+                "valid": False,
+                "error": f"Tail deletion detected: audit ledger is empty but anchor records {anchor.total_events} events.",
+                "verified_events": 0,
+                "total_events": 0,
+                "head_hash": "0" * 64,
+                "anchored_head_hash": anchor.head_hash,
+            }
         return {
             "valid": True,
             "verified_events": 0,
@@ -123,6 +158,20 @@ def verify_audit_chain(db: Session) -> Dict[str, Any]:
             "verified_events": verified_count,
             "total_events": len(events),
         }
+
+    # Verify against external anchor (detect tail row deletion)
+    anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    if anchor is not None:
+        target_head = expected_head_hash or anchor.head_hash
+        if len(events) < anchor.total_events or expected_prev != target_head:
+            return {
+                "valid": False,
+                "error": f"Tail deletion detected: chain ends at count {len(events)} with head '{expected_prev}', but anchor records {anchor.total_events} events with head '{anchor.head_hash}'.",
+                "verified_events": verified_count,
+                "total_events": len(events),
+                "head_hash": expected_prev,
+                "anchored_head_hash": anchor.head_hash,
+            }
 
     return {
         "valid": True,

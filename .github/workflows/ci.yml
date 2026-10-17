@@ -25,6 +25,8 @@ jobs:
         run: python3 scripts/check_claims.py
       - name: Verify evidence register and citations
         run: python3 scripts/check_evidence.py
+      - name: Verify evidence excerpts audit
+        run: python3 scripts/audit_excerpts.py
       - name: Verify reality audit and anti-fabrication policy
         run: python3 scripts/reality_audit.py --require-stub-registry
 
@@ -50,6 +52,8 @@ jobs:
         run: VIGIL_ACCEPT_3B=1 uv run pytest tests/acceptance_3b -v
       - name: Run Phase 4a acceptance contract tests
         run: VIGIL_ACCEPT_P4=1 VIGIL_CONTRACT_P4V2=1 uv run pytest tests/acceptance_p4 -v
+      - name: Run Phase 5 acceptance contract tests
+        run: VIGIL_ACCEPT_P5=1 uv run pytest tests/acceptance_p5 -v
 
   frontend-lint-and-build:
     runs-on: ubuntu-latest

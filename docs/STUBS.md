@@ -16,4 +16,6 @@ Every placeholder, simplification or not-yet-real component must appear here. An
 | S-010 | K1 surveillance role | K1 is a research inference module; K3/B4 are the shipped surveillance baselines (ADR-0007). Token `K1-WORLD`: K1 does not beat CA 15-3 baseline on vigil-sim cohort. | One-marker mechanistic model recovers parameters in its own world but adds nothing on vigil-sim over K3/B4; closed per MASTER_PLAN §13 fallback protocol | Closed (Research Module) | None (K1-WORLD registered) |
 | S-011 | M4 Test Ladder | Test escalation ladder deferred to Phase 4b per Master Plan v1.3 | Scheduled for Phase 4b | Phase 4b | M4 |
 | S-012 | `reality: allow(R1)` Exception | Parameter grid values / static threshold evaluation list in `scripts/run_study_s2.py` | Allowed parameter sweep list for calibration operating point discovery (not hard-coded study results) | Phase 4a / 5a | None (Audited in `scripts/reality_audit.py`) |
-
+| S-013 | Frontend Web Interface | React/Vite surveillance console deferred per Master Plan scope | Out of scope for Phase 5 | Phase 6 | Frontend UI |
+| S-014 | Offline-first Sync | Mobile SQLite local synchronization protocol deferred | Out of scope for Phase 5 | Phase 6 | Offline Sync |
+| S-015 | OCR Lab Importer | Document extraction from scanned PDFs/photos deferred | Out of scope for Phase 5 | Phase 6 | OCR Extraction |
