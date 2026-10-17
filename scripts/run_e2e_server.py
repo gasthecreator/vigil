@@ -40,12 +40,14 @@ from vigil_api.models.v2 import (  # noqa: E402
     Alert,
     AlertSeverity,
     AlertStatus,
+    CaregiverShare,
     ConsentRecord,
     FollowUpTask,
     FollowUpTaskStatus,
     FollowUpTaskType,
     Observation,
     RiskAssessment,
+    Symptom,
     User,
     UserRole,
 )
@@ -157,6 +159,67 @@ def seed_database():
         )
         db.add(ra0)
         db.flush()
+
+        # Recent spike observation for PAT-001 (CA 15-3 = 180.0 U/mL)
+        obs1 = Observation(
+            id="OBS-001",
+            patient_id=p1.id,
+            analyte_code="ca_15_3",
+            value=180.0,
+            unit="U/mL",
+            raw_value=180.0,
+            raw_unit="U/mL",
+            plausibility_status="implausible",
+            specimen_collected_at=now - timedelta(days=2),
+            result_received_at=now - timedelta(days=1),
+            created_at=now - timedelta(days=1),
+        )
+        db.add(obs1)
+        db.flush()
+
+        # Risk assessment for OBS-001
+        ra1 = RiskAssessment(
+            id="RA-001",
+            patient_id=p1.id,
+            observation_id=obs1.id,
+            assessment_date=now - timedelta(days=1),
+            model_versions={"M3": "1.0", "M5": "1.0"},
+            input_hash="hash1",
+            score=0.65,
+            risk_tier="moderate",
+            adjudicated_action="needs_repeat",
+            clinical_note="Significant elevation flagged. Repeat specimen recommended.",
+            created_at=now - timedelta(days=1),
+        )
+        db.add(ra1)
+        db.flush()
+
+        # Seeded symptom for PAT-001
+        sym1 = Symptom(
+            id="SYM-001",
+            patient_id=p1.id,
+            symptom_name="Fatigue",
+            severity=2,
+            notes="Mild fatigue after morning walks",
+            input_modality="text",
+            recorded_at=now - timedelta(days=2),
+            created_at=now - timedelta(days=2),
+        )
+        db.add(sym1)
+
+        # Seeded caregiver share for PAT-001
+        share1 = CaregiverShare(
+            id="CS-001",
+            patient_id=p1.id,
+            share_token="test-caregiver-token-12345",
+            caregiver_name="Chinedu Adebayo",
+            relationship_type="Spouse",
+            scope="view_summary",
+            status="active",
+            expires_at=now + timedelta(days=30),
+            created_at=now - timedelta(days=5),
+        )
+        db.add(share1)
 
         # Follow-Up Task for PAT-001 (Level 2 urgent task)
         task1 = FollowUpTask(

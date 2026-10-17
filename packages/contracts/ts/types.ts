@@ -75,6 +75,31 @@ export interface BatchImportResponse {
   total_rows: number;
 }
 
+export interface CaregiverShareCreateRequest {
+  /** Name of the family caregiver */
+  caregiver_name: string;
+  /** Validity period in days */
+  expires_in_days?: number;
+  /** Relationship (e.g. daughter, spouse, sibling) */
+  relationship_type?: string;
+  /** Access scope: view_summary or full_history */
+  scope?: string;
+}
+
+export interface CaregiverShareResponse {
+  caregiver_name: string;
+  created_at: string /* ISO 8601 */;
+  expires_at: string /* ISO 8601 */;
+  id: string;
+  patient_id: string;
+  relationship_type: string;
+  revoked_at?: string /* ISO 8601 */ | null;
+  scope: string;
+  share_token: string;
+  status: string;
+  synthetic?: boolean;
+}
+
 export interface ConsentCreateRequest {
   /** Type of clinical consent */
   consent_type?: string;
@@ -86,6 +111,18 @@ export interface ConsentCreateRequest {
   scope?: string;
   /** Withdrawal date */
   withdrawn_at?: string /* ISO 8601 */ | null;
+}
+
+export interface DisclosureUnlockRequest {
+  /** Reason for unlocking bad news / sensitive result */
+  reason?: string | null;
+}
+
+export interface DisclosureUnlockResponse {
+  message: string;
+  synthetic?: boolean;
+  unlocked: boolean;
+  unlocked_at: string /* ISO 8601 */;
 }
 
 export interface FollowUpTaskResponse {
@@ -201,7 +238,7 @@ export interface PatientCreate {
 }
 
 export interface PatientResponse {
-  age: number;
+  age?: number | null;
   created_at: string /* ISO 8601 */;
   external_id?: string | null;
   id: string;
@@ -220,6 +257,22 @@ export interface PatientUpdate {
   mrn?: string | null;
   /** Clinical surveillance status */
   status?: string | null;
+}
+
+export interface PlainLanguageExplainerResponse {
+  analyte_code: string;
+  flesch_kincaid_grade_level: number;
+  headline: string;
+  observation_id: string;
+  patient_id: string;
+  questions_to_ask_your_doctor: string[];
+  recommended_action: string;
+  synthetic?: boolean;
+  verbal_band: string;
+  verdict: string;
+  verified?: boolean;
+  what_this_means: string;
+  word_count: number;
 }
 
 export interface RiskAssessmentSummary {
@@ -259,6 +312,29 @@ export interface RowReport {
   value?: number | null;
 }
 
+export interface SecondLookCreateRequest {
+  /** ID of observation to be re-evaluated */
+  observation_id: string;
+  /** Questions or context from patient/caregiver */
+  patient_notes?: string | null;
+  /** Requested clinical review action */
+  requested_action?: string | null;
+}
+
+export interface SecondLookResponse {
+  analyte_code: string;
+  created_at: string /* ISO 8601 */;
+  notes?: string | null;
+  observation_id: string;
+  patient_id: string;
+  plausibility_status: string;
+  status: string;
+  synthetic?: boolean;
+  task_id: string;
+  unit: string;
+  value: number;
+}
+
 export interface SimulationRequest {
   hypothetical_lab: Record<string, number>;
 }
@@ -268,6 +344,31 @@ export interface SimulationResponse {
   justification_text: string;
   projected_risk: number;
   triage_flag: boolean;
+}
+
+export interface SymptomCreateRequest {
+  /** Input modality e.g. text or voice */
+  input_modality?: string;
+  /** Patient/caregiver description or notes */
+  notes?: string | null;
+  /** Timestamp of symptom experience */
+  recorded_at?: string /* ISO 8601 */ | null;
+  /** Severity grade (1=Mild, 2=Moderate, 3=Severe, 4=Very Severe) */
+  severity?: number;
+  /** Name/category of symptom (e.g. bone_pain, fatigue) */
+  symptom_name: string;
+}
+
+export interface SymptomResponse {
+  created_at: string /* ISO 8601 */;
+  id: string;
+  input_modality?: string;
+  notes?: string | null;
+  patient_id: string;
+  recorded_at: string /* ISO 8601 */;
+  severity: number;
+  symptom_name: string;
+  synthetic?: boolean;
 }
 
 export interface SyncBatchRequest {

@@ -105,4 +105,49 @@ export class VigilApiClient {
   async verifyAuditChain(): Promise<{ valid: boolean; total_events: number; head_hash: string }> {
     return this.request("/api/v1/audit/verify");
   }
+
+  // Family & Patient Companion (M8)
+  async recordSymptom(patientId: string, symptom: Types.SymptomCreateRequest): Promise<Types.SymptomResponse> {
+    return this.request(`/api/v1/patients/${patientId}/symptoms`, { method: "POST", body: JSON.stringify(symptom) });
+  }
+
+  async listSymptoms(patientId: string): Promise<Types.SymptomResponse[]> {
+    return this.request(`/api/v1/patients/${patientId}/symptoms`);
+  }
+
+  async createCaregiverShare(patientId: string, share: Types.CaregiverShareCreateRequest): Promise<Types.CaregiverShareResponse> {
+    return this.request(`/api/v1/patients/${patientId}/shares`, { method: "POST", body: JSON.stringify(share) });
+  }
+
+  async listCaregiverShares(patientId: string): Promise<Types.CaregiverShareResponse[]> {
+    return this.request(`/api/v1/patients/${patientId}/shares`);
+  }
+
+  async revokeCaregiverShare(patientId: string, shareId: string): Promise<Types.CaregiverShareResponse> {
+    return this.request(`/api/v1/patients/${patientId}/shares/${shareId}`, { method: "DELETE" });
+  }
+
+  async requestSecondLook(patientId: string, req: Types.SecondLookCreateRequest): Promise<Types.SecondLookResponse> {
+    return this.request(`/api/v1/patients/${patientId}/second-look`, { method: "POST", body: JSON.stringify(req) });
+  }
+
+  async unlockDisclosure(patientId: string, req: Types.DisclosureUnlockRequest): Promise<Types.DisclosureUnlockResponse> {
+    return this.request(`/api/v1/patients/${patientId}/disclosure/unlock`, { method: "POST", body: JSON.stringify(req) });
+  }
+
+  async getObservationExplainer(patientId: string, obsId: string): Promise<Types.PlainLanguageExplainerResponse> {
+    return this.request(`/api/v1/patients/${patientId}/observations/${obsId}/explainer`);
+  }
+
+  async getCaregiverSharedSummary(shareToken: string): Promise<Record<string, any>> {
+    return this.request(`/api/v1/companion/share/${shareToken}`);
+  }
+
+  async recordCaregiverSymptom(shareToken: string, symptom: Types.SymptomCreateRequest): Promise<Types.SymptomResponse> {
+    return this.request(`/api/v1/companion/share/${shareToken}/symptoms`, { method: "POST", body: JSON.stringify(symptom) });
+  }
+
+  async getCaregiverObservationExplainer(shareToken: string, obsId: string): Promise<Types.PlainLanguageExplainerResponse> {
+    return this.request(`/api/v1/companion/share/${shareToken}/observations/${obsId}/explainer`);
+  }
 }

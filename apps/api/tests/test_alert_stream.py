@@ -110,3 +110,14 @@ def test_sse_stream_patient_role_restrictions(client):
     # 2. Patient role streaming for a different patient is forbidden (403)
     resp_diff_pat = client.get(f"/api/v1/alerts/stream?patient_id={pid}", headers=headers_pat)
     assert resp_diff_pat.status_code == 403
+
+
+def test_alert_dismiss_route_absent(client):
+    """Enforce Master Plan §6.3 / P10-A Zero-Dismissal Pipeline Invariant.
+
+    POST /api/v1/alerts/{id}/dismiss is structurally absent from the router (returns 404/405).
+    Alerts can never be silently dismissed; they must be formally adjudicated with an M3 disposition.
+    """
+    headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
+    resp = client.post("/api/v1/alerts/alert-any/dismiss", headers=headers)
+    assert resp.status_code in (404, 405)

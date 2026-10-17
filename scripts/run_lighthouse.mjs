@@ -14,6 +14,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { spawn } from "child_process";
 import lighthouse from "lighthouse";
 import * as chromeLauncher from "chrome-launcher";
 
@@ -31,6 +32,7 @@ async function runAudit(url, viewName) {
   try {
     chrome = await chromeLauncher.launch({
       chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+      chromePath: process.env.CHROME_PATH || undefined,
     });
   } catch (err) {
     console.error("Failed to launch Chrome:", err);
@@ -84,43 +86,116 @@ async function runAudit(url, viewName) {
   }
 }
 
-async function main() {
-  const triageResult = await runAudit("http://127.0.0.1:3000", "triage");
-  const timelineResult = await runAudit("http://127.0.0.1:3000", "timeline");
+async function isUrlReady(url) {
+  try {
+    const res = await fetch(url);
+    return res.status < 500;
+  } catch {
+    return false;
+  }
+}
 
-  const mdSummary = `# Lighthouse UX & Accessibility Audit Report
-**Master Plan §9.7 / Condition P9-C**
+async function waitForServer(url, timeoutMs = 30000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await isUrlReady(url)) return true;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return false;
+}
+
+async function main() {
+  let backendProc = null;
+  let frontendProc = null;
+
+  try {
+    const backendReady = await isUrlReady("http://127.0.0.1:8000/docs");
+    if (!backendReady) {
+      console.log("🚀 Spawning real backend server via scripts/run_e2e_server.py ...");
+      backendProc = spawn("uv", ["run", "python", path.join(ROOT, "scripts/run_e2e_server.py")], {
+        cwd: ROOT,
+        stdio: "ignore",
+      });
+      const ok = await waitForServer("http://127.0.0.1:8000/docs", 30000);
+      if (!ok) throw new Error("Backend server failed to start within 30s");
+      console.log("   ✅ Backend server ready on http://127.0.0.1:8000");
+    }
+
+    const frontendReady = await isUrlReady("http://127.0.0.1:3000/");
+    if (!frontendReady) {
+      console.log("🚀 Spawning Next.js frontend production server ...");
+      frontendProc = spawn("npm", ["--workspace=@vigil/web", "run", "start"], {
+        cwd: ROOT,
+        stdio: "ignore",
+      });
+      const ok = await waitForServer("http://127.0.0.1:3000/", 30000);
+      if (!ok) throw new Error("Frontend server failed to start within 30s");
+      console.log("   ✅ Frontend server ready on http://127.0.0.1:3000");
+    }
+
+    const audits = [
+      { url: "http://127.0.0.1:3000/", name: "triage" },
+      { url: "http://127.0.0.1:3000/patients/PAT-001", name: "timeline" },
+      { url: "http://127.0.0.1:3000/companion", name: "companion" },
+      { url: "http://127.0.0.1:3000/companion/results/obs-001", name: "explainer" },
+      { url: "http://127.0.0.1:3000/companion/symptoms", name: "symptoms" },
+    ];
+
+    const results = [];
+    for (const a of audits) {
+      results.push(await runAudit(a.url, a.name));
+    }
+
+    const allPassed = results.every((r) => r.passed);
+
+    let tableRows = results
+      .map(
+        (r) =>
+          `| **${r.viewName.toUpperCase()}** (\`${r.url}\`) | **${r.perfScore}** | **${r.a11yScore}** | **${r.tti} ms** | **${r.bestPracticesScore}** | **${r.seoScore}** | ${r.passed ? "✅ MET" : "❌ FAILED"} |`
+      )
+      .join("\n");
+
+    const mdSummary = `# Lighthouse UX & Accessibility Audit Report
+**Master Plan §9.7 / Condition P9-C / P10-A**
 **Audit Date:** ${new Date().toISOString()}
 
 ## Committed Engineering Budgets
-| Metric | Committed Budget | Triage Queue View | Patient Timeline View | Status |
-|---|---|---|---|---|
-| **Performance** | $\\ge 90$ | **${triageResult.perfScore}** | **${timelineResult.perfScore}** | ${triageResult.perfScore >= 90 && timelineResult.perfScore >= 90 ? "✅ MET" : "❌ FAILED"} |
-| **Accessibility (WCAG)** | $\\ge 90$ | **${triageResult.a11yScore}** | **${timelineResult.a11yScore}** | ${triageResult.a11yScore >= 90 && timelineResult.a11yScore >= 90 ? "✅ MET" : "❌ FAILED"} |
-| **Time to Interactive (TTI)** | $\\le 3500$ ms | **${triageResult.tti} ms** | **${timelineResult.tti} ms** | ${triageResult.tti <= 3500 && timelineResult.tti <= 3500 ? "✅ MET" : "❌ FAILED"} |
-| **Best Practices** | $\\ge 90$ | **${triageResult.bestPracticesScore}** | **${timelineResult.bestPracticesScore}** | ${triageResult.bestPracticesScore >= 90 && timelineResult.bestPracticesScore >= 90 ? "✅ MET" : "⚠️ ACCEPTABLE"} |
-| **SEO** | Informational | **${triageResult.seoScore}** | **${timelineResult.seoScore}** | ✅ MET |
+- **Performance Budget:** $\\ge 90$
+- **Accessibility Budget (WCAG):** $\\ge 90$
+- **Time to Interactive (TTI):** $\\le 3500$ ms
+
+| Audited View & Exact URL | Performance | Accessibility | TTI | Best Practices | SEO | Status |
+|---|---|---|---|---|---|---|
+${tableRows}
 
 ## Committed Artifacts
-- **Triage View:** [triage-report.html](./triage-report.html) / [triage-report.json](./triage-report.json)
-- **Timeline View:** [timeline-report.html](./timeline-report.html) / [timeline-report.json](./timeline-report.json)
+${results.map((r) => `- **${r.viewName.toUpperCase()} View:** [\`${r.viewName.toLowerCase()}-report.html\`](./${r.viewName.toLowerCase()}-report.html) / [\`${r.viewName.toLowerCase()}-report.json\`](./${r.viewName.toLowerCase()}-report.json)`).join("\n")}
 
 ## Audit Methodology & Environment
 - **Device Profile:** Desktop / Emulated High-DPI Display
 - **Network / Throttling:** Real local loopback / unthrottled CPU benchmark
-- **Target URL:** \`http://127.0.0.1:3000\`
 - **Zero-Dismissal & Watermark State:** Confirmed active and visible during audit.
 `;
 
-  const mdPath = path.join(OUT_DIR, "LIGHTHOUSE_BUDGETS.md");
-  fs.writeFileSync(mdPath, mdSummary, "utf-8");
-  console.log(`\n📄 Committed budget summary written to ${mdPath}`);
+    const mdPath = path.join(OUT_DIR, "LIGHTHOUSE_BUDGETS.md");
+    fs.writeFileSync(mdPath, mdSummary, "utf-8");
+    console.log(`\n📄 Committed budget summary written to ${mdPath}`);
 
-  if (!triageResult.passed || !timelineResult.passed) {
-    console.error("\n❌ Lighthouse engineering budgets failed!");
-    process.exit(1);
-  } else {
-    console.log("\n✅ All Lighthouse performance and accessibility budgets MET!");
+    if (!allPassed) {
+      console.error("\n❌ Lighthouse engineering budgets failed!");
+      process.exit(1);
+    } else {
+      console.log("\n✅ All Lighthouse performance and accessibility budgets MET across all views!");
+    }
+  } finally {
+    if (backendProc) {
+      console.log("🛑 Stopping spawned backend server ...");
+      backendProc.kill();
+    }
+    if (frontendProc) {
+      console.log("🛑 Stopping spawned frontend server ...");
+      frontendProc.kill();
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useTranslation, SupportedLocale, translations } from "@vigil/ui";
 import { SyntheticBanner } from "@vigil/ui";
 import { flushOfflineSyncQueue, getOfflineQueue } from "@/lib/api";
@@ -64,6 +65,22 @@ export const Header: React.FC = () => {
             <p className="text-xs text-slate-500">{t.common.appName}</p>
           </div>
         </div>
+
+        {/* Navigation */}
+        <nav className="flex items-center gap-2" aria-label="Main Navigation">
+          <Link
+            href="/"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            Clinician Workstation
+          </Link>
+          <Link
+            href="/companion"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors"
+          >
+            Family Companion
+          </Link>
+        </nav>
 
         {/* Controls: Offline Queue & Language Selector */}
         <div className="flex items-center gap-3">

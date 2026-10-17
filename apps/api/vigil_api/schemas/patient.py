@@ -24,7 +24,7 @@ class PatientUpdate(BaseModel):
 
 class PatientResponse(BaseModel):
     id: str
-    age: int
+    age: Optional[int] = None
     created_at: datetime
     status: str
     mrn: Optional[str] = None

@@ -36,7 +36,13 @@ from vigil_ml.k2 import SequentialDetector
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
 from vigil_ml.kinetic_k1 import HybridKineticModelK1, UnscentedKalmanFilterK1
 from vigil_ml.m3 import adjudicate, rcv
-from vigil_ml.m5 import generate_worked_journey, render_clinician_note, verify_narrative
+from vigil_ml.m5 import (
+    compute_flesch_kincaid_grade_level,
+    generate_worked_journey,
+    render_clinician_note,
+    render_plain_language_explainer,
+    verify_narrative,
+)
 from vigil_ml.organ_susceptibility import (
     TARGET_ORGANS,
     BaselineOrganSusceptibilityModelM1,
@@ -106,6 +112,8 @@ __all__ = [
     "render_clinician_note",
     "verify_narrative",
     "generate_worked_journey",
+    "render_plain_language_explainer",
+    "compute_flesch_kincaid_grade_level",
     # Export & Runtime
     "VigilProductionRuntime",
     "export_to_onnx",

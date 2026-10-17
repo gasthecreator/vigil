@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -78,3 +79,31 @@ jobs:
         run: npm run web:lint
       - name: Build web application
         run: npm run web:build
+
+  e2e-and-lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install Python dependencies
+        run: uv sync --all-packages
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+      - name: Install monorepo dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Build web application
+        run: npm run web:build
+      - name: Run Playwright E2E integration tests (Workstation & Companion)
+        run: npm --workspace=@vigil/web run test:e2e
+      - name: Enforce Lighthouse performance and accessibility budgets
+        run: node scripts/run_lighthouse.mjs

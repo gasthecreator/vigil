@@ -3,6 +3,7 @@
 import hashlib
 import json
 import math
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,12 +24,14 @@ from vigil_api.models.v2 import (
     Alert,
     AlertSeverity,
     AlertStatus,
+    CaregiverShare,
     ConsentRecord,
     FollowUpTask,
     FollowUpTaskStatus,
     FollowUpTaskType,
     Observation,
     RiskAssessment,
+    Symptom,
     User,
     UserRole,
 )
@@ -44,16 +47,29 @@ from vigil_api.schemas.lab import LabResultCreate
 from vigil_api.schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from vigil_api.schemas.v2 import (
     AlertSummary,
+    CaregiverShareCreateRequest,
+    CaregiverShareResponse,
     ConsentCreateRequest,
+    DisclosureUnlockRequest,
+    DisclosureUnlockResponse,
     FollowUpTaskSummary,
     ObservationCreateRequest,
     ObservationCreateResponse,
+    PlainLanguageExplainerResponse,
     RiskAssessmentSummary,
+    SecondLookCreateRequest,
+    SecondLookResponse,
+    SymptomCreateRequest,
+    SymptomResponse,
 )
 from vigil_core.analytes import check_plausibility, get_analyte
 from vigil_core.units import IncompatibleUnitsError, InvalidUnitError, UnitConversionError
 from vigil_ml.m3 import adjudicate
-from vigil_ml.m5 import render_clinician_note, verify_narrative
+from vigil_ml.m5 import (
+    render_clinician_note,
+    render_plain_language_explainer,
+    verify_narrative,
+)
 
 router = APIRouter()
 
@@ -1304,3 +1320,444 @@ def record_consent(
         "granted": consent.granted,
         "scope": consent.scope,
     }
+
+
+# ==============================================================================
+# Family & Patient Companion (M8) Endpoints: Symptoms, Shares, Second-Look
+# ==============================================================================
+
+
+@router.post("/{id}/symptoms", response_model=SymptomResponse, status_code=status.HTTP_201_CREATED)
+def record_patient_symptom(
+    id: str,
+    payload: SymptomCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Records a structured patient symptom in the diary (Master Plan §6.8)."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+
+    symptom = Symptom(
+        patient_id=patient.id,
+        symptom_name=payload.symptom_name,
+        severity=payload.severity,
+        notes=payload.notes,
+        input_modality=payload.input_modality,
+        recorded_at=payload.recorded_at or now,
+        created_at=now,
+    )
+    db.add(symptom)
+    db.flush()
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="symptom.create",
+        resource_type="Symptom",
+        resource_id=symptom.id,
+        details={
+            "patient_id": patient.id,
+            "symptom_name": payload.symptom_name,
+            "severity": payload.severity,
+            "modality": payload.input_modality,
+        },
+        timestamp=now,
+    )
+    db.commit()
+    db.refresh(symptom)
+
+    return SymptomResponse(
+        id=symptom.id,
+        patient_id=symptom.patient_id,
+        symptom_name=symptom.symptom_name,
+        severity=symptom.severity,
+        notes=symptom.notes,
+        input_modality=symptom.input_modality,
+        recorded_at=symptom.recorded_at,
+        created_at=symptom.created_at,
+        synthetic=True,
+    )
+
+
+@router.get("/{id}/symptoms", response_model=List[SymptomResponse], status_code=status.HTTP_200_OK)
+def list_patient_symptoms(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lists symptom history for a consented patient."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    symptoms = (
+        db.execute(
+            select(Symptom)
+            .where(Symptom.patient_id == patient.id)
+            .order_by(desc(Symptom.recorded_at))
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        SymptomResponse(
+            id=s.id,
+            patient_id=s.patient_id,
+            symptom_name=s.symptom_name,
+            severity=s.severity,
+            notes=s.notes,
+            input_modality=s.input_modality,
+            recorded_at=s.recorded_at,
+            created_at=s.created_at,
+            synthetic=True,
+        )
+        for s in symptoms
+    ]
+
+
+@router.post(
+    "/{id}/shares", response_model=CaregiverShareResponse, status_code=status.HTTP_201_CREATED
+)
+def create_caregiver_share(
+    id: str,
+    payload: CaregiverShareCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generates a scoped, revocable caregiver access authorization token."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+    token = f"cg_{secrets.token_urlsafe(32)}"
+    expires_at = now + timedelta(days=payload.expires_in_days)
+
+    share = CaregiverShare(
+        patient_id=patient.id,
+        share_token=token,
+        caregiver_name=payload.caregiver_name,
+        relationship_type=payload.relationship_type,
+        scope=payload.scope,
+        status="active",
+        expires_at=expires_at,
+        created_at=now,
+    )
+    db.add(share)
+    db.flush()
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="caregiver_share.create",
+        resource_type="CaregiverShare",
+        resource_id=share.id,
+        details={
+            "patient_id": patient.id,
+            "caregiver_name": payload.caregiver_name,
+            "scope": payload.scope,
+            "expires_at": expires_at.isoformat(),
+        },
+        timestamp=now,
+    )
+    db.commit()
+    db.refresh(share)
+
+    return CaregiverShareResponse(
+        id=share.id,
+        patient_id=share.patient_id,
+        share_token=share.share_token,
+        caregiver_name=share.caregiver_name,
+        relationship_type=share.relationship_type,
+        scope=share.scope,
+        status=share.status,
+        expires_at=share.expires_at,
+        revoked_at=share.revoked_at,
+        created_at=share.created_at,
+        synthetic=True,
+    )
+
+
+@router.get(
+    "/{id}/shares", response_model=List[CaregiverShareResponse], status_code=status.HTTP_200_OK
+)
+def list_caregiver_shares(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lists caregiver shares for a consented patient."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    shares = (
+        db.execute(
+            select(CaregiverShare)
+            .where(CaregiverShare.patient_id == patient.id)
+            .order_by(desc(CaregiverShare.created_at))
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        CaregiverShareResponse(
+            id=s.id,
+            patient_id=s.patient_id,
+            share_token=s.share_token,
+            caregiver_name=s.caregiver_name,
+            relationship_type=s.relationship_type,
+            scope=s.scope,
+            status=s.status,
+            expires_at=s.expires_at,
+            revoked_at=s.revoked_at,
+            created_at=s.created_at,
+            synthetic=True,
+        )
+        for s in shares
+    ]
+
+
+@router.delete(
+    "/{id}/shares/{share_id}", response_model=CaregiverShareResponse, status_code=status.HTTP_200_OK
+)
+def revoke_caregiver_share(
+    id: str,
+    share_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Revokes an active caregiver share."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+
+    share = db.execute(
+        select(CaregiverShare).where(
+            CaregiverShare.id == share_id,
+            CaregiverShare.patient_id == patient.id,
+        )
+    ).scalar_one_or_none()
+
+    if share is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Share record not found.")
+
+    share.status = "revoked"
+    share.revoked_at = now
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="caregiver_share.revoked",
+        resource_type="CaregiverShare",
+        resource_id=share.id,
+        details={"patient_id": patient.id, "share_id": share.id},
+        timestamp=now,
+    )
+    db.commit()
+    db.refresh(share)
+
+    return CaregiverShareResponse(
+        id=share.id,
+        patient_id=share.patient_id,
+        share_token=share.share_token,
+        caregiver_name=share.caregiver_name,
+        relationship_type=share.relationship_type,
+        scope=share.scope,
+        status=share.status,
+        expires_at=share.expires_at,
+        revoked_at=share.revoked_at,
+        created_at=share.created_at,
+        synthetic=True,
+    )
+
+
+@router.post(
+    "/{id}/second-look", response_model=SecondLookResponse, status_code=status.HTTP_201_CREATED
+)
+def submit_second_look_request(
+    id: str,
+    payload: SecondLookCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Submits a patient-initiated Second-Look Request to the clinical care team."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+
+    obs = db.execute(
+        select(Observation).where(
+            Observation.id == payload.observation_id,
+            Observation.patient_id == patient.id,
+        )
+    ).scalar_one_or_none()
+
+    if obs is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Observation '{payload.observation_id}' not found for patient '{patient.id}'.",
+        )
+
+    task_id = str(uuid.uuid4())
+    notes_text = (
+        f"Second-Look Request initiated by patient/caregiver for {obs.analyte_code.upper()} "
+        f"({obs.value} {obs.unit}, collected {obs.specimen_collected_at.strftime('%Y-%m-%d')}). "
+        f"Plausibility status: {obs.plausibility_status}. "
+        f"Patient Notes: {payload.patient_notes or 'Review requested by patient.'}"
+    )
+
+    task = FollowUpTask(
+        id=task_id,
+        patient_id=patient.id,
+        alert_id=None,
+        task_type="second_look_request",
+        status=FollowUpTaskStatus.PENDING.value,
+        due_date=now + timedelta(days=7),
+        escalation_level=0,
+        notes=notes_text,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(task)
+    db.flush()
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="patient.second_look_requested",
+        resource_type="FollowUpTask",
+        resource_id=task.id,
+        details={
+            "patient_id": patient.id,
+            "observation_id": obs.id,
+            "analyte": obs.analyte_code,
+            "value": obs.value,
+            "unit": obs.unit,
+        },
+        timestamp=now,
+    )
+    db.commit()
+
+    return SecondLookResponse(
+        task_id=task.id,
+        observation_id=obs.id,
+        patient_id=patient.id,
+        analyte_code=obs.analyte_code,
+        value=obs.value,
+        unit=obs.unit,
+        plausibility_status=obs.plausibility_status,
+        status="submitted",
+        notes=task.notes,
+        created_at=now,
+        synthetic=True,
+    )
+
+
+@router.post(
+    "/{id}/disclosure/unlock",
+    response_model=DisclosureUnlockResponse,
+    status_code=status.HTTP_200_OK,
+)
+def unlock_patient_disclosure(
+    id: str,
+    payload: DisclosureUnlockRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Records patient opt-in unlock event for sensitive / bad-news results with audit tracking."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="disclosure.unlocked",
+        resource_type="PatientDisclosure",
+        resource_id=patient.id,
+        details={"reason": payload.reason},
+        timestamp=now,
+    )
+    db.commit()
+
+    return DisclosureUnlockResponse(
+        unlocked=True,
+        unlocked_at=now,
+        message="Sensitive results unlocked for patient/caregiver viewing.",
+        synthetic=True,
+    )
+
+
+@router.get(
+    "/{id}/observations/{obs_id}/explainer",
+    response_model=PlainLanguageExplainerResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get verified plain-language result explainer for patient/family",
+)
+def get_observation_explainer(
+    id: str,
+    obs_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Returns an M5-verified plain-language result explainer with FKGL <= 8.0,
+    uncertainty verbal band, and questions to ask doctor.
+    """
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    obs = db.execute(
+        select(Observation).where(Observation.id == obs_id, Observation.patient_id == patient.id)
+    ).scalar_one_or_none()
+
+    if obs is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Observation '{obs_id}' not found for patient '{patient.id}'.",
+        )
+
+    # Determine verdict based on plausibility status or associated risk assessment
+    verdict = "explained"
+    if obs.plausibility_status in {"implausible", "extreme_spike"}:
+        verdict = "needs_repeat"
+    else:
+        # Check if an alert or high risk is linked
+        risk = (
+            db.execute(
+                select(RiskAssessment)
+                .where(RiskAssessment.patient_id == patient.id)
+                .order_by(desc(RiskAssessment.assessment_date))
+            )
+            .scalars()
+            .first()
+        )
+        if risk and risk.adjudicated_action in {"escalate", "needs_repeat", "explained"}:
+            verdict = risk.adjudicated_action
+        elif risk and risk.risk_tier == "high":
+            verdict = "escalate"
+
+    explainer = render_plain_language_explainer(verdict=verdict, analyte_code=obs.analyte_code)
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="observation.explainer_read",
+        resource_type="Observation",
+        resource_id=obs.id,
+        details={
+            "patient_id": patient.id,
+            "verdict": explainer["verdict"],
+            "reading_level": explainer["flesch_kincaid_grade_level"],
+        },
+    )
+    db.commit()
+
+    return PlainLanguageExplainerResponse(
+        observation_id=obs.id,
+        patient_id=patient.id,
+        analyte_code=obs.analyte_code,
+        verdict=explainer["verdict"],
+        verbal_band=explainer["verbal_band"],
+        headline=explainer["headline"],
+        what_this_means=explainer["what_this_means"],
+        recommended_action=explainer["recommended_action"],
+        questions_to_ask_your_doctor=explainer["questions_to_ask_your_doctor"],
+        flesch_kincaid_grade_level=explainer["flesch_kincaid_grade_level"],
+        word_count=explainer["word_count"],
+        verified=explainer["verified"],
+        synthetic=True,
+    )

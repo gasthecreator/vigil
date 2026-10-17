@@ -5,8 +5,9 @@ import { Header } from "@/components/Header";
 import { ClinicalDisclaimer } from "@/components/ClinicalDisclaimer";
 
 export const metadata: Metadata = {
-  title: "Vigil Clinician Workstation (M9) | Precision Oncology Surveillance",
-  description: "Evidence-disciplined precision oncology surveillance workstation for breast cancer monitoring.",
+  title: "Vigil Platform (M8/M9) | Precision Oncology Surveillance & Companion",
+  description: "Evidence-disciplined precision oncology surveillance workstation and plain-language family companion.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

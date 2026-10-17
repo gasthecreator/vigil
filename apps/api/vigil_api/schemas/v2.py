@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -136,3 +136,101 @@ class PatientV2Response(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class SymptomCreateRequest(BaseModel):
+    symptom_name: str = Field(..., description="Name/category of symptom (e.g. bone_pain, fatigue)")
+    severity: int = Field(
+        1, ge=1, le=4, description="Severity grade (1=Mild, 2=Moderate, 3=Severe, 4=Very Severe)"
+    )
+    notes: Optional[str] = Field(None, description="Patient/caregiver description or notes")
+    input_modality: str = Field("text", description="Input modality e.g. text or voice")
+    recorded_at: Optional[datetime] = Field(None, description="Timestamp of symptom experience")
+
+
+class SymptomResponse(BaseModel):
+    id: str
+    patient_id: str
+    symptom_name: str
+    severity: int
+    notes: Optional[str] = None
+    input_modality: str = "text"
+    recorded_at: datetime
+    created_at: datetime
+    synthetic: bool = True
+
+
+class CaregiverShareCreateRequest(BaseModel):
+    caregiver_name: str = Field(..., description="Name of the family caregiver")
+    relationship_type: str = Field(
+        "caregiver", description="Relationship (e.g. daughter, spouse, sibling)"
+    )
+    scope: str = Field("view_summary", description="Access scope: view_summary or full_history")
+    expires_in_days: int = Field(30, ge=1, le=365, description="Validity period in days")
+
+
+class CaregiverShareResponse(BaseModel):
+    id: str
+    patient_id: str
+    share_token: str
+    caregiver_name: str
+    relationship_type: str
+    scope: str
+    status: str
+    expires_at: datetime
+    revoked_at: Optional[datetime] = None
+    created_at: datetime
+    synthetic: bool = True
+
+
+class SecondLookCreateRequest(BaseModel):
+    observation_id: str = Field(..., description="ID of observation to be re-evaluated")
+    patient_notes: Optional[str] = Field(
+        None, description="Questions or context from patient/caregiver"
+    )
+    requested_action: Optional[str] = Field(
+        "repeat_lab_review", description="Requested clinical review action"
+    )
+
+
+class SecondLookResponse(BaseModel):
+    task_id: str
+    observation_id: str
+    patient_id: str
+    analyte_code: str
+    value: float
+    unit: str
+    plausibility_status: str
+    status: str
+    notes: Optional[str] = None
+    created_at: datetime
+    synthetic: bool = True
+
+
+class DisclosureUnlockRequest(BaseModel):
+    reason: Optional[str] = Field(
+        "patient_opt_in_reveal", description="Reason for unlocking bad news / sensitive result"
+    )
+
+
+class DisclosureUnlockResponse(BaseModel):
+    unlocked: bool
+    unlocked_at: datetime
+    message: str
+    synthetic: bool = True
+
+
+class PlainLanguageExplainerResponse(BaseModel):
+    observation_id: str
+    patient_id: str
+    analyte_code: str
+    verdict: str
+    verbal_band: str
+    headline: str
+    what_this_means: str
+    recommended_action: str
+    questions_to_ask_your_doctor: List[str]
+    flesch_kincaid_grade_level: float
+    word_count: int
+    verified: bool = True
+    synthetic: bool = True

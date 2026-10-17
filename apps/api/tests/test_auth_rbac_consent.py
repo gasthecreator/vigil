@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from vigil_api.auth import create_access_token
 from vigil_api.config import settings
+from vigil_api.crypto import compute_blind_index
 from vigil_api.database import Base, get_db
 from vigil_api.main import app
 from vigil_api.models.v2 import (
@@ -62,6 +63,8 @@ def test_env(tmp_path):
             id="pat-target",
             facility_id="fac-01",
             mrn="MRN-TARGET",
+            mrn_bidx=compute_blind_index("MRN-TARGET"),
+            age=52,
             biological_sex="female",
             primary_cancer_type="breast",
             synthetic=True,
@@ -74,6 +77,8 @@ def test_env(tmp_path):
             id="pat-foreign",
             facility_id="fac-01",
             mrn="MRN-FOREIGN",
+            mrn_bidx=compute_blind_index("MRN-FOREIGN"),
+            age=56,
             biological_sex="female",
             primary_cancer_type="breast",
             synthetic=True,
@@ -299,3 +304,47 @@ def test_patient_role_cannot_read_foreign_records(test_env, monkeypatch):
     # Reading another patient's record is strictly forbidden (HTTP 403)
     r_foreign = client.get("/api/v1/patients/pat-foreign", headers=headers)
     assert r_foreign.status_code == 403
+
+
+def test_patient_list_redaction(test_env, monkeypatch):
+    """Enforce P9-D / P10-A: GET /patients/ masks identifiers without consent, unmasks with consent.
+
+    Also tests that MRN search for an unconsented patient returns HTTP 200 with empty list []
+    to prevent existence oracle attacks.
+    """
+    client, engine = test_env
+    monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
+
+    # pat-target has revoked/no consent; pat-foreign has active consent
+    set_patient_consent_state(engine, "pat-target", "revoked")
+
+    token_clinician = create_access_token(subject="doc-1", role=UserRole.CLINICIAN.value)
+    headers = {"Authorization": f"Bearer {token_clinician}"}
+
+    # 1. List patients
+    resp = client.get("/api/v1/patients/", headers=headers)
+    assert resp.status_code == 200
+    patients = resp.json()
+
+    pat_target = next(p for p in patients if p["id"] == "pat-target")
+    pat_foreign = next(p for p in patients if p["id"] == "pat-foreign")
+
+    # Unconsented patient has masked identifiers
+    assert pat_target["is_masked"] is True
+    assert pat_target["mrn"] != "MRN-TARGET"
+    assert pat_target["mrn"].endswith("GET") or "***" in pat_target["mrn"]
+
+    # Consented patient has unmasked identifiers
+    assert pat_foreign["is_masked"] is False
+    assert pat_foreign["mrn"] == "MRN-FOREIGN"
+
+    # 2. MRN search for unconsented patient returns 200 [] (no existence oracle)
+    r_search_unconsented = client.get("/api/v1/patients/?mrn=MRN-TARGET", headers=headers)
+    assert r_search_unconsented.status_code == 200
+    assert r_search_unconsented.json() == []
+
+    # MRN search for consented patient returns the match
+    r_search_consented = client.get("/api/v1/patients/?mrn=MRN-FOREIGN", headers=headers)
+    assert r_search_consented.status_code == 200
+    assert len(r_search_consented.json()) == 1
+    assert r_search_consented.json()[0]["id"] == "pat-foreign"
