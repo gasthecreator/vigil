@@ -139,7 +139,11 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
                 for _, row in X_test.iterrows():
                     pid = row["patient_id"]
                     eval_d = row.get("eval_day", 730.0)
-                    p_obs = test_obs_sliced[(test_obs_sliced["patient_id"] == pid) & (test_obs_sliced["day"] <= eval_d)]
+                    p_obs = test_obs_sliced[
+                        (test_obs_sliced["patient_id"] == pid)
+                        & (test_obs_sliced["day"] <= eval_d)
+                        & (test_obs_sliced["ca_15_3"].notna())
+                    ]
                     days = p_obs["day"].to_numpy(dtype=float)
                     ca_vals = p_obs["ca_15_3"].to_numpy(dtype=float)
                     obs_list.append(K1Observations(days=days, values={"ca153": ca_vals}))
@@ -176,13 +180,14 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             )
             auc_boot = boot_res["auc"]
 
-            # Latency benchmark (p50 and p95 over >= 100 single calls on CPU, Condition D1)
+            # Latency benchmark (p50, p95, p99 over >= 1000 single calls on CPU, Condition P7-C)
             sample_input = obs_list[0] if name == "K1_Kinetic" else X_test.iloc[[0]]
             lat_times = []
-            for _ in range(100):
+            for _ in range(1000):
                 t0 = time.perf_counter()
                 m.predict_risk(sample_input)
                 lat_times.append((time.perf_counter() - t0) * 1000.0)
+            p99_lat = float(np.percentile(lat_times, 99))
             p95_lat = float(np.percentile(lat_times, 95))
             p50_lat = float(np.percentile(lat_times, 50))
 
@@ -213,6 +218,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
                 "ece": round(float(cal_report.expected_calibration_error), 4),
                 "net_benefit": round(float(net_benefit), 4),
                 "lead_time_days": round(lead_time_val, 1),
+                "latency_p99_ms": round(p99_lat, 2),
                 "latency_p95_ms": round(p95_lat, 2),
                 "latency_p50_ms": round(p50_lat, 2),
             }
@@ -300,7 +306,8 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         if len(p_obs) == 0:
             continue
 
-        max_ca = p_obs["ca_15_3"].max() if "ca_15_3" in p_obs else 20.0
+        valid_ca = p_obs["ca_15_3"].dropna() if "ca_15_3" in p_obs else pd.Series(dtype=float)
+        max_ca = float(valid_ca.max()) if len(valid_ca) > 0 else 18.0
         score = 1.0 / (1.0 + np.exp(-(max_ca - 30.0) / 8.0))
         imaged = bool(p_obs["imaging_performed"].any())
         d_true = 1 if p.true_recurrence_event else 0
@@ -835,7 +842,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             for _, row in X_test_in.iterrows():
                 pid = row["patient_id"]
                 eval_d = row.get("eval_day", 730.0)
-                p_obs = test_in_obs[(test_in_obs["patient_id"] == pid) & (test_in_obs["day"] <= eval_d)]
+                p_obs = test_in_obs[(test_in_obs["patient_id"] == pid) & (test_in_obs["day"] <= eval_d) & (test_in_obs["ca_15_3"].notna())]
                 obs_list_in.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
             preds_in = m.predict_risk(obs_list_in)
 
@@ -843,7 +850,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             for _, row in X_test_g3.iterrows():
                 pid = row["patient_id"]
                 eval_d = row.get("eval_day", 730.0)
-                p_obs = test_g3_obs[(test_g3_obs["patient_id"] == pid) & (test_g3_obs["day"] <= eval_d)]
+                p_obs = test_g3_obs[(test_g3_obs["patient_id"] == pid) & (test_g3_obs["day"] <= eval_d) & (test_g3_obs["ca_15_3"].notna())]
                 obs_list_g3.append(K1Observations(days=p_obs["day"].to_numpy(float), values={"ca153": p_obs["ca_15_3"].to_numpy(float)}))
             preds_g3 = m.predict_risk(obs_list_g3)
         else:

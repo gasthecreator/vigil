@@ -1,0 +1,17 @@
+{
+  "drill_status": "SUCCESS",
+  "rpo_seconds": 0.0,
+  "rto_ms": 1.07,
+  "backup_duration_ms": 1.33,
+  "total_drill_duration_ms": 149.11,
+  "audit_events_verified": 60,
+  "cryptographic_chain_valid": true,
+  "patients_recovered": 20,
+  "observations_recovered": 40,
+  "backup_manifest": {
+    "database_sha256": "351ed91979dd65a51aa3363a9669c00ff696a5adc779e97d63173c139de74296",
+    "anchor_sha256": "c0c1a7e3a11d2a14a3358e50301429fcf780009f2e2a1f77ed4d9668ad4cd784",
+    "backup_timestamp": "2026-10-17T08:00:10.859433+00:00",
+    "total_events": 60
+  }
+}

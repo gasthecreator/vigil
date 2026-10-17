@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -99,7 +100,6 @@ def _parse_tabular_input(body_bytes: bytes, content_type: str) -> List[Dict[str,
 )
 async def batch_import_observations(
     request: Request,
-    payload: Optional[BatchImportRequest] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)),
 ):
@@ -113,15 +113,32 @@ async def batch_import_observations(
 
     # 1. Extract rows based on input format
     content_type = request.headers.get("content-type", "").lower()
+    body = await request.body()
+    if not body:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data rows found in request body. Supply JSON rows, csv_data, or raw CSV/Excel upload.",
+        )
 
-    if payload and payload.rows:
-        raw_rows = [r.model_dump() for r in payload.rows]
-    elif payload and payload.csv_data:
-        raw_rows = _parse_tabular_input(payload.csv_data.encode("utf-8"), "text/csv")
-    else:
-        body = await request.body()
-        if body:
-            raw_rows = _parse_tabular_input(body, content_type)
+    # If content-type is JSON or body appears to be JSON
+    is_json = "application/json" in content_type or body.strip().startswith(b"{")
+    if is_json:
+        try:
+            payload_dict = json.loads(body.decode("utf-8"))
+            payload = BatchImportRequest(**payload_dict)
+            if payload.rows:
+                raw_rows = [r.model_dump() for r in payload.rows]
+            elif payload.csv_data:
+                raw_rows = _parse_tabular_input(payload.csv_data.encode("utf-8"), "text/csv")
+        except Exception as exc:
+            if "application/json" in content_type:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid JSON payload: {exc}",
+                )
+
+    if not raw_rows:
+        raw_rows = _parse_tabular_input(body, content_type)
 
     if not raw_rows:
         raise HTTPException(
@@ -144,7 +161,14 @@ async def batch_import_observations(
         unit = str(row.get("unit") or "").strip()
         specimen_date_str = row.get("specimen_collected_at") or row.get("date_drawn") or row.get("date")
         lab_id = row.get("laboratory_id")
-        lab_changed = bool(row.get("lab_changed", False))
+
+        lab_changed_val = row.get("lab_changed", False)
+        if isinstance(lab_changed_val, str):
+            lab_changed = lab_changed_val.strip().lower() in ("true", "1", "yes", "t", "y")
+        elif isinstance(lab_changed_val, (int, float)):
+            lab_changed = bool(lab_changed_val)
+        else:
+            lab_changed = bool(lab_changed_val)
 
         errors: List[str] = []
 

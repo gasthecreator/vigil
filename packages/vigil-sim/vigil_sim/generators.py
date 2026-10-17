@@ -148,8 +148,10 @@ class CohortDataset:
             }
             # Analytes and observation masks
             for k, v in obs.analytes.items():
-                row[k] = v
-                row[f"observed_{k}"] = obs.observed_mask.get(k, True)
+                is_observed = bool(obs.observed_mask.get(k, True))
+                row[f"observed_{k}"] = is_observed
+                row[f"latent_{k}"] = v
+                row[k] = v if is_observed else np.nan
             # Symptoms
             for s, g in obs.symptoms.items():
                 row[f"symptom_{s}"] = g

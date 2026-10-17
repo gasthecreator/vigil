@@ -486,6 +486,7 @@ def ingest_single_observation_internal(
         specimen_collected_at=specimen_date,
         result_received_at=now,
         laboratory_id=laboratory_id,
+        lab_changed=lab_changed,
         plausibility_status=plausibility.status.value,
         raw_value=value,
         raw_unit=unit,
