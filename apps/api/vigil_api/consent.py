@@ -48,8 +48,14 @@ def verify_patient_consent(
         .all()
     )
 
+    # The most recent decision per consent type governs: a later withdrawal (granted=False or
+    # withdrawn_at set) or an expired record revokes an earlier grant instead of being skipped.
     active_consent: Optional[ConsentRecord] = None
+    seen_types: set[str] = set()
     for c in consents:
+        if c.consent_type in seen_types:
+            continue
+        seen_types.add(c.consent_type)
         if not c.granted:
             continue
         if c.withdrawn_at is not None:
