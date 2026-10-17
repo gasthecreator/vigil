@@ -101,6 +101,27 @@ class FollowUpTaskStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
+class MachineStatus(str, enum.Enum):
+    OPERATIONAL = "operational"
+    DOWN = "down"
+    MAINTENANCE = "maintenance"
+
+
+class RadiotherapyContext(str, enum.Enum):
+    ADJUVANT_POST_LUMPECTOMY = "adjuvant_post_lumpectomy"
+    ADJUVANT_POST_MASTECTOMY = "adjuvant_post_mastectomy"
+    CURATIVE_TNBC = "curative_tnbc"
+    PALLIATIVE_BONE_BRAIN = "palliative_bone_brain"
+
+
+class CourseStatus(str, enum.Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    INTERRUPTED = "interrupted"
+
+
 # ==============================================================================
 # 1. Facility & User Models
 # ==============================================================================
@@ -119,6 +140,9 @@ class Facility(Base):
 
     users = relationship("User", back_populates="facility")
     patients = relationship("Patient", back_populates="facility")
+    linac_machines = relationship(
+        "LinacMachine", back_populates="facility", cascade="all, delete-orphan"
+    )
 
 
 class User(Base):
@@ -203,6 +227,9 @@ class Patient(Base):
     )
     caregiver_shares = relationship(
         "CaregiverShare", back_populates="patient", cascade="all, delete-orphan"
+    )
+    radiotherapy_courses = relationship(
+        "RadiotherapyCourse", back_populates="patient", cascade="all, delete-orphan"
     )
 
     # Legacy prototype relationships for backward compatibility
@@ -602,7 +629,8 @@ class CaregiverShare(Base):
     patient_id = Column(
         String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    share_token = Column(String(64), unique=True, nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    token_preview = Column(String(32), nullable=False, default="cg_***")
     caregiver_name = Column(String(100), nullable=False)
     relationship_type = Column(String(50), nullable=False, default="caregiver")
     scope = Column(
@@ -614,3 +642,92 @@ class CaregiverShare(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     patient = relationship("Patient", back_populates="caregiver_shares")
+
+
+# ==============================================================================
+# 7. Treatment Continuity & Radiotherapy Triage Models (M7)
+# ==============================================================================
+
+
+class LinacMachine(Base):
+    """Linear accelerator (LINAC) radiation treatment machine (M7)."""
+
+    __tablename__ = "linac_machines"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    facility_id = Column(
+        String(36), ForeignKey("facilities.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    machine_name = Column(String(100), nullable=False)
+    daily_slot_capacity = Column(Integer, nullable=False, default=16)
+    status = Column(String(50), nullable=False, default=MachineStatus.OPERATIONAL.value, index=True)
+    downtime_started_at = Column(DateTime(timezone=True), nullable=True)
+    expected_return_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    facility = relationship("Facility", back_populates="linac_machines")
+    courses = relationship("RadiotherapyCourse", back_populates="assigned_machine")
+
+
+class RadiotherapyCourse(Base):
+    """Prescribed radiotherapy fractionation course for a cancer patient (M7)."""
+
+    __tablename__ = "radiotherapy_courses"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    assigned_machine_id = Column(
+        String(36), ForeignKey("linac_machines.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    clinical_context = Column(
+        String(50), nullable=False, default=RadiotherapyContext.ADJUVANT_POST_LUMPECTOMY.value
+    )
+    total_fractions = Column(Integer, nullable=False, default=15)
+    fractions_delivered = Column(Integer, nullable=False, default=0)
+    prescribed_start_date = Column(DateTime(timezone=True), nullable=False)
+    scheduled_start_date = Column(DateTime(timezone=True), nullable=True)
+    actual_start_date = Column(DateTime(timezone=True), nullable=True)
+    urgency_tier = Column(
+        String(50), nullable=False, default="routine"
+    )  # emergency, urgent, routine
+    status = Column(String(50), nullable=False, default=CourseStatus.PENDING.value, index=True)
+    baseline_subgroup = Column(String(100), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    patient = relationship("Patient", back_populates="radiotherapy_courses")
+    assigned_machine = relationship("LinacMachine", back_populates="courses")
+    ledger_entries = relationship(
+        "DelayLedgerEntry", back_populates="course", cascade="all, delete-orphan"
+    )
+
+
+class DelayLedgerEntry(Base):
+    """Transparent delay ledger record documenting treatment shifts, reasons, and marginal harm (M7)."""
+
+    __tablename__ = "delay_ledger_entries"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    course_id = Column(
+        String(36),
+        ForeignKey("radiotherapy_courses.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    delay_days = Column(Integer, nullable=False)
+    reason = Column(String(255), nullable=False)
+    marginal_harm = Column(Float, nullable=True)
+    moved_from_date = Column(DateTime(timezone=True), nullable=True)
+    moved_to_date = Column(DateTime(timezone=True), nullable=False)
+    clinician_overridden = Column(Boolean, default=False, nullable=False)
+    recorded_by = Column(String(100), nullable=False, default="system_cp_sat")
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    patient = relationship("Patient")
+    course = relationship("RadiotherapyCourse", back_populates="ledger_entries")

@@ -50,6 +50,10 @@ from vigil_api.schemas.v2 import (
     CaregiverShareCreateRequest,
     CaregiverShareResponse,
     ConsentCreateRequest,
+    DisclosureLockRequest,
+    DisclosureLockResponse,
+    DisclosureReleaseRequest,
+    DisclosureReleaseRequestResponse,
     DisclosureUnlockRequest,
     DisclosureUnlockResponse,
     FollowUpTaskSummary,
@@ -1432,11 +1436,14 @@ def create_caregiver_share(
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
     now = datetime.now(timezone.utc)
     token = f"cg_{secrets.token_urlsafe(32)}"
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    token_preview = f"{token[:5]}...{token[-4:]}"
     expires_at = now + timedelta(days=payload.expires_in_days)
 
     share = CaregiverShare(
         patient_id=patient.id,
-        share_token=token,
+        token_hash=token_hash,
+        token_preview=token_preview,
         caregiver_name=payload.caregiver_name,
         relationship_type=payload.relationship_type,
         scope=payload.scope,
@@ -1458,6 +1465,7 @@ def create_caregiver_share(
             "patient_id": patient.id,
             "caregiver_name": payload.caregiver_name,
             "scope": payload.scope,
+            "token_preview": token_preview,
             "expires_at": expires_at.isoformat(),
         },
         timestamp=now,
@@ -1465,10 +1473,12 @@ def create_caregiver_share(
     db.commit()
     db.refresh(share)
 
+    # Return raw token ONCE upon creation; token_preview for UI display
     return CaregiverShareResponse(
         id=share.id,
         patient_id=share.patient_id,
-        share_token=share.share_token,
+        share_token=token,
+        token_preview=share.token_preview,
         caregiver_name=share.caregiver_name,
         relationship_type=share.relationship_type,
         scope=share.scope,
@@ -1503,7 +1513,8 @@ def list_caregiver_shares(
         CaregiverShareResponse(
             id=s.id,
             patient_id=s.patient_id,
-            share_token=s.share_token,
+            share_token=None,  # NEVER reveal raw bearer token on listing
+            token_preview=s.token_preview,
             caregiver_name=s.caregiver_name,
             relationship_type=s.relationship_type,
             scope=s.scope,
@@ -1559,7 +1570,8 @@ def revoke_caregiver_share(
     return CaregiverShareResponse(
         id=share.id,
         patient_id=share.patient_id,
-        share_token=share.share_token,
+        share_token=None,
+        token_preview=share.token_preview,
         caregiver_name=share.caregiver_name,
         relationship_type=share.relationship_type,
         scope=share.scope,
@@ -1685,6 +1697,99 @@ def unlock_patient_disclosure(
         unlocked=True,
         unlocked_at=now,
         message="Sensitive results unlocked for patient/caregiver viewing.",
+        synthetic=True,
+    )
+
+
+@router.post(
+    "/{id}/disclosure/request-release",
+    response_model=DisclosureReleaseRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Patient or caregiver requests clinician release of bad-news diagnostic results",
+)
+def request_disclosure_release(
+    id: str,
+    payload: DisclosureReleaseRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Patient-initiated request asking their clinical care team to release withheld sensitive findings."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+    task_id = str(uuid.uuid4())
+    notes_text = (
+        f"Patient or caregiver requested clinician release of sensitive/escalate results. "
+        f"Patient note: {payload.reason or 'Patient requested release.'}"
+    )
+
+    task = FollowUpTask(
+        id=task_id,
+        patient_id=patient.id,
+        alert_id=None,
+        task_type="disclosure_release_request",
+        status=FollowUpTaskStatus.PENDING.value,
+        due_date=now + timedelta(days=1),
+        escalation_level=1,
+        notes=notes_text,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(task)
+    db.flush()
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="disclosure.release_requested",
+        resource_type="FollowUpTask",
+        resource_id=task.id,
+        details={"patient_id": patient.id, "reason": payload.reason},
+        timestamp=now,
+    )
+    db.commit()
+
+    return DisclosureReleaseRequestResponse(
+        requested=True,
+        task_id=task.id,
+        message="Request submitted. A clinician will review and release your results.",
+        synthetic=True,
+    )
+
+
+@router.post(
+    "/{id}/disclosure/lock",
+    response_model=DisclosureLockResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Clinician re-locks disclosure for a patient",
+)
+def lock_patient_disclosure(
+    id: str,
+    payload: DisclosureLockRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
+    """Clinician-controlled re-locking of sensitive / bad-news results, persisted and audited."""
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    now = datetime.now(timezone.utc)
+    patient.disclosure_unlocked_at = None
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="disclosure.locked",
+        resource_type="PatientDisclosure",
+        resource_id=patient.id,
+        details={"reason": payload.reason},
+        timestamp=now,
+    )
+    db.commit()
+
+    return DisclosureLockResponse(
+        locked=True,
+        locked_at=now,
+        message="Sensitive results re-locked. Patient and caregivers cannot view without new release.",
         synthetic=True,
     )
 

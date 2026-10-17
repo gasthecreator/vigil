@@ -8,6 +8,7 @@ Master Plan §6.9 / Condition P9-B.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -42,10 +43,16 @@ from vigil_api.models.v2 import (  # noqa: E402
     AlertStatus,
     CaregiverShare,
     ConsentRecord,
+    CourseStatus,
+    DelayLedgerEntry,
     FollowUpTask,
     FollowUpTaskStatus,
     FollowUpTaskType,
+    LinacMachine,
+    MachineStatus,
     Observation,
+    RadiotherapyContext,
+    RadiotherapyCourse,
     RiskAssessment,
     Symptom,
     User,
@@ -194,6 +201,39 @@ def seed_database():
         db.add(ra1)
         db.flush()
 
+        # Seeded escalate observation for PAT-001 to test bad-news mode server gating
+        obs_esc = Observation(
+            id="OBS-ESC-001",
+            patient_id=p1.id,
+            analyte_code="ca_15_3",
+            value=38.0,
+            unit="U/mL",
+            raw_value=38.0,
+            raw_unit="U/mL",
+            plausibility_status="plausible",
+            specimen_collected_at=now - timedelta(hours=6),
+            result_received_at=now - timedelta(hours=2),
+            created_at=now - timedelta(hours=2),
+        )
+        db.add(obs_esc)
+        db.flush()
+
+        ra_esc = RiskAssessment(
+            id="RA-ESC-001",
+            patient_id=p1.id,
+            observation_id=obs_esc.id,
+            assessment_date=now - timedelta(hours=2),
+            model_versions={"M3": "1.0", "M5": "1.0"},
+            input_hash="hash_esc",
+            score=0.91,
+            risk_tier="high",
+            adjudicated_action="escalate",
+            clinical_note="Confirmed exponential kinetic progression requiring multidisciplinary care team review.",
+            created_at=now - timedelta(hours=2),
+        )
+        db.add(ra_esc)
+        db.flush()
+
         # Seeded symptom for PAT-001
         sym1 = Symptom(
             id="SYM-001",
@@ -208,10 +248,14 @@ def seed_database():
         db.add(sym1)
 
         # Seeded caregiver share for PAT-001
+        raw_token = "test-caregiver-token-12345"
+        token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+        token_preview = f"{raw_token[:5]}...{raw_token[-4:]}"
         share1 = CaregiverShare(
             id="CS-001",
             patient_id=p1.id,
-            share_token="test-caregiver-token-12345",
+            token_hash=token_hash,
+            token_preview=token_preview,
             caregiver_name="Chinedu Adebayo",
             relationship_type="Spouse",
             scope="view_summary",
@@ -312,8 +356,80 @@ def seed_database():
         )
         db.add(p3)
 
+        # 5. LINAC Machines (M7 Treatment Continuity)
+        linac1 = LinacMachine(
+            id="LINAC-01",
+            machine_name="LINAC-01 (Elekta Synergy)",
+            daily_slot_capacity=16,
+            status=MachineStatus.OPERATIONAL.value,
+            downtime_started_at=None,
+            expected_return_at=None,
+            created_at=now - timedelta(days=180),
+            updated_at=now,
+        )
+        linac2 = LinacMachine(
+            id="LINAC-02",
+            machine_name="LINAC-02 (Varian Clinac)",
+            daily_slot_capacity=16,
+            status=MachineStatus.DOWN.value,
+            downtime_started_at=now - timedelta(days=2),
+            expected_return_at=now + timedelta(days=5),
+            created_at=now - timedelta(days=180),
+            updated_at=now,
+        )
+        db.add_all([linac1, linac2])
+
+        # 6. Radiotherapy Courses (M7)
+        rtc1 = RadiotherapyCourse(
+            id="RTC-001",
+            patient_id=p1.id,
+            assigned_machine_id=linac1.id,
+            clinical_context=RadiotherapyContext.ADJUVANT_POST_LUMPECTOMY.value,
+            total_fractions=15,
+            fractions_delivered=0,
+            prescribed_start_date=now - timedelta(days=14),
+            scheduled_start_date=now - timedelta(days=7),
+            urgency_tier="routine",
+            status=CourseStatus.PENDING.value,
+            baseline_subgroup="public_referral",
+            created_at=now - timedelta(days=14),
+            updated_at=now,
+        )
+        rtc2 = RadiotherapyCourse(
+            id="RTC-002",
+            patient_id=p2.id,
+            assigned_machine_id=linac2.id,
+            clinical_context=RadiotherapyContext.CURATIVE_TNBC.value,
+            total_fractions=25,
+            fractions_delivered=5,
+            prescribed_start_date=now - timedelta(days=21),
+            scheduled_start_date=now - timedelta(days=3),
+            urgency_tier="urgent",
+            status=CourseStatus.IN_PROGRESS.value,
+            baseline_subgroup="direct_intake",
+            created_at=now - timedelta(days=21),
+            updated_at=now,
+        )
+        db.add_all([rtc1, rtc2])
+
+        # 7. Delay Ledger Entry for RTC-001 (documenting initial delay)
+        ledger1 = DelayLedgerEntry(
+            id="LEDGER-001",
+            patient_id=p1.id,
+            course_id=rtc1.id,
+            delay_days=7,
+            reason="Capacity re-allocation following LINAC-02 unscheduled maintenance",
+            marginal_harm=0.0175,
+            moved_from_date=now - timedelta(days=14),
+            moved_to_date=now - timedelta(days=7),
+            clinician_overridden=False,
+            recorded_by="system_cp_sat",
+            created_at=now - timedelta(days=7),
+        )
+        db.add(ledger1)
+
         db.commit()
-        print(f"✅ Seeded E2E database with 3 patients at {db_path}")
+        print(f"✅ Seeded E2E database with 3 patients, 2 LINACs, and 2 RT courses at {db_path}")
     finally:
         db.close()
 

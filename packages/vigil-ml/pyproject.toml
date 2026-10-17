@@ -20,6 +20,7 @@ dependencies = [
     "jax>=0.4.0",
     "numpyro>=0.15.0",
     "sbi>=0.23.0",
+    "ortools>=9.9.0",
 ]
 
 [build-system]

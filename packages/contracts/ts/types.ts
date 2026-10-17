@@ -95,9 +95,10 @@ export interface CaregiverShareResponse {
   relationship_type: string;
   revoked_at?: string /* ISO 8601 */ | null;
   scope: string;
-  share_token: string;
+  share_token?: string | null;
   status: string;
   synthetic?: boolean;
+  token_preview: string;
 }
 
 export interface ConsentCreateRequest {
@@ -111,6 +112,45 @@ export interface ConsentCreateRequest {
   scope?: string;
   /** Withdrawal date */
   withdrawn_at?: string /* ISO 8601 */ | null;
+}
+
+export interface DelayLedgerEntryResponse {
+  clinician_overridden?: boolean;
+  course_id: string;
+  created_at: string /* ISO 8601 */;
+  delay_days: number;
+  id: string;
+  marginal_harm?: number | null;
+  moved_from_date?: string /* ISO 8601 */ | null;
+  moved_to_date: string /* ISO 8601 */;
+  patient_id: string;
+  reason: string;
+  recorded_by?: string;
+  synthetic?: boolean;
+}
+
+export interface DisclosureLockRequest {
+  /** Reason for re-locking disclosure */
+  reason?: string | null;
+}
+
+export interface DisclosureLockResponse {
+  locked?: boolean;
+  locked_at: string /* ISO 8601 */;
+  message: string;
+  synthetic?: boolean;
+}
+
+export interface DisclosureReleaseRequest {
+  /** Reason or patient note for requesting clinician release */
+  reason?: string | null;
+}
+
+export interface DisclosureReleaseRequestResponse {
+  message: string;
+  requested?: boolean;
+  synthetic?: boolean;
+  task_id: string;
 }
 
 export interface DisclosureUnlockRequest {
@@ -194,6 +234,28 @@ export interface LabResultCreate {
   wbc_count: number;
 }
 
+export interface LinacMachineResponse {
+  created_at: string /* ISO 8601 */;
+  daily_slot_capacity: number;
+  downtime_started_at?: string /* ISO 8601 */ | null;
+  expected_return_at?: string /* ISO 8601 */ | null;
+  facility_id?: string | null;
+  id: string;
+  machine_name: string;
+  status: string;
+  synthetic?: boolean;
+  updated_at: string /* ISO 8601 */;
+}
+
+export interface LinacMachineStatusUpdate {
+  /** Expected time machine will return to operational status */
+  expected_return_at?: string /* ISO 8601 */ | null;
+  /** Reason for downtime or maintenance */
+  reason?: string | null;
+  /** Machine status: operational, down, maintenance */
+  status: string;
+}
+
 export interface ObservationCreateRequest {
   /** Analyte code from vigil_core.analytes (e.g. 'ca_15_3', 'cea') */
   analyte_code: string;
@@ -237,6 +299,20 @@ export interface PatientCreate {
   status?: string;
 }
 
+export interface PatientDelayNoticeResponse {
+  clinical_context?: string | null;
+  course_id?: string | null;
+  delay_history?: DelayLedgerEntryResponse[];
+  expected_start_date?: string /* ISO 8601 */ | null;
+  has_active_treatment: boolean;
+  machine_name?: string | null;
+  machine_status?: string | null;
+  patient_id: string;
+  plain_language_notice: string;
+  synthetic?: boolean;
+  total_delay_days?: number;
+}
+
 export interface PatientResponse {
   age?: number | null;
   created_at: string /* ISO 8601 */;
@@ -275,6 +351,38 @@ export interface PlainLanguageExplainerResponse {
   word_count: number;
 }
 
+export interface RadiotherapyCourseCreate {
+  assigned_machine_id?: string | null;
+  baseline_subgroup?: string | null;
+  /** Clinical context: adjuvant_post_lumpectomy, adjuvant_post_mastectomy, curative_tnbc, palliative_bone_brain */
+  clinical_context?: string;
+  patient_id: string;
+  prescribed_start_date: string /* ISO 8601 */;
+  total_fractions?: number;
+  /** Urgency tier: emergency, urgent, routine */
+  urgency_tier?: string;
+}
+
+export interface RadiotherapyCourseResponse {
+  actual_start_date?: string /* ISO 8601 */ | null;
+  assigned_machine_id?: string | null;
+  baseline_subgroup?: string | null;
+  clinical_context: string;
+  created_at: string /* ISO 8601 */;
+  current_delay_days?: number;
+  expected_excess_harm?: number;
+  fractions_delivered: number;
+  id: string;
+  patient_id: string;
+  prescribed_start_date: string /* ISO 8601 */;
+  scheduled_start_date?: string /* ISO 8601 */ | null;
+  status: string;
+  synthetic?: boolean;
+  total_fractions: number;
+  updated_at: string /* ISO 8601 */;
+  urgency_tier: string;
+}
+
 export interface RiskAssessmentSummary {
   abstention?: boolean;
   adjudicated_action: string;
@@ -310,6 +418,53 @@ export interface RowReport {
   task_created?: boolean;
   unit?: string | null;
   value?: number | null;
+}
+
+export interface ScheduleAssignment {
+  context: string;
+  course_id: string;
+  delay_days: number;
+  explanation: string;
+  fractions: number;
+  is_moved?: boolean;
+  machine_id: string;
+  marginal_harm: number;
+  patient_id: string;
+  scheduled_date: string /* ISO 8601 */;
+  start_day: number;
+}
+
+export interface ScheduleConfirmRequest {
+  assignments: ScheduleAssignment[];
+  /** Clinical rationale for confirming the schedule reallocation */
+  reason?: string | null;
+}
+
+export interface ScheduleConfirmResponse {
+  audit_event_id: string;
+  confirmed?: boolean;
+  ledger_entries_created: number;
+  message: string;
+  synthetic?: boolean;
+}
+
+export interface ScheduleSolveRequest {
+  fairness_disparity_bound?: number;
+  horizon_days?: number;
+  max_wait_days?: number;
+  stability_penalty?: number;
+}
+
+export interface ScheduleSolveResponse {
+  assignments: ScheduleAssignment[];
+  fairness_disparity: number;
+  max_delay_days: number;
+  mean_delay_days: number;
+  solver_time_seconds: number;
+  status: string;
+  synthetic?: boolean;
+  total_excess_harm: number;
+  unassigned_patient_ids: string[];
 }
 
 export interface SecondLookCreateRequest {

@@ -201,4 +201,61 @@ test.describe("M8 Family & Patient Companion E2E Suite (Real Backend & Seeded SQ
     expect(swText).toContain("vigil-companion-v1");
     expect(swText).toContain('addEventListener("fetch"');
   });
+
+  test("Bad-News Explainer Lifecycle: Locked -> Patient Requests Release -> Clinician Unlocks -> Explainer Appears -> Clinician Re-locks", async ({
+    page,
+    request,
+  }) => {
+    // 1. Ensure disclosure is initially locked for PAT-001
+    const lockResp = await request.post("http://127.0.0.1:8000/api/v1/patients/PAT-001/disclosure/lock", {
+      headers: { "X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-01" },
+      data: { reason: "Initial lock for e2e test" },
+    });
+    expect(lockResp.status()).toBe(200);
+
+    // 2. Patient visits escalate observation explainer: must be locked
+    await page.goto("/companion/results/OBS-ESC-001");
+    await page.waitForSelector("header");
+
+    await expect(page.locator('[data-testid="explainer-locked"]')).toBeVisible();
+    await expect(
+      page.locator("text=Your care team has this result and will talk it through with you")
+    ).toBeVisible();
+    await expect(page.locator('[data-testid="explainer-content"]')).not.toBeVisible();
+
+    // 3. Patient clicks "I am ready — Request Clinician Release"
+    await page.click('[data-testid="request-release-button"]');
+    await expect(page.locator('[data-testid="release-requested-confirmation"]')).toBeVisible();
+    await expect(page.locator("text=Release request submitted")).toBeVisible();
+
+    // 4. Clinician releases sensitive disclosure via API
+    const unlockResp = await request.post("http://127.0.0.1:8000/api/v1/patients/PAT-001/disclosure/unlock", {
+      headers: { "X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-01" },
+      data: { reason: "Clinician post-counseling disclosure release" },
+    });
+    expect(unlockResp.status()).toBe(200);
+
+    // 5. Patient reloads: full explainer now appears
+    await page.reload();
+    await page.waitForSelector("header");
+
+    await expect(page.locator('[data-testid="explainer-content"]')).toBeVisible();
+    await expect(page.locator("text=Confidence & Uncertainty Band")).toBeVisible();
+    await expect(page.locator("text=What this result means in plain words")).toBeVisible();
+    await expect(page.locator('[data-testid="explainer-locked"]')).not.toBeVisible();
+
+    // 6. Clinician re-locks disclosure
+    const relockResp = await request.post("http://127.0.0.1:8000/api/v1/patients/PAT-001/disclosure/lock", {
+      headers: { "X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-01" },
+      data: { reason: "Clinician re-locking after new high-risk observation" },
+    });
+    expect(relockResp.status()).toBe(200);
+
+    // 7. Patient reloads page: locked again
+    await page.reload();
+    await page.waitForSelector("header");
+
+    await expect(page.locator('[data-testid="explainer-locked"]')).toBeVisible();
+    await expect(page.locator('[data-testid="explainer-content"]')).not.toBeVisible();
+  });
 });

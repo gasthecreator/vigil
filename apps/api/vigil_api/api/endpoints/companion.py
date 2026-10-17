@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import hashlib
+import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, select
@@ -13,6 +15,8 @@ from vigil_api.consent import has_active_consent
 from vigil_api.database import get_db
 from vigil_api.models.v2 import (
     CaregiverShare,
+    FollowUpTask,
+    FollowUpTaskStatus,
     Observation,
     Patient,
     RiskAssessment,
@@ -21,6 +25,8 @@ from vigil_api.models.v2 import (
     UserRole,
 )
 from vigil_api.schemas.v2 import (
+    DisclosureReleaseRequest,
+    DisclosureReleaseRequestResponse,
     PlainLanguageExplainerResponse,
     SymptomCreateRequest,
     SymptomResponse,
@@ -50,9 +56,10 @@ def get_caregiver_shared_summary(
     - Hash-chained audit event recorded for every caregiver access.
     """
     now = datetime.now(timezone.utc)
+    token_hash = hashlib.sha256(share_token.encode("utf-8")).hexdigest()
 
     share = db.execute(
-        select(CaregiverShare).where(CaregiverShare.share_token == share_token)
+        select(CaregiverShare).where(CaregiverShare.token_hash == token_hash)
     ).scalar_one_or_none()
 
     if share is None:
@@ -201,9 +208,10 @@ def record_caregiver_symptom(
 ):
     """Allows an authorized caregiver to record a symptom in the patient's diary."""
     now = datetime.now(timezone.utc)
+    token_hash = hashlib.sha256(share_token.encode("utf-8")).hexdigest()
 
     share = db.execute(
-        select(CaregiverShare).where(CaregiverShare.share_token == share_token)
+        select(CaregiverShare).where(CaregiverShare.token_hash == token_hash)
     ).scalar_one_or_none()
 
     if share is None or share.status != "active":
@@ -290,9 +298,10 @@ def get_caregiver_observation_explainer(
 ):
     """Retrieves verified plain-language result explainer accessible to an authorized caregiver."""
     now = datetime.now(timezone.utc)
+    token_hash = hashlib.sha256(share_token.encode("utf-8")).hexdigest()
 
     share = db.execute(
-        select(CaregiverShare).where(CaregiverShare.share_token == share_token)
+        select(CaregiverShare).where(CaregiverShare.token_hash == token_hash)
     ).scalar_one_or_none()
 
     if share is None:
@@ -410,5 +419,104 @@ def get_caregiver_observation_explainer(
         flesch_kincaid_grade_level=explainer["flesch_kincaid_grade_level"],
         word_count=explainer["word_count"],
         verified=explainer["verified"],
+        synthetic=True,
+    )
+
+
+@router.post(
+    "/share/{share_token}/disclosure/request-release",
+    response_model=DisclosureReleaseRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Caregiver requests clinician release of sensitive diagnostic results on behalf of patient",
+)
+def caregiver_request_disclosure_release(
+    share_token: str,
+    payload: DisclosureReleaseRequest,
+    db: Session = Depends(get_db),
+):
+    """Allows an authorized caregiver to submit a clinician release request for sensitive findings."""
+    now = datetime.now(timezone.utc)
+    token_hash = hashlib.sha256(share_token.encode("utf-8")).hexdigest()
+
+    share = db.execute(
+        select(CaregiverShare).where(CaregiverShare.token_hash == token_hash)
+    ).scalar_one_or_none()
+
+    if share is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Caregiver share token not found or invalid.",
+        )
+
+    if share.status == "revoked" or share.revoked_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: caregiver share token has been revoked by patient.",
+        )
+
+    exp = (
+        share.expires_at
+        if share.expires_at.tzinfo
+        else share.expires_at.replace(tzinfo=timezone.utc)
+    )
+    if exp <= now:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: caregiver share token has expired.",
+        )
+
+    dummy_user = User(
+        id=f"caregiver-{share.id[:8]}",
+        username=share.caregiver_name,
+        role=UserRole.CAREGIVER.value,
+        email="caregiver@delegated.local",
+    )
+    if not has_active_consent(share.patient_id, db, dummy_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: patient lacks active clinical surveillance consent.",
+        )
+
+    task_id = str(uuid.uuid4())
+    notes_text = (
+        f"Caregiver '{share.caregiver_name}' requested clinician release of sensitive/escalate results. "
+        f"Caregiver Note: {payload.reason or 'Caregiver requested release.'}"
+    )
+
+    task = FollowUpTask(
+        id=task_id,
+        patient_id=share.patient_id,
+        alert_id=None,
+        task_type="disclosure_release_request",
+        status=FollowUpTaskStatus.PENDING.value,
+        due_date=now + timedelta(days=1),
+        escalation_level=1,
+        notes=notes_text,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(task)
+    db.flush()
+
+    record_audit_event(
+        db=db,
+        actor_id=f"caregiver:{share.caregiver_name}",
+        actor_role=UserRole.CAREGIVER.value,
+        action="caregiver.disclosure_release_requested",
+        resource_type="FollowUpTask",
+        resource_id=task.id,
+        details={
+            "patient_id": share.patient_id,
+            "share_id": share.id,
+            "reason": payload.reason,
+        },
+        timestamp=now,
+    )
+    db.commit()
+
+    return DisclosureReleaseRequestResponse(
+        requested=True,
+        task_id=task.id,
+        message="Request submitted. A clinician will review and release results.",
         synthetic=True,
     )

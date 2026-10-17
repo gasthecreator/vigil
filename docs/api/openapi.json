@@ -391,8 +391,15 @@
             "type": "string"
           },
           "share_token": {
-            "title": "Share Token",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Token"
           },
           "status": {
             "title": "Status",
@@ -402,12 +409,16 @@
             "default": true,
             "title": "Synthetic",
             "type": "boolean"
+          },
+          "token_preview": {
+            "title": "Token Preview",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "patient_id",
-          "share_token",
+          "token_preview",
           "caregiver_name",
           "relationship_type",
           "scope",
@@ -466,6 +477,184 @@
           }
         },
         "title": "ConsentCreateRequest",
+        "type": "object"
+      },
+      "DelayLedgerEntryResponse": {
+        "properties": {
+          "clinician_overridden": {
+            "default": false,
+            "title": "Clinician Overridden",
+            "type": "boolean"
+          },
+          "course_id": {
+            "title": "Course Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delay_days": {
+            "title": "Delay Days",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "marginal_harm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marginal Harm"
+          },
+          "moved_from_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved From Date"
+          },
+          "moved_to_date": {
+            "format": "date-time",
+            "title": "Moved To Date",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "recorded_by": {
+            "default": "system_cp_sat",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "course_id",
+          "delay_days",
+          "reason",
+          "moved_to_date",
+          "created_at"
+        ],
+        "title": "DelayLedgerEntryResponse",
+        "type": "object"
+      },
+      "DisclosureLockRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "Clinician re-locked disclosure",
+            "description": "Reason for re-locking disclosure",
+            "title": "Reason"
+          }
+        },
+        "title": "DisclosureLockRequest",
+        "type": "object"
+      },
+      "DisclosureLockResponse": {
+        "properties": {
+          "locked": {
+            "default": true,
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "locked_at": {
+            "format": "date-time",
+            "title": "Locked At",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "locked_at",
+          "message"
+        ],
+        "title": "DisclosureLockResponse",
+        "type": "object"
+      },
+      "DisclosureReleaseRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "Patient requested release of withheld diagnostic result",
+            "description": "Reason or patient note for requesting clinician release",
+            "title": "Reason"
+          }
+        },
+        "title": "DisclosureReleaseRequest",
+        "type": "object"
+      },
+      "DisclosureReleaseRequestResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "requested": {
+            "default": true,
+            "title": "Requested",
+            "type": "boolean"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "message"
+        ],
+        "title": "DisclosureReleaseRequestResponse",
         "type": "object"
       },
       "DisclosureUnlockRequest": {
@@ -840,6 +1029,125 @@
         "title": "LabResultCreate",
         "type": "object"
       },
+      "LinacMachineResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "daily_slot_capacity": {
+            "title": "Daily Slot Capacity",
+            "type": "integer"
+          },
+          "downtime_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downtime Started At"
+          },
+          "expected_return_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Return At"
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facility Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "machine_name": {
+            "title": "Machine Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "machine_name",
+          "daily_slot_capacity",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LinacMachineResponse",
+        "type": "object"
+      },
+      "LinacMachineStatusUpdate": {
+        "properties": {
+          "expected_return_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Expected time machine will return to operational status",
+            "title": "Expected Return At"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reason for downtime or maintenance",
+            "title": "Reason"
+          },
+          "status": {
+            "description": "Machine status: operational, down, maintenance",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "LinacMachineStatusUpdate",
+        "type": "object"
+      },
       "ObservationCreateRequest": {
         "properties": {
           "analyte_code": {
@@ -1029,6 +1337,103 @@
           "age"
         ],
         "title": "PatientCreate",
+        "type": "object"
+      },
+      "PatientDelayNoticeResponse": {
+        "properties": {
+          "clinical_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Context"
+          },
+          "course_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Id"
+          },
+          "delay_history": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DelayLedgerEntryResponse"
+            },
+            "title": "Delay History",
+            "type": "array"
+          },
+          "expected_start_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Start Date"
+          },
+          "has_active_treatment": {
+            "title": "Has Active Treatment",
+            "type": "boolean"
+          },
+          "machine_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine Name"
+          },
+          "machine_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine Status"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "plain_language_notice": {
+            "title": "Plain Language Notice",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "total_delay_days": {
+            "default": 0,
+            "title": "Total Delay Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "patient_id",
+          "has_active_treatment",
+          "plain_language_notice"
+        ],
+        "title": "PatientDelayNoticeResponse",
         "type": "object"
       },
       "PatientResponse": {
@@ -1224,6 +1629,188 @@
           "word_count"
         ],
         "title": "PlainLanguageExplainerResponse",
+        "type": "object"
+      },
+      "RadiotherapyCourseCreate": {
+        "properties": {
+          "assigned_machine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Machine Id"
+          },
+          "baseline_subgroup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Subgroup"
+          },
+          "clinical_context": {
+            "default": "adjuvant_post_lumpectomy",
+            "description": "Clinical context: adjuvant_post_lumpectomy, adjuvant_post_mastectomy, curative_tnbc, palliative_bone_brain",
+            "title": "Clinical Context",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "prescribed_start_date": {
+            "format": "date-time",
+            "title": "Prescribed Start Date",
+            "type": "string"
+          },
+          "total_fractions": {
+            "default": 15,
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Total Fractions",
+            "type": "integer"
+          },
+          "urgency_tier": {
+            "default": "routine",
+            "description": "Urgency tier: emergency, urgent, routine",
+            "title": "Urgency Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id",
+          "prescribed_start_date"
+        ],
+        "title": "RadiotherapyCourseCreate",
+        "type": "object"
+      },
+      "RadiotherapyCourseResponse": {
+        "properties": {
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "assigned_machine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Machine Id"
+          },
+          "baseline_subgroup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Subgroup"
+          },
+          "clinical_context": {
+            "title": "Clinical Context",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current_delay_days": {
+            "default": 0,
+            "title": "Current Delay Days",
+            "type": "integer"
+          },
+          "expected_excess_harm": {
+            "default": 0.0,
+            "title": "Expected Excess Harm",
+            "type": "number"
+          },
+          "fractions_delivered": {
+            "title": "Fractions Delivered",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "prescribed_start_date": {
+            "format": "date-time",
+            "title": "Prescribed Start Date",
+            "type": "string"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "total_fractions": {
+            "title": "Total Fractions",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "urgency_tier": {
+            "title": "Urgency Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "clinical_context",
+          "total_fractions",
+          "fractions_delivered",
+          "prescribed_start_date",
+          "urgency_tier",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RadiotherapyCourseResponse",
         "type": "object"
       },
       "RiskAssessmentSummary": {
@@ -1434,6 +2021,224 @@
           "status"
         ],
         "title": "RowReport",
+        "type": "object"
+      },
+      "ScheduleAssignment": {
+        "properties": {
+          "context": {
+            "title": "Context",
+            "type": "string"
+          },
+          "course_id": {
+            "title": "Course Id",
+            "type": "string"
+          },
+          "delay_days": {
+            "title": "Delay Days",
+            "type": "integer"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "fractions": {
+            "title": "Fractions",
+            "type": "integer"
+          },
+          "is_moved": {
+            "default": false,
+            "title": "Is Moved",
+            "type": "boolean"
+          },
+          "machine_id": {
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "marginal_harm": {
+            "title": "Marginal Harm",
+            "type": "number"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "scheduled_date": {
+            "format": "date-time",
+            "title": "Scheduled Date",
+            "type": "string"
+          },
+          "start_day": {
+            "title": "Start Day",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "patient_id",
+          "course_id",
+          "machine_id",
+          "start_day",
+          "scheduled_date",
+          "fractions",
+          "context",
+          "delay_days",
+          "marginal_harm",
+          "explanation"
+        ],
+        "title": "ScheduleAssignment",
+        "type": "object"
+      },
+      "ScheduleConfirmRequest": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleAssignment"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "Clinician approved CP-SAT continuity reallocation",
+            "description": "Clinical rationale for confirming the schedule reallocation",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "assignments"
+        ],
+        "title": "ScheduleConfirmRequest",
+        "type": "object"
+      },
+      "ScheduleConfirmResponse": {
+        "properties": {
+          "audit_event_id": {
+            "title": "Audit Event Id",
+            "type": "string"
+          },
+          "confirmed": {
+            "default": true,
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "ledger_entries_created": {
+            "title": "Ledger Entries Created",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ledger_entries_created",
+          "audit_event_id",
+          "message"
+        ],
+        "title": "ScheduleConfirmResponse",
+        "type": "object"
+      },
+      "ScheduleSolveRequest": {
+        "properties": {
+          "fairness_disparity_bound": {
+            "default": 5.0,
+            "maximum": 30.0,
+            "minimum": 0.5,
+            "title": "Fairness Disparity Bound",
+            "type": "number"
+          },
+          "horizon_days": {
+            "default": 30,
+            "maximum": 60.0,
+            "minimum": 5.0,
+            "title": "Horizon Days",
+            "type": "integer"
+          },
+          "max_wait_days": {
+            "default": 45,
+            "maximum": 120.0,
+            "minimum": 5.0,
+            "title": "Max Wait Days",
+            "type": "integer"
+          },
+          "stability_penalty": {
+            "default": 0.01,
+            "minimum": 0.0,
+            "title": "Stability Penalty",
+            "type": "number"
+          }
+        },
+        "title": "ScheduleSolveRequest",
+        "type": "object"
+      },
+      "ScheduleSolveResponse": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleAssignment"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "fairness_disparity": {
+            "title": "Fairness Disparity",
+            "type": "number"
+          },
+          "max_delay_days": {
+            "title": "Max Delay Days",
+            "type": "integer"
+          },
+          "mean_delay_days": {
+            "title": "Mean Delay Days",
+            "type": "number"
+          },
+          "solver_time_seconds": {
+            "title": "Solver Time Seconds",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "total_excess_harm": {
+            "title": "Total Excess Harm",
+            "type": "number"
+          },
+          "unassigned_patient_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unassigned Patient Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "solver_time_seconds",
+          "total_excess_harm",
+          "mean_delay_days",
+          "max_delay_days",
+          "fairness_disparity",
+          "assignments",
+          "unassigned_patient_ids"
+        ],
+        "title": "ScheduleSolveResponse",
         "type": "object"
       },
       "SecondLookCreateRequest": {
@@ -2848,6 +3653,59 @@
         ]
       }
     },
+    "/api/v1/companion/share/{share_token}/disclosure/request-release": {
+      "post": {
+        "description": "Allows an authorized caregiver to submit a clinician release request for sensitive findings.",
+        "operationId": "caregiver_request_disclosure_release_api_v1_companion_share__share_token__disclosure_request_release_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "share_token",
+            "required": true,
+            "schema": {
+              "title": "Share Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisclosureReleaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisclosureReleaseRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Caregiver requests clinician release of sensitive diagnostic results on behalf of patient",
+        "tags": [
+          "Family & Patient Companion (M8)"
+        ]
+      }
+    },
     "/api/v1/companion/share/{share_token}/observations/{obs_id}/explainer": {
       "get": {
         "description": "Retrieves verified plain-language result explainer accessible to an authorized caregiver.",
@@ -2950,6 +3808,714 @@
         "summary": "Record patient symptom on behalf of patient via caregiver share token",
         "tags": [
           "Family & Patient Companion (M8)"
+        ]
+      }
+    },
+    "/api/v1/continuity/courses": {
+      "get": {
+        "description": "Lists radiotherapy courses with current delay days and calculated excess harm.",
+        "operationId": "list_radiotherapy_courses_api_v1_continuity_courses_get",
+        "parameters": [
+          {
+            "description": "Filter by patient ID",
+            "in": "query",
+            "name": "patient_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by patient ID",
+              "title": "Patient Id"
+            }
+          },
+          {
+            "description": "Filter by status (pending, in_progress, completed)",
+            "in": "query",
+            "name": "course_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (pending, in_progress, completed)",
+              "title": "Course Status"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RadiotherapyCourseResponse"
+                  },
+                  "title": "Response List Radiotherapy Courses Api V1 Continuity Courses Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Radiotherapy Courses",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      },
+      "post": {
+        "description": "Enrolls a patient into a prescribed radiotherapy treatment course (M7).",
+        "operationId": "create_radiotherapy_course_api_v1_continuity_courses_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RadiotherapyCourseCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadiotherapyCourseResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Radiotherapy Course",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/ledger": {
+      "get": {
+        "description": "Retrieves immutable delay ledger entries tracking delay days, moves, and reasons (M7).",
+        "operationId": "get_delay_ledger_api_v1_continuity_ledger_get",
+        "parameters": [
+          {
+            "description": "Filter by patient ID",
+            "in": "query",
+            "name": "patient_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by patient ID",
+              "title": "Patient Id"
+            }
+          },
+          {
+            "description": "Filter by course ID",
+            "in": "query",
+            "name": "course_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by course ID",
+              "title": "Course Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DelayLedgerEntryResponse"
+                  },
+                  "title": "Response Get Delay Ledger Api V1 Continuity Ledger Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Delay Ledger",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/machines": {
+      "get": {
+        "description": "Lists all linear accelerators with their operational and downtime status.",
+        "operationId": "list_linac_machines_api_v1_continuity_machines_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LinacMachineResponse"
+                  },
+                  "title": "Response List Linac Machines Api V1 Continuity Machines Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Linac Machines",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/machines/{id}/status": {
+      "post": {
+        "description": "Updates operational status of a LINAC machine (e.g. down, maintenance, operational).",
+        "operationId": "update_machine_status_api_v1_continuity_machines__id__status_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinacMachineStatusUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinacMachineResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Machine Status",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/patients/{id}/delay-notice": {
+      "get": {
+        "description": "Generates an honest, plain-language treatment delay notice for the patient or family caregiver (M7/M8).",
+        "operationId": "get_patient_delay_notice_api_v1_continuity_patients__id__delay_notice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientDelayNoticeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Patient Delay Notice",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/schedule/confirm": {
+      "post": {
+        "description": "Clinician-confirmed schedule re-allocation.\n\nEnforces:\n- Clinician oversight and authentication\n- Writes immutable DelayLedgerEntry records for moved/delayed treatments\n- Updates scheduled start date and assigned machine on the course\n- Records hash-chained audit event continuity.schedule_confirmed",
+        "operationId": "confirm_radiotherapy_schedule_api_v1_continuity_schedule_confirm_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleConfirmResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Radiotherapy Schedule",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
+        ]
+      }
+    },
+    "/api/v1/continuity/schedule/solve": {
+      "post": {
+        "description": "Solves the multi-machine radiotherapy scheduling problem via Google OR-Tools CP-SAT.\n\nEnforces:\n- Hard machine slot capacity limits per day\n- Machine maintenance and breakdown downtime\n- Course contiguity (fractions delivered on consecutive days)\n- Clinical urgency ceilings (emergency \u2264 3d, urgent \u2264 7d)\n- Algorithmic fairness: bounded delay disparity across subgroups (\u2264 disparity_bound)\n- No-starvation: maximum waiting time bounded by max_wait_days",
+        "operationId": "solve_radiotherapy_schedule_api_v1_continuity_schedule_solve_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleSolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleSolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Solve Radiotherapy Schedule",
+        "tags": [
+          "Treatment Continuity & Radiotherapy (M7)"
         ]
       }
     },
@@ -4439,9 +6005,189 @@
         ]
       }
     },
+    "/api/v1/patients/{id}/disclosure/lock": {
+      "post": {
+        "description": "Clinician-controlled re-locking of sensitive / bad-news results, persisted and audited.",
+        "operationId": "lock_patient_disclosure_api_v1_patients__id__disclosure_lock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisclosureLockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisclosureLockResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Clinician re-locks disclosure for a patient",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/disclosure/request-release": {
+      "post": {
+        "description": "Patient-initiated request asking their clinical care team to release withheld sensitive findings.",
+        "operationId": "request_disclosure_release_api_v1_patients__id__disclosure_request_release_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisclosureReleaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisclosureReleaseRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patient or caregiver requests clinician release of bad-news diagnostic results",
+        "tags": [
+          "Patients & Surveillance"
+        ]
+      }
+    },
     "/api/v1/patients/{id}/disclosure/unlock": {
       "post": {
-        "description": "Records patient opt-in unlock event for sensitive / bad-news results with audit tracking.",
+        "description": "Clinician-controlled release of sensitive / bad-news results, persisted and audited.",
         "operationId": "unlock_patient_disclosure_api_v1_patients__id__disclosure_unlock_post",
         "parameters": [
           {

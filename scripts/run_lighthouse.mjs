@@ -144,6 +144,7 @@ async function main() {
     const audits = [
       { url: "http://127.0.0.1:3000/", name: "triage" },
       { url: "http://127.0.0.1:3000/patients/PAT-001", name: "timeline" },
+      { url: "http://127.0.0.1:3000/continuity", name: "continuity" },
       { url: "http://127.0.0.1:3000/companion", name: "companion" },
       { url: "http://127.0.0.1:3000/companion/results/obs-001", name: "explainer" },
       { url: "http://127.0.0.1:3000/companion/symptoms", name: "symptoms" },
