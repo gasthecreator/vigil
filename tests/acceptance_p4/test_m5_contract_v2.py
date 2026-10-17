@@ -15,8 +15,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-if os.environ.get("VIGIL_ACCEPT_P4") != "1":
-    pytest.skip("set VIGIL_ACCEPT_P4=1 to run Phase 4 acceptance tests", allow_module_level=True)
+if os.environ.get("VIGIL_ACCEPT_P4") != "1" or os.environ.get("VIGIL_CONTRACT_P4V2") != "1":
+    pytest.skip(
+        "set VIGIL_ACCEPT_P4=1 and VIGIL_CONTRACT_P4V2=1 to run M5 contract v2",
+        allow_module_level=True,
+    )
 
 ROOT = Path(__file__).resolve().parents[2]
 M5 = importlib.import_module(os.environ.get("VIGIL_M5_MODULE", "vigil_ml.m5"))

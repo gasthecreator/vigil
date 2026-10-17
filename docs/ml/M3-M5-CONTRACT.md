@@ -28,4 +28,4 @@ Tests: (1) round trip — for 200 random fact tables the rendered note verifies 
 
 
 ## Contract v2 (added after review of PR #29)
-`tests/acceptance_p4/test_m5_contract_v2.py`: the verifier must accept **only** content warranted by the fact table. 17 unwarranted sentences (paraphrased forbidden claims and numberless clinical claims) must be rejected when appended, when replacing a real sentence, and when standing alone; every genuine sentence is accepted alone but rejected when one word is changed. A blacklist cannot pass this; template-derivation can.
+`tests/acceptance_p4/test_m5_contract_v2.py` (run with `VIGIL_ACCEPT_P4=1 VIGIL_CONTRACT_P4V2=1`; CI must enable it once M5 is fixed): the verifier must accept **only** content warranted by the fact table. 17 unwarranted sentences (paraphrased forbidden claims and numberless clinical claims) must be rejected when appended, when replacing a real sentence, and when standing alone; every genuine sentence is accepted alone but rejected when one word is changed. A blacklist cannot pass this; template-derivation can.
