@@ -81,8 +81,17 @@ Prospective risk is derived **exclusively** from the kinetic trajectory forward 
 $$P(\text{Recurrence} \le t + H \mid \mathcal{H}_t) = \frac{1}{N} \sum_{j=1}^N \mathbb{I}(t_{\text{onset}}^{(j)} \le H) \cdot \sigma\left(\frac{B^{(j)}(H) - B_{\text{det}}}{0.5 B_{\text{det}}}\right)$$
 - **Zero Label Head:** No direct supervised classifier or logistic blend ($0.6/0.4$).
 - **Strict Monotonicity:** Mathematically guaranteed monotone non-decreasing when doubling times are shortened and when the time horizon is lengthened.
+- **Strict Real Observation Inputs (RR12 & Condition B-3):** `predict_risk` accepts only real observation sequences (`K1Observations`). Tabular summary approximations or slope-derived pseudo-points are strictly rejected with `TypeError`.
 
-### 4.2 Data-Driven Detection Threshold ($B_{\text{det}}$)
+### 4.2 Parameter Calibration & Residual Noise (RR11, RR13)
+Parameters are calibrated on an independent cohort drawn from `vigil-sim` (`seed=999`, $N=500$ patients) via the committed calibration script [`scripts/calibrate_k1.py`](../../scripts/calibrate_k1.py), which produces [`k1_calibration.json`](../../packages/vigil-ml/vigil_ml/models/k1_calibration.json):
+- `residual_sd[0]`: $\sigma(T_d) = 25.2695$ days (tumor doubling time residual standard error)
+- `residual_sd[1]`: $\sigma(s) = 0.0738$ U/mL/unit burden/day (shedding rate residual standard error)
+- `residual_sd[2]`: $\sigma(c) = 0.0404\,\text{day}^{-1}$ (clearance rate residual standard error)
+- `residual_sd[3]`: $\sigma(t_{\text{onset}}) = 42.6228$ days (recurrence onset residual standard error)
+- Prior blend weights: When marker elevation is within analytical noise floor ($3\sigma_{\text{obs}} = 4.5\,\text{U/mL}$), shedding and onset revert smoothly to the empirical prior. Clearance utilizes population prior weight $0.70$ reflective of pharmacokinetic identifiability bounds.
+
+### 4.3 Data-Driven Detection Threshold ($B_{\text{det}}$)
 Detection threshold $B_{\text{det}}$ is not a hard-coded constant or arbitrary multiplier; it is estimated from empirical training cohort data in `fit()` using Youden's J statistic ($J = \text{TPR} - \text{FPR}$) over biomarker elevation distributions. Formulaic training loss histories have been completely removed from `fit()`.
 
 ---

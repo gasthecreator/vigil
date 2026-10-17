@@ -1,0 +1,148 @@
+{
+  "study_id": "S7_PLAUSIBILITY",
+  "date": "2026-10-16",
+  "protocol_version": "1.0",
+  "execution_time_seconds": 4.72,
+  "contract_cohort": {
+    "n_cases": 3000,
+    "auc_real_vs_stable": {
+      "point": 0.9961,
+      "ci95": [
+        0.9937,
+        0.9977
+      ]
+    },
+    "auc_error_vs_rest": {
+      "point": 0.9487,
+      "ci95": [
+        0.9114,
+        0.977
+      ]
+    },
+    "ece_real": {
+      "point": 0.0023,
+      "ci95": [
+        0.0016,
+        0.0087
+      ]
+    },
+    "ece_error": {
+      "point": 0.0025,
+      "ci95": [
+        0.0022,
+        0.0067
+      ]
+    },
+    "brier_real": 0.0186,
+    "brier_real_base": 0.1656,
+    "brier_real_ratio": 0.1121,
+    "brier_error": 0.0064,
+    "brier_error_base": 0.0272,
+    "brier_error_ratio": 0.2353,
+    "zero_dismissal_compliance": 1.0,
+    "action_distribution": {
+      "explained": 2197,
+      "needs_repeat": 207,
+      "escalate": 596
+    }
+  },
+  "vigilsim_cohort": {
+    "n_patient_visits_evaluated": 845,
+    "auc_real": {
+      "point": 0.4912,
+      "ci95": [
+        0.437,
+        0.5476
+      ]
+    },
+    "auc_error": {
+      "point": 0.8587,
+      "ci95": [
+        0.8101,
+        0.9013
+      ]
+    },
+    "ece_real": {
+      "point": 0.2021,
+      "ci95": [
+        0.1751,
+        0.2315
+      ]
+    },
+    "ece_error": {
+      "point": 0.3959,
+      "ci95": [
+        0.3455,
+        0.4494
+      ]
+    }
+  },
+  "hypotheses": {
+    "H1_real_discrimination": {
+      "verdict": "CONFIRMED",
+      "auroc": {
+        "point": 0.9961,
+        "ci95": [
+          0.9937,
+          0.9977
+        ]
+      },
+      "criterion": "AUROC >= 0.85, CI95 lower >= 0.80"
+    },
+    "H2_error_discrimination": {
+      "verdict": "CONFIRMED",
+      "auroc": {
+        "point": 0.9487,
+        "ci95": [
+          0.9114,
+          0.977
+        ]
+      },
+      "criterion": "AUROC >= 0.80, CI95 lower >= 0.75"
+    },
+    "H3_calibration": {
+      "verdict": "CONFIRMED",
+      "ece_real": {
+        "point": 0.0023,
+        "ci95": [
+          0.0016,
+          0.0087
+        ]
+      },
+      "ece_error": {
+        "point": 0.0025,
+        "ci95": [
+          0.0022,
+          0.0067
+        ]
+      },
+      "brier_real_ratio": 0.1121,
+      "brier_error_ratio": 0.2353,
+      "criterion": "ECE <= 0.06, Brier ratio <= 0.85"
+    },
+    "H4_zero_dismissal_safety": {
+      "verdict": "CONFIRMED",
+      "compliance": 1.0,
+      "criterion": "100% compliance with zero-dismissal safety policy"
+    }
+  },
+  "biological_variation_citations": {
+    "ca_15_3": {
+      "cv_within": 0.061,
+      "cv_between": 0.431,
+      "status": "PRIMARY-VERIFIED",
+      "source": "Aarsand et al. 2021 (EuBIVAS), PMID 33964202 (Evidence E9)"
+    },
+    "cea": {
+      "cv_within": 0.127,
+      "cv_between": 0.554,
+      "status": "PRIMARY-VERIFIED",
+      "source": "Aarsand et al. 2021 (EuBIVAS), PMID 33964202 (Evidence E9)"
+    },
+    "secondary_analytes": {
+      "status": "SECONDARY",
+      "source": "EFLM Biological Variation Database (Ric\u00f3s et al. 1999 update)",
+      "note": "Analytes such as ALP, ALT, AST, GGT have secondary status pending primary laboratory validation"
+    }
+  }
+}
