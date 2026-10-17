@@ -192,6 +192,10 @@ export interface ObservationCreateResponse {
 export interface PatientCreate {
   /** Patient age in years */
   age: number;
+  /** External hospital system identifier (encrypted at rest) */
+  external_id?: string | null;
+  /** Medical Record Number (encrypted at rest) */
+  mrn?: string | null;
   /** Clinical surveillance status */
   status?: string;
 }
@@ -199,8 +203,21 @@ export interface PatientCreate {
 export interface PatientResponse {
   age: number;
   created_at: string /* ISO 8601 */;
+  external_id?: string | null;
   id: string;
+  mrn?: string | null;
   status: string;
+}
+
+export interface PatientUpdate {
+  /** Patient age in years */
+  age?: number | null;
+  /** External hospital system identifier (encrypted at rest) */
+  external_id?: string | null;
+  /** Medical Record Number (encrypted at rest) */
+  mrn?: string | null;
+  /** Clinical surveillance status */
+  status?: string | null;
 }
 
 export interface RiskAssessmentSummary {

@@ -120,3 +120,99 @@ def test_key_rotation(tmp_path, monkeypatch):
     # Decryptable by f_b directly!
     decrypted_by_b = f_b.decrypt(new_raw_mrn.encode("utf-8")).decode("utf-8")
     assert decrypted_by_b == "MRN-ROTATION-ABC"
+
+
+def test_mrn_http_api_flow_and_rotation(tmp_path, monkeypatch):
+    """Verifies Condition P8-C through HTTP API: create, read, update, blind index, and key rotation."""
+    from fastapi.testclient import TestClient
+    from vigil_api.database import get_db
+    from vigil_api.main import app
+
+    key_1 = Fernet.generate_key().decode()
+    key_2 = Fernet.generate_key().decode()
+
+    db_file = tmp_path / "api_crypto.db"
+    db_url = f"sqlite:///{db_file}"
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEYS", key_1)
+
+    engine = create_engine(db_url)
+    Base.metadata.create_all(bind=engine)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        client = TestClient(app)
+        headers = {"X-Vigil-Role": "clinician"}
+        admin_headers = {"X-Vigil-Role": "admin"}
+
+        # 1. Create patient with MRN via HTTP API
+        resp = client.post(
+            "/api/v1/patients/",
+            json={"age": 52, "status": "active", "mrn": "MRN-CONFIDENTIAL-001", "external_id": "EXT-999"},
+            headers=headers,
+        )
+        assert resp.status_code == 201
+        pat_data = resp.json()
+        pid = pat_data["id"]
+        assert pat_data["mrn"] == "MRN-CONFIDENTIAL-001"
+
+        # 2. Verify raw SQLite contains ciphertext, NOT plaintext
+        conn = sqlite3.connect(db_file)
+        row = conn.execute("SELECT mrn, external_id, mrn_bidx FROM patients WHERE id = ?", (pid,)).fetchone()
+        conn.close()
+        raw_mrn, raw_ext, bidx = row
+        assert raw_mrn.startswith("gAAAAA")
+        assert "MRN-CONFIDENTIAL-001" not in raw_mrn
+        assert bidx is not None
+        assert len(bidx) == 64
+
+        # 3. Grant consent and read back decrypted MRN
+        client.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=headers)
+        get_resp = client.get(f"/api/v1/patients/{pid}", headers=headers)
+        assert get_resp.status_code == 200
+        assert get_resp.json()["mrn"] == "MRN-CONFIDENTIAL-001"
+        assert get_resp.json()["external_id"] == "EXT-999"
+
+        # 4. Search by blind-indexed MRN
+        search_resp = client.get("/api/v1/patients/?mrn=MRN-CONFIDENTIAL-001", headers=headers)
+        assert search_resp.status_code == 200
+        assert len(search_resp.json()) == 1
+        assert search_resp.json()[0]["id"] == pid
+
+        # 5. Update MRN via PATCH /{id}
+        patch_resp = client.patch(
+            f"/api/v1/patients/{pid}",
+            json={"mrn": "MRN-UPDATED-002"},
+            headers=headers,
+        )
+        assert patch_resp.status_code == 200
+        assert patch_resp.json()["mrn"] == "MRN-UPDATED-002"
+
+        # Verify updated raw ciphertext in DB
+        conn = sqlite3.connect(db_file)
+        upd_raw_mrn, upd_bidx = conn.execute("SELECT mrn, mrn_bidx FROM patients WHERE id = ?", (pid,)).fetchone()
+        conn.close()
+        assert upd_raw_mrn.startswith("gAAAAA")
+        assert "MRN-UPDATED-002" not in upd_raw_mrn
+        assert upd_bidx != bidx
+
+        # 6. Key rotation via POST /rotate-keys
+        # Switch primary key to key_2 with key_1 as secondary
+        monkeypatch.setenv("FIELD_ENCRYPTION_KEYS", f"{key_2},{key_1}")
+        rot_resp = client.post("/api/v1/patients/rotate-keys", headers=admin_headers)
+        assert rot_resp.status_code == 200
+        assert rot_resp.json()["rotated"] >= 1
+
+        # Verify patient still decrypts with new primary key
+        get_rot = client.get(f"/api/v1/patients/{pid}", headers=headers)
+        assert get_rot.status_code == 200
+        assert get_rot.json()["mrn"] == "MRN-UPDATED-002"
+    finally:
+        app.dependency_overrides.pop(get_db, None)

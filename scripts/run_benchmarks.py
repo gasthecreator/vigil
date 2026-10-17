@@ -307,7 +307,10 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             continue
 
         valid_ca = p_obs["ca_15_3"].dropna() if "ca_15_3" in p_obs else pd.Series(dtype=float)
-        max_ca = float(valid_ca.max()) if len(valid_ca) > 0 else 18.0
+        if len(valid_ca) == 0:
+            # Condition P8-D: Explicitly handle patients with no valid CA 15-3 measurements without inventing 18.0
+            continue
+        max_ca = float(valid_ca.max())
         score = 1.0 / (1.0 + np.exp(-(max_ca - 30.0) / 8.0))
         imaged = bool(p_obs["imaging_performed"].any())
         d_true = 1 if p.true_recurrence_event else 0
