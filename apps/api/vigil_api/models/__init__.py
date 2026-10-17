@@ -1,5 +1,51 @@
 """SQLAlchemy Models package init."""
 
-from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
+from vigil_api.models.v2 import (
+    Alert,
+    AlertAcknowledgement,
+    AlertDisposition,
+    AlertSeverity,
+    AlertStatus,
+    AuditEvent,
+    BaselineProfile,
+    ConsentRecord,
+    Facility,
+    FollowUpTask,
+    FollowUpTaskStatus,
+    FollowUpTaskType,
+    LabResult,
+    Observation,
+    Patient,
+    RiskAssessment,
+    RiskInference,
+    User,
+    UserRole,
+    calculate_audit_hash,
+    generate_uuid,
+    utc_now,
+)
 
-__all__ = ["Patient", "BaselineProfile", "LabResult", "RiskInference"]
+__all__ = [
+    "Facility",
+    "User",
+    "UserRole",
+    "Patient",
+    "ConsentRecord",
+    "Observation",
+    "RiskAssessment",
+    "Alert",
+    "AlertSeverity",
+    "AlertStatus",
+    "AlertDisposition",
+    "AlertAcknowledgement",
+    "FollowUpTask",
+    "FollowUpTaskType",
+    "FollowUpTaskStatus",
+    "AuditEvent",
+    "calculate_audit_hash",
+    "BaselineProfile",
+    "LabResult",
+    "RiskInference",
+    "generate_uuid",
+    "utc_now",
+]

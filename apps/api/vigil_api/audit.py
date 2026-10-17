@@ -1,0 +1,132 @@
+"""Hash-Chained Append-Only Audit Trail Engine.
+
+Implements Master Plan §11 and Phase 5a Audit requirements:
+- Cryptographic SHA-256 hash chaining of all clinical actions.
+- Verification engine detecting broken links or altered event contents.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from vigil_api.models.v2 import AuditEvent, calculate_audit_hash
+
+
+def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
+    """Find the current leaf node of the cryptographic audit chain."""
+    all_events = db.execute(select(AuditEvent)).scalars().all()
+    if not all_events:
+        return None
+    prev_set = {e.prev_hash for e in all_events}
+    for e in all_events:
+        if e.curr_hash not in prev_set:
+            return e
+    return all_events[-1]
+
+
+def record_audit_event(
+    db: Session,
+    actor_id: str,
+    actor_role: str,
+    action: str,
+    resource_type: str,
+    resource_id: str,
+    details: Dict[str, Any],
+    timestamp: Optional[datetime] = None,
+) -> AuditEvent:
+    """Append a cryptographically chained audit event to the ledger."""
+    if timestamp is None:
+        timestamp = datetime.now(timezone.utc)
+
+    # Get the latest audit event leaf to link against
+    latest_event = get_latest_audit_event(db)
+    prev_hash = latest_event.curr_hash if latest_event else "0" * 64
+
+    curr_hash = calculate_audit_hash(
+        prev_hash=prev_hash,
+        timestamp=timestamp,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        action=action,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        details=details,
+    )
+
+    event = AuditEvent(
+        timestamp=timestamp,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        action=action,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        details=details,
+        prev_hash=prev_hash,
+        curr_hash=curr_hash,
+    )
+    db.add(event)
+    db.flush()
+    return event
+
+
+def verify_audit_chain(db: Session) -> Dict[str, Any]:
+    """Verify cryptographic integrity of the entire audit event chain."""
+    events = db.execute(select(AuditEvent)).scalars().all()
+    if not events:
+        return {
+            "valid": True,
+            "verified_events": 0,
+            "total_events": 0,
+            "head_hash": "0" * 64,
+        }
+
+    by_prev = {ev.prev_hash: ev for ev in events}
+    expected_prev = "0" * 64
+    verified_count = 0
+
+    while expected_prev in by_prev:
+        ev = by_prev[expected_prev]
+        recomputed_hash = calculate_audit_hash(
+            prev_hash=ev.prev_hash,
+            timestamp=ev.timestamp,
+            actor_id=ev.actor_id,
+            actor_role=ev.actor_role,
+            action=ev.action,
+            resource_type=ev.resource_type,
+            resource_id=ev.resource_id,
+            details=ev.details,
+        )
+
+        if ev.curr_hash != recomputed_hash:
+            return {
+                "valid": False,
+                "error": f"Tampered payload at index {verified_count}: curr_hash '{ev.curr_hash}' does not match recomputed hash '{recomputed_hash}'",
+                "tampered_event_id": ev.id,
+                "verified_events": verified_count,
+                "total_events": len(events),
+            }
+
+        expected_prev = ev.curr_hash
+        verified_count += 1
+
+    if verified_count != len(events):
+        orphans = [e for e in events if e.curr_hash != expected_prev and e.prev_hash != expected_prev]
+        orphan_id = orphans[0].id if orphans else "unknown"
+        return {
+            "valid": False,
+            "error": f"Chain link broken at index {verified_count}: expected next link from '{expected_prev}', but link is missing or disconnected.",
+            "tampered_event_id": orphan_id,
+            "verified_events": verified_count,
+            "total_events": len(events),
+        }
+
+    return {
+        "valid": True,
+        "verified_events": verified_count,
+        "total_events": len(events),
+        "head_hash": expected_prev,
+    }
