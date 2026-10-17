@@ -14,7 +14,7 @@
 | P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
 | P4a | M3 plausibility, M5 verified narrative (Plan v1.3) | SUBMITTED FOR REVIEW | `e65d375` | [`docs/progress/PHASE-4A-REPORT.md`](progress/PHASE-4A-REPORT.md) | M3 ACCEPTED-WITH-CONDITIONS; **M5 REJECTED** (verifier is a blacklist; 0/18 contract-v2 tests pass); E9 numeric values downgraded — `docs/progress/VERDICT-P4A.md` |
 | P4b | M4 test escalation ladder | NOT STARTED | — | — | — (needs verified imaging sensitivity/specificity sources first) |
-| P5 | Platform backend v2 (Phase 5a platform core) | SUBMITTED FOR REVIEW | `feat/phase-5a-platform-core` | [`docs/progress/PHASE-5A-REPORT.md`](progress/PHASE-5A-REPORT.md) | — |
+| P5 | Platform backend v2 (Phase 5a platform core) | SUBMITTED FOR REVIEW | `feat/phase-5a-platform-core` | [`docs/progress/PHASE-5A-REPORT.md`](progress/PHASE-5A-REPORT.md) | 5a: core pipeline real (ingestion→M3→K2→M5, guardian, hash-chained audit, M5 verifier now strict) BUT production auth is open, legacy endpoints bypass the no-dismissal pipeline, audit coverage partial, fabricated E12/E7 excerpts, undisclosed simulator edit — `docs/progress/VERDICT-P5A.md` |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | NOT STARTED | — | — | — |

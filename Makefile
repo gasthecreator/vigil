@@ -44,6 +44,9 @@ test:
 	@echo "==> Executing test suites across packages..."
 	$(UV) run pytest -v
 
+audit-evidence:
+	python3 scripts/audit_excerpts.py
+
 verify-phase:
 	@if [ -z "$(PHASE)" ]; then \
 		echo "Error: PHASE variable required. Usage: make verify-phase PHASE=0"; \

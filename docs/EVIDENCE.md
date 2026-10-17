@@ -54,7 +54,7 @@
   - CEA: $CV_i = 12.7\%$, $CV_g = 55.6\%$, $\text{II} = 0.23$.
 * **Used by:** Analyte registry (`packages/vigil-core/vigil_core/analytes.py`), Plausibility Adjudicator (Module M3).
 
-### E12 — Metastatic Site Tropism by Subtype — `PRIMARY-VERIFIED`
+### E12 — Metastatic Site Tropism by Subtype — `SECONDARY` (downgraded by overseer 2026-10-17: saved 'verbatim' excerpt contains numbers absent from the retrievable source; see scripts/audit_excerpts.py and docs/progress/VERDICT-P5A.md)
 * **Dossier:** [`docs/evidence/E12.md`](evidence/E12.md)
 * **Primary Source:**
   1. Wu Q, Li J, Zhu S, et al. "Breast cancer subtypes predict the preferential site of distant metastases: a SEER based study." *Oncotarget*. 2017;8(17):27990–27996. doi:[10.18632/oncotarget.15856](https://doi.org/10.18632/oncotarget.15856). PMID:[28427196](https://pubmed.ncbi.nlm.nih.gov/28427196/).
@@ -75,7 +75,7 @@
 * Sources: PMC7456314; local press reports.
 * **Used by:** Treatment delay and harm modeling (Module M7).
 
-### E7 — Nigerian Breast Cancer Presentation, Staging, and Subtypes — `PRIMARY-VERIFIED`
+### E7 — Nigerian Breast Cancer Presentation, Staging, and Subtypes — `SECONDARY` (downgraded by overseer 2026-10-17: saved 'verbatim' excerpt contains numbers absent from the retrievable source; see scripts/audit_excerpts.py and docs/progress/VERDICT-P5A.md)
 * **Dossier:** [`docs/evidence/E7.md`](evidence/E7.md)
 * **Primary Sources:**
   1. Jedy-Agba E, McCormack V, Adebamowo C, dos-Santos-Silva I. "Stage at diagnosis of breast cancer in sub-Saharan Africa: a systematic review and meta-analysis." *Lancet Glob Health*. 2016;4(12):e923–e935. doi:[10.1016/S2214-109X(16)30259-5](https://doi.org/10.1016/S2214-109X(16)30259-5). PMID:[27855871](https://pubmed.ncbi.nlm.nih.gov/27855871/).
