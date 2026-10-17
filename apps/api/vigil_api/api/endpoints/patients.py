@@ -73,6 +73,11 @@ from vigil_ml.m5 import (
 
 router = APIRouter()
 
+DISCLOSURE_LOCKED_DETAIL = {
+    "code": "disclosure_locked",
+    "message": "Your care team has this result and will talk it through with you. Please ask them when you are ready.",
+}
+
 
 def mask_identifier(val: Optional[str]) -> Optional[str]:
     """Masks an identifier returning only the last two characters."""
@@ -1657,11 +1662,12 @@ def unlock_patient_disclosure(
     id: str,
     payload: DisclosureUnlockRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
 ):
-    """Records patient opt-in unlock event for sensitive / bad-news results with audit tracking."""
+    """Clinician-controlled release of sensitive / bad-news results, persisted and audited."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
     now = datetime.now(timezone.utc)
+    patient.disclosure_unlocked_at = now
 
     record_audit_event(
         db=db,
@@ -1728,6 +1734,22 @@ def get_observation_explainer(
             verdict = risk.adjudicated_action
         elif risk and risk.risk_tier == "high":
             verdict = "escalate"
+
+    if verdict == "escalate" and patient.disclosure_unlocked_at is None:
+        record_audit_event(
+            db=db,
+            actor_id=current_user.id,
+            actor_role=current_user.role,
+            action="observation.explainer_withheld",
+            resource_type="Observation",
+            resource_id=obs.id,
+            details={"patient_id": patient.id, "reason": "disclosure_locked"},
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=DISCLOSURE_LOCKED_DETAIL,
+        )
 
     explainer = render_plain_language_explainer(verdict=verdict, analyte_code=obs.analyte_code)
 

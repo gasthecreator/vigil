@@ -23,3 +23,6 @@
 - **P11-D** PR body generated from the OpenAPI diff, not from memory.
 - **P11-E** Hash caregiver tokens at rest; one-time display; tests.
 - **P11-F** Add a regression test that every route returning clinical content to a patient/caregiver principal respects the disclosure state.
+
+## Overseer fix (done directly, not delegated)
+Defect 1 was implemented by the overseer (see PR `fix/server-side-bad-news-gate`): persisted `disclosure_unlocked_at`, clinician/admin-only unlock, 403 `disclosure_locked` on both explainer routes, caregiver summary withholds interpretation, and the explainer page's hardcoded fallback explainer (`verified: true`, shown on *any* error) was removed — a second, UI-side defect found while fixing. `tests/acceptance_p11` passes; `apps/api/tests/test_companion_api.py::test_caregiver_share_lifecycle_and_scope` was updated because it asserted the old ungated behaviour. Still open for the executor: patient 'request release' flow, re-lock endpoint, P11-B…P11-F.
