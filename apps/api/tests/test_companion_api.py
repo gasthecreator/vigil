@@ -276,6 +276,19 @@ def test_caregiver_share_lifecycle_and_scope(companion_env):
     cg_view = resp_cg.json()
     assert cg_view["caregiver_name"] == "Amina Bello"
     assert cg_view["patient"]["id"] == patient_id
+    # Bad-news mode: escalate-level assessment is withheld from caregivers until a clinician releases it
+    assert cg_view["latest_risk"] == {
+        "withheld": True,
+        "message": cg_view["latest_risk"]["message"],
+    }
+    assert all(o["plausibility_status"] is None for o in cg_view["observations"])
+    unlock = client.post(
+        f"/api/v1/patients/{patient_id}/disclosure/unlock",
+        json={"reason": "clinician release"},
+        headers={"X-Vigil-Role": "clinician"},
+    )
+    assert unlock.status_code == 200
+    cg_view = client.get(f"/api/v1/companion/share/{share_token}").json()
     assert cg_view["latest_risk"]["risk_tier"] == "high"
     # Under 'view_summary', observations are capped at 3
     assert len(cg_view["observations"]) <= 3

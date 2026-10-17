@@ -27,6 +27,7 @@ export default function PlainLanguageExplainerPage() {
 
   const [explainer, setExplainer] = useState<PlainLanguageExplainerResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadState, setLoadState] = useState<"ok" | "locked" | "error">("ok");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -35,29 +36,9 @@ export default function PlainLanguageExplainerPage() {
         const data = await apiClient.getObservationExplainer(patientId, obsId);
         setExplainer(data);
       } catch (err) {
-        console.warn("Using offline verified explainer fallback:", err);
-        // Deterministic offline fallback matching M5
-        setExplainer({
-          observation_id: obsId,
-          patient_id: patientId,
-          analyte_code: "ca_15_3",
-          verdict: "needs_repeat",
-          verbal_band: "Analytical uncertainty (suspected lab or specimen variation)",
-          headline: "This result needs a quick repeat test.",
-          what_this_means:
-            "A sudden shift in a lab number often comes from lab equipment variation rather than a true change in your body. A single high result is not a diagnosis. Repeating the blood test gives your doctor an accurate and reliable picture.",
-          recommended_action:
-            "Repeat blood test within 7 to 14 days at your local laboratory.",
-          questions_to_ask_your_doctor: [
-            "When and where should I repeat this blood test?",
-            "Are there any special instructions before my next blood draw?",
-            "What specific symptoms should I watch for while waiting for the repeat test?",
-          ],
-          flesch_kincaid_grade_level: 6.43,
-          word_count: 58,
-          verified: true,
-          synthetic: true,
-        });
+        // Never substitute invented content for a real result: show a locked or error state instead.
+        const msg = err instanceof Error ? err.message : String(err);
+        setLoadState(msg.includes("disclosure_locked") ? "locked" : "error");
       } finally {
         setIsLoading(false);
       }
@@ -110,6 +91,17 @@ export default function PlainLanguageExplainerPage() {
         </CardHeader>
 
         <CardContent className="p-6 space-y-6">
+          {loadState === "locked" && (
+            <p role="status" data-testid="explainer-locked" className="text-slate-800 text-base">
+              Your care team has this result and will talk it through with you. Please ask them when you
+              are ready.
+            </p>
+          )}
+          {loadState === "error" && (
+            <p role="alert" data-testid="explainer-error" className="text-slate-800 text-base">
+              We could not load this result right now. Please try again, or contact your care team.
+            </p>
+          )}
           {/* Verbal Uncertainty Band */}
           {explainer?.verbal_band && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">

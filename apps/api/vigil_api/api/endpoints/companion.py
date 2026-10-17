@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
+from vigil_api.api.endpoints.patients import DISCLOSURE_LOCKED_DETAIL
 from vigil_api.audit import record_audit_event
 from vigil_api.consent import has_active_consent
 from vigil_api.database import get_db
@@ -138,6 +139,25 @@ def get_caregiver_shared_summary(
     )
     db.commit()
 
+    # Bad-news mode: while a clinician has not released the disclosure, an escalate-level assessment is
+    # withheld from caregivers (interpretation only; raw lab values remain visible as in any lab portal).
+    withheld = (
+        patient.disclosure_unlocked_at is None
+        and latest_risk is not None
+        and (latest_risk.adjudicated_action == "escalate" or latest_risk.risk_tier == "high")
+    )
+    if withheld:
+        latest_risk_payload = {"withheld": True, "message": DISCLOSURE_LOCKED_DETAIL["message"]}
+    elif latest_risk:
+        latest_risk_payload = {
+            "score": latest_risk.score,
+            "risk_tier": latest_risk.risk_tier,
+            "adjudicated_action": latest_risk.adjudicated_action,
+            "assessment_date": latest_risk.assessment_date,
+        }
+    else:
+        latest_risk_payload = None
+
     return {
         "share_id": share.id,
         "patient_id": patient.id,
@@ -159,18 +179,11 @@ def get_caregiver_shared_summary(
                 "value": o.value,
                 "unit": o.unit,
                 "specimen_collected_at": o.specimen_collected_at,
-                "plausibility_status": o.plausibility_status,
+                "plausibility_status": None if withheld else o.plausibility_status,
             }
             for o in observations
         ],
-        "latest_risk": {
-            "score": latest_risk.score if latest_risk else None,
-            "risk_tier": latest_risk.risk_tier if latest_risk else "standard",
-            "adjudicated_action": latest_risk.adjudicated_action if latest_risk else "routine",
-            "assessment_date": latest_risk.assessment_date if latest_risk else None,
-        }
-        if latest_risk
-        else None,
+        "latest_risk": latest_risk_payload,
         "synthetic": True,
     }
 
@@ -346,6 +359,25 @@ def get_caregiver_observation_explainer(
             verdict = risk.adjudicated_action
         elif risk and risk.risk_tier == "high":
             verdict = "escalate"
+
+    patient_row = db.execute(select(Patient).where(Patient.id == share.patient_id)).scalar_one()
+    if verdict == "escalate" and patient_row.disclosure_unlocked_at is None:
+        record_audit_event(
+            db=db,
+            actor_id=f"caregiver:{share.caregiver_name}",
+            actor_role=UserRole.CAREGIVER.value,
+            action="caregiver.observation_explainer_withheld",
+            resource_type="Observation",
+            resource_id=obs.id,
+            details={
+                "patient_id": share.patient_id,
+                "share_id": share.id,
+                "reason": "disclosure_locked",
+            },
+            timestamp=now,
+        )
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=DISCLOSURE_LOCKED_DETAIL)
 
     explainer = render_plain_language_explainer(verdict=verdict, analyte_code=obs.analyte_code)
 

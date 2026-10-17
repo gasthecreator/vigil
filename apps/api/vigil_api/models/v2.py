@@ -169,6 +169,8 @@ class Patient(Base):
     synthetic = Column(Boolean, default=True, nullable=False, index=True)  # Principle 1
     status = Column(String(50), default="active", nullable=False, index=True)
     detector_state = Column(JSON, nullable=True)  # Persisted K2 SequentialDetector state
+    # Bad-news mode: escalate-level results are withheld from patient/caregiver routes until a clinician releases them
+    disclosure_unlocked_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
