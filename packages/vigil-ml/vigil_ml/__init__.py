@@ -35,6 +35,8 @@ from vigil_ml.joint_model import (
 from vigil_ml.k2 import SequentialDetector
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
 from vigil_ml.kinetic_k1 import HybridKineticModelK1, UnscentedKalmanFilterK1
+from vigil_ml.m3 import adjudicate, rcv
+from vigil_ml.m5 import generate_worked_journey, render_clinician_note, verify_narrative
 from vigil_ml.organ_susceptibility import (
     TARGET_ORGANS,
     BaselineOrganSusceptibilityModelM1,
@@ -97,6 +99,13 @@ __all__ = [
     "ConformalPredictionResult",
     "ProductionEnsembleK8",
     "AbstentionReason",
+    # M3 Plausibility Adjudicator
+    "rcv",
+    "adjudicate",
+    # M5 Verified Narrative
+    "render_clinician_note",
+    "verify_narrative",
+    "generate_worked_journey",
     # Export & Runtime
     "VigilProductionRuntime",
     "export_to_onnx",

@@ -14,4 +14,5 @@ Every placeholder, simplification or not-yet-real component must appear here. An
 | S-008 | K3 `FastLandmarkJointModel` | RESOLVED (Condition R4): Learns coefficients from data via LogisticRegression | Closed | Phase 3A (R4) | None (Resolved) |
 | S-009 | K2 sequential detector, K5 | K2 RESOLVED (Phase 3B): SequentialDetector anytime-valid e-process with recursive standardisation and mixture supermartingale in vigil_ml/k2.py; verified by tests/acceptance_3b/test_k2_contract.py. K5 hierarchical lab harmonisation deferred to Phase 3C. | K2 complete; K5 scheduled for 3C | Phase 3C | K5 |
 | S-010 | K1 surveillance role | K1 is a research inference module; K3/B4 are the shipped surveillance baselines (ADR-0007). Token `K1-WORLD`: K1 does not beat CA 15-3 baseline on vigil-sim cohort. | One-marker mechanistic model recovers parameters in its own world but adds nothing on vigil-sim over K3/B4; closed per MASTER_PLAN §13 fallback protocol | Closed (Research Module) | None (K1-WORLD registered) |
+| S-011 | M4 Test Ladder | Test escalation ladder deferred to Phase 4b per Master Plan v1.3 | Scheduled for Phase 4b | Phase 4b | M4 |
 
