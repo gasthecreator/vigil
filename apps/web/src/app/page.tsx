@@ -1,242 +1,279 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { TriageQueue } from "@/components/TriageQueue";
-import { LongitudinalChart } from "@/components/LongitudinalChart";
-import { IntakeForms } from "@/components/IntakeForms";
-import { OrganSusceptibilityCard } from "@/components/OrganSusceptibilityCard";
-import { SimulationStudio } from "@/components/SimulationStudio";
+import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation, Button } from "@vigil/ui";
+import { apiClient } from "@/lib/api";
 import {
-  fetchTriageQueue,
-  fetchPatientDetail,
-  fetchPatientTrajectory,
-  fetchCohortAnalytics,
-} from "@/lib/api";
-import {
-  TriageQueueItem,
-  TrajectoryPoint,
-  Patient,
-  CohortAnalytics,
+  PatientResponse,
+  ObservationItem,
+  RiskAssessmentSummary,
+  AlertSummary,
+  FollowUpTaskResponse,
+  TriagePatientViewModel,
 } from "@/lib/types";
-import {
-  ShieldAlert,
-  AlertTriangle,
-  Users,
-  Activity,
-  HeartPulse,
-  RefreshCw,
-  Clock,
-} from "lucide-react";
+import { TriageQueue } from "@/components/TriageQueue";
+import { PatientTimeline } from "@/components/PatientTimeline";
+import { M3AdjudicationPanel } from "@/components/M3AdjudicationPanel";
+import { AlertInbox } from "@/components/AlertInbox";
+import { FollowUpBoard } from "@/components/FollowUpBoard";
+import { ObservationIntakeModal } from "@/components/ObservationIntakeModal";
+import { PatientEnrollmentModal } from "@/components/PatientEnrollmentModal";
+import { Users, Bell, CheckSquare, RefreshCw } from "lucide-react";
 
-export default function SurveillanceDashboard() {
-  const [triageQueue, setTriageQueue] = useState<TriageQueueItem[]>([]);
+export default function ClinicianWorkstation() {
+  const { t } = useTranslation();
+
+  // Navigation Tabs
+  const [activeTab, setActiveTab] = useState<"triage" | "alerts" | "followup">("triage");
+
+  // Core Data State
+  const [patients, setPatients] = useState<PatientResponse[]>([]);
+  const [alerts, setAlerts] = useState<AlertSummary[]>([]);
+  const [followUpTasks, setFollowUpTasks] = useState<FollowUpTaskResponse[]>([]);
+
+  // Selected Patient State
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [trajectory, setTrajectory] = useState<TrajectoryPoint[]>([]);
-  const [analytics, setAnalytics] = useState<CohortAnalytics | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientResponse | null>(null);
+  const [observations, setObservations] = useState<ObservationItem[]>([]);
+  const [riskHistory, setRiskHistory] = useState<RiskAssessmentSummary[]>([]);
+  const [selectedObservation, setSelectedObservation] = useState<ObservationItem | null>(null);
 
-  // Load all initial surveillance data
-  const loadData = useCallback(async (selectId?: string) => {
+  // Modals
+  const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(false);
+  const [isIntakeOpen, setIsIntakeOpen] = useState(false);
+
+  // Loading & Feedback
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Load all initial data from Vigil API client
+  const loadWorkstationData = useCallback(async (preferredPatientId?: string) => {
     try {
-      setRefreshing(true);
-      const [queueData, analyticsData] = await Promise.all([
-        fetchTriageQueue(),
-        fetchCohortAnalytics(),
+      setIsRefreshing(true);
+      const [ptsData, alertsData, tasksData] = await Promise.all([
+        apiClient.listPatients().catch(() => []),
+        apiClient.listAlerts("open").catch(() => []),
+        apiClient.getOutreachList().catch(() => []),
       ]);
 
-      setTriageQueue(queueData);
-      setAnalytics(analyticsData);
+      setPatients(ptsData);
+      setAlerts(alertsData);
+      setFollowUpTasks(tasksData);
 
-      // Determine selected patient
-      const targetId = selectId || selectedPatientId || (queueData.length > 0 ? queueData[0].patient_id : null);
-
+      const targetId = preferredPatientId || selectedPatientId || (ptsData.length > 0 ? ptsData[0].id : null);
       if (targetId) {
         setSelectedPatientId(targetId);
-        const [patientDetail, trajectoryData] = await Promise.all([
-          fetchPatientDetail(targetId),
-          fetchPatientTrajectory(targetId),
-        ]);
-        setSelectedPatient(patientDetail);
-        setTrajectory(trajectoryData);
+        await loadPatientDetails(targetId);
       }
     } catch (err) {
-      console.error("Dashboard data load error:", err);
+      console.error("Failed to load workstation data:", err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [selectedPatientId]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleSelectPatient = async (patientId: string) => {
-    setSelectedPatientId(patientId);
+  const loadPatientDetails = async (patientId: string) => {
     try {
-      const [pDetail, pTraj] = await Promise.all([
-        fetchPatientDetail(patientId),
-        fetchPatientTrajectory(patientId),
+      const [pt, obsList, rHistory] = await Promise.all([
+        apiClient.getPatient(patientId),
+        apiClient.listObservations(patientId).catch(() => []),
+        apiClient.listRiskHistory(patientId).catch(() => []),
       ]);
-      setSelectedPatient(pDetail);
-      setTrajectory(pTraj);
+      setSelectedPatient(pt);
+      setObservations(obsList);
+      setRiskHistory(rHistory);
+
+      // Default select latest observation if present
+      if (obsList.length > 0) {
+        setSelectedObservation(obsList[0]);
+      } else {
+        setSelectedObservation(null);
+      }
     } catch (err) {
-      console.error("Failed to select patient:", err);
+      console.error(`Failed to load details for patient ${patientId}:`, err);
     }
   };
 
-  const handleIntakeSuccess = (newPatientId?: string) => {
-    loadData(newPatientId || selectedPatientId || undefined);
+  useEffect(() => {
+    loadWorkstationData();
+  }, [loadWorkstationData]);
+
+  const handleSelectPatient = async (patientId: string) => {
+    setSelectedPatientId(patientId);
+    await loadPatientDetails(patientId);
   };
+
+  // Compute composite urgency view-models for triage queue
+  const triageViewModels: TriagePatientViewModel[] = (Array.isArray(patients) ? patients : []).map((pt) => {
+    const ptTasks = followUpTasks.filter((t) => t.patient_id === pt.id && t.status !== "completed");
+    const ptAlerts = alerts.filter((a) => a.id.includes(pt.id));
+    const isSelected = pt.id === selectedPatientId;
+    const ptObs = isSelected ? observations : [];
+    const latestObs = ptObs.length > 0 ? ptObs[0] : null;
+
+    // Composite urgency calculation:
+    // Risk weight + active alert weight + task weight
+    let urgencyScore = 20; // baseline
+    if (ptTasks.length > 0) urgencyScore += Math.min(ptTasks.length * 15, 45);
+    if (ptAlerts.length > 0) urgencyScore += 35;
+    if (latestObs) {
+      const qc = (latestObs.quality_flags as Record<string, unknown>) || {};
+      if (qc.action === "escalate") urgencyScore += 40;
+      else if (qc.action === "needs_repeat") urgencyScore += 25;
+    }
+
+    let urgencyLevel: "urgent" | "high" | "medium" | "low" = "low";
+    if (urgencyScore >= 75) urgencyLevel = "urgent";
+    else if (urgencyScore >= 50) urgencyLevel = "high";
+    else if (urgencyScore >= 30) urgencyLevel = "medium";
+
+    const qcFlags = (latestObs?.quality_flags as Record<string, unknown>) || {};
+
+    return {
+      id: pt.id,
+      mrn: pt.mrn,
+      age: pt.age,
+      status: pt.status,
+      compositeUrgencyScore: urgencyScore,
+      urgencyLevel,
+      latestAnalyteCode: latestObs?.analyte_code || null,
+      latestAnalyteValue: latestObs?.value || null,
+      latestAnalyteUnit: latestObs?.unit || null,
+      latestM3Action: (qcFlags.action as any) || null,
+      openTasksCount: ptTasks.length,
+      openAlertsCount: ptAlerts.length,
+      daysSinceLastVisit: 14,
+    };
+  });
 
   return (
     <div className="space-y-6">
-      {/* Cohort Surveillance KPI Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex items-center space-x-3 shadow-md">
-          <div className="p-2.5 rounded-lg bg-sky-950/80 text-sky-400 border border-sky-800/60">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-400">Total Monitored</p>
-            <p className="text-xl font-bold font-mono text-white">{analytics?.total_patients ?? "—"}</p>
-          </div>
+      {/* Top Navigation Tabs & Feed Refresh */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+        <div className="flex items-center gap-2" role="tablist">
+          <button
+            role="tab"
+            aria-selected={activeTab === "triage"}
+            onClick={() => setActiveTab("triage")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "triage"
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Triage & Surveillance
+          </button>
+
+          <button
+            role="tab"
+            aria-selected={activeTab === "alerts"}
+            onClick={() => setActiveTab("alerts")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "alerts"
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            Alert Inbox
+            {alerts.length > 0 && (
+              <span className="bg-red-500 text-white text-[11px] px-1.5 py-0.2 rounded-full font-mono">
+                {alerts.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            role="tab"
+            aria-selected={activeTab === "followup"}
+            onClick={() => setActiveTab("followup")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === "followup"
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <CheckSquare className="w-4 h-4" />
+            Follow-Up Guardian (M6)
+            {followUpTasks.length > 0 && (
+              <span className="bg-amber-500 text-white text-[11px] px-1.5 py-0.2 rounded-full font-mono">
+                {followUpTasks.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        <div className="bg-slate-900/80 border border-rose-900/50 rounded-xl p-3.5 flex items-center space-x-3 shadow-md">
-          <div className="p-2.5 rounded-lg bg-rose-950/80 text-rose-400 border border-rose-800/60">
-            <ShieldAlert className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-rose-300">Critical Alerts (≥75%)</p>
-            <p className="text-xl font-bold font-mono text-rose-200">{analytics?.critical_alerts ?? "—"}</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/80 border border-amber-900/50 rounded-xl p-3.5 flex items-center space-x-3 shadow-md">
-          <div className="p-2.5 rounded-lg bg-amber-950/80 text-amber-400 border border-amber-800/60">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-amber-300">Surveillance Watch</p>
-            <p className="text-xl font-bold font-mono text-amber-200">{analytics?.watch_cases ?? "—"}</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/80 border border-emerald-900/50 rounded-xl p-3.5 flex items-center space-x-3 shadow-md">
-          <div className="p-2.5 rounded-lg bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-            <HeartPulse className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-emerald-300">Stable Surveillance</p>
-            <p className="text-xl font-bold font-mono text-emerald-200">{analytics?.stable_cases ?? "—"}</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex items-center space-x-3 shadow-md">
-          <div className="p-2.5 rounded-lg bg-indigo-950/80 text-indigo-400 border border-indigo-800/60">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-400">Cohort Mean Risk</p>
-            <p className="text-xl font-bold font-mono text-white">
-              {analytics ? `${(analytics.average_cohort_risk * 100).toFixed(1)}%` : "—"}
-            </p>
-          </div>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadWorkstationData()}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 self-start sm:self-auto text-xs"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          {t.common.refresh}
+        </Button>
       </div>
 
-      {/* Main Grid: View 1 (Left) and View 2 & 3 (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: View 1 - Prioritized Triage Queue */}
-        <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
-          <TriageQueue
-            queue={triageQueue}
-            selectedPatientId={selectedPatientId}
-            onSelectPatient={handleSelectPatient}
-            onRefresh={() => loadData()}
-          />
-        </div>
-
-        {/* Right Column: View 3 (Trajectory & Alerts), Organ Card, View 2 (Intake), and Simulator */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          {/* Selected Patient Identity Banner */}
-          {selectedPatient && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-xl bg-slate-800 flex items-center justify-center font-mono font-bold text-cyan-400 text-sm border border-slate-700">
-                  PT
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-mono text-sm font-bold text-white">
-                      Patient ID: {selectedPatient.id}
-                    </h3>
-                    <span className="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
-                      {selectedPatient.age} Years Old
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Enrolled {new Date(selectedPatient.created_at).toLocaleDateString()} • Status: Active Surveillance
-                  </p>
-                </div>
-              </div>
-
-              {selectedPatient.latest_risk !== null && (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">Latest Trajectory Risk:</span>
-                  <span
-                    className={`font-mono text-sm font-bold px-3 py-1 rounded-lg ${
-                      (selectedPatient.latest_risk ?? 0) >= 0.75
-                        ? "bg-rose-600 text-white animate-pulse"
-                        : (selectedPatient.latest_risk ?? 0) >= 0.40
-                        ? "bg-amber-950 text-amber-300 border border-amber-800"
-                        : "bg-emerald-950 text-emerald-300 border border-emerald-800"
-                    }`}
-                  >
-                    {((selectedPatient.latest_risk ?? 0) * 100).toFixed(1)}%
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* View 3: Longitudinal Risk Chart with Recharts & y=0.75 Alert Threshold */}
-          {selectedPatientId && (
-            <LongitudinalChart
-              trajectory={trajectory}
-              patientId={selectedPatientId}
+      {/* Main Tab Views */}
+      {activeTab === "triage" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Triage Queue (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            <TriageQueue
+              patients={triageViewModels}
+              selectedPatientId={selectedPatientId}
+              onSelectPatient={handleSelectPatient}
+              onOpenEnrollment={() => setIsEnrollmentOpen(true)}
             />
-          )}
+          </div>
 
-          {/* Organ Tropism Susceptibility (Model A Output) */}
-          <OrganSusceptibilityCard
-            vector={selectedPatient?.baseline_profile?.target_organ_susceptibility_vector}
-            subtype={
-              selectedPatient?.baseline_profile?.her2_status
-                ? "HER2-Enriched"
-                : selectedPatient?.baseline_profile?.er_status
-                ? "Luminal A (ER+/PR+)"
-                : "Triple Negative"
-            }
-            stage={selectedPatient?.baseline_profile?.tumor_stage}
-          />
+          {/* Right Column: Timeline & M3 Adjudication (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            <PatientTimeline
+              patient={selectedPatient}
+              observations={observations}
+              riskHistory={riskHistory}
+              selectedObservationId={selectedObservation?.id || null}
+              onSelectObservation={(obs) => setSelectedObservation(obs)}
+              onOpenIntake={() => setIsIntakeOpen(true)}
+            />
 
-          {/* View 2: Intake Forms Side-Panels */}
-          <IntakeForms
-            patientList={triageQueue.map((p) => ({ id: p.patient_id, age: p.age }))}
-            selectedPatientId={selectedPatientId}
-            onSuccess={handleIntakeSuccess}
-          />
-
-          {/* Non-Destructive What-If Simulation Studio */}
-          {selectedPatientId && (
-            <SimulationStudio patientId={selectedPatientId} />
-          )}
+            <M3AdjudicationPanel
+              observation={selectedObservation}
+              patientId={selectedPatientId || ""}
+              onActionComplete={() => loadWorkstationData(selectedPatientId || undefined)}
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === "alerts" && (
+        <AlertInbox alerts={alerts} onAcknowledgeSuccess={() => loadWorkstationData()} />
+      )}
+
+      {activeTab === "followup" && (
+        <FollowUpBoard tasks={followUpTasks} onTaskUpdated={() => loadWorkstationData()} />
+      )}
+
+      {/* Observation Intake Modal (Alt+S enabled) */}
+      {selectedPatientId && (
+        <ObservationIntakeModal
+          isOpen={isIntakeOpen}
+          onClose={() => setIsIntakeOpen(false)}
+          patientId={selectedPatientId}
+          onIntakeSuccess={() => loadPatientDetails(selectedPatientId)}
+        />
+      )}
+
+      {/* Patient Enrollment Modal (Journey J1) */}
+      <PatientEnrollmentModal
+        isOpen={isEnrollmentOpen}
+        onClose={() => setIsEnrollmentOpen(false)}
+        onEnrollmentSuccess={(newId) => loadWorkstationData(newId)}
+      />
     </div>
   );
 }

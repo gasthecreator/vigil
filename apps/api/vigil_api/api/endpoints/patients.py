@@ -31,6 +31,7 @@ from vigil_api.models.v2 import (
     User,
     UserRole,
 )
+from vigil_api.crypto import compute_blind_index
 from vigil_api.schemas.baseline import BaselineCreate, BaselineResponse
 from vigil_api.schemas.inference import (
     RiskInferenceResponse,
@@ -40,7 +41,7 @@ from vigil_api.schemas.inference import (
     TriageQueueItem,
 )
 from vigil_api.schemas.lab import LabResultCreate
-from vigil_api.schemas.patient import PatientCreate, PatientResponse
+from vigil_api.schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from vigil_api.schemas.v2 import (
     AlertSummary,
     ConsentCreateRequest,
@@ -68,6 +69,10 @@ def create_patient(
     patient = Patient(
         age=payload.age,
         status=payload.status,
+        mrn=payload.mrn,
+        external_id=payload.external_id,
+        mrn_bidx=compute_blind_index(payload.mrn) if payload.mrn else None,
+        external_id_bidx=compute_blind_index(payload.external_id) if payload.external_id else None,
         synthetic=True,
         created_at=now,
         updated_at=now,
@@ -83,7 +88,7 @@ def create_patient(
         action="patient.created",
         resource_type="Patient",
         resource_id=patient.id,
-        details={"age": patient.age, "status": patient.status},
+        details={"age": patient.age, "status": patient.status, "has_mrn": bool(patient.mrn)},
         timestamp=now,
     )
 
@@ -93,10 +98,23 @@ def create_patient(
 
 
 @router.get("/", response_model=List[PatientResponse])
-def list_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Lists all registered patients."""
-    patients = db.query(Patient).offset(skip).limit(limit).all()
-    return patients
+def list_patients(
+    skip: int = 0,
+    limit: int = 100,
+    mrn: Optional[str] = None,
+    external_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lists all registered patients, optionally filtering by blind-indexed MRN or external_id."""
+    query = db.query(Patient)
+    if mrn:
+        bidx = compute_blind_index(mrn)
+        query = query.filter(Patient.mrn_bidx == bidx)
+    if external_id:
+        bidx = compute_blind_index(external_id)
+        query = query.filter(Patient.external_id_bidx == bidx)
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/triage", response_model=List[TriageQueueItem])
@@ -280,6 +298,8 @@ def get_patient_detail(
 
     return {
         "id": patient.id,
+        "mrn": patient.mrn,
+        "external_id": patient.external_id,
         "age": patient.age,
         "status": patient.status,
         "synthetic": patient.synthetic,
@@ -300,6 +320,69 @@ def get_patient_detail(
         "triage_flag": latest_inference.triage_flag if latest_inference else False,
         "latest_justification": latest_inference.justification_text if latest_inference else None,
     }
+
+
+@router.patch("/{id}", response_model=PatientResponse)
+def update_patient(
+    id: str,
+    payload: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
+    """Updates patient demographics or encrypted identifiers."""
+    now = datetime.now(timezone.utc)
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+
+    if payload.age is not None:
+        patient.age = payload.age
+    if payload.status is not None:
+        patient.status = payload.status
+    if payload.mrn is not None:
+        patient.mrn = payload.mrn
+        patient.mrn_bidx = compute_blind_index(payload.mrn)
+    if payload.external_id is not None:
+        patient.external_id = payload.external_id
+        patient.external_id_bidx = compute_blind_index(payload.external_id)
+    patient.updated_at = now
+
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="patient.updated",
+        resource_type="Patient",
+        resource_id=patient.id,
+        details={"updated_fields": list(payload.model_dump(exclude_unset=True).keys())},
+        timestamp=now,
+    )
+    db.commit()
+    db.refresh(patient)
+    return patient
+
+
+@router.post("/rotate-keys", status_code=status.HTTP_200_OK)
+def rotate_patient_keys_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.CLINICIAN)),
+):
+    """Triggers re-encryption of all patient MRN and external_id ciphertexts to the latest primary key."""
+    from scripts.rotate_encryption_keys import rotate_patient_keys
+
+    db_url = str(db.get_bind().url)
+    scanned, rotated = rotate_patient_keys(db_url, dry_run=False)
+    now = datetime.now(timezone.utc)
+    record_audit_event(
+        db=db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="security.keys_rotated",
+        resource_type="PatientEncryption",
+        resource_id="all",
+        details={"scanned": scanned, "rotated": rotated},
+        timestamp=now,
+    )
+    db.commit()
+    return {"status": "success", "scanned": scanned, "rotated": rotated}
 
 
 @router.post("/{id}/baseline", response_model=BaselineResponse)

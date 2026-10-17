@@ -35,6 +35,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -147,8 +148,10 @@ class Patient(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
     facility_id = Column(String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True, index=True)
-    mrn = Column(EncryptedString(255), nullable=True, index=True)
-    external_id = Column(EncryptedString(255), nullable=True, index=True)
+    mrn = Column(EncryptedString(255), nullable=True)
+    external_id = Column(EncryptedString(255), nullable=True)
+    mrn_bidx = Column(String(64), nullable=True, index=True)
+    external_id_bidx = Column(String(64), nullable=True, index=True)
     age = Column(Integer, nullable=True)
     birth_date = Column(DateTime, nullable=True)
     biological_sex = Column(String(20), default="female", nullable=False)
@@ -450,11 +453,16 @@ class IdempotencyRecord(Base):
     __tablename__ = "idempotency_records"
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    idempotency_key = Column(String(128), unique=True, nullable=False, index=True)
+    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=True, index=True)
+    idempotency_key = Column(String(128), nullable=False, index=True)
     entity_type = Column(String(50), nullable=False, index=True)
     entity_id = Column(String(36), nullable=True)
     status = Column(String(50), default="applied", nullable=False)
     response_payload = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("patient_id", "idempotency_key", name="uq_patient_idempotency_key"),
+    )
 
 

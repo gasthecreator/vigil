@@ -13,6 +13,9 @@ import base64
 import os
 from typing import Any, List, Optional
 
+import hashlib
+import hmac
+
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from sqlalchemy import Text, TypeDecorator
 
@@ -28,7 +31,12 @@ def get_encryption_keys() -> List[bytes]:
     The first key is the primary encryption key. Subsequent keys are secondary
     keys used for decrypting and rotating data encrypted with previous keys.
     """
-    raw_keys_env = os.getenv("FIELD_ENCRYPTION_KEYS", "").strip()
+    raw_keys_env = (
+        os.getenv("VIGIL_FIELD_ENCRYPTION_KEYS")
+        or os.getenv("FIELD_ENCRYPTION_KEYS")
+        or os.getenv("ENCRYPTION_KEY")
+        or ""
+    ).strip()
 
     if raw_keys_env:
         raw_keys = [k.strip() for k in raw_keys_env.split(",") if k.strip()]
@@ -46,6 +54,16 @@ def get_encryption_keys() -> List[bytes]:
             raise ValueError(f"Invalid Fernet encryption key '{k}': {e}") from e
 
     return byte_keys
+
+
+def compute_blind_index(value: Optional[str]) -> Optional[str]:
+    """Computes an HMAC-SHA256 blind index for exact-match querying over encrypted fields."""
+    if value is None:
+        return None
+    keys = get_encryption_keys()
+    secret = keys[0] if keys else DEFAULT_DEV_ENCRYPTION_KEY.encode("ascii")
+    norm = value.strip().upper().encode("utf-8")
+    return hmac.new(secret, norm, hashlib.sha256).hexdigest()
 
 
 def get_multi_fernet(keys: Optional[List[bytes]] = None) -> MultiFernet:

@@ -151,6 +151,16 @@ class SequentialParticleFilter:
         c = rng.uniform(0.05, 0.20, size=P)
         t_onset = rng.uniform(30.0, 240.0, size=P)
 
+        if len(days) == 0:
+            idx = rng.choice(P, size=n_draws, replace=True)
+            return {
+                "doubling_time_days": np.clip(T_d[idx], 40.0, 160.0),
+                "shedding_ca153": np.clip(s[idx], 0.05, 0.35),
+                "clearance_ca153": np.clip(c[idx], 0.05, 0.20),
+                "onset_day": np.clip(t_onset[idx], 30.0, 240.0),
+                "prior_only": True,
+            }
+
         g = np.log(2.0) / T_d
         dt = np.maximum(0.0, days[None, :] - t_onset[:, None])
         mask = days[None, :] >= t_onset[:, None]
@@ -215,6 +225,15 @@ _NUTS_KERNEL = NUTS(_numpyro_k1_model, target_accept_prob=0.85)
 def _route_nuts(
     obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
 ) -> dict[str, np.ndarray]:
+    if len(obs.days) == 0 or len(obs.values["ca153"]) == 0:
+        return {
+            "doubling_time_days": rng.uniform(40.0, 160.0, size=n_draws),
+            "shedding_ca153": rng.uniform(0.05, 0.35, size=n_draws),
+            "clearance_ca153": rng.uniform(0.05, 0.20, size=n_draws),
+            "onset_day": rng.uniform(30.0, 240.0, size=n_draws),
+            "prior_only": True,
+        }
+
     days = jnp.array(obs.days)
     ca153 = jnp.array(obs.values["ca153"])
     seed = int(rng.integers(0, 2**31 - 1))
@@ -389,11 +408,24 @@ def _route_amortized(
     vals_arr = np.array(obs.values["ca153"], dtype=float)
     days_arr = np.array(obs.days, dtype=float)
 
+    if len(vals_arr) == 0:
+        # Condition P8-D: Sample directly from prior distributions without synthesizing fake 18.0 observations
+        draws = np.zeros((n_draws, 4))
+        draws[:, 0] = rng.uniform(LO_BOUNDS[0], HI_BOUNDS[0], size=n_draws)
+        draws[:, 1] = rng.uniform(LO_BOUNDS[1], HI_BOUNDS[1], size=n_draws)
+        draws[:, 2] = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_draws)
+        draws[:, 3] = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_draws)
+        return {
+            "doubling_time_days": draws[:, 0],
+            "shedding_ca153": draws[:, 1],
+            "clearance_ca153": draws[:, 2],
+            "onset_day": draws[:, 3],
+            "prior_only": True,
+        }
+
     net = _get_or_load_amortized_model()
     if len(vals_arr) == len(SCHEDULE):
         y_vec = vals_arr
-    elif len(vals_arr) == 0:
-        y_vec = np.full(len(SCHEDULE), 18.0)
     else:
         y_vec = np.interp(SCHEDULE, days_arr, vals_arr)
 
@@ -492,10 +524,23 @@ def _route_npe(
     post = _get_or_load_npe_posterior()
 
     y_raw = obs.values["ca153"]
+    if len(y_raw) == 0:
+        # Condition P8-D: Return prior draws directly with prior_only=True without inventing 18.0 observations
+        draws = np.zeros((n_draws, 4))
+        draws[:, 0] = rng.uniform(40.0, 160.0, size=n_draws)
+        draws[:, 1] = rng.uniform(0.05, 0.35, size=n_draws)
+        draws[:, 2] = rng.uniform(0.05, 0.20, size=n_draws)
+        draws[:, 3] = rng.uniform(30.0, 240.0, size=n_draws)
+        return {
+            "doubling_time_days": draws[:, 0],
+            "shedding_ca153": draws[:, 1],
+            "clearance_ca153": draws[:, 2],
+            "onset_day": draws[:, 3],
+            "prior_only": True,
+        }
+
     if len(y_raw) == len(SCHEDULE):
         y_vec = np.array(y_raw, dtype=float)
-    elif len(y_raw) == 0:
-        y_vec = np.full(len(SCHEDULE), 18.0)
     else:
         y_vec = np.interp(SCHEDULE, obs.days, y_raw)
 

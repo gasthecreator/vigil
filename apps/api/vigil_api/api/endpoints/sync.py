@@ -95,9 +95,26 @@ def process_sync_batch(
     rejected_count = 0
 
     for item in payload.mutations:
-        # 1. Idempotency Check
+        # 1. Consent & Patient Verification FIRST (P8-B)
+        try:
+            patient = verify_patient_consent(patient_id=item.patient_id, db=db, user=current_user)
+        except HTTPException as e:
+            rejected_count += 1
+            results.append(
+                SyncMutationResult(
+                    client_mutation_id=item.client_mutation_id,
+                    status="rejected",
+                    error=f"Consent/Auth check failed: {e.detail}",
+                )
+            )
+            continue
+
+        # 2. Idempotency Check scoped to (patient_id, client_mutation_id) (P8-B)
         existing_idemp = db.execute(
-            select(IdempotencyRecord).where(IdempotencyRecord.idempotency_key == item.client_mutation_id)
+            select(IdempotencyRecord).where(
+                IdempotencyRecord.patient_id == item.patient_id,
+                IdempotencyRecord.idempotency_key == item.client_mutation_id,
+            )
         ).scalar_one_or_none()
 
         if existing_idemp is not None:
@@ -108,20 +125,6 @@ def process_sync_batch(
                     status="already_applied",
                     entity_id=existing_idemp.entity_id,
                     details=existing_idemp.response_payload,
-                )
-            )
-            continue
-
-        # 2. Consent & Patient Verification
-        try:
-            patient = verify_patient_consent(patient_id=item.patient_id, db=db, user=current_user)
-        except HTTPException as e:
-            rejected_count += 1
-            results.append(
-                SyncMutationResult(
-                    client_mutation_id=item.client_mutation_id,
-                    status="rejected",
-                    error=f"Consent/Auth check failed: {e.detail}",
                 )
             )
             continue
@@ -164,6 +167,7 @@ def process_sync_batch(
 
                 # Record idempotency
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="observation",
                     entity_id=obs.id,
@@ -223,6 +227,7 @@ def process_sync_batch(
                 db.flush()
 
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="follow_up_task",
                     entity_id=task.id,
@@ -281,6 +286,7 @@ def process_sync_batch(
                 db.flush()
 
                 idemp = IdempotencyRecord(
+                    patient_id=patient.id,
                     idempotency_key=item.client_mutation_id,
                     entity_type="alert_acknowledgement",
                     entity_id=alert.id,

@@ -18,8 +18,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+      "@vigil/contracts": ["../../packages/contracts/ts"],
+      "@vigil/ui": ["../../packages/ui/src"]
+    },
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
