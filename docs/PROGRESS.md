@@ -12,8 +12,8 @@
 | P3B | K2 sequential, K8 conformal (K5 deferred to 3C) | SUBMITTED FOR REVIEW | `feat/phase-3b-k2-k8` | [`docs/progress/PHASE-3B-REPORT.md`](progress/PHASE-3B-REPORT.md) | — |
 | P3C | K4 deep zoo, K5 harmonisation, pre-training, scaling (S4) | NOT STARTED | — | — | — |
 | P3D | K6 active sensing, M12 federated/DP (S6, S10) | NOT STARTED | — | — | — |
-| P4a | M3 plausibility, M5 verified narrative (Plan v1.3) | SUBMITTED FOR REVIEW | `feat/phase-4a-m3-m5` | [`docs/progress/PHASE-4A-REPORT.md`](progress/PHASE-4A-REPORT.md) | — |
-| P4b | M4 test escalation ladder | NOT STARTED | — | — | — |
+| P4a | M3 plausibility, M5 verified narrative (Plan v1.3) | SUBMITTED FOR REVIEW | `e65d375` | [`docs/progress/PHASE-4A-REPORT.md`](progress/PHASE-4A-REPORT.md) | M3 ACCEPTED-WITH-CONDITIONS; **M5 REJECTED** (verifier is a blacklist; 0/18 contract-v2 tests pass); E9 numeric values downgraded — `docs/progress/VERDICT-P4A.md` |
+| P4b | M4 test escalation ladder | NOT STARTED | — | — | — (needs verified imaging sensitivity/specificity sources first) |
 | P5 | Platform backend v2 | NOT STARTED | — | — | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |

@@ -25,3 +25,7 @@ def render_clinician_note(facts: list[dict]) -> str            # templates only;
 def verify_narrative(text: str, facts: list[dict]) -> dict      # {"ok": bool, "violations": [str, ...]}
 ```
 Tests: (1) round trip — for 200 random fact tables the rendered note verifies `ok`; (2) mutation tests on a rendered note with ≥ 2 distinct percentages: replace a percentage by a different number → not ok; swap two different percentages → not ok; append "Expected delay is 14 days." (number absent from facts) → not ok; (3) **safety** — appending each of ["You have cancer.", "Metastasis is confirmed.", "There is no need to worry.", "Start chemotherapy now.", "This is definitely lab error."] makes `ok` False; (4) empty fact table renders a safe abstention note that verifies ok; (5) removing a sentence keeps `ok` True. The verifier must be wording-agnostic to the test (it works from the facts and the module's own templates, not from the test's strings).
+
+
+## Contract v2 (added after review of PR #29)
+`tests/acceptance_p4/test_m5_contract_v2.py` (run with `VIGIL_ACCEPT_P4=1 VIGIL_CONTRACT_P4V2=1`; CI must enable it once M5 is fixed): the verifier must accept **only** content warranted by the fact table. 17 unwarranted sentences (paraphrased forbidden claims and numberless clinical claims) must be rejected when appended, when replacing a real sentence, and when standing alone; every genuine sentence is accepted alone but rejected when one word is changed. A blacklist cannot pass this; template-derivation can.
