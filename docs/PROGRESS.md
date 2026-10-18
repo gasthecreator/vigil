@@ -26,6 +26,7 @@
 | T0 | Final build Tier 0: close P15-A to P15-G | SUBMITTED FOR REVIEW | `feat/tier0-p15-conditions` | [`docs/progress/TIER0-REPORT.md`](progress/TIER0-REPORT.md) | — |
 | T1 | Final build Tier 1: Phase 9 preparation (pre-registration, partner toolkit, public-data loaders, silent mode, pilot safety kit) | SUBMITTED FOR REVIEW | `feat/tier1-phase9-prep` | [`docs/progress/TIER1-REPORT.md`](progress/TIER1-REPORT.md) | — |
 | T2a | Final build Tier 2: M4 resource-aware test ladder (contract, audited evidence E20-E22, engine, route, properties) | SUBMITTED FOR REVIEW | `feat/tier2-m4-ladder` | [`docs/progress/TIER2-M4-REPORT.md`](progress/TIER2-M4-REPORT.md) | — |
+| T2b | Final build Tier 2: K5 laboratory harmonisation rebuilt, old S5 retracted, pre-registered study EXP-K5-001 (criterion failed, kill rule fired, K5 not claimed to help) | SUBMITTED FOR REVIEW | `feat/tier2-k5-s5` | [`docs/progress/TIER2-K5-REPORT.md`](progress/TIER2-K5-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |

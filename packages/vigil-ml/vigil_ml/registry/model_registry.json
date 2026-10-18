@@ -1,0 +1,28 @@
+{
+  "schema": "vigil-model-registry-v1",
+  "models": [
+    {
+      "id": "K5",
+      "name": "Laboratory harmonisation (REML partial pooling of laboratory offsets)",
+      "module": "packages/vigil-ml/vigil_ml/k5.py",
+      "maturity": "L0",
+      "status": "research; claim not earned (pre-registered criterion failed, ADR-0024); not wired to any pipeline",
+      "data": "synthetic only",
+      "formats": {
+        "safetensors": "format vigil-k5-v1, JSON metadata, no pickle",
+        "onnx": "Gather, Exp, Div graph"
+      },
+      "parity_tests": [
+        "packages/vigil-ml/tests/test_k5.py::test_safetensors_and_onnx_parity",
+        "packages/vigil-ml/tests/test_k5.py::test_unseen_laboratory_is_left_unchanged"
+      ],
+      "study": {
+        "prereg": "experiments/EXP-K5-001/PREREG.md",
+        "result_file": "experiments/EXP-K5-001/results.json",
+        "conclusion": "experiments/EXP-K5-001/CONCLUSION.md",
+        "result_sha256": "629f4787ffd3d1dd8f4cbe33b25cf3d74630e6b9cc6b4578f275c313df92f969"
+      },
+      "model_card": "docs/model_cards/MODEL-CARD-K5.md"
+    }
+  ]
+}

@@ -92,6 +92,12 @@
 * **Limits:** head and neck primaries (not breast), one centre, retrospective, reference standard is the CT itself, no confidence intervals.
 * **Used by:** M4 test ladder (lung rows). A breast-cancer-specific accuracy source for chest radiography was searched for and not found; one search result is a pooled detection-rate review, which is not an accuracy measure.
 
+### E23 — Between-Laboratory Spread of CA 15-3 Results (EQA programme) — `SECONDARY` (abstract-level; numbers machine-verified against the PubMed abstract)
+* **Source:** Jia T, Zhang Z, Yue Y, et al. "The Current Status of CA15-3 Measurement Based on a Commutable External Quality Assessment Program." *Clin Lab*. 2026;72(10):2285-2292. doi:[10.7754/Clin.Lab.2025.251106](https://doi.org/10.7754/Clin.Lab.2025.251106). PMID:[42847942](https://pubmed.ncbi.nlm.nih.gov/42847942/). Excerpt: [`docs/evidence/excerpts/E23_jia_2026_ca153_eqa.md`](evidence/excerpts/E23_jia_2026_ca153_eqa.md).
+* **Figures:** five EQA rounds 2023 to 2025 with 504 to 817 laboratories; within reagent classes the robust CV across laboratories ranged from 6.48 to 7.63 percent. The abstract states that reagents and methods differ and that different cut-offs should be used.
+* **Limits:** Chinese national programme (not Nigerian laboratories); a spread across laboratories, not a bias estimate; abstract-level only.
+* **Used by:** K5 lab-harmonisation study `experiments/EXP-K5-001` (to anchor the simulated between-laboratory spread; larger spreads are assumptions).
+
 ### E6 — Radiotherapy Capacity in Nigeria — `SECONDARY` / `STALE`
 * ~200M population, estimated shortfall of ~280 LINACs by IAEA benchmarks; high out-of-pocket costs and machine downtime. Current national facility assessment pending hospital partnership data.
 * Sources: PMC7456314; local press reports.

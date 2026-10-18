@@ -1,8 +1,12 @@
 """
 packages/vigil-ml/vigil_ml/harmonisation_k5.py
 
-K5 — Hierarchical Pooling and Laboratory Harmonisation.
-Solves Problem H-G: Multi-lab, multi-assay heterogeneity where analyzer shifts mimic recurrence.
+LEGACY (superseded by `vigil_ml/k5.py`, ADR-0024). Kept only because an older test and the public import
+surface use it. Its offsets shrink a laboratory's *mean value*, which also reflects case mix, and it has no
+validation: its former study was retracted (reports/ml/RETRACTED/README.md). Do not use it in new code.
+
+K5 — Hierarchical Pooling and Laboratory Harmonisation (legacy design).
+Problem H-G: Multi-lab, multi-assay heterogeneity where analyzer shifts mimic recurrence.
 
 Components:
 1. Hierarchical Bayesian partial pooling for lab-specific analyte baselines and scale factors.
@@ -124,37 +128,10 @@ class HierarchicalLabHarmoniserK5:
         return harm_val, is_shift
 
     def run_study_s5(self) -> Dict[str, Any]:
+        """Retracted. The study body subtracted the injected offset by hand and returned a literal 34.2.
+
+        See reports/ml/RETRACTED/README.md. The replacement is experiments/EXP-K5-001/run.py using vigil_ml.k5.
         """
-        Study S5: Evaluates false-alarm control under injected lab assay shifts
-        and calibration error on held-out new sites.
-        """
-        rng = np.random.default_rng(777)
-        n_patients = 100
-        # Injected shift of +6.0 U/mL at Lab B
-        raw_false_alarms = 0
-        harmonised_false_alarms = 0
-
-        for _ in range(n_patients):
-            base = rng.normal(18.0, 2.0)
-            # Normal biological noise + systematic lab bias (+5.5 U/mL)
-            raw_obs = base + rng.normal(0, 2.2) + 5.5
-
-            # Unharmonised decision (fixed cutoff > 28.0)
-            if raw_obs > 28.0:
-                raw_false_alarms += 1
-
-            # Harmonised decision (subtracts estimated offset ~5.5)
-            harm_obs = raw_obs - 5.5
-            if harm_obs > 28.0:
-                harmonised_false_alarms += 1
-
-        return {
-            "unharmonised_false_alarm_rate": raw_false_alarms / float(n_patients),
-            "harmonised_false_alarm_rate": harmonised_false_alarms / float(n_patients),
-            "new_site_brier_reduction_pct": 34.2,
-            "conclusion": (
-                "Hierarchical lab harmonisation reduces spurious threshold alerts caused by inter-assay shifts "
-                f"from {raw_false_alarms / n_patients:.2f} to {harmonised_false_alarms / n_patients:.2f}, "
-                "yielding 34.2% lower Brier score on held-out clinical facilities."
-            ),
-        }
+        raise NotImplementedError(
+            "Old S5 retracted (hand-subtracted offset, literal 34.2). Use experiments/EXP-K5-001/run.py."
+        )

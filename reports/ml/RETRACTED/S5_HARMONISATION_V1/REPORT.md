@@ -1,3 +1,5 @@
+> **RETRACTED (2026-10-18).** Do not cite anything below. In `harmonisation_k5.py::run_study_s5` the "harmonised" arm subtracts the injected offset by hand (`harm_obs = raw_obs - 5.5`), and `new_site_brier_reduction_pct` is the literal `34.2`. Replaced by `experiments/EXP-K5-001/` (see `reports/ml/RETRACTED/README.md`).
+
 # Study S5 Report: Multi-Site Hierarchical Pooling & Lab Harmonisation
 
 > **Notice:** All analyses performed on **SYNTHETIC TIERS G1, G3**. Results establish algorithmic properties and method ranking, not clinical efficacy.

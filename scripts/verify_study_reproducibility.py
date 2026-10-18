@@ -122,8 +122,75 @@ def verify_m7_cpsat_v2() -> bool:
     return True
 
 
+def _first_diff(a, b, tol: float = 1e-6, path: str = "") -> str | None:
+    """Path of the first difference (floats compared with a relative tolerance), or None if equal."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        if a.keys() != b.keys():
+            return f"{path}: keys differ"
+        for k in a:
+            d = _first_diff(a[k], b[k], tol, f"{path}/{k}")
+            if d:
+                return d
+        return None
+    if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            return f"{path}: lengths differ"
+        for i, (x, y) in enumerate(zip(a, b)):
+            d = _first_diff(x, y, tol, f"{path}[{i}]")
+            if d:
+                return d
+        return None
+    if isinstance(a, float) or isinstance(b, float):
+        if a is None or b is None:
+            return None if a == b else f"{path}: {a} != {b}"
+        ok = abs(float(a) - float(b)) <= tol * max(1.0, abs(float(a)), abs(float(b)))
+        return None if ok else f"{path}: {a} != {b}"
+    return None if a == b else f"{path}: {a} != {b}"
+
+
+def _close(a, b, tol: float = 1e-6) -> bool:
+    d = _first_diff(a, b, tol)
+    if d:
+        print(f"    first difference: {d}")
+    return d is None
+
+
+def verify_k5_study() -> bool:
+    print("🔬 Verifying EXP-K5-001 (K5 lab harmonisation) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-K5-001"
+    stored = json.loads((exp / "results.json").read_text())
+    spec = importlib.util.spec_from_file_location("exp_k5_run_verify", exp / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp_k5_run_verify"] = mod
+    spec.loader.exec_module(mod)
+    # (1) Re-run frozen replication 0 and compare every number.
+    fresh = json.loads(json.dumps(mod.replication(("frozen", 0, stored["detector_calibration"], False))))
+    if not _close(fresh, stored["replications"][0]):
+        print("❌ EXP-K5-001: frozen replication 0 does not reproduce results.json.")
+        return False
+    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-6; floats differ in the last digits across BLAS builds).")
+    # (2) The aggregate and the hypothesis verdicts are a pure function of the stored replications.
+    agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
+    if not _close(agg, stored["aggregate"]):
+        print("❌ EXP-K5-001: aggregate does not equal a fresh derivation from the stored replications.")
+        return False
+    print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored replications.")
+    # (3) REPORT.md is the render of results.json.
+    report = mod.render_report(stored, stored["detector_calibration"], float(
+        __import__("re").search(r"Run time (\d+) s", (exp / "REPORT.md").read_text()).group(1)))
+    if report != (exp / "REPORT.md").read_text():
+        print("❌ EXP-K5-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    return True
+
+
 def main() -> int:
     ok = True
+    if not verify_k5_study():
+        ok = False
     if not verify_m10_reproducibility():
         ok = False
     if not verify_s8_k7_integrity():
