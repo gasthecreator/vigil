@@ -15,6 +15,7 @@ from vigil_api.api.endpoints import (
     patients,
     quality,
     sync,
+    test_escalation,
 )
 
 api_router = APIRouter()
@@ -38,4 +39,7 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Cryptographic Au
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics & Cohort"])
 api_router.include_router(
     quality.router, prefix="/quality", tags=["Quality & Missed-Signal Audit (M10)"]
+)
+api_router.include_router(
+    test_escalation.router, prefix="/test-ladder", tags=["Resource-Aware Test Ladder (M4)"]
 )

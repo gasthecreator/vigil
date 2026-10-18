@@ -91,6 +91,9 @@ ROUTE_POLICY: Dict[Tuple[str, str], RoutePolicy] = {
     ("POST", "/api/v1/follow-up/{task_id}/transition"): RoutePolicy(_r("clinician", "nurse_clerk", "quality_lead")),
     ("POST", "/api/v1/follow-up/reminders/run"): RoutePolicy(WRITERS),
     ("GET", "/api/v1/follow-up/reminders/receipts"): RoutePolicy(WRITERS),
+    # Resource-aware test ladder (M4): stateless decision aid, a model output, so blocked in silent mode
+    ("POST", "/api/v1/test-ladder/recommend"): RoutePolicy(_r("clinician", "admin"), silent="blocked", note="stateless; no patient id"),
+    ("GET", "/api/v1/test-ladder/facilities"): RoutePolicy(_r("clinician", "admin"), note="registry listing, not a model output"),
     # Audit, analytics, quality
     ("GET", "/api/v1/audit/verify"): RoutePolicy(_r("admin", "clinician", "quality_lead")),
     ("GET", "/api/v1/audit/events"): RoutePolicy(_r("admin", "quality_lead")),
