@@ -18,7 +18,6 @@ Covers:
 from __future__ import annotations
 
 import datetime as dt
-import os
 import uuid
 from pathlib import Path
 from typing import Dict, Optional
@@ -27,7 +26,6 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-
 from vigil_api.auth import create_access_token
 from vigil_api.config import settings
 from vigil_api.database import Base, get_db
