@@ -109,8 +109,20 @@ def simulate_policy_run(
     daily_cap: np.ndarray,
     harm_model: ContinuityHarmModel,
     scheduler: RadiotherapyScheduler,
+    cpsat_window: int = 7,
+    downtime_visibility: str = "oracle",
 ) -> Dict[str, Any]:
-    """Runs a single simulation realization under the specified policy."""
+    """Runs a single simulation realization under the specified policy.
+
+    ``cpsat_window`` is the rolling-horizon window handed to ``scheduler.solve`` (default 7 days,
+    the value used by the committed M7-TWIN results; EXP-M7-001 attempts A2/A3 use longer windows).
+
+    ``downtime_visibility``: what the CP-SAT arm is told about machine downtime inside its window.
+    ``"oracle"`` (default, unchanged behaviour of the committed M7-TWIN results) passes the exact
+    future breakdowns of the window - information a real department does not have; the committed
+    results are therefore optimistic for CP-SAT. ``"persistence"`` (EXP-M7-001, amendment 1) passes
+    today's capacity of each machine as the forecast for the whole window.
+    """
     horizon_days, num_machines = daily_cap.shape
     remaining_cap = daily_cap.copy()
 
@@ -143,11 +155,16 @@ def simulate_policy_run(
             continue
 
         if policy_name == "CPSAT":
-            h_win = min(7, horizon_days - d)
+            h_win = min(cpsat_window, horizon_days - d)
             m_configs = []
             for m_idx in range(num_machines):
                 m_id = f"LINAC-{m_idx + 1:02d}"
-                d_days = [h_rel for h_rel in range(h_win) if remaining_cap[d + h_rel, m_idx] == 0]
+                if downtime_visibility == "oracle":
+                    d_days = [h_rel for h_rel in range(h_win) if remaining_cap[d + h_rel, m_idx] == 0]
+                elif downtime_visibility == "persistence":
+                    d_days = list(range(h_win)) if remaining_cap[d, m_idx] == 0 else []
+                else:
+                    raise ValueError(f"unknown downtime_visibility {downtime_visibility!r}")
                 m_configs.append(
                     MachineConfig(
                         machine_id=m_id,

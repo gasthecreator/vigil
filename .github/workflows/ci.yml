@@ -22,8 +22,10 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv (pinned action, pinned version)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
       - name: Install dependencies
         run: uv sync --all-packages
       - name: Verify claims policy
@@ -47,8 +49,10 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv (pinned action, pinned version)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
       - name: Install dependencies
         run: uv sync --all-packages
       - name: Run linting
@@ -104,8 +108,10 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv (pinned action, pinned version)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
       - name: Install Python dependencies
         run: uv sync --all-packages
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -123,3 +129,33 @@ jobs:
         run: npm --workspace=@vigil/web run test:e2e
       - name: Enforce Lighthouse performance and accessibility budgets
         run: node scripts/run_lighthouse.mjs
+
+  commit-messages:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Conventional Commits (BASE..HEAD)
+        run: python3 scripts/check_commit_messages.py "origin/${{ github.base_ref }}"
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install uv (pinned action, pinned version)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Export locked Python dependencies
+        run: uv export --frozen --all-packages --no-hashes --no-emit-workspace > requirements.audit.txt
+      - name: pip-audit (known vulnerabilities in locked Python dependencies)
+        run: uvx pip-audit==2.10.1 -r requirements.audit.txt --no-deps --disable-pip
+      - name: Repo-standards audit (critical findings only; full gap list is in docs/audits)
+        run: python3 scripts/audit_repo_standards.py --critical-only

@@ -2203,6 +2203,17 @@
             "title": "Patient Id",
             "type": "string"
           },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
           "scheduled_date": {
             "format": "date-time",
             "title": "Scheduled Date",
@@ -2246,7 +2257,7 @@
                 "type": "null"
               }
             ],
-            "default": "Clinician approved CP-SAT continuity reallocation",
+            "default": "Clinician approved schedule reallocation",
             "description": "Clinical rationale for confirming the schedule reallocation",
             "title": "Reason"
           }
@@ -2291,6 +2302,7 @@
         "type": "object"
       },
       "ScheduleSolveRequest": {
+        "description": "Request a schedule proposal.\n\n``method`` defaults to the explainable urgency ranking (ADR-0019). The CP-SAT\noptimiser is a research module: it is only available to\nadministrators (or when the deployment sets ``VIGIL_ENABLE_RESEARCH_SCHEDULER=1``)\nand is always labelled ``unvalidated in simulation``. ``fairness_disparity_bound``,\n``max_wait_days`` and ``stability_penalty`` apply to the CP-SAT method only.",
         "properties": {
           "fairness_disparity_bound": {
             "default": 5.0,
@@ -2313,6 +2325,15 @@
             "title": "Max Wait Days",
             "type": "integer"
           },
+          "method": {
+            "default": "urgency_ranking",
+            "enum": [
+              "urgency_ranking",
+              "cpsat_research"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
           "stability_penalty": {
             "default": 0.01,
             "minimum": 0.0,
@@ -2332,6 +2353,11 @@
             "title": "Assignments",
             "type": "array"
           },
+          "fairness_bound_enforced": {
+            "default": false,
+            "title": "Fairness Bound Enforced",
+            "type": "boolean"
+          },
           "fairness_disparity": {
             "title": "Fairness Disparity",
             "type": "number"
@@ -2343,6 +2369,16 @@
           "mean_delay_days": {
             "title": "Mean Delay Days",
             "type": "number"
+          },
+          "method": {
+            "default": "urgency_ranking",
+            "title": "Method",
+            "type": "string"
+          },
+          "method_label": {
+            "default": "Explainable urgency ranking",
+            "title": "Method Label",
+            "type": "string"
           },
           "patients_included": {
             "default": 0,
@@ -2382,6 +2418,13 @@
             "default": "unvalidated in simulation",
             "title": "Validation Status",
             "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [
@@ -3557,8 +3600,42 @@
     },
     "/api/v1/analytics/cohort": {
       "get": {
-        "description": "Provides population-level surveillance KPIs and organ tropism distribution.",
+        "description": "Provides population-level surveillance KPIs and organ tropism distribution.\n\nRestricted to clinical/quality roles and computed only over patients with active consent.",
         "operationId": "get_cohort_analytics_api_v1_analytics_cohort_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3567,8 +3644,23 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Cohort Analytics",
         "tags": [
           "Analytics & Cohort"
@@ -4649,7 +4741,7 @@
     },
     "/api/v1/continuity/schedule/solve": {
       "post": {
-        "description": "Solves the multi-machine radiotherapy scheduling problem via Google OR-Tools CP-SAT.\n\nEnforces:\n- Hard machine slot capacity limits per day\n- Machine maintenance and breakdown downtime\n- Course contiguity (fractions delivered on consecutive days)\n- Clinical urgency ceilings (emergency \u2264 3d, urgent \u2264 7d)\n- Algorithmic fairness: bounded delay disparity across subgroups (\u2264 disparity_bound)\n- No-starvation: maximum waiting time bounded by max_wait_days",
+        "description": "Propose a radiotherapy schedule. A clinician must confirm it (separate endpoint).\n\n``method=\"urgency_ranking\"`` (default, ADR-0019): explainable ranking - courses in\nprogress first, then clinician-flagged urgent courses, then clinical tier, then waiting\ntime. No fairness bound is enforced; the response reports the realised disparity and\nlists warnings (e.g. an emergency/urgent course not started inside its bound).\n\n``method=\"cpsat_research\"``: Google OR-Tools CP-SAT research optimiser. Only for\nadministrators, or when ``VIGIL_ENABLE_RESEARCH_SCHEDULER=1`` is set by the operator;\nalways labelled ``unvalidated in simulation`` (ADR-0019, study M7-TWIN).",
         "operationId": "solve_radiotherapy_schedule_api_v1_continuity_schedule_solve_post",
         "parameters": [
           {
@@ -7273,7 +7365,7 @@
     },
     "/api/v1/patients/{id}/simulate": {
       "post": {
-        "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory.",
+        "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory. Clinician/admin only,\nrequires active consent.",
         "operationId": "simulate_future_lab_api_v1_patients__id__simulate_post",
         "parameters": [
           {
@@ -7283,6 +7375,38 @@
             "schema": {
               "title": "Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -7318,6 +7442,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Simulate Future Lab",
         "tags": [
           "Patients & Surveillance"
@@ -7498,7 +7627,7 @@
     },
     "/api/v1/patients/{id}/trajectory": {
       "get": {
-        "description": "Returns full longitudinal surveillance trajectory for a patient, joining\neach lab draw with its corresponding calculated_metastasis_risk, triage_flag,\nand clinical justification_text.",
+        "description": "Returns full longitudinal surveillance trajectory for a patient, joining\neach lab draw with its corresponding calculated_metastasis_risk, triage_flag,\nand clinical justification_text. Requires authentication and active consent.",
         "operationId": "get_patient_trajectory_api_v1_patients__id__trajectory_get",
         "parameters": [
           {
@@ -7508,6 +7637,38 @@
             "schema": {
               "title": "Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
             }
           }
         ],
@@ -7537,6 +7698,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Patient Trajectory",
         "tags": [
           "Patients & Surveillance"

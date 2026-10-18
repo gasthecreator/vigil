@@ -7,6 +7,11 @@
 
 ---
 
+## 0. Assets and review status
+
+**Assets protected:** (1) patient identifiers and clinical observations (field-encrypted at rest, blind-indexed for lookup); (2) the hash-chained audit log and its external anchor (integrity, tail-deletion detection); (3) consent records and caregiver delegations (authorization decisions); (4) model artifacts and study results (integrity, reproducibility); (5) availability of follow-up alerts to clinicians.
+**Last reviewed:** 2026-10-18 (executor review; not an independent security review; no external penetration test has been performed).
+
 ## 1. System Overview & Trust Boundaries
 
 The Vigil Precision Oncology Platform ingests laboratory observations, executes plausibility adjudication (M3), sequential recurrence detection (K2), verified clinical narrative drafting (M5), radiotherapy continuity scheduling (M7), caregiver companion delegation (M8), and audit validation (M10), while strictly coordinating follow-up actions via the Follow-Up Guardian (M6).

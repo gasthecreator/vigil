@@ -211,12 +211,13 @@ def test_create_and_list_radiotherapy_courses(client):
 
 
 def test_schedule_solve_cp_sat(client):
-    """Test solving radiotherapy schedule using Google OR-Tools CP-SAT."""
-    headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"}
+    """The CP-SAT research optimiser still works when explicitly requested by an administrator."""
+    headers = {"X-Vigil-Role": "admin", "X-Vigil-User-Id": "USR-ADMIN-01"}
 
     solve_res = client.post(
         "/api/v1/continuity/schedule/solve",
         json={
+            "method": "cpsat_research",
             "horizon_days": 14,
             "fairness_disparity_bound": 5.0,
             "max_wait_days": 30,
@@ -226,6 +227,9 @@ def test_schedule_solve_cp_sat(client):
     )
     assert solve_res.status_code == 200
     sol = solve_res.json()
+    assert sol["method"] == "cpsat_research"
+    assert sol["validation_status"] == "unvalidated in simulation"
+    assert sol["fairness_bound_enforced"] is True
     assert sol["status"] in ("OPTIMAL", "FEASIBLE")
     assert sol["solver_time_seconds"] > 0
     assert len(sol["assignments"]) >= 2
@@ -234,6 +238,109 @@ def test_schedule_solve_cp_sat(client):
         assert a["patient_id"] in ("PAT-CONT-01", "PAT-CONT-02")
         assert a["marginal_harm"] >= 0.0
         assert len(a["explanation"]) > 0
+
+
+def test_schedule_solve_defaults_to_explainable_urgency_ranking(client):
+    """ADR-0019: the default method is the urgency ranking; the ongoing course ranks first."""
+    headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"}
+    res = client.post("/api/v1/continuity/schedule/solve", json={}, headers=headers)
+    assert res.status_code == 200
+    sol = res.json()
+    assert sol["method"] == "urgency_ranking"
+    assert sol["method_label"] == "Explainable urgency ranking"
+    assert sol["fairness_bound_enforced"] is False
+    assert "no real-data validation" in sol["validation_status"]
+    assert sol["synthetic"] is True
+    by_course = {a["course_id"]: a for a in sol["assignments"]}
+    # RTC-002 is in progress (5/25 fractions) -> priority 1; RTC-001 waits.
+    assert by_course["RTC-002"]["priority_rank"] == 1
+    assert by_course["RTC-001"]["priority_rank"] == 2
+    assert "course in progress" in by_course["RTC-002"]["explanation"]
+    assert by_course["RTC-002"]["start_day"] == 0
+
+
+def test_cpsat_research_method_is_not_available_to_clinicians(client):
+    """The unvalidated optimiser is a server-side opt-in, not a UI toggle."""
+    for role, user in (
+        ("clinician", "USR-DR-01"),
+        ("quality_lead", "USR-DR-01"),
+    ):
+        res = client.post(
+            "/api/v1/continuity/schedule/solve",
+            json={"method": "cpsat_research"},
+            headers={"X-Vigil-Role": role, "X-Vigil-User-Id": user},
+        )
+        assert res.status_code == 403, (role, res.text)
+        assert "research module" in res.json()["detail"]
+
+
+def test_cpsat_research_method_operator_opt_in(client, monkeypatch):
+    monkeypatch.setenv("VIGIL_ENABLE_RESEARCH_SCHEDULER", "1")
+    res = client.post(
+        "/api/v1/continuity/schedule/solve",
+        json={"method": "cpsat_research", "horizon_days": 7},
+        headers={"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"},
+    )
+    assert res.status_code == 200
+    assert res.json()["validation_status"] == "unvalidated in simulation"
+
+
+def test_urgency_ranking_warns_when_flagged_course_not_started(client):
+    """A clinician-flagged urgent course that the rule cannot start inside its bound is surfaced."""
+    headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"}
+    created = client.post(
+        "/api/v1/continuity/courses",
+        json={
+            "patient_id": "PAT-CONT-01",
+            "clinical_context": "palliative_bone_brain",
+            "total_fractions": 5,
+            "prescribed_start_date": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+            "urgency_tier": "emergency",
+            "baseline_subgroup": "subgroup_a",
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    emergency_id = created.json()["id"]
+    # Both machines down for the whole horizon: nothing can be treated.
+    for mid in ("LINAC-01", "LINAC-02"):
+        r = client.post(
+            f"/api/v1/continuity/machines/{mid}/status",
+            json={"status": "down", "reason": "test: beam fault"},
+            headers=headers,
+        )
+        assert r.status_code == 200
+    res = client.post("/api/v1/continuity/schedule/solve", json={"horizon_days": 7}, headers=headers)
+    assert res.status_code == 200
+    sol = res.json()
+    assert sol["assignments"] == []
+    assert any(
+        emergency_id in w and "urgency bound 3 days" in w for w in sol["warnings"]
+    ), sol["warnings"]
+
+
+def test_urgency_ranking_promotes_flagged_course_above_higher_tier_waiting_course(client):
+    """Clinician flag outranks clinical tier among waiting courses; ongoing still first."""
+    headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"}
+    created = client.post(
+        "/api/v1/continuity/courses",
+        json={
+            "patient_id": "PAT-CONT-01",
+            "clinical_context": "adjuvant_post_lumpectomy",
+            "total_fractions": 15,
+            "prescribed_start_date": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+            "urgency_tier": "urgent",
+            "baseline_subgroup": "subgroup_a",
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    new_id = created.json()["id"]
+    sol = client.post("/api/v1/continuity/schedule/solve", json={}, headers=headers).json()
+    rank = {a["course_id"]: a["priority_rank"] for a in sol["assignments"]}
+    assert rank["RTC-002"] == 1  # ongoing course
+    assert rank[new_id] == 2  # flagged lumpectomy beats routine lumpectomy RTC-001
+    assert rank["RTC-001"] == 3
 
 
 def test_schedule_confirm_and_delay_ledger(client):

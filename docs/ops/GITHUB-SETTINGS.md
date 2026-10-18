@@ -46,9 +46,9 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
     {
       "type": "pull_request",
       "parameters": {
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": true,
+        "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": true
       }
@@ -58,9 +58,13 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          {"context": "lint-and-typecheck"},
-          {"context": "unit-and-property-tests"},
-          {"context": "claims-policy-check"}
+          {"context": "claims-and-governance"},
+          {"context": "backend-lint-and-test"},
+          {"context": "frontend-lint-and-build"},
+          {"context": "e2e-and-lighthouse"},
+          {"context": "dependency-audit"},
+          {"context": "analyze (python)"},
+          {"context": "analyze (javascript-typescript)"}
         ]
       }
     }
@@ -97,8 +101,13 @@ gh api --method PATCH -H "Accept: application/vnd.github+json" \
 - [ ] `main` branch cannot be force-pushed or deleted.
 - [ ] Direct pushes to `main` are blocked; all changes must pass through pull requests.
 - [ ] Required status checks include:
-  - `lint-and-typecheck`
-  - `unit-and-property-tests`
-  - `claims-policy-check`
-- [ ] CODEOWNERS review is required.
+  - `claims-and-governance`, `backend-lint-and-test`, `frontend-lint-and-build`, `e2e-and-lighthouse`, `dependency-audit`, `analyze (python)`, `analyze (javascript-typescript)`
+  - (names verified against `gh api repos/gasthecreator/vigil/commits/main/check-runs`; a required context that no job reports blocks every merge forever)
+- [ ] Review requirement: see the note below.
 - [ ] Secret scanning and Dependabot alerts are active.
+
+## 4. Notes added in the final-build Tier 0
+
+1. **Check names.** The first version of this file listed contexts (`lint-and-typecheck`, `unit-and-property-tests`, `claims-policy-check`) that no workflow job reports. Applied as written, it would have made `main` unmergeable. The contexts above are the real job names.
+2. **Reviews with a single maintainer.** GitHub does not let a pull-request author approve their own PR, and `.github/CODEOWNERS` currently names one owner. Requiring one approval plus code-owner review would therefore lock the owner out. The ruleset above requires **0** approvals and no code-owner review so that the required status checks and PR-only flow are the gate. As soon as a second maintainer exists, raise `required_approving_review_count` to 1 and `require_code_owner_review` to `true`, and add that person to CODEOWNERS (repo-standards T1.2).
+3. **State observed on 2026-10-18** with `scripts/audit_repo_standards.py --online`: `main` has no branch protection and no ruleset (`gh api repos/gasthecreator/vigil/branches/main/protection` returns 404). Applying section 1 is owner action H-GH-1 in `docs/HANDOVER.md`.

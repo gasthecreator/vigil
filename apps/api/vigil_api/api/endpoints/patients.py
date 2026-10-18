@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc, select
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, func, select
+from sqlalchemy.orm import Session, defer, selectinload
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.config import settings
@@ -215,6 +215,18 @@ def list_patients(
     return results
 
 
+def _latest_row_per_patient(db: Session, model: Any, ts_column: Any) -> Dict[str, Any]:
+    """Most recent row of ``model`` per patient in one statement (window function), keyed by patient_id."""
+    ranked = select(
+        model.id.label("row_id"),
+        func.row_number()
+        .over(partition_by=model.patient_id, order_by=(desc(ts_column), desc(model.id)))
+        .label("rn"),
+    ).subquery()
+    rows = db.execute(select(model).join(ranked, model.id == ranked.c.row_id).where(ranked.c.rn == 1)).scalars()
+    return {r.patient_id: r for r in rows}
+
+
 @router.get("/triage", response_model=List[TriageQueueItem])
 def get_triage_queue(
     db: Session = Depends(get_db),
@@ -231,17 +243,40 @@ def get_triage_queue(
     Master Plan §6.9 (M9) / Phase 5b.
     """
     now = datetime.now(timezone.utc)
-    patients = db.query(Patient).all()
+    patients = (
+        db.query(Patient)
+        .options(selectinload(Patient.baseline_profile), defer(Patient.detector_state))
+        .all()
+    )
     triage_roster: List[TriageQueueItem] = []
 
-    for patient in patients:
-        # Find latest risk inference
-        latest_inference = (
-            db.query(RiskInference)
-            .filter(RiskInference.patient_id == patient.id)
-            .order_by(desc(RiskInference.created_at))
-            .first()
+    # Batched reads (constant number of statements, independent of the number of patients). This replaced a
+    # per-patient query loop (about 6 statements per patient) found by the real-HTTP load test; the original
+    # implementation is kept as the oracle in apps/api/tests/test_triage_batched.py.
+    latest_inference_by_patient = _latest_row_per_patient(db, RiskInference, RiskInference.created_at)
+    latest_assessment_by_patient = _latest_row_per_patient(db, RiskAssessment, RiskAssessment.created_at)
+    lab_stats = {
+        pid: (last_drawn, count)
+        for pid, last_drawn, count in db.query(
+            LabResult.patient_id, func.max(LabResult.date_drawn), func.count(LabResult.id)
+        ).group_by(LabResult.patient_id)
+    }
+    # Active tasks are reduced in SQL to what the urgency formula uses: the earliest due date (=> largest overdue
+    # days) and the highest escalation level per patient. Materialising every pending task made the cost grow with
+    # the number of unresolved tasks (thousands after a soak run).
+    task_stats = {
+        pid: (earliest_due, max_escalation)
+        for pid, earliest_due, max_escalation in db.query(
+            FollowUpTask.patient_id,
+            func.min(FollowUpTask.due_date),
+            func.max(FollowUpTask.escalation_level),
         )
+        .filter(FollowUpTask.status.in_(["pending", "in_progress", "escalated"]))
+        .group_by(FollowUpTask.patient_id)
+    }
+
+    for patient in patients:
+        latest_inference = latest_inference_by_patient.get(patient.id)
 
         baseline = patient.baseline_profile
         subtype = "Unknown"
@@ -260,13 +295,7 @@ def get_triage_queue(
             else:
                 subtype = "Triple Negative (TNBC)"
 
-        last_lab = (
-            db.query(LabResult)
-            .filter(LabResult.patient_id == patient.id)
-            .order_by(desc(LabResult.date_drawn))
-            .first()
-        )
-        total_labs = db.query(LabResult).filter(LabResult.patient_id == patient.id).count()
+        last_lab_date, total_labs = lab_stats.get(patient.id, (None, 0))
 
         latest_risk = latest_inference.calculated_metastasis_risk if latest_inference else 0.0
         triage_flag = latest_inference.triage_flag if latest_inference else False
@@ -280,12 +309,7 @@ def get_triage_queue(
         s_risk = float(latest_risk)
 
         # 2. Uncertainty / Abstention component (weight 0.25)
-        latest_assessment = (
-            db.query(RiskAssessment)
-            .filter(RiskAssessment.patient_id == patient.id)
-            .order_by(desc(RiskAssessment.created_at))
-            .first()
-        )
+        latest_assessment = latest_assessment_by_patient.get(patient.id)
         if latest_assessment:
             if latest_assessment.abstention:
                 s_unc = 1.0
@@ -298,39 +322,25 @@ def get_triage_queue(
             s_unc = min(1.0, float(2.0 * margin))
 
         # 3. Overdue follow-up tasks component (weight 0.20)
-        active_tasks = (
-            db.query(FollowUpTask)
-            .filter(
-                FollowUpTask.patient_id == patient.id,
-                FollowUpTask.status.in_(["pending", "in_progress", "escalated"]),
-            )
-            .all()
-        )
         max_overdue_days = 0.0
         max_escalation = 0
-        for task in active_tasks:
-            due = (
-                task.due_date
-                if task.due_date.tzinfo
-                else task.due_date.replace(tzinfo=timezone.utc)
-            )
-            overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
-            if overdue_days > max_overdue_days:
-                max_overdue_days = overdue_days
-            if task.escalation_level > max_escalation:
-                max_escalation = task.escalation_level
+        has_active_tasks = patient.id in task_stats
+        if has_active_tasks:
+            earliest_due, max_escalation = task_stats[patient.id]
+            due = earliest_due if earliest_due.tzinfo else earliest_due.replace(tzinfo=timezone.utc)
+            max_overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
 
-        if active_tasks:
+        if has_active_tasks:
             s_overdue = min(1.0, max(max_overdue_days / 14.0, max_escalation / 3.0))
         else:
             s_overdue = 0.0
 
         # 4. Treatment / surveillance delay component (weight 0.15)
-        if last_lab and last_lab.date_drawn:
+        if last_lab_date:
             lab_date = (
-                last_lab.date_drawn
-                if last_lab.date_drawn.tzinfo
-                else last_lab.date_drawn.replace(tzinfo=timezone.utc)
+                last_lab_date
+                if last_lab_date.tzinfo
+                else last_lab_date.replace(tzinfo=timezone.utc)
             )
             days_since = max(0.0, (now - lab_date).total_seconds() / 86400.0)
             if days_since > 90.0:
@@ -363,7 +373,7 @@ def get_triage_queue(
                 triage_flag=triage_flag,
                 latest_justification=justification,
                 target_organ_susceptibility_vector=organ_vector,
-                last_lab_date=last_lab.date_drawn if last_lab else None,
+                last_lab_date=last_lab_date,
                 total_labs=total_labs,
                 action_urgency=action_urgency,
                 urgency_breakdown=urgency_breakdown,

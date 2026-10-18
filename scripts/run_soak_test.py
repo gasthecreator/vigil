@@ -1,191 +1,115 @@
 #!/usr/bin/env python3
 """scripts/run_soak_test.py
 
-Automated Sustained Soak Testing Tool for Vigil API.
-Implements Master Plan §9.5, §12, and WP8.4.
+Sustained soak of the Vigil API over real HTTP (uvicorn subprocess + httpx client).
 
-Runs continuous background requests over a sustained duration (default 60s),
-sampling RSS process memory, queue depth, and response latency to detect
-memory leaks, connection exhaustion, or performance degradation.
-Outputs:
-- reports/load/SOAK_TEST_RESULTS.json
-- reports/load/SOAK_TEST_RESULTS.md
+Measured
+  * wall-clock duration actually run, request count, error rate, overall p95;
+  * latency drift: p95 of the first vs. last quarter of the run (after warm-up);
+  * server memory: *current* RSS of the uvicorn process sampled with `ps` every `--interval` seconds
+    (not peak RSS, which can only grow), growth = median of the last quarter vs. median of the first
+    quarter after warm-up.
+
+Budgets (fixed here, before any result): error rate <= 0.1 %, overall p95 <= 200 ms,
+p95 drift <= 50 %, RSS growth <= 15 %. Warm-up = first 10 % of the run (at least 30 s when the run is long enough).
+
+Output (script-written only): reports/load/SOAK_TEST_HTTP_RESULTS.json and .md.
+Default duration is 1800 s (30 min); the scheduled workflow uses the same default.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import resource
+import statistics
 import sys
-import time
 from pathlib import Path
-from typing import Any, Dict, List
 
-import numpy as np
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import http_load_harness as h  # noqa: E402
+import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "apps" / "api"))
-sys.path.insert(0, str(ROOT / "packages" / "vigil-core"))
-
-from run_load_test import setup_load_test_environment
-from vigil_api.main import app
+NAME = "SOAK_TEST_HTTP_RESULTS"
+SOAK_BUDGETS = {"p95_latency_ms": 200.0, "error_rate_percent": 0.1, "p95_drift_percent": 50.0, "rss_growth_percent": 15.0}
 
 
-def get_current_rss_mb() -> float:
-    """Returns current process Resident Set Size (RSS) in Megabytes."""
-    # maxrss in ru_maxrss is in bytes on macOS / KB on Linux
-    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    if sys.platform == "darwin":
-        return usage / (1024.0 * 1024.0)
-    else:
-        return usage / 1024.0
-
-
-def run_soak_test(duration_seconds: int = 60, interval_seconds: float = 2.0) -> Dict[str, Any]:
-    print(f"🌊 Starting Sustained Soak Test ({duration_seconds}s duration, sampling every {interval_seconds}s)...")
-    token, _ = setup_load_test_environment()
-    client = TestClient(app, raise_server_exceptions=False)
-    headers = {"Authorization": f"Bearer {token}"}
-
-    endpoints = [
-        "/health",
-        "/api/v1/patients/",
-        "/api/v1/patients/triage",
-        "/api/v1/continuity/courses",
-        "/api/v1/continuity/machines",
-    ]
-
-    t_start = time.perf_counter()
-    next_sample_time = t_start
-    samples: List[Dict[str, Any]] = []
-    latencies: List[float] = []
-    total_requests = 0
-    failed_requests = 0
-
-    initial_memory = get_current_rss_mb()
-
-    while (time.perf_counter() - t_start) < duration_seconds:
-        # Send burst of requests across endpoints
-        for ep in endpoints:
-            t0 = time.perf_counter()
-            r = client.get(ep, headers=headers)
-            lat_ms = (time.perf_counter() - t0) * 1000.0
-            latencies.append(lat_ms)
-            total_requests += 1
-            if r.status_code not in (200, 201, 204):
-                failed_requests += 1
-
-        curr_time = time.perf_counter()
-        if curr_time >= next_sample_time:
-            elapsed = curr_time - t_start
-            rss = get_current_rss_mb()
-            recent_p95 = float(np.percentile(latencies[-50:], 95)) if len(latencies) >= 50 else float(np.mean(latencies))
-            samples.append({
-                "elapsed_seconds": round(elapsed, 1),
-                "rss_mb": round(rss, 2),
-                "cumulative_requests": total_requests,
-                "recent_p95_ms": round(recent_p95, 2),
-            })
-            next_sample_time = curr_time + interval_seconds
-            print(f"  [T+{elapsed:4.1f}s] RSS: {rss:6.2f} MB | Reqs: {total_requests:5d} | p95: {recent_p95:5.1f} ms")
-
-        time.sleep(0.05)
-
-    final_memory = get_current_rss_mb()
-    memory_growth_mb = final_memory - initial_memory
-    growth_percent = (memory_growth_mb / initial_memory) * 100.0 if initial_memory > 0 else 0.0
-
-    p95_overall = float(np.percentile(latencies, 95))
-    error_rate = (failed_requests / total_requests) * 100.0 if total_requests > 0 else 0.0
-
-    results = {
-        "test_name": "Vigil API Sustained Soak Test",
-        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "duration_seconds": round(time.perf_counter() - t_start, 1),
-        "total_requests": total_requests,
-        "initial_rss_mb": round(initial_memory, 2),
-        "final_rss_mb": round(final_memory, 2),
-        "rss_growth_mb": round(memory_growth_mb, 2),
-        "growth_percent": round(growth_percent, 2),
-        "p95_latency_ms": round(p95_overall, 2),
-        "error_rate_percent": round(error_rate, 3),
-        "samples": samples,
-        "budgets": {
-            "memory_stability": {
-                "growth_percent": round(growth_percent, 2),
-                "budget_max_percent": 15.0,
-                "status": "PASS" if growth_percent <= 15.0 else "FAIL",
-            },
-            "error_rate": {
-                "error_rate_percent": round(error_rate, 3),
-                "budget_max_percent": 0.10,
-                "status": "PASS" if error_rate <= 0.10 else "FAIL",
-            },
-        },
+def analyse(res: dict) -> dict:
+    rec = res.pop("_records")
+    wall = res["duration_seconds"]
+    t0 = min(r[0] for r in rec) if rec else 0.0
+    warm = min(max(0.1 * wall, 30.0), 0.5 * wall)
+    post = [r for r in rec if (r[0] - t0) >= warm]
+    span = wall - warm
+    q1 = [r[3] for r in post if (r[0] - t0) < warm + span / 4]
+    q4 = [r[3] for r in post if (r[0] - t0) >= warm + 3 * span / 4]
+    p95 = lambda x: float(np.percentile(x, 95)) if x else float("nan")  # noqa: E731
+    drift = 100.0 * (p95(q4) - p95(q1)) / p95(q1) if q1 and q4 else float("nan")
+    samples = [s for s in res["server_rss_mb"]["samples"] if s["rss_mb"] is not None and s["elapsed_s"] >= warm]
+    m = len(samples)
+    first = [s["rss_mb"] for s in samples[: max(m // 4, 1)]]
+    last = [s["rss_mb"] for s in samples[-max(m // 4, 1):]]
+    growth = 100.0 * (statistics.median(last) - statistics.median(first)) / statistics.median(first) if m >= 4 else float("nan")
+    res["soak"] = {
+        "warmup_seconds": round(warm, 1),
+        "p95_first_quarter_ms": round(p95(q1), 2), "p95_last_quarter_ms": round(p95(q4), 2), "p95_drift_percent": round(drift, 2),
+        "rss_median_first_quarter_mb": statistics.median(first) if first else None,
+        "rss_median_last_quarter_mb": statistics.median(last) if last else None,
+        "rss_growth_percent": round(growth, 2),
+        "rss_samples_used": m,
+        "budgets": SOAK_BUDGETS,
     }
+    ok = lambda v, lim: (v == v) and v <= lim  # noqa: E731  (NaN -> False)
+    res["soak"]["verdicts"] = {
+        "p95_latency_ms": "PASS" if ok(res["overall_latency"].get("p95_ms", 1e9), SOAK_BUDGETS["p95_latency_ms"]) else "FAIL",
+        "error_rate_percent": "PASS" if ok(res["error_rate_percent"], SOAK_BUDGETS["error_rate_percent"]) else "FAIL",
+        "p95_drift_percent": "PASS" if ok(drift, SOAK_BUDGETS["p95_drift_percent"]) else "FAIL/UNMEASURABLE",
+        "rss_growth_percent": "PASS" if ok(growth, SOAK_BUDGETS["rss_growth_percent"]) else "FAIL/UNMEASURABLE",
+    }
+    return res
 
-    return results
+
+def run_soak_test(duration_seconds: float = 1800.0, concurrency: int = 8, interval_seconds: float = 10.0, n_patients: int = 200) -> dict:
+    return analyse(h.run(concurrency=concurrency, duration_seconds=duration_seconds, sample_interval=interval_seconds, label="soak", n_patients=n_patients))
 
 
-def write_soak_reports(results: Dict[str, Any]) -> None:
-    out_dir = ROOT / "reports" / "load"
+def write_reports(res: dict, out_dir: Path) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    json_path = out_dir / "SOAK_TEST_RESULTS.json"
-    md_path = out_dir / "SOAK_TEST_RESULTS.md"
-
-    json_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
-
-    bg = results["budgets"]
-
-    md_content = rf"""# Vigil API Sustained Soak Test Report
-
-**Date:** {results['timestamp_utc']}
-**Duration:** {results['duration_seconds']} seconds
-**Total Workload:** {results['total_requests']} requests
-**Standard Compliance:** Master Plan §9.5, §12, WP8.4
-
----
-
-## 1. Stability Budgets
-| Metric | Measured | Target Budget | Verdict |
-|:---|:---|:---|:---|
-| **Memory Growth** | **{bg['memory_stability']['growth_percent']}%** ({results['rss_growth_mb']} MB) | $\le 15.0\%$ | **{bg['memory_stability']['status']}** |
-| **Error Rate** | **{bg['error_rate']['error_rate_percent']:.3f}%** | $\le 0.100\%$ | **{bg['error_rate']['status']}** |
-| **p95 Latency** | **{results['p95_latency_ms']} ms** | $\le 200.0$ ms | **PASS** |
-
----
-
-## 2. Memory Timeline (Resident Set Size)
-- **Initial RSS:** {results['initial_rss_mb']} MB
-- **Final RSS:** {results['final_rss_mb']} MB
-- **Net Growth:** {results['rss_growth_mb']} MB ({results['growth_percent']}%)
-
-No memory leak or unbounded connection hoarding detected under sustained load.
-"""
-    md_path.write_text(md_content, encoding="utf-8")
-    print(f"✅ Committed Soak Test Reports written to:\n  - {json_path}\n  - {md_path}")
+    jp, mp = out_dir / f"{NAME}.json", out_dir / f"{NAME}.md"
+    jp.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8")
+    s, hst, ov = res["soak"], res["host"], res["overall_latency"]
+    lines = [
+        "# Vigil API soak test (real HTTP)", "", "> Written by `scripts/run_soak_test.py`. Do not edit by hand.", "",
+        f"- Date (UTC): {res['timestamp_utc']}",
+        f"- Duration actually run: **{res['duration_seconds']} s** (requested {res['requested']['duration_seconds']} s), concurrency {res['concurrency']}, {res['patients']} patients, {res['total_requests']} requests ({res['throughput_req_per_sec']} req/s)",
+        f"- Transport: **{res['transport']}** to a separate `uvicorn` process (1 worker), staging profile, SQLite file, no TLS",
+        f"- Host: {hst['platform']}, {hst['cpu_count']} CPUs, Python {hst['python']}",
+        "", "## Verdicts against budgets fixed before the run", "", "| Metric | Measured | Budget | Verdict |", "|---|---|---|---|",
+        f"| overall p95 | {ov.get('p95_ms')} ms | <= {s['budgets']['p95_latency_ms']} | {s['verdicts']['p95_latency_ms']} |",
+        f"| error rate | {res['error_rate_percent']} % | <= {s['budgets']['error_rate_percent']} | {s['verdicts']['error_rate_percent']} |",
+        f"| p95 drift (last vs first quarter after warm-up) | {s['p95_first_quarter_ms']} -> {s['p95_last_quarter_ms']} ms = {s['p95_drift_percent']} % | <= {s['budgets']['p95_drift_percent']} % | {s['verdicts']['p95_drift_percent']} |",
+        f"| server RSS growth (median last vs first quarter after warm-up, {s['rss_samples_used']} samples) | {s['rss_median_first_quarter_mb']} -> {s['rss_median_last_quarter_mb']} MB = {s['rss_growth_percent']} % | <= {s['budgets']['rss_growth_percent']} % | {s['verdicts']['rss_growth_percent']} |",
+        "", "RSS is the current resident set of the server process sampled with `ps`; it is not peak RSS.", "",
+        "## Limits", "", "One host runs client and server; one worker; SQLite; no TLS; synthetic data growing a single SQLite file and audit chain for the whole run. "
+        "A pass is not evidence about hospital hardware or PostgreSQL. Memory 'stability' means growth under the stated threshold over this window, not absence of leaks.", "",
+    ]
+    mp.write_text("\n".join(lines), encoding="utf-8")
+    return jp, mp
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Vigil API Soak Testing Tool")
-    parser.add_argument("--duration", type=int, default=30, help="Duration in seconds (default: 30)")
-    args = parser.parse_args()
-
-    results = run_soak_test(duration_seconds=args.duration)
-    write_soak_reports(results)
-
-    mem_ok = results["budgets"]["memory_stability"]["status"] == "PASS"
-    err_ok = results["budgets"]["error_rate"]["status"] == "PASS"
-
-    if mem_ok and err_ok:
-        print("\n🎉 SOAK TEST STABILITY BUDGETS PASSED!")
-        return 0
-    else:
-        print("\n❌ SOAK TEST STABILITY BUDGET VIOLATION DETECTED.")
-        return 1
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--duration", type=float, default=1800.0, help="seconds (default 1800 = 30 min)")
+    ap.add_argument("--concurrency", type=int, default=8)
+    ap.add_argument("--interval", type=float, default=10.0)
+    ap.add_argument("--patients", type=int, default=200, help="synthetic patients provisioned (default 200; run 1 used 10, see reports/load/README.md)")
+    ap.add_argument("--out-dir", type=Path, default=ROOT / "reports" / "load")
+    a = ap.parse_args()
+    res = run_soak_test(a.duration, a.concurrency, a.interval, a.patients)
+    jp, _ = write_reports(res, a.out_dir)
+    print(f"wrote {jp}")
+    print(res["soak"]["verdicts"])
+    return 0 if all(v == "PASS" for v in res["soak"]["verdicts"].values()) else 1
 
 
 if __name__ == "__main__":

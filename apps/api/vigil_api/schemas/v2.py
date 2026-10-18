@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -339,6 +339,16 @@ class DelayLedgerEntryResponse(BaseModel):
 
 
 class ScheduleSolveRequest(BaseModel):
+    """Request a schedule proposal.
+
+    ``method`` defaults to the explainable urgency ranking (ADR-0019). The CP-SAT
+    optimiser is a research module: it is only available to
+    administrators (or when the deployment sets ``VIGIL_ENABLE_RESEARCH_SCHEDULER=1``)
+    and is always labelled ``unvalidated in simulation``. ``fairness_disparity_bound``,
+    ``max_wait_days`` and ``stability_penalty`` apply to the CP-SAT method only.
+    """
+
+    method: Literal["urgency_ranking", "cpsat_research"] = "urgency_ranking"
     horizon_days: int = Field(30, ge=5, le=60)
     fairness_disparity_bound: float = Field(5.0, ge=0.5, le=30.0)
     max_wait_days: int = Field(45, ge=5, le=120)
@@ -357,6 +367,7 @@ class ScheduleAssignment(BaseModel):
     marginal_harm: float
     explanation: str
     is_moved: bool = False
+    priority_rank: Optional[int] = None  # 1 = served first (urgency ranking only)
 
 
 class ScheduleSolveResponse(BaseModel):
@@ -370,6 +381,10 @@ class ScheduleSolveResponse(BaseModel):
     unassigned_patient_ids: List[str]
     patients_included: int = 0
     patients_unconsented_included: int = 0
+    method: str = "urgency_ranking"
+    method_label: str = "Explainable urgency ranking"
+    fairness_bound_enforced: bool = False
+    warnings: List[str] = Field(default_factory=list)
     validation_status: str = "unvalidated in simulation"
     synthetic: bool = True
 
@@ -377,7 +392,7 @@ class ScheduleSolveResponse(BaseModel):
 class ScheduleConfirmRequest(BaseModel):
     assignments: List[ScheduleAssignment]
     reason: Optional[str] = Field(
-        "Clinician approved CP-SAT continuity reallocation",
+        "Clinician approved schedule reallocation",
         description="Clinical rationale for confirming the schedule reallocation",
     )
 

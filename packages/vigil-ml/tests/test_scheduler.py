@@ -261,3 +261,55 @@ def test_brute_force_optimality_on_minimal_instance():
     assert res.patient_start_days["P_pal"] == 0
     assert res.patient_start_days["P_lump"] == 1
     assert round(res.total_expected_harm, 4) == round(harm_opt1, 4)
+
+
+# ---------------------------------------------------------------------------
+# ADR-0019: explainable urgency ranking (shipped M7 recommendation)
+# ---------------------------------------------------------------------------
+
+
+def _mixed_cohort():
+    ctx = ClinicalContext
+    return [
+        PatientCourse("ongoing", ctx.ADJUVANT_POST_LUMPECTOMY.value, 15, fractions_completed=3, elapsed_delay_days=5),
+        PatientCourse("pal", ctx.PALLIATIVE_BONE_BRAIN.value, 5, elapsed_delay_days=2),
+        PatientCourse("tnbc", ctx.CURATIVE_TNBC.value, 25, elapsed_delay_days=40),
+        PatientCourse("lump_old", ctx.ADJUVANT_POST_LUMPECTOMY.value, 15, elapsed_delay_days=60),
+        PatientCourse("lump_flagged", ctx.ADJUVANT_POST_LUMPECTOMY.value, 15, elapsed_delay_days=1, urgency_bound_days=7),
+    ]
+
+
+def test_rank_urgency_order_and_reasons(scheduler):
+    machines = [MachineConfig("M1", "Linac 1", daily_capacity=2)]
+    out = scheduler.rank_urgency(machines, _mixed_cohort(), horizon_days=3)
+    order = sorted(out.ranks, key=out.ranks.get)
+    assert order == ["ongoing", "lump_flagged", "pal", "tnbc", "lump_old"]
+    assert "course in progress" in out.rank_reasons["ongoing"]
+    assert "clinician-flagged" in out.rank_reasons["lump_flagged"]
+    # capacity 2/day: the two highest-priority courses are treated on day 0, nobody else
+    day0 = {a.patient_id for a in out.schedule.allocations if a.day == 0}
+    assert day0 == {"ongoing", "lump_flagged"}
+    assert out.schedule.is_fairness_certified is False
+
+
+def test_rank_urgency_equals_frozen_study_arm_without_flags(scheduler):
+    """The shipped ranking must not silently differ from the pre-registered study arm."""
+    machines = [MachineConfig("M1", "Linac 1", daily_capacity=2)]
+    cohort = [p for p in _mixed_cohort() if p.patient_id != "lump_flagged"]
+    a = scheduler.rank_urgency(machines, cohort, horizon_days=6).schedule
+    b = scheduler.solve_urgency_heuristic(machines, cohort, horizon_days=6)
+    key = lambda r: sorted((x.patient_id, x.day, x.machine_id) for x in r.allocations)  # noqa: E731
+    assert key(a) == key(b)
+
+
+def test_fairness_certification_is_not_a_constant():
+    """cp-sat: certified only when a bound was imposed; greedy policies never certify."""
+    machines = [MachineConfig("M1", "Linac 1", daily_capacity=1)]
+    pts = [
+        PatientCourse("a", ClinicalContext.CURATIVE_TNBC.value, 1, subgroup="x"),
+        PatientCourse("b", ClinicalContext.CURATIVE_TNBC.value, 1, subgroup="y"),
+    ]
+    unbounded = RadiotherapyScheduler(ContinuityHarmModel())
+    assert unbounded.solve(machines, pts, horizon_days=3).is_fairness_certified is False
+    assert unbounded.solve_fcfs(machines, pts, horizon_days=3).is_fairness_certified is False
+    assert unbounded.solve_urgency_heuristic(machines, pts, horizon_days=3).is_fairness_certified is False

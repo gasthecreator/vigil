@@ -69,10 +69,24 @@ class ScheduleResult:
     machine_utilization: Dict[str, float]
     solver_wall_time_seconds: float
     course_start_days: Dict[str, Optional[int]] = field(default_factory=dict)
-    is_fairness_certified: bool = True
+    is_fairness_certified: bool = False
     synthetic: bool = True
     solver_objective: Optional[float] = None
     validation_status: str = "unvalidated in simulation"
+
+
+URGENCY_RANKING_VALIDATION_STATUS = (
+    "explainable ranking rule; compared only in simulation (synthetic); "
+    "no real-data validation; requires clinician review"
+)
+CPSAT_VALIDATION_STATUS = "unvalidated in simulation"
+
+
+@dataclass
+class UrgencyRankingResult:
+    schedule: ScheduleResult
+    ranks: Dict[str, int]  # course uid -> 1-based priority rank
+    rank_reasons: Dict[str, str]
 
 
 def _course_uid(p: PatientCourse) -> str:
@@ -398,10 +412,16 @@ class RadiotherapyScheduler:
             machine_utilization=utilization,
             solver_wall_time_seconds=round(wall_time, 4),
             course_start_days=course_start_days,
-            is_fairness_certified=True,
+            # Certified only if a bound was imposed on the model AND the realised mean-wait
+            # disparity respects it; never a constant.
+            is_fairness_certified=(
+                self.max_fairness_disparity_days is not None
+                and status_str in ("OPTIMAL", "FEASIBLE")
+                and disparity <= self.max_fairness_disparity_days
+            ),
             synthetic=True,
             solver_objective=solver_obj,
-            validation_status="unvalidated in simulation",
+            validation_status=CPSAT_VALIDATION_STATUS,
         )
 
     def _generate_marginal_explanations(
@@ -467,30 +487,88 @@ class RadiotherapyScheduler:
         sorted_patients = sorted(patients, key=lambda p: -p.elapsed_delay_days)
         return self._simulate_greedy_policy(machines, sorted_patients, horizon_days, start_time)
 
+    # Clinical tiers of the explainable urgency ranking (ADR-0019). Higher = served earlier.
+    URGENCY_TIER: Dict[str, int] = {
+        ClinicalContext.PALLIATIVE_BONE_BRAIN.value: 4,
+        ClinicalContext.CURATIVE_TNBC.value: 3,
+        ClinicalContext.ADJUVANT_POST_MASTECTOMY.value: 2,
+        ClinicalContext.ADJUVANT_POST_LUMPECTOMY.value: 1,
+    }
+    ONGOING_TIER: int = 5
+
     def solve_urgency_heuristic(
         self,
         machines: List[MachineConfig],
         patients: List[PatientCourse],
         horizon_days: int = 14,
     ) -> ScheduleResult:
-        """Simple clinical urgency heuristic (Palliative > TNBC > PMRT > Lumpectomy), then delay."""
+        """Urgency heuristic arm of the pre-registered studies.
+
+        Ordering: ongoing courses first, then clinical tier (Palliative > TNBC > PMRT >
+        Lumpectomy), then elapsed delay. Behaviour is frozen: study M7-TWIN and the
+        CP-SAT research track compare against exactly this ordering.
+        """
         start_time = time.perf_counter()
-        tier_map = {
-            ClinicalContext.PALLIATIVE_BONE_BRAIN.value: 4,
-            ClinicalContext.CURATIVE_TNBC.value: 3,
-            ClinicalContext.ADJUVANT_POST_MASTECTOMY.value: 2,
-            ClinicalContext.ADJUVANT_POST_LUMPECTOMY.value: 1,
-        }
-        # Ongoing patients get tier 5 (do not stop ongoing course)
         sorted_patients = sorted(
             patients,
             key=lambda p: (
-                5 if p.fractions_completed > 0 else tier_map.get(p.clinical_context, 0),
+                self.ONGOING_TIER
+                if p.fractions_completed > 0
+                else self.URGENCY_TIER.get(p.clinical_context, 0),
                 p.elapsed_delay_days,
             ),
             reverse=True,
         )
         return self._simulate_greedy_policy(machines, sorted_patients, horizon_days, start_time)
+
+    def rank_urgency(
+        self,
+        machines: List[MachineConfig],
+        patients: List[PatientCourse],
+        horizon_days: int = 14,
+    ) -> "UrgencyRankingResult":
+        """Explainable urgency ranking shipped as the M7 recommendation (ADR-0019).
+
+        Ordering (every comparison is reported in the rank reason):
+        1. courses already in progress (never interrupt a course that has started);
+        2. waiting courses the treating clinician flagged ``emergency``/``urgent``
+           (``urgency_bound_days`` set) - promotes only among waiting courses;
+        3. clinical tier (Palliative > curative TNBC > post-mastectomy > post-lumpectomy);
+        4. longer elapsed delay first.
+        Slots are then filled day by day, one fraction per course per day. No fairness
+        bound and no starvation ceiling are enforced by this rule; the result says so
+        (``fairness_bound_enforced=False``) and reports the realised disparity.
+        """
+        start_time = time.perf_counter()
+
+        def key(p: PatientCourse):
+            ongoing = p.fractions_completed > 0
+            flagged = (not ongoing) and p.urgency_bound_days is not None
+            return (
+                1 if ongoing else 0,
+                1 if flagged else 0,
+                self.URGENCY_TIER.get(p.clinical_context, 0),
+                p.elapsed_delay_days,
+            )
+
+        ordered = sorted(patients, key=key, reverse=True)
+        reasons: Dict[str, str] = {}
+        ranks: Dict[str, int] = {}
+        for i, p in enumerate(ordered, start=1):
+            ongoing, flagged, tier, delay = key(p)
+            if ongoing:
+                basis = f"course in progress ({p.fractions_completed}/{p.fractions_total} fractions done)"
+            elif flagged:
+                basis = f"clinician-flagged urgent (bound {p.urgency_bound_days}d), tier {tier}"
+            else:
+                basis = f"{p.clinical_context.replace('_', ' ')} (tier {tier})"
+            reasons[_course_uid(p)] = f"Priority {i} of {len(ordered)}: {basis}; waiting {delay}d."
+            ranks[_course_uid(p)] = i
+
+        res = self._simulate_greedy_policy(machines, ordered, horizon_days, start_time)
+        res.is_fairness_certified = False
+        res.validation_status = URGENCY_RANKING_VALIDATION_STATUS
+        return UrgencyRankingResult(schedule=res, ranks=ranks, rank_reasons=reasons)
 
     def _simulate_greedy_policy(
         self,
@@ -613,6 +691,7 @@ class RadiotherapyScheduler:
             machine_utilization=utilization,
             solver_wall_time_seconds=round(time.perf_counter() - start_time, 4),
             course_start_days=course_start_days,
-            is_fairness_certified=True,
+            # Greedy policies impose no fairness bound; they never certify fairness.
+            is_fairness_certified=False,
             synthetic=True,
         )

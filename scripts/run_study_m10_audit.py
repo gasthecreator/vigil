@@ -272,9 +272,9 @@ def run_study() -> Dict[str, Any]:
     md_content = rf"""# Study M10-V2: Missed-Signal Quality Audit Engine Evaluation
 
 **Study Identifier:** M10-V2
-**Pre-Registration:** [`docs/studies/PREREG-M10.md`](file://{ROOT / "docs" / "studies" / "PREREG-M10.md"})
-**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](file://{ROOT / "docs" / "adr" / "0016-missed-signal-quality-audit-privacy-and-consent.md"})
-**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](file://{ROOT / "docs" / "adr" / "0017-quality-audit-consent-and-aggregate-use.md"})
+**Pre-Registration:** [`docs/studies/PREREG-M10.md`](../../docs/studies/PREREG-M10.md)
+**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](../../docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md)
+**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](../../docs/adr/0017-quality-audit-consent-and-aggregate-use.md)
 **Status:** COMPLETE (All 5 Pre-Registered Hypotheses SUPPORTED)
 
 ---
