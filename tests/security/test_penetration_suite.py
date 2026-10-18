@@ -167,6 +167,8 @@ OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
     ("GET", "/api/v1/quality/audit/latest"): {"clinician", "quality_lead", "admin"},
     ("POST", "/api/v1/quality/audit"): {"quality_lead", "admin"},
     ("GET", "/api/v1/audit/events"): {"quality_lead", "admin"},
+    ("POST", "/api/v1/test-ladder/recommend"): {"clinician", "admin"},
+    ("GET", "/api/v1/test-ladder/facilities"): {"clinician", "admin"},
     ("GET", "/api/v1/audit/verify"): {"quality_lead", "admin", "clinician"},
     ("POST", "/api/v1/patients/rotate-keys"): {"admin"},
 

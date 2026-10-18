@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -466,3 +466,73 @@ class QualityAuditResponse(BaseModel):
     register_audit_verified: bool = True
     narrative_summary: str
     synthetic: bool = True
+
+
+# ==============================================================================
+# M4 resource-aware test ladder (docs/ml/M4-CONTRACT.md)
+# ==============================================================================
+class TestLadderPrior(BaseModel):
+    """Probability that the organ is involved, as an interval with a stated provenance."""
+
+    __test__ = False
+
+    value: float = Field(..., gt=0.0, lt=1.0)
+    lo: Optional[float] = Field(None, gt=0.0, lt=1.0, description="Defaults to value")
+    hi: Optional[float] = Field(None, gt=0.0, lt=1.0, description="Defaults to value")
+    provenance: str = Field(..., min_length=1, max_length=500, description="Where the prior came from")
+
+
+class TestLadderModalityRow(BaseModel):
+    __test__ = False
+
+    modality: str = Field(..., min_length=1, max_length=64)
+    available: bool
+    turnaround_days: Optional[int] = Field(None, ge=0, le=365)
+    price_band: int = Field(..., ge=1, le=4, description="1 lowest to 4 highest")
+    distance_band: int = Field(..., ge=1, le=4, description="1 nearest to 4 farthest")
+    source: str = Field(..., min_length=1, max_length=200, description="Who reported this row")
+    verified_on: Optional[date] = Field(None, description="Date the row was last confirmed")
+
+
+class TestLadderFacility(BaseModel):
+    __test__ = False
+
+    facility_id: str = Field(..., min_length=1, max_length=64)
+    name: str = Field(..., min_length=1, max_length=200)
+    tier: str = Field(..., min_length=1, max_length=32)
+    modalities: List[TestLadderModalityRow] = Field(..., max_length=40)
+
+
+class TestLadderRequest(BaseModel):
+    """Stateless request. Exactly one of ``facility_id`` (registry template) or ``facility`` (inline rows)."""
+
+    __test__ = False
+
+    organ: Literal["bone", "liver", "lung", "brain"]
+    prior: TestLadderPrior
+    facility_id: Optional[str] = Field(None, description="A registry facility id (illustrative templates ship)")
+    facility: Optional[TestLadderFacility] = None
+    max_price_band: Optional[int] = Field(
+        None, ge=1, le=4, description="Highest price band the patient has agreed to; tests above it are skipped"
+    )
+    as_of: Optional[date] = Field(None, description="Date for staleness; defaults to the server date, never later")
+
+
+class TestLadderResponse(BaseModel):
+    """Output of the pure M4 engine, unchanged. Probabilities are intervals, never single numbers."""
+
+    __test__ = False
+
+    organ: str
+    outcome: Literal["ladder", "refer", "no_sourced_option"]
+    prior: Dict[str, Any]
+    as_of: date
+    facility_id: str
+    illustrative_facility: bool
+    rungs: List[Dict[str, Any]]
+    referrals: List[Dict[str, Any]]
+    skipped: List[Dict[str, str]]
+    notes: List[str]
+    negative_result_excludes_involvement: bool
+    negative_result_statement: str
+    scope_statement: str
