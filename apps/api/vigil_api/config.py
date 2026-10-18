@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     REQUIRE_AUTH: bool = os.getenv("REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")
 
+    # Silent mode (PREREGISTRATION section 6, T-Q): model outputs go to a shadow store that no clinician-facing
+    # route can read. Server-side only: no request field, header or query parameter can change it.
+    SILENT_MODE: bool = os.getenv("VIGIL_SILENT_MODE", "false").lower() in ("true", "1", "yes")
+    SILENT_SHADOW_DATABASE_URL: str = os.getenv("VIGIL_SILENT_SHADOW_DATABASE_URL", "")
+
     # Disclaimer text required on API root
     DISCLAIMER: str = (
         "Vigil is a research prototype and decision-support aid. It is not a medical device, "
@@ -49,6 +54,17 @@ class Settings(BaseSettings):
     )
 
     def model_post_init(self, __context) -> None:
+        if self.SILENT_MODE:
+            if not self.SILENT_SHADOW_DATABASE_URL:
+                raise ValueError(
+                    "VIGIL_SILENT_MODE is on but VIGIL_SILENT_SHADOW_DATABASE_URL is not set; "
+                    "silent mode fails closed instead of writing model outputs to the main database."
+                )
+            if self.SILENT_SHADOW_DATABASE_URL == self.DATABASE_URL:
+                raise ValueError(
+                    "VIGIL_SILENT_SHADOW_DATABASE_URL must differ from DATABASE_URL: the shadow store "
+                    "must be a separate database."
+                )
         if self.ENVIRONMENT != "local":
             self.REQUIRE_AUTH = True
             if (

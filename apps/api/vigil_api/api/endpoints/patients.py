@@ -9,14 +9,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, defer, selectinload
+from vigil_api import silent_mode
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.config import settings
 from vigil_api.consent import has_active_consent, verify_patient_consent
 from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
+from vigil_api.disclosure import DISCLOSURE_LOCKED_DETAIL, withheld_for
 from vigil_api.ml.detector_helpers import detector_from_dict, detector_to_dict
 from vigil_api.ml.inference import SentinelEngine
 from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
@@ -77,10 +80,20 @@ from vigil_ml.m5 import (
 
 router = APIRouter()
 
-DISCLOSURE_LOCKED_DETAIL = {
-    "code": "disclosure_locked",
-    "message": "Your care team has this result and will talk it through with you. Please ask them when you are ready.",
-}
+
+
+def _audit_withheld(db: Session, user: User, patient: Patient, route: str) -> None:
+    """Record that a patient-facing route withheld locked bad news (hazard H17)."""
+    record_audit_event(
+        db=db,
+        actor_id=user.id,
+        actor_role=user.role,
+        action="patient_route.withheld",
+        resource_type="Patient",
+        resource_id=patient.id,
+        details={"patient_id": patient.id, "route": route, "reason": "disclosure_locked"},
+    )
+    db.commit()
 
 
 def mask_identifier(val: Optional[str]) -> Optional[str]:
@@ -95,7 +108,9 @@ def mask_identifier(val: Optional[str]) -> Optional[str]:
 def create_patient(
     payload: PatientCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Registers a new patient into the oncology surveillance roster."""
     now = datetime.now(timezone.utc)
@@ -420,6 +435,10 @@ def get_patient_detail(
     )
     db.commit()
 
+    withheld = withheld_for(db, patient, current_user)
+    if withheld:
+        latest_inference = None
+
     return {
         "id": patient.id,
         "mrn": patient.mrn,
@@ -443,6 +462,7 @@ def get_patient_detail(
         "latest_risk": latest_inference.calculated_metastasis_risk if latest_inference else None,
         "triage_flag": latest_inference.triage_flag if latest_inference else False,
         "latest_justification": latest_inference.justification_text if latest_inference else None,
+        "results_withheld": withheld,
     }
 
 
@@ -532,12 +552,13 @@ def submit_baseline_profile(
     id: str,
     payload: BaselineCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Submits primary tumor pathology and comorbidities."""
-    patient = db.query(Patient).filter(Patient.id == id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+    silent_mode.block_in_silent_mode("Baseline profile entry (returns the organ-susceptibility vector)")
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     engine = SentinelEngine.get_instance()
     model_a_input = {
@@ -600,8 +621,13 @@ def ingest_single_observation_internal(
     specimen_collected_at: Optional[datetime] = None,
     laboratory_id: Optional[str] = None,
     lab_changed: bool = False,
-) -> Tuple[Observation, RiskAssessment, Optional[Alert], Optional[FollowUpTask], Dict[str, Any]]:
+) -> Tuple[
+    Observation, Optional[RiskAssessment], Optional[Alert], Optional[FollowUpTask], Dict[str, Any]
+]:
     """Canonical single-observation ingestion engine.
+
+    In silent mode (``vigil_api.silent_mode``) the model outputs go to the shadow store and this function
+    returns ``(observation, None, None, None, {"action": WITHHELD_ACTION})``.
 
     Enforces:
     1. Positive non-NaN value bounds.
@@ -624,6 +650,8 @@ def ingest_single_observation_internal(
     try:
         analyte = get_analyte(clean_code)
     except KeyError:
+        if silent_mode.is_silent():
+            silent_mode.record_rejection(clean_code, "unregistered_analyte")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Analyte '{analyte_code}' not found in registry.",
@@ -632,6 +660,8 @@ def ingest_single_observation_internal(
     try:
         plausibility = check_plausibility(analyte.code, value, unit)
     except (InvalidUnitError, IncompatibleUnitsError, UnitConversionError) as exc:
+        if silent_mode.is_silent():
+            silent_mode.record_rejection(analyte.code, "unit")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Unit validation failed: {str(exc)}. Silent unit coercion is forbidden.",
@@ -679,9 +709,13 @@ def ingest_single_observation_internal(
     )
 
     # 3. Update & Persist K2 SequentialDetector
-    detector = detector_from_dict(patient.detector_state)
+    silent = silent_mode.is_silent()
+    detector = detector_from_dict(
+        silent_mode.load_detector_state(patient.id) if silent else patient.detector_state
+    )
     detector.update(day=current_day, value=plausibility.canonical_value)
-    patient.detector_state = detector_to_dict(detector)
+    if not silent:
+        patient.detector_state = detector_to_dict(detector)
 
     # 4. Generate & Verify M5 Clinician Note
     clinical_note = render_clinician_note(m3_result["rationale_facts"])
@@ -724,6 +758,82 @@ def ingest_single_observation_internal(
     )
     db.add(obs)
     db.flush()
+
+    if silent:
+        # Silent mode: outputs go to the shadow store only. Nothing derived from the model is written to the
+        # clinical database (no RiskAssessment, Alert, FollowUpTask, K2 state) or returned to the caller.
+        s_tier = (
+            "high"
+            if (m3_result["action"] == "escalate" or detector.alert)
+            else "medium"
+            if m3_result["action"] == "needs_repeat"
+            else "low"
+        )
+        s_surprising = (
+            m3_result["action"] in ("escalate", "needs_repeat")
+            or detector.alert
+            or not plausibility.is_valid
+            or plausibility.is_critical
+        )
+        s_alert_type = None
+        s_severity = None
+        if s_surprising:
+            s_alert_type = (
+                "biomarker_spike"
+                if m3_result["action"] == "escalate"
+                else "lab_error_repeat"
+                if m3_result["action"] == "needs_repeat"
+                else "sequential_divergence"
+                if detector.alert
+                else "critical_panic_boundary"
+            )
+            s_severity = (
+                AlertSeverity.CRITICAL.value
+                if (m3_result["action"] == "escalate" or plausibility.is_critical)
+                else AlertSeverity.WARNING.value
+            )
+        silent_mode.record_prediction(
+            patient_id=patient.id,
+            observation_id=obs.id,
+            analyte_code=analyte.code,
+            specimen_collected_at=specimen_date,
+            canonical_value=plausibility.canonical_value,
+            score=m3_result["p_real"],
+            score_kind="m3_p_real",
+            m3_action=m3_result["action"],
+            risk_tier=s_tier,
+            would_alert=bool(s_surprising),
+            alert_type=s_alert_type,
+            severity=s_severity,
+            p_error=m3_result["p_error"],
+            p_stable=m3_result["p_stable"],
+            k2_log_e=detector.log_e,
+            k2_tier=detector.tier.value,
+            k2_alert=detector.alert,
+            plausibility_status=plausibility.status.value,
+            model_versions={"M3": "1.0", "K2": "1.0", "M5": "1.0"},
+            input_hash=input_hash,
+        )
+        silent_mode.save_detector_state(patient.id, detector_to_dict(detector))
+        # The audit record carries no model output (the audit log is readable by auditors).
+        record_audit_event(
+            db=db,
+            actor_id=current_user.id if current_user else "unknown",
+            actor_role=current_user.role if current_user else "clinician",
+            action="observation.ingest",
+            resource_type="Observation",
+            resource_id=obs.id,
+            details={
+                "patient_id": patient.id,
+                "analyte": analyte.code,
+                "raw_value": value,
+                "raw_unit": unit,
+                "canonical_value": plausibility.canonical_value,
+                "silent_mode": True,
+            },
+            timestamp=now,
+        )
+        return obs, None, None, None, {"action": silent_mode.WITHHELD_ACTION}
 
     # 7. Save RiskAssessment
     risk_tier = (
@@ -840,12 +950,18 @@ def ingest_single_observation_internal(
     return obs, risk, alert, task, m3_result
 
 
-@router.post("/{id}/labs", response_model=RiskInferenceResponse)
+@router.post(
+    "/{id}/labs",
+    response_model=RiskInferenceResponse,
+    responses={202: {"description": "Silent mode: the draw is recorded and outputs are withheld."}},
+)
 def submit_lab_result(
     id: str,
     payload: LabResultCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
+    ),
 ):
     """Submits new lab result draw.
 
@@ -853,6 +969,10 @@ def submit_lab_result(
     pipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,
     and cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.
     """
+    # KNOWN GAP (docs/proposals/PROP-0005-labs-route-consent.md): unlike /observations this route does
+    # not call verify_patient_consent. tests/acceptance_p5 (overseer-owned, read-only) posts to it for
+    # a patient that has no consent record and expects the draw to be ingested; adding the check
+    # makes that test fail. The role gate above stays. Pinned by a strict xfail test.
     patient = db.query(Patient).filter(Patient.id == id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -885,12 +1005,33 @@ def submit_lab_result(
                 unit=unit,
                 specimen_collected_at=drawn_date,
             )
-            last_risk_score = max(last_risk_score, risk.score)
+            if risk is not None:
+                last_risk_score = max(last_risk_score, risk.score)
             if alert is not None:
                 has_alert = True
             justifications.append(f"{code}: {m3_res['action']}")
 
     # Save legacy LabResult record for backward schema compatibility
+    if silent_mode.is_silent():
+        # Silent mode: record the draw (data), run no legacy engine, return no risk (the prototype engine's
+        # output would be a clinician-visible model output).
+        db.add(
+            LabResult(
+                patient_id=id,
+                date_drawn=drawn_date,
+                alt_level=payload.alt_level,
+                ast_level=payload.ast_level,
+                creatinine=payload.creatinine,
+                ca_15_3=payload.ca_15_3,
+                wbc_count=payload.wbc_count,
+            )
+        )
+        db.commit()
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={"status": "recorded", "outputs_withheld": True, "patient_id": id},
+        )
+
     lab_record = LabResult(
         patient_id=id,
         date_drawn=drawn_date,
@@ -970,7 +1111,10 @@ def get_patient_trajectory(
     each lab draw with its corresponding calculated_metastasis_risk, triage_flag,
     and clinical justification_text. Requires authentication and active consent.
     """
-    verify_patient_consent(patient_id=id, db=db, user=current_user)
+    patient_row = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    if withheld_for(db, patient_row, current_user):
+        _audit_withheld(db, current_user, patient_row, "trajectory")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=DISCLOSURE_LOCKED_DETAIL)
 
     labs = (
         db.query(LabResult)
@@ -1040,6 +1184,7 @@ def simulate_future_lab(
     on the patient's continuous metastasis risk trajectory. Clinician/admin only,
     requires active consent.
     """
+    silent_mode.block_in_silent_mode("The what-if simulation")
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     labs = (
@@ -1172,9 +1317,12 @@ def ingest_observation(
             adjudicated_action=risk.adjudicated_action,
             clinical_note=risk.clinical_note,
             abstention=risk.abstention,
-        ),
+        )
+        if risk is not None
+        else None,
         alert=alert_summary,
         follow_up_task=follow_up_summary,
+        outputs_withheld=risk is None,
         synthetic=True,
     )
 
@@ -1212,10 +1360,13 @@ def list_patient_observations(
     )
     db.commit()
 
+    withheld = withheld_for(db, patient, current_user)
     res = []
     for o in obs_list:
         flags = getattr(o, "quality_flags", None)
-        if not flags and o.risk_assessment:
+        if withheld:
+            flags = None
+        elif not flags and o.risk_assessment:
             ra = o.risk_assessment
             unc = ra.uncertainty or {}
             flags = {
@@ -1257,6 +1408,9 @@ def list_patient_risk_history(
 ):
     """Retrieve risk assessment trajectory for consented patient."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    if withheld_for(db, patient, current_user):
+        _audit_withheld(db, current_user, patient, "risk-history")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=DISCLOSURE_LOCKED_DETAIL)
     assessments = (
         db.execute(
             select(RiskAssessment)
@@ -1361,7 +1515,9 @@ def record_patient_symptom(
     id: str,
     payload: SymptomCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.PATIENT, UserRole.CAREGIVER, UserRole.NURSE_CLERK, UserRole.CLINICIAN, UserRole.ADMIN)
+    ),
 ):
     """Records a structured patient symptom in the diary (Master Plan §6.8)."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
@@ -1450,7 +1606,9 @@ def create_caregiver_share(
     id: str,
     payload: CaregiverShareCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.PATIENT, UserRole.CLINICIAN, UserRole.ADMIN)
+    ),
 ):
     """Generates a scoped, revocable caregiver access authorization token."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
@@ -1516,7 +1674,9 @@ def create_caregiver_share(
 def list_caregiver_shares(
     id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.PATIENT, UserRole.CLINICIAN, UserRole.ADMIN)
+    ),
 ):
     """Lists caregiver shares for a consented patient."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
@@ -1555,7 +1715,9 @@ def revoke_caregiver_share(
     id: str,
     share_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.PATIENT, UserRole.CLINICIAN, UserRole.ADMIN)
+    ),
 ):
     """Revokes an active caregiver share."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
@@ -1610,7 +1772,11 @@ def submit_second_look_request(
     id: str,
     payload: SecondLookCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.PATIENT, UserRole.CAREGIVER, UserRole.CLINICIAN, UserRole.ADMIN
+        )
+    ),
 ):
     """Submits a patient-initiated Second-Look Request to the clinical care team."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
@@ -1731,7 +1897,9 @@ def request_disclosure_release(
     id: str,
     payload: DisclosureReleaseRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(UserRole.PATIENT, UserRole.CAREGIVER, UserRole.CLINICIAN, UserRole.ADMIN)
+    ),
 ):
     """Patient-initiated request asking their clinical care team to release withheld sensitive findings."""
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)

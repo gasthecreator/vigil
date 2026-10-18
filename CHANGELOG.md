@@ -18,13 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repo-standards audit scored per rubric item from inspection, able to fail (`scripts/audit_repo_standards.py`), commit-message gate, CodeQL workflow, `pip-audit` CI job, pinned `setup-uv`.
 - Release hash manifest from committed blobs with `verify`, and cosign sign/verify tooling (`docs/release/SIGNING.md`); `docs/HANDOVER.md`; `docs/README.md` index; `docs/release/COMPATIBILITY.md`.
 - `.env.example`, `.python-version`, `.nvmrc`.
+- Silent mode (ADR-0022): model outputs go to a separate shadow database and are not returned or stored where clinician-facing routes can read them; fails closed; monitoring report with alarm-rate, calibration, conformal-coverage and data-shift monitors (`scripts/silent_mode_ctl.py`, `docs/clinical/SILENT-MODE.md`).
+- Declared route policy checked against the running server for every route and role (ADR-0023, `tests/security/test_route_policy_full_matrix.py`); `PROP-0004` records nine routes where the older security-test table disagrees with the server.
+- Pilot safety kit (`docs/clinical/PILOT/`: stop rules, training, incident template, go/no-go; all `DRAFT-UNREVIEWED`); hazards H23 and H24.
+- Phase 9 preparation: pre-registration and freeze gate, sample-size script, partner ingestion toolkit (CSV/Excel/HL7) with per-row rejection reports, synthetic messy partner dataset and dry run, cBioPortal loaders for METABRIC and TCGA-BRCA with dataset cards and a marginals comparison, draft (not submitted) data-access applications.
 
 ### Changed
+- `ObservationCreateResponse.risk_assessment` is optional and `outputs_withheld` was added (silent mode); `docs/api/openapi.json` regenerated.
+- Patient, caregiver and quality-lead tokens can no longer register patients or submit baselines and labs; caregivers can no longer mint shares (behaviour change, see ADR-0023).
+- `metabric_loader` and `tcga_loader` are marked superseded by `contracts.loaders.cbioportal`.
 - `tests/resilience/test_load_and_soak.py` no longer overwrites committed reports and now exercises a separate uvicorn process.
 - `docs/ops/GITHUB-SETTINGS.md`: required-check names corrected to the real CI job names.
 - `docs/STUBS.md` rows corrected against the repository.
 
 ### Fixed
+- Hazard H17 (bad news withheld from patients and caregivers) was enforced only on the explainer routes: `GET /patients/{id}`, `/risk-history`, `/trajectory`, `/observations` and `GET /alerts/stream` returned withheld results. All now use one gate (`vigil_api/disclosure.py`).
+- `POST /patients/`, `/baseline` and `/labs` accepted any authenticated role (role gates added). `/labs` still does not check patient consent: open, hazard H25, `PROP-0005`; `shares`, `second-look`, `symptoms` and `disclosure/request-release` accepted roles outside the intended set.
 - `restore_backup` failed when the target directory did not exist.
 - `docs/release/REPRODUCIBILITY.md` §5 referenced a manifest key that does not exist.
 - Audit-log append loaded the whole audit table twice per write (cost grew with history); now O(log N) with a fallback to the full scan, plus an index on `audit_events.prev_hash` (migration 007). Found by the real-HTTP load test.

@@ -1,0 +1,1701 @@
+{
+  "synthetic": true,
+  "seed": 20261018,
+  "generator": "scripts/make_messy_partner_dataset.py",
+  "rows": {
+    "patients": 61,
+    "baseline_profile": 62,
+    "lab_observations": 2402,
+    "clinical_outcomes": 61
+  },
+  "expected_rejections": [
+    {
+      "table": "baseline_profile",
+      "row": 3,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 6,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 9,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 12,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 15,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 18,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 21,
+      "code": "BAD_ENUM",
+      "field": "stage_ajcc"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 25,
+      "code": "OUT_OF_RANGE",
+      "field": "tumor_grade"
+    },
+    {
+      "table": "baseline_profile",
+      "row": 61,
+      "code": "ORPHAN_FK",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 3,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 6,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 9,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 12,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 15,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 18,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 37,
+      "code": "INCONSISTENT",
+      "field": "recurrence_confirmed"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 39,
+      "code": "MISSING_REQUIRED",
+      "field": "recurrence_day"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 44,
+      "code": "INCONSISTENT",
+      "field": "recurrence_day"
+    },
+    {
+      "table": "clinical_outcomes",
+      "row": 61,
+      "code": "ORPHAN_FK",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 81,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 82,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 83,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 84,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 85,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 86,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 87,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 88,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 89,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 90,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 91,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 92,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 93,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 94,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 95,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 96,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 97,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 98,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 99,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 100,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 101,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 102,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 103,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 104,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 105,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 106,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 107,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 108,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 109,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 110,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 111,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 112,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 113,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 114,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 115,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 116,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 117,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 118,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 119,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 120,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 201,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 202,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 203,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 204,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 205,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 206,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 207,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 208,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 209,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 210,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 211,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 212,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 213,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 214,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 215,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 216,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 217,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 218,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 219,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 220,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 221,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 222,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 223,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 224,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 225,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 226,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 227,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 228,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 229,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 230,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 231,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 232,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 233,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 234,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 235,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 236,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 237,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 238,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 239,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 240,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 321,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 322,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 323,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 324,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 325,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 326,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 327,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 328,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 329,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 330,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 331,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 332,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 333,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 334,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 335,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 336,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 337,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 338,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 339,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 340,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 341,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 342,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 343,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 344,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 345,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 346,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 347,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 348,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 349,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 350,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 351,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 352,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 353,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 354,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 355,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 356,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 357,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 358,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 359,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 360,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 441,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 442,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 443,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 444,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 445,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 446,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 447,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 448,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 449,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 450,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 451,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 452,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 453,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 454,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 455,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 456,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 457,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 458,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 459,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 460,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 461,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 462,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 463,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 464,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 465,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 466,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 467,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 468,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 469,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 470,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 471,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 472,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 473,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 474,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 475,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 476,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 477,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 478,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 479,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 480,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 561,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 562,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 563,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 564,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 565,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 566,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 567,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 568,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 569,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 570,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 571,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 572,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 573,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 574,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 575,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 576,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 577,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 578,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 579,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 580,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 581,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 582,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 583,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 584,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 585,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 586,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 587,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 588,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 589,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 590,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 591,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 592,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 593,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 594,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 595,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 596,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 597,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 598,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 599,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 600,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 681,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 682,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 683,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 684,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 685,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 686,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 687,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 688,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 689,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 690,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 691,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 692,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 693,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 694,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 695,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 696,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 697,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 698,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 699,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 700,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 701,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 702,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 703,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 704,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 705,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 706,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 707,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 708,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 709,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 710,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 711,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 712,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 713,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 714,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 715,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 716,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 717,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 718,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 719,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 720,
+      "code": "PARENT_REJECTED",
+      "field": "patient_id"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1201,
+      "code": "UNKNOWN_ANALYTE",
+      "field": "analyte_code"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1207,
+      "code": "UNKNOWN_UNIT",
+      "field": "unit_ucum"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1241,
+      "code": "OUT_OF_RANGE",
+      "field": "value_numeric"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1246,
+      "code": "OUT_OF_RANGE",
+      "field": "observation_day"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1251,
+      "code": "BAD_TYPE",
+      "field": "observation_day"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1282,
+      "code": "INCOMPATIBLE_UNIT",
+      "field": "unit_ucum"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1283,
+      "code": "NAME_CODE_MISMATCH",
+      "field": "analyte_name"
+    },
+    {
+      "table": "lab_observations",
+      "row": 1324,
+      "code": "CONFLICTING_DUPLICATE",
+      "field": "patient_id,observation_day,analyte_code"
+    },
+    {
+      "table": "lab_observations",
+      "row": 2401,
+      "code": "CONFLICTING_DUPLICATE",
+      "field": "patient_id,observation_day,analyte_code"
+    },
+    {
+      "table": "patients",
+      "row": 3,
+      "code": "MISSING_REQUIRED",
+      "field": "age_at_diagnosis"
+    },
+    {
+      "table": "patients",
+      "row": 6,
+      "code": "OUT_OF_RANGE",
+      "field": "age_at_diagnosis"
+    },
+    {
+      "table": "patients",
+      "row": 9,
+      "code": "BAD_ENUM",
+      "field": "vital_status"
+    },
+    {
+      "table": "patients",
+      "row": 12,
+      "code": "CONFLICTING_DUPLICATE",
+      "field": "patient_id"
+    },
+    {
+      "table": "patients",
+      "row": 15,
+      "code": "BAD_TYPE",
+      "field": "days_to_last_followup"
+    },
+    {
+      "table": "patients",
+      "row": 18,
+      "code": "INCONSISTENT",
+      "field": "index_day"
+    },
+    {
+      "table": "patients",
+      "row": 61,
+      "code": "CONFLICTING_DUPLICATE",
+      "field": "patient_id"
+    }
+  ],
+  "expected_flagged_labs": [
+    {
+      "row": 1362,
+      "analyte": "alt"
+    }
+  ],
+  "expected_duplicates_dropped": 2,
+  "expected_normalised_cells_at_least": 23,
+  "hl7": {
+    "accepted_rows": 3,
+    "rejections": [
+      {
+        "message": 2,
+        "obx": 1,
+        "code": "UNKNOWN_ANALYTE"
+      },
+      {
+        "message": 2,
+        "obx": 2,
+        "code": "NON_NUMERIC_VALUE"
+      },
+      {
+        "message": 2,
+        "obx": 3,
+        "code": "MISSING_UNIT"
+      },
+      {
+        "message": 3,
+        "obx": 1,
+        "code": "BEFORE_DIAGNOSIS"
+      },
+      {
+        "message": 4,
+        "obx": 1,
+        "code": "NO_INDEX_DATE"
+      }
+    ]
+  }
+}

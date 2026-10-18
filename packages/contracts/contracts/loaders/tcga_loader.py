@@ -2,6 +2,13 @@
 contracts.loaders.tcga_loader
 
 Loader contract and schema validation for TCGA-BRCA clinical data files from NCI GDC.
+
+SUPERSEDED for real data by ``contracts.loaders.cbioportal`` (per-row rejection
+reports, real cBioPortal column names, tested on the files published by the
+study; see ``scripts/fetch_public_clinical.py`` and the dataset card in
+``data/dataset_cards/``). This module validates only the small synthetic fixture
+in ``data/fixtures/`` and is kept so that its existing tests keep running; do not
+use it on downloaded data.
 """
 
 from pathlib import Path

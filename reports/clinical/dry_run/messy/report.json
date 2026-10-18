@@ -1,0 +1,73 @@
+{
+  "tier": "SYNTHETIC DRY RUN - NOT A RESULT",
+  "parameters": {
+    "PR-01": 0.8,
+    "PR-02": 1.2,
+    "PR-03": 0.0,
+    "PR-05": 20.0,
+    "PR-06": 5.0,
+    "PR-07": 0.1,
+    "PR-08": 30.0,
+    "PR-09": 0.05,
+    "PR-04": 5.0
+  },
+  "parameter_provenance": "PROPOSED values of PREREGISTRATION.md (not ratified); PR-04 supplied on the command line",
+  "bootstrap_seed": 20261018,
+  "bootstrap_resamples": 2000,
+  "partition_key_id": "SYNTHETIC-DRYRUN-KEY",
+  "data_quality": {
+    "per_table": {
+      "patients": {
+        "rows_in": 61,
+        "rows_clean": 54,
+        "rows_rejected": 7,
+        "duplicates_dropped": 0,
+        "rows_flagged": 0
+      },
+      "baseline_profile": {
+        "rows_in": 62,
+        "rows_clean": 52,
+        "rows_rejected": 9,
+        "duplicates_dropped": 1,
+        "rows_flagged": 0
+      },
+      "lab_observations": {
+        "rows_in": 2402,
+        "rows_clean": 2151,
+        "rows_rejected": 249,
+        "duplicates_dropped": 1,
+        "rows_flagged": 1
+      },
+      "clinical_outcomes": {
+        "rows_in": 61,
+        "rows_clean": 51,
+        "rows_rejected": 10,
+        "duplicates_dropped": 0,
+        "rows_flagged": 0
+      }
+    },
+    "rejection_codes": {
+      "BAD_ENUM": 2,
+      "BAD_TYPE": 2,
+      "CONFLICTING_DUPLICATE": 4,
+      "INCOMPATIBLE_UNIT": 1,
+      "INCONSISTENT": 3,
+      "MISSING_REQUIRED": 2,
+      "NAME_CODE_MISMATCH": 1,
+      "ORPHAN_FK": 2,
+      "OUT_OF_RANGE": 4,
+      "PARENT_REJECTED": 252,
+      "UNKNOWN_ANALYTE": 1,
+      "UNKNOWN_UNIT": 1
+    },
+    "rejection_rate": 0.10634184068058777,
+    "stop_rate": 0.1,
+    "duplicates_dropped": 2,
+    "normalised_cells": 23,
+    "flagged_labs": 1,
+    "complete_case_patients": 49
+  },
+  "deviations": [],
+  "status": "STOPPED",
+  "reason": "rejection rate 0.106 exceeds PR-07 = 0.1; review the extraction with the partner (PREREGISTRATION section 5.6)"
+}

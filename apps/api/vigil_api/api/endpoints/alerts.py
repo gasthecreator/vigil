@@ -12,6 +12,7 @@ from vigil_api.audit import record_audit_event
 from vigil_api.auth import require_roles
 from vigil_api.consent import verify_patient_consent
 from vigil_api.database import get_db
+from vigil_api.disclosure import withheld_for
 from vigil_api.models.v2 import (
     Alert,
     AlertAcknowledgement,
@@ -163,8 +164,16 @@ def stream_alerts(
     elif patient_id:
         verify_patient_consent(patient_id=patient_id, db=db, user=current_user)
 
+    withheld = False
+    if user_role in (UserRole.PATIENT.value, UserRole.CAREGIVER.value):
+        patient_row = verify_patient_consent(patient_id=patient_id, db=db, user=current_user)
+        withheld = withheld_for(db, patient_row, current_user)
+
     def event_generator():
         query = select(Alert).order_by(Alert.created_at.asc())
+        if withheld:
+            # Hazard H17: bad news is locked for this patient; no alert may reach a patient-facing token.
+            query = query.where(Alert.id.is_(None))
         if patient_id:
             query = query.where(Alert.patient_id == patient_id)
         if status_filter:

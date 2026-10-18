@@ -1247,6 +1247,11 @@
             "title": "Observation Id",
             "type": "string"
           },
+          "outputs_withheld": {
+            "default": false,
+            "title": "Outputs Withheld",
+            "type": "boolean"
+          },
           "patient_id": {
             "title": "Patient Id",
             "type": "string"
@@ -1264,7 +1269,14 @@
             "type": "number"
           },
           "risk_assessment": {
-            "$ref": "#/components/schemas/RiskAssessmentSummary"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskAssessmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "specimen_collected_at": {
             "format": "date-time",
@@ -1287,8 +1299,7 @@
           "raw_unit",
           "specimen_collected_at",
           "plausibility_status",
-          "adjudicated_action",
-          "risk_assessment"
+          "adjudicated_action"
         ],
         "title": "ObservationCreateResponse",
         "type": "object"
@@ -6643,6 +6654,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "202": {
+            "description": "Silent mode: the draw is recorded and outputs are withheld."
           },
           "422": {
             "content": {

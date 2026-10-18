@@ -9,6 +9,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
+from vigil_api import silent_mode
 from vigil_api.auth import require_roles
 from vigil_api.config import settings
 from vigil_api.consent import has_active_consent
@@ -98,6 +99,7 @@ def seed_demo_cohort(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Demo seeding endpoint is disabled outside the local development environment.",
         )
+    silent_mode.block_in_silent_mode("Demo cohort seeding")
 
     engine = VigilEngine.get_instance()
     created_ids = []

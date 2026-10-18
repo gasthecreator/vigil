@@ -165,7 +165,7 @@ def process_sync_batch(
 
                 resp_payload = {
                     "observation_id": obs.id,
-                    "risk_assessment_id": risk.id,
+                    "risk_assessment_id": risk.id if risk is not None else None,
                     "action": m3_result["action"],
                 }
 
