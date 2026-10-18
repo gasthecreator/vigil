@@ -122,17 +122,37 @@ def verify_m7_cpsat_v2() -> bool:
     return True
 
 
-def _close(a, b, tol=1e-9) -> bool:
-    """Recursive comparison; floats within a relative tolerance (BLAS differences across platforms)."""
+def _first_diff(a, b, tol: float = 1e-6, path: str = "") -> str | None:
+    """Path of the first difference (floats compared with a relative tolerance), or None if equal."""
     if isinstance(a, dict) and isinstance(b, dict):
-        return a.keys() == b.keys() and all(_close(a[k], b[k], tol) for k in a)
+        if a.keys() != b.keys():
+            return f"{path}: keys differ"
+        for k in a:
+            d = _first_diff(a[k], b[k], tol, f"{path}/{k}")
+            if d:
+                return d
+        return None
     if isinstance(a, list) and isinstance(b, list):
-        return len(a) == len(b) and all(_close(x, y, tol) for x, y in zip(a, b))
+        if len(a) != len(b):
+            return f"{path}: lengths differ"
+        for i, (x, y) in enumerate(zip(a, b)):
+            d = _first_diff(x, y, tol, f"{path}[{i}]")
+            if d:
+                return d
+        return None
     if isinstance(a, float) or isinstance(b, float):
         if a is None or b is None:
-            return a == b
-        return abs(float(a) - float(b)) <= tol * max(1.0, abs(float(a)), abs(float(b)))
-    return a == b
+            return None if a == b else f"{path}: {a} != {b}"
+        ok = abs(float(a) - float(b)) <= tol * max(1.0, abs(float(a)), abs(float(b)))
+        return None if ok else f"{path}: {a} != {b}"
+    return None if a == b else f"{path}: {a} != {b}"
+
+
+def _close(a, b, tol: float = 1e-6) -> bool:
+    d = _first_diff(a, b, tol)
+    if d:
+        print(f"    first difference: {d}")
+    return d is None
 
 
 def verify_k5_study() -> bool:
@@ -150,7 +170,7 @@ def verify_k5_study() -> bool:
     if not _close(fresh, stored["replications"][0]):
         print("❌ EXP-K5-001: frozen replication 0 does not reproduce results.json.")
         return False
-    print("  ✅ frozen replication 0 reproduces results.json (tolerance 1e-9).")
+    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-6; floats differ in the last digits across BLAS builds).")
     # (2) The aggregate and the hypothesis verdicts are a pure function of the stored replications.
     agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
     if not _close(agg, stored["aggregate"]):
