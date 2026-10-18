@@ -99,11 +99,36 @@ def verify_s8_k7_integrity() -> bool:
     return True
 
 
+def verify_m7_cpsat_v2() -> bool:
+    print("🔬 Verifying EXP-M7-001 (CP-SAT research track) against committed results...")
+    exp = ROOT / "experiments" / "EXP-M7-001"
+    # (1) Re-run the first replications of one frozen cell and compare every metric to results.json.
+    cmd = [sys.executable, str(ROOT / "scripts" / "run_study_m7_cpsat_v2.py"), "--mode", "verify", "--reps", "2"]
+    res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    if res.returncode != 0:
+        print(f"❌ EXP-M7-001 verify failed:\n{res.stdout}\n{res.stderr}")
+        return False
+    print("  " + res.stdout.strip().splitlines()[-1])
+    # (2) Re-derive the all-in analysis from results.json in-process and compare with the committed file.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from analyze_m7_cpsat_v2_allin import analyse
+
+    derived = analyse(json.loads((exp / "results.json").read_text()))
+    committed = json.loads((exp / "ALLIN_ANALYSIS.json").read_text())
+    if json.loads(json.dumps(derived, sort_keys=True)) != committed:
+        print("❌ ALLIN_ANALYSIS.json does not match a fresh derivation from results.json (stale or hand-edited).")
+        return False
+    print("  ✅ ALLIN_ANALYSIS.json equals a fresh derivation from results.json.")
+    return True
+
+
 def main() -> int:
     ok = True
     if not verify_m10_reproducibility():
         ok = False
     if not verify_s8_k7_integrity():
+        ok = False
+    if not verify_m7_cpsat_v2():
         ok = False
 
     if not ok:
