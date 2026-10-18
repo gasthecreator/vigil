@@ -508,6 +508,7 @@ def solve_radiotherapy_schedule(
         unassigned_patient_ids=unassigned,
         patients_included=len(distinct_patients),
         patients_unconsented_included=len(unconsented_patients),
+        validation_status=result.validation_status,
         synthetic=True,
     )
 

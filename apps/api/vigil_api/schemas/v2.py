@@ -370,6 +370,7 @@ class ScheduleSolveResponse(BaseModel):
     unassigned_patient_ids: List[str]
     patients_included: int = 0
     patients_unconsented_included: int = 0
+    validation_status: str = "unvalidated in simulation"
     synthetic: bool = True
 
 

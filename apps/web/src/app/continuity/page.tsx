@@ -139,9 +139,13 @@ export default function ContinuityPage() {
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200">
                 Module M7
+              </span>
+              <span className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-amber-700" />
+                Unvalidated in Simulation
               </span>
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> Algorithmic Fairness
@@ -347,6 +351,12 @@ export default function ContinuityPage() {
           {/* Solution Proposed Banner */}
           {solveResult && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 shadow-sm space-y-4">
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                <span>
+                  <strong>Clinical Notice (P13-A):</strong> Schedule reallocations are <em>unvalidated in simulation</em> against heuristic baselines under multi-week capacity crunches. Mandatory human oncologist review and sign-off is required before clinical execution.
+                </span>
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
