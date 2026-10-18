@@ -1,52 +1,60 @@
-# Pre-Registration: Study M10 — Missed-Signal Quality Audit Engine Evaluation
+# Pre-Registration: Study M10-V2 — Missed-Signal Quality Audit Engine Evaluation
 
-**Study Identifier:** M10  
+**Study Identifier:** M10-V2  
 **Module:** M10 (Missed-Signal Quality Audit Engine)  
 **Document:** `docs/studies/PREREG-M10.md`  
-**Reference:** `docs/MASTER_PLAN.md` §6.10, §11; `docs/REALITY_RULES.md`  
-**Date:** 2026-10-17  
+**Reference:** `docs/MASTER_PLAN.md` §6.10, §11; `docs/REALITY_RULES.md`; `docs/progress/VERDICT-P7B.md` (Conditions P13-B, P13-C, P13-D, P13-F)  
+**Date:** 2026-10-18  
 **Status:** PRE-REGISTERED (Committed prior to execution)  
+**Supersedes:** PREREG-M10 (v1 retracted due to circular label coupling identified in VERDICT-P7B)
 
 ---
 
 ## 1. Scientific & Operational Objective
-Evaluate Vigil's retrospective quality audit engine (`vigil_ml.quality`) in detecting missed surveillance signals across patient trajectories. The engine identifies instances where algorithmic alarms or biomarker kinetics indicated disease recurrence or acute clinical progression, but no timely clinical action (imaging order, biopsy, oncologist referral, treatment modification) was recorded within a pre-specified audit window ($W_{\text{action}} = 30$ calendar days).
+
+Evaluate Vigil's retrospective quality audit engine (`vigil_ml.quality`) in detecting missed oncology surveillance signals across patient trajectories without circularity or synthetic data contamination:
+
+1. **Independent Injected Truth:** The ground-truth trajectory generator must be strictly decoupled from the detector. The generator simulates underlying latent tumor kinetics (exponential growth with variable doubling times $T_d \in [45, 120]$ days), visit jitter, informative missingness, assay noise, and transient benign fluctuations. It never writes an `alert_level` label.
+2. **Dynamic Algorithmic Detection:** The audit detector executes the validated Model K2 anytime-valid sequential detection e-process (`SequentialDetector`, $\alpha_{\text{pt}} = 0.05$) and Model M3 Plausibility Adjudicator (`adjudicate`) at fixed false-alert rates directly over raw $(t, y)$ series.
+3. **Clinician Action Attribution:** `action_recorded` is determined strictly by clinician-attributable actions (e.g. `AlertAcknowledgement` with disposition, clinician-completed follow-up review, or ordered diagnostic imaging). Automated system task generation alone does NOT constitute clinical action.
+4. **Multi-Facility Diversity:** Validates across 5 distinct facility profiles:
+   - *Facility 1 (Mixed Referral Hospital):* High volume, realistic missed signals.
+   - *Facility 2 (Zero-Miss Center):* Diligent clinical staff where 100% of signals receive timely action.
+   - *Facility 3 (Recurrence-Free Clinic):* 100% stable/benign trajectories (tests specificity under null).
+   - *Facility 4 (High Benign Spike Clinic):* High rate of transient non-malignant biomarker elevations (tests resilience against false alarms).
+   - *Facility 5 (Pipeline-Only Facility):* System tasks created automatically but never acknowledged or completed by a clinician (verifies that automated pipeline tasks do not mask missed signals; expected missed rate $\ne 0$).
 
 ---
 
-## 2. Mandatory Ethical, Privacy & Governance Controls
+## 2. Mandatory Privacy & Governance Controls
 
-### 2.1 Strictly Descriptive Register
-* The audit engine reports strictly factual observations: *"signal present, action not recorded"*.
-* Under no circumstances may judgmental, accusatory, or punitive language be produced (e.g. "negligence", "error", "blame", "fault", "malpractice").
-
-### 2.2 Re-Identification Prevention & Small-Cell Suppression ($k \ge 5$)
-* Aggregate reporting only. No patient names, MRNs, or individual clinician identifiers are emitted in audit reports or API payloads.
-* Any demographic, geographic, or clinical stratum with fewer than 5 patients ($n < 5$) must be suppressed (masked as `"<5"` or omitted) to guarantee $k$-anonymity against re-identification attacks.
-
-### 2.3 Legal & Institutional Governance Basis (ADR 0016)
-* The quality audit operates under institutional healthcare quality improvement mandates and NDPA public health exemptions.
-* Audit generation and exports are restricted exclusively to authorized institutional leadership (`quality_lead` and `admin` roles) and logged immutably in the facility access audit trail.
+1. **Strictly Neutral Descriptive Register:** Text output must adhere strictly to factual non-punitive terminology (*"signal present, action not recorded"*). Forbidden punitive terms (`negligence`, `error`, `blame`, `fault`, `malpractice`, `careless`) are scanned and rejected by automated assertions.
+2. **$k \ge 5$ Small-Cell Suppression:** Any demographic, subtype, or clinical stratum with $1 \le n < 5$ must be masked as `"<5"` with rates nulled out. Zero raw unsuppressed data may be leaked or exposed by production code paths.
+3. **Consent Opt-Out Enforcement (ADR 0017):** Facility data extraction must strictly exclude any patient who has withdrawn consent or lacks active consent.
 
 ---
 
 ## 3. Pre-Registered Hypotheses
 
-### Hypothesis H1 — Synthetic Ground-Truth Recovery
-* **Statement:** On a synthetic cohort with injected known clinical trajectories (true missed signals vs acted-upon alerts vs true-negative stable patients), the audit engine will recover true missed signals with Sensitivity $\ge 90.0\%$ and Specificity $\ge 95.0\%$.
+### Hypothesis H1 — Sensitivity & Precision on Independent Truth
+* **Statement:** On diverse non-circular synthetic trajectories, the audit engine will detect true missed signals with Sensitivity $\ge 85.0\%$ and Precision $\ge 80.0\%$.
+* **Criterion:** 95% percentile bootstrap confidence interval lower bounds satisfy $\text{Sensitivity}_{\text{lower}} \ge 0.80$ and $\text{Precision}_{\text{lower}} \ge 0.75$.
 
-### Hypothesis H2 — Small-Cell Privacy Guarantee ($k \ge 5$)
-* **Statement:** Across all demographic, stage, and clinical context breakdowns in the audit report, zero cells with $1 \le n < 5$ will be exposed. All small cells will be suppressed.
+### Hypothesis H2 — Signal Detection Lead Time & Timing Accuracy
+* **Statement:** The detected signal day tracks the true latent kinetic escalation point with mean absolute delay error $\le 45$ days (within one routine follow-up cycle).
 
-### Hypothesis H3 — Specificity on Biological Noise Trajectories
-* **Statement:** When evaluated on non-cancer trajectories with benign physiological biomarker fluctuations (hepatotoxicity spikes, inter-lab batch shifts, infection), the engine produces zero false missed-signal flags (False Positive Rate $\le 2.0\%$).
+### Hypothesis H3 — Specificity under Biological Noise & Benign Spikes
+* **Statement:** Across recurrence-free and high-benign-spike cohorts, the false-positive alert rate remains $\le 5.0\%$ (conforming to the K2 anytime-valid design budget $\alpha \le 0.05$).
+
+### Hypothesis H4 — Pipeline-Only Decoupling Invariant
+* **Statement:** A facility where follow-up tasks are created by the ingestion pipeline but never completed or acknowledged by a clinician will yield an action-not-recorded rate $> 0$ (confirming that automated tasks do not falsely register as clinician actions).
+
+### Hypothesis H5 — Small-Cell Privacy Guarantee ($k \ge 5$)
+* **Statement:** Across all breakdown strata, exactly zero cells with $1 \le n < 5$ are exposed in audit reports or API responses.
 
 ---
 
-## 4. Evaluation Cohorts & Protocol
-1. **Cohort Alpha (Injected Ground Truth):** $N = 1,000$ simulated surveillance trajectories from `vigil-sim` with known latent recurrence onset and simulated EHR action logs:
-   - 150 injected missed signals (sustained marker rise $\ge 3$ consecutive visits, no imaging or clinical escalation within 30 days).
-   - 250 acted-upon signals (sustained rise followed by recorded imaging/biopsy within 14 days).
-   - 600 stable recurrence-free trajectories.
-2. **Cohort Beta (Biological Noise Stress):** $N = 500$ null trajectories subject to severe non-cancer perturbations (hepatic flares, assay variation, random missing visits).
-3. **Statistical Analysis:** Point estimates with 95% percentile bootstrap confidence intervals ($B = 1,000$).
+## 4. Evaluation Protocol & Statistical Methods
+
+- **Replications:** 1,000 independent bootstrap replications ($B = 1,000$) over patient trajectories to compute 95% percentile confidence intervals for all primary metrics.
+- **Reporting:** Point estimates, standard errors, and percentile bootstrap CIs committed to `reports/ml/STUDY_M10_MISSED_SIGNALS.json` and rendered in Markdown.
