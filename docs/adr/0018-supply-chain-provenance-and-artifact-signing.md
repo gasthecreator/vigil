@@ -34,3 +34,13 @@ Vigil establishes a binding Vulnerability Policy (`docs/security/VULNERABILITY_P
 - Every release candidate includes verifiable, machine-readable inventory artifacts for regulatory submission.
 - Builds are 100% reproducible across local developer machines, GitHub Actions runners, and on-premise hospital installations.
 - Vulnerability triage is governed by explicit clinical safety and data integrity SLAs.
+
+## Amendment 1 (final-build Tier 0; corrections after VERDICT-P8B)
+
+The original text over-described what was enforced. Corrections, each checkable:
+
+1. **No artifact is signed.** The release manifest is a SHA-256 *hash manifest* (`"kind": "sha256-hash-manifest"`, `"signature": {"status": "unsigned"}`). Tooling to sign (cosign, key-based) and to verify exists in `scripts/generate_release_manifest.py` and is tested; producing the signing key is an owner action ([`docs/release/SIGNING.md`](../release/SIGNING.md)).
+2. **"Direct dependencies pinned with exact versions" was not true.** Direct dependencies in `pyproject.toml` use lower bounds (`>=`); reproducibility comes from the committed lockfiles (`uv.lock`, `package-lock.json`) and frozen installs, not from exact specifiers.
+3. **"100% reproducible builds" was never measured.** Bit-for-bit reproducibility is not claimed. What exists: a lockfile-determined dependency set and a CI job that regenerates the cheap study results and diffs them.
+4. **The vulnerability gate was not enforced for the web tier.** `pip-audit` is now a blocking CI job (`dependency-audit`). `npm audit` found critical/high advisories in the locked `next@14.2.35` and `postcss`; remediation is tracked in the Tier-0 handover notes and the dependency-upgrade PR. Until it lands, the policy statement "unmitigated High/Critical in production runtime blocks merge" is **not met** for the web tier.
+5. CI no longer installs `uv` with `curl | sh`; it uses `astral-sh/setup-uv` pinned by commit SHA and a pinned uv version.

@@ -98,19 +98,12 @@ uv run pytest tests/resilience/test_load_and_soak.py -v
 
 ---
 
-## 5. Artifact Provenance & Checksum Verification
+## 5. Artifact integrity (hash manifest, unsigned)
 
-Verify the integrity of committed release candidate artifacts against `docs/release/RELEASE_MANIFEST_v1.0.0-rc.1.json`:
+Verify committed release-candidate artifacts against `docs/release/RELEASE_MANIFEST_v1.0.0-rc.1.json`:
 
 ```bash
-python3 -c "
-import json, hashlib
-with open('docs/release/RELEASE_MANIFEST_v1.0.0-rc.1.json') as f:
-    manifest = json.load(f)
-for path, expected_sha in manifest['artifact_checksums'].items():
-    with open(path, 'rb') as af:
-        actual_sha = hashlib.sha256(af.read()).hexdigest()
-    assert actual_sha == expected_sha, f'Checksum mismatch in {path}'
-print('All release candidate artifact checksums verified!')
-"
+python scripts/generate_release_manifest.py verify --release v1.0.0-rc.1
 ```
+
+This re-hashes every listed file and fails on a missing file or digest mismatch. The manifest is **unsigned**: it detects accidental or unnoticed change, not an attacker who can regenerate it. Signing is an owner action: see [`SIGNING.md`](SIGNING.md).
