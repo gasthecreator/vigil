@@ -110,6 +110,18 @@
 * **Limits:** consensus guideline for Asian systems; says nothing about Nigerian pathways; recommendation 8d runs against marker-based surveillance, so the K6 simulation study makes no claim about real patients.
 * **Used by:** K6 active-sensing study `experiments/EXP-K6-001` (named baseline schedules; the counter-indication is stated in its limits).
 
+### E26 — Federated Averaging (iterative model averaging of locally computed updates) — `SECONDARY` (method source; abstract-level)
+* **Source:** McMahan HB, Moore E, Ramage D, Hampson S, Agüera y Arcas B. "Communication-Efficient Learning of Deep Networks from Decentralized Data." AISTATS 2017. PMLR 54:1273-1282. [PMLR proceedings](https://proceedings.mlr.press/v54/mcmahan17a.html). arXiv:[1602.05629](https://arxiv.org/abs/1602.05629). Excerpt: [`docs/evidence/excerpts/E26_mcmahan_2017_fedavg.md`](evidence/excerpts/E26_mcmahan_2017_fedavg.md). No Crossref DOI: PMLR 54 does not register one; the arXiv `10.48550/arXiv.1602.05629` identifier is not in Crossref.
+* **Figures:** none copied. The paper names Federated Learning as training by aggregating locally-computed updates without uploading the training data, and FederatedAveraging as iterative model averaging of locally trained weights.
+* **Limits:** mobile-device language and image models, not clinical laboratories; robustness claims are empirical on their datasets.
+* **Used by:** M12 federated/DP feasibility study `experiments/EXP-M12-001` (to name the FedAvg algorithm).
+
+### E27 — Differentially private SGD (clip, noise, privacy accounting) — `SECONDARY` (method source; abstract-level)
+* **Source:** Abadi M, Chu A, Goodfellow I, McMahan HB, Mironov I, Talwar K, Zhang L. "Deep Learning with Differential Privacy." CCS 2016. doi:[10.1145/2976749.2978318](https://doi.org/10.1145/2976749.2978318). arXiv:[1607.00133](https://arxiv.org/abs/1607.00133). Excerpt: [`docs/evidence/excerpts/E27_abadi_2016_dp_sgd.md`](evidence/excerpts/E27_abadi_2016_dp_sgd.md).
+* **Figures:** none copied into the study. The method is: at each SGD step, clip the ℓ2 norm of each example's gradient, average, add Gaussian noise, and account the privacy loss. A full-text numerical example (q = 0.01, σ = 4, δ = 10⁻⁵, T = 10000 → ε ≈ 1.26 under the moments accountant) is used only as a unit-test target for Vigil's accountant.
+* **Limits:** MNIST/CIFAR, not clinical data; (ε, δ)-DP is not an NDPA/GDPR determination.
+* **Used by:** M12 federated/DP feasibility study `experiments/EXP-M12-001` (to name DP-SGD and the accountant test).
+
 ### E6 — Radiotherapy Capacity in Nigeria — `SECONDARY` / `STALE`
 * ~200M population, estimated shortfall of ~280 LINACs by IAEA benchmarks; high out-of-pocket costs and machine downtime. Current national facility assessment pending hospital partnership data.
 * Sources: PMC7456314; local press reports.
