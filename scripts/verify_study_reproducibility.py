@@ -232,9 +232,80 @@ def verify_k4_study() -> bool:
     return True
 
 
+def _k6_model_free_rep(mod) -> dict:
+    """Frozen replication 0, fixed and stage-heuristic arms only: they need the alert thresholds
+    (calibrated on the training world) and the test worlds, and no fitted model."""
+    from vigil_ml import k6
+    from vigil_ml import k6_engine as E
+    from vigil_sim import GeneratorType
+    from vigil_sim.surveillance import build_world
+
+    cfg = mod.design("full")
+    s = mod.base_seed("frozen", 0)
+    train = build_world(GeneratorType.G1_SMOOTH, s, cfg["n_train_generated"])
+    theta = k6.calibrate_thresholds(E.threshold_samples(train))
+    stub = {"hazard": None, "prior": None, "table": None}
+    gens = {"G1": (GeneratorType.G1_SMOOTH, 1), "G2": (GeneratorType.G2_BURST, 2), "G3": (GeneratorType.G3_NOISE, 3)}
+    records = []
+    for wname, (gen, off) in gens.items():
+        world = build_world(gen, s + off, cfg["n_test_generated"])
+        for fam, arm, params, factory in mod.arm_list(cfg, stub, full=(wname == "G1")):
+            if fam not in ("fixed", "heuristic"):
+                continue
+            res = E.simulate(world, factory(), theta, k6.CostTable())
+            records.append(mod._record("frozen", 0, wname, fam, arm, params, world, res))
+    return {"records": records}
+
+
+def verify_k6_study() -> bool:
+    print("🔬 Verifying EXP-K6-001 (K6 active sensing) against committed results...")
+    import importlib.util
+    import os
+
+    import xgboost  # noqa: F401  (imported before anything else that may load an OpenMP runtime)
+
+    exp = ROOT / "experiments" / "EXP-K6-001"
+    stored = json.loads((exp / "results.json").read_text())
+    spec = importlib.util.spec_from_file_location("exp_k6_run_verify", exp / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp_k6_run_verify"] = mod
+    spec.loader.exec_module(mod)
+    # (1) The stored results were produced by exactly this code (k6.py, k6_engine.py, surveillance.py, run.py).
+    if stored.get("code_hash") != mod.code_hash():
+        print("❌ EXP-K6-001: results.json was produced by different code than the committed code.")
+        return False
+    print("  ✅ results.json carries the hash of the committed code.")
+    # (2) The aggregate and the hypothesis verdicts are a pure function of the stored records.
+    agg = json.loads(json.dumps(mod.aggregate(stored)))
+    if not _close(agg, stored["aggregate"]):
+        print("❌ EXP-K6-001: aggregate does not equal a fresh derivation from the stored records.")
+        return False
+    print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored records.")
+    # (3) REPORT.md is the render of results.json.
+    if mod.render_report(stored) != (exp / "REPORT.md").read_text():
+        print("❌ EXP-K6-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    # (4) Re-run frozen replication 0 and compare every stored number of the arms that use no model
+    #     (fixed and stage-heuristic). With VIGIL_VERIFY_K6_FULL=1 the whole replication is re-run, models included
+    #     (about three minutes; tree-ensemble floats are only guaranteed on the same platform, hence opt-in).
+    full = os.environ.get("VIGIL_VERIFY_K6_FULL") == "1"
+    fresh = json.loads(json.dumps(mod.run_rep("frozen", 0, "full") if full else _k6_model_free_rep(mod)))
+    keep = (lambda r: True) if full else (lambda r: r["family"] in ("fixed", "heuristic"))
+    old = [r for r in stored["records"] if r["rep"] == 0 and keep(r)]
+    new = [r for r in fresh["records"] if keep(r)]
+    if not _close(new, old):
+        print("❌ EXP-K6-001: frozen replication 0 does not reproduce results.json.")
+        return False
+    print(f"  ✅ frozen replication 0 reproduces results.json ({'all arms' if full else 'fixed and heuristic arms'}; relative tolerance 1e-6).")
+    return True
+
+
 def main() -> int:
     ok = True
     if not verify_k4_study():
+        ok = False
+    if not verify_k6_study():
         ok = False
     if not verify_k5_study():
         ok = False
