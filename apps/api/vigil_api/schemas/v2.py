@@ -65,9 +65,11 @@ class ObservationCreateResponse(BaseModel):
     specimen_collected_at: datetime
     plausibility_status: str
     adjudicated_action: str
-    risk_assessment: RiskAssessmentSummary
+    # None only in silent mode, where model outputs are withheld from every clinician-facing response.
+    risk_assessment: Optional[RiskAssessmentSummary] = None
     alert: Optional[AlertSummary] = None
     follow_up_task: Optional[FollowUpTaskSummary] = None
+    outputs_withheld: bool = False
     synthetic: bool = True  # Invariant: Responses carry the synthetic flag
 
 
