@@ -45,7 +45,10 @@ PANEL_ANALYTES: Dict[str, Tuple[str, ...]] = {
     "P2": ("alp", "ggt", "ast", "alt", "ca_15_3"),
     "P3": ("alp", "ggt", "ast", "alt", "ca_15_3", "cea"),
 }
-W_GRID: Tuple[float, ...] = (0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6)
+# PREREG section 5 plus Amendment 3: the original nine values and eight halvings below 0.1.
+W_GRID: Tuple[float, ...] = tuple(0.1 / 2**k for k in range(8, 0, -1)) + (
+    0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6,
+)
 S_FLOOR: float = 0.02
 SYMPTOM_ALERT_GRADE: int = 2
 BURDEN_DETECTABLE: float = 12.0

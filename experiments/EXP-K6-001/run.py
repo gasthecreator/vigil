@@ -661,7 +661,7 @@ def render_report(res: Dict[str, Any]) -> str:
       f"Bmid = {f(pa['budgets']['Bmid'], 2)}; D13 = {f(pa['D13'])} days (delay of fixed 91 days, P2).")
     w("")
     for fam, title in (("fixed", "Fixed schedules (24 arms; frontier arms marked *)"), ("risk", "Risk-triggered (48 arms; frontier arms marked *)"),
-                       ("heuristic", "Stage heuristic"), ("k6_free", "K6 (9 weights, panels free)")):
+                       ("heuristic", "Stage heuristic"), ("k6_free", "K6 (17 weights, panels free)")):
         rows = pa["tables"][fam]
         front = {(round(c, 9), round(d, 9)) for c, d in frontier([(r["cost"], r["delay"]) for r in rows])}
         w(f"### {title}")
