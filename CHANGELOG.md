@@ -5,6 +5,29 @@ All notable changes to **Vigil** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- M7 ships the explainable urgency ranking (`RadiotherapyScheduler.rank_urgency`); CP-SAT is opt-in research behind the `unvalidated in simulation` badge and an admin/operator gate (ADR-0019).
+- Research CP-SAT formulation and pre-registered study `experiments/EXP-M7-001/` (`scheduler_research.py`, `scripts/run_study_m7_cpsat_v2.py`).
+- Versioned audit-hash scheme with golden compatibility fixture generated from the pre-8b function (ADR-0020).
+- Real-HTTP load and soak harness (`scripts/http_load_harness.py`); scheduled soak default 30 minutes.
+- Repo-standards audit scored per rubric item from inspection, able to fail (`scripts/audit_repo_standards.py`), commit-message gate, CodeQL workflow, `pip-audit` CI job, pinned `setup-uv`.
+- Release hash manifest from committed blobs with `verify`, and cosign sign/verify tooling (`docs/release/SIGNING.md`); `docs/HANDOVER.md`; `docs/README.md` index; `docs/release/COMPATIBILITY.md`.
+- `.env.example`, `.python-version`, `.nvmrc`.
+
+### Changed
+- `tests/resilience/test_load_and_soak.py` no longer overwrites committed reports and now exercises a separate uvicorn process.
+- `docs/ops/GITHUB-SETTINGS.md`: required-check names corrected to the real CI job names.
+- `docs/STUBS.md` rows corrected against the repository.
+
+### Fixed
+- `restore_backup` failed when the target directory did not exist.
+- `docs/release/REPRODUCIBILITY.md` §5 referenced a manifest key that does not exist.
+
+### Corrected (documentation)
+- The rc.1 "signed"/"signable" manifest is an unsigned SHA-256 hash manifest; the Phase 8b audit score (3.00) was awarded for file presence and is void; the Phase 8b load/soak claims (50 virtual users, 5,000 operations) were not supported by the committed runs. See `docs/progress/PHASE-8B-REPORT.md` errata and ADR-0018 Amendment 1.
+
 ## [1.0.0-rc.1] - 2026-10-18
 
 ### Added
