@@ -157,5 +157,7 @@ jobs:
         run: uv export --frozen --all-packages --no-hashes --no-emit-workspace > requirements.audit.txt
       - name: pip-audit (known vulnerabilities in locked Python dependencies)
         run: uvx pip-audit==2.10.1 -r requirements.audit.txt --no-deps --disable-pip
+      - name: npm audit (production dependencies of the web tier; high/critical block)
+        run: npm audit --package-lock-only --omit=dev --audit-level=high
       - name: Repo-standards audit (critical findings only; full gap list is in docs/audits)
         run: python3 scripts/audit_repo_standards.py --critical-only

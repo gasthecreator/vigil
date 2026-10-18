@@ -41,6 +41,6 @@
 
 | ID | Item | Evidence | Plan |
 |---|---|---|---|
-| X-DEP-1 | `npm audit --omit=dev` reports critical/high advisories for the locked `next@14.2.35` and `postcss`; the fix is a major upgrade (`next@16`) | `cd apps/web && npm audit --omit=dev` (2026-10-18: 1 critical, 1 high); ADR-0018 policy says unmitigated high/critical in the production runtime blocks merge | Upgrade attempt on its own branch with the full e2e/Lighthouse suites; until it lands, the web tier does **not** meet the ADR-0018 vulnerability policy and must not be exposed to untrusted networks |
+| X-DEP-1 | (RESOLVED on branch `fix/web-next15-security`, pending merge) `npm audit --omit=dev` reported 1 critical and 1 high advisory for `next@14.2.35` and `postcss`. Upgraded to `next@15.5.28` with a `postcss` override; `npm audit --package-lock-only --omit=dev` now reports 0 vulnerabilities and is a CI gate. Dev-only tooling advisories remain (`braces`/`tailwindcss`/`eslint-config-next` chain, 7 high, 2 moderate; build-time only, fix needs `tailwindcss@4`, a breaking change) | `cd apps/web && npm audit` | Merge that PR after the owner reviews; the dev-tooling advisories stay OPEN |
 | X-AUD-1 | Repo-standards audit is below its Master-Plan target in every tier | `docs/audits/REPO-AUDIT-P15.md` (script-written; gap list at the end) | Items that need the owner are in section A; the rest are listed there with fixes |
 | X-ADR-0018-2 | Direct dependencies use lower bounds (`>=`), reproducibility rests on lockfiles | ADR-0018 Amendment 1 | Documented, not changed |

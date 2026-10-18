@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,12 +22,29 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@vigil/contracts": ["../../packages/contracts/ts"],
-      "@vigil/ui": ["../../packages/ui/src"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@vigil/contracts": [
+        "../../packages/contracts/ts"
+      ],
+      "@vigil/ui": [
+        "../../packages/ui/src"
+      ]
     },
-    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "target": "ES2017"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
