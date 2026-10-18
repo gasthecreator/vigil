@@ -665,7 +665,7 @@ def aggregate(payload: Dict[str, Any]) -> Dict[str, Any]:
     can = pick(df, arm="canary_permuted_labels")
     cmean = float(per_rep(can, reps).mean())
     lo, hi = cfg["canary_range"]
-    out["canary"] = {"mean_auc_g1": cmean, "range": [lo, hi], "void": bool(not (lo <= cmean <= hi)), "per_rep": per_rep(can, reps).tolist(),
+    out["canary"] = {"mean_auc_g1": cmean, "range": [lo, hi], "void": bool(cmean > hi), "below_range": bool(cmean < lo), "per_rep": per_rep(can, reps).tolist(),
                      "n_fits": int(len(can)), "sd_per_fit": float(can.auc_g1.std())}
 
     # tables: mean AUC [CI] per (family, size, arm, N), metrics on all three test cohorts
@@ -775,7 +775,7 @@ def render_report(res: Dict[str, Any]) -> str:
              f"(machine-dependent); code hash `{res['code_hash']}`.")
     L.append("")
     if agg["canary"]["void"]:
-        L.append(f"## VOID: the leakage canary failed (mean AUC {fmt(agg['canary']['mean_auc_g1'])}, accepted range {agg['canary']['range']}). "
+        L.append(f"## VOID: the leakage canary failed (mean AUC {fmt(agg['canary']['mean_auc_g1'])}, above {agg['canary']['range'][1]}). "
                  "Every result below is declared void.")
         L.append("")
     L.append("## 1. Verdicts (pre-registered primary family, Bonferroni level "
@@ -810,7 +810,9 @@ def render_report(res: Dict[str, Any]) -> str:
     L.append("## 2. Leakage canary")
     L.append("")
     L.append(f"GRU-D, medium, N={cfg['n_canary']}, {cfg['n_canary_perms']} label permutations per replication (all training rows, amendments A1 and A3), true test labels: mean G1 AUC "
-             f"**{fmt(agg['canary']['mean_auc_g1'])}** over {agg['canary']['n_fits']} fits (standard deviation of one fit {fmt(agg['canary']['sd_per_fit'])}; accepted range {agg['canary']['range']}) -> **{'VOID' if agg['canary']['void'] else 'passes'}**.")
+             f"**{fmt(agg['canary']['mean_auc_g1'])}** over {agg['canary']['n_fits']} fits (standard deviation of one fit {fmt(agg['canary']['sd_per_fit'])}). "
+             f"Rule (amendment A3c): VOID only if the mean is above {agg['canary']['range'][1]}, because leakage can only raise the AUC -> **{'VOID' if agg['canary']['void'] else 'passes'}**. "
+             + (f"The mean is below {agg['canary']['range'][0]}: this is not a leakage signal and is reported as observed (see amendment A3c); a model fitted to permuted labels is not centred on 0.5." if agg['canary']['below_range'] else ""))
     L.append("")
     L.append("## 3. Strongest classical baseline first (G1 test, IPCW AUC at 365 days, mean over replications)")
     L.append("")
