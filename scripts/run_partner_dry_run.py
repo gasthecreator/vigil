@@ -12,6 +12,7 @@ The numbers are plumbing and null-behaviour checks on invented data. They are no
 from __future__ import annotations
 
 import argparse
+import difflib
 import filecmp
 import json
 import shutil
@@ -115,6 +116,18 @@ def main(argv: list[str] | None = None) -> int:
                 bad.append(str(f.relative_to(tmp)))
         if bad:
             print("dry-run reports differ from the committed files:", *bad, sep="\n  ")
+            for name in bad:
+                ref, new = OUT / name, tmp / name
+                if ref.exists():
+                    delta = difflib.unified_diff(
+                        ref.read_text().splitlines(),
+                        new.read_text().splitlines(),
+                        "committed/" + name,
+                        "rebuilt/" + name,
+                        lineterm="",
+                        n=0,
+                    )
+                    print(*list(delta)[:40], sep="\n")
             return 1
         print("dry-run reports reproduce byte for byte")
         return 0
