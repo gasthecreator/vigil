@@ -69,7 +69,8 @@ def simulate(
     neg_all = np.zeros((n, g), dtype=bool)
     panel_all = np.full((n, g), -1, dtype=np.int8)
     screen_idx = np.full(n, g, dtype=int)
-    rows_acc: Dict[str, List[np.ndarray]] = {k: [] for k in ("X", "patient", "t", "alert_P1", "alert_P2", "alert_P3", "detectable")}
+    keys = ("X", "patient", "t", "pt_alert_P1", "pt_alert_P2", "pt_alert_P3", "pt_detectable")
+    rows_acc: Dict[str, List[np.ndarray]] = {k: [] for k in keys}
     training = hasattr(policy, "decide_rows")
     for t in range(g):
         day = float(world.day[t])
@@ -89,6 +90,11 @@ def simulate(
         positive = world.burden[rows, t] >= IMAGING_BURDEN
         detected = alerted & positive
         negative = alerted & ~positive
+        if collect:
+            # panel table (PREREG section 5, Amendment 4): EVERY visit, before any removal, all three panels
+            for p in k6.PANELS:
+                rows_acc[f"pt_alert_{p}"].append(k6.alert_flags(z_full, k6.panel_mask(p), theta, max_sym))
+            rows_acc["pt_detectable"].append(positive)
         hist.record_alert(rows, alerted, negative, day)
         visited[rows, t] = True
         vcost[rows, t] = cost.visit + panel_cost[pan] + cost.imaging * alerted
@@ -106,9 +112,6 @@ def simulate(
             rows_acc["X"].append(feats)
             rows_acc["patient"].append(cont)
             rows_acc["t"].append(np.full(cont.size, t))
-            for i, p in enumerate(k6.PANELS):
-                rows_acc[f"alert_{p}"].append(k6.alert_flags(z_full[keep], k6.panel_mask(p), theta, max_sym[keep]))
-            rows_acc["detectable"].append(positive[keep])
         if training:
             delta, new_pan = policy.decide_rows(cont)
         else:
@@ -152,12 +155,14 @@ def threshold_samples(world: Any) -> Dict[str, np.ndarray]:
 
 
 def panel_table_from_rows(rows: Dict[str, np.ndarray]) -> k6.PanelTable:
-    det = rows["detectable"].astype(bool)
+    det = rows["pt_detectable"].astype(bool)
+    if not det.any() or det.all():
+        raise ValueError("the panel table needs training visits both with and without detectable disease")
     sens, fa = {}, {}
     for p in k6.PANELS:
-        a = rows[f"alert_{p}"].astype(bool)
-        sens[p] = float(a[det].mean()) if det.any() else 0.0
-        fa[p] = float(a[~det].mean()) if (~det).any() else 0.0
+        a = rows[f"pt_alert_{p}"].astype(bool)
+        sens[p] = float(a[det].mean())
+        fa[p] = float(a[~det].mean())
     return k6.PanelTable(sensitivity=sens, false_alert=fa)
 
 

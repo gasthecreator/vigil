@@ -221,6 +221,21 @@ def _train_toy(w: ToyWorld, seed=0, shuffle=False):
     return theta, haz, E.panel_table_from_rows(cat)
 
 
+def test_panel_table_counts_every_training_visit_including_those_that_detect():
+    """Amendment 4: the table once came out as sensitivity 0 for every panel when the signal is in an
+    analyte every panel measures, because visits at which the visiting panel had already detected the
+    patient were dropped before counting (and 0 is what an empty count returned)."""
+    w = make_toy_world(n=400, seed=5)
+    w.values[:, :, 0] = np.where(w.burden > 0, w.values[:, :, 0] * 3.0, w.values[:, :, 0])  # ALP, in P1, P2 and P3
+    _, _, table = _train_toy(w, seed=5)
+    assert all(table.sensitivity[p] > 0.9 for p in k6.PANELS), table.sensitivity
+    assert all(0.0 <= table.false_alert[p] < 0.2 for p in k6.PANELS)
+    # and a signal only in CA 15-3 (the default toy world): carried by P2 and P3, absent from P1
+    w2 = make_toy_world(n=400, seed=5)
+    _, _, t2 = _train_toy(w2, seed=5)
+    assert t2.sensitivity["P2"] > 0.9 and t2.sensitivity["P3"] > 0.9 and t2.sensitivity["P1"] < 0.1
+
+
 def test_decisions_before_a_day_do_not_depend_on_data_from_that_day_on():
     w = make_toy_world(n=300, seed=1)
     theta, haz, table = _train_toy(w, seed=1)
