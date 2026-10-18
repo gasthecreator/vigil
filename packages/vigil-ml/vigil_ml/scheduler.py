@@ -71,6 +71,8 @@ class ScheduleResult:
     course_start_days: Dict[str, Optional[int]] = field(default_factory=dict)
     is_fairness_certified: bool = True
     synthetic: bool = True
+    solver_objective: Optional[float] = None
+    validation_status: str = "unvalidated in simulation"
 
 
 def _course_uid(p: PatientCourse) -> str:
@@ -282,10 +284,15 @@ class RadiotherapyScheduler:
         wall_time = time.perf_counter() - start_time
 
         status_str = "INFEASIBLE"
+        solver_obj: Optional[float] = None
         if solver_status == cp_model.OPTIMAL:
             status_str = "OPTIMAL"
+            solver_obj = float(solver.ObjectiveValue())
         elif solver_status == cp_model.FEASIBLE:
             status_str = "FEASIBLE"
+            solver_obj = float(solver.ObjectiveValue())
+        elif solver_status == cp_model.UNKNOWN:
+            status_str = "TIMEOUT"
 
         allocations: List[SlotAllocation] = []
         patient_start_days: Dict[str, Optional[int]] = {}
@@ -394,6 +401,8 @@ class RadiotherapyScheduler:
             course_start_days=course_start_days,
             is_fairness_certified=True,
             synthetic=True,
+            solver_objective=solver_obj,
+            validation_status="unvalidated in simulation",
         )
 
     def _generate_marginal_explanations(

@@ -2,7 +2,7 @@
   "study": "M7-TWIN",
   "description": "Departmental Digital Twin & Radiotherapy Triage Evaluation (CP-SAT)",
   "pre_registration": "docs/studies/PREREG-M7-TWIN.md",
-  "timestamp": "2026-10-17T18:50:00Z",
+  "timestamp": "2026-10-18T00:00:00Z",
   "replications": 50,
   "facility": {
     "linacs": 2,
@@ -13,17 +13,35 @@
   },
   "baseline_summary": {
     "cpsat": {
-      "mean_harm": 0.08218,
-      "mean_wait_days": 6.94,
-      "mean_subgroup_disparity_days": 1.2
+      "mean_harm": 0.09116,
+      "wait_harm": 0.00073,
+      "interruption_harm": 0.09044,
+      "unscheduled_harm": 0.04132,
+      "mean_wait_days": 6.28,
+      "mean_subgroup_disparity_days": 1.27,
+      "status_counts": {
+        "OPTIMAL": 765,
+        "FEASIBLE": 749,
+        "TIMEOUT": 1298,
+        "INFEASIBLE": 21,
+        "FALLBACK": 1326
+      },
+      "objective_realised_correlation": 0.0657,
+      "validation_status": "unvalidated in simulation"
     },
     "urgency_heuristic": {
       "mean_harm": 0.0188,
+      "wait_harm": 0.00055,
+      "interruption_harm": 0.01825,
+      "unscheduled_harm": 0.0353,
       "mean_wait_days": 13.11,
       "mean_subgroup_disparity_days": 1.82
     },
     "fcfs": {
       "mean_harm": 0.02128,
+      "wait_harm": 0.00261,
+      "interruption_harm": 0.01867,
+      "unscheduled_harm": 0.04384,
       "mean_wait_days": 12.72,
       "mean_subgroup_disparity_days": 1.0
     },
@@ -33,50 +51,50 @@
   },
   "paired_comparisons": {
     "fcfs_minus_cpsat": {
-      "mean_difference": -0.0609,
+      "mean_difference": -0.06989,
       "bootstrap_ci_95": [
-        -0.07402,
-        -0.04919
+        -0.0823,
+        -0.05765
       ]
     },
     "urgency_minus_cpsat": {
-      "mean_difference": -0.06338,
+      "mean_difference": -0.07237,
       "bootstrap_ci_95": [
-        -0.07647,
-        -0.05146
+        -0.08444,
+        -0.05998
       ]
     },
     "greedy_proxy_minus_cpsat": {
-      "mean_difference": -0.06544,
+      "mean_difference": -0.07442,
       "bootstrap_ci_95": [
-        -0.07874,
-        -0.05349
+        -0.08686,
+        -0.06208
       ]
     }
   },
   "hypotheses": {
     "H1_harm_reduction_vs_fcfs": {
       "statement": "CP-SAT achieves lower harm than FCFS",
-      "observed_mean_diff": -0.0609,
+      "observed_mean_diff": -0.06989,
       "bootstrap_95_ci": [
-        -0.07402,
-        -0.04919
+        -0.0823,
+        -0.05765
       ],
       "verdict": "REFUTED"
     },
     "H2_cpsat_vs_urgency_heuristic": {
       "statement": "CP-SAT vs Clinical Urgency Heuristic (honest reporting of strongest baseline)",
-      "observed_mean_diff": -0.06338,
+      "observed_mean_diff": -0.07237,
       "bootstrap_95_ci": [
-        -0.07647,
-        -0.05146
+        -0.08444,
+        -0.05998
       ],
       "verdict": "URGENCY_ACHIEVES_LOWER_RAW_HARM",
-      "trade_off_analysis": "The unconstrained Clinical Urgency Heuristic strictly protects ongoing courses and high urgency tiers at the cost of higher wait disparity and starvation of lower-urgency patients. CP-SAT enforces bounded wait disparity (<= 5.0d) and prevents starvation."
+      "trade_off_analysis": "The Clinical Urgency Heuristic achieves substantially lower realized harm (~4x lower) because it never starts a new patient if an ongoing patient would suffer a treatment break. In contrast, CP-SAT over a rolling 7-day horizon with finite lookahead initiates waiting patients, which leads to treatment interruptions when machines break down. Interruption harm is 20-50x more damaging per day than initial wait harm under the E8 continuity model."
     },
     "H3_subgroup_fairness": {
       "statement": "Subgroup wait disparity <= 5.0 days under CP-SAT",
-      "observed_disparity_days": 1.2,
+      "observed_disparity_days": 1.27,
       "threshold_days": 5.0,
       "verdict": "SUPPORTED"
     },
@@ -85,6 +103,416 @@
       "min_spearman_rho": 0.9824,
       "threshold": 0.8,
       "verdict": "SUPPORTED"
+    }
+  },
+  "sweep_grid": {
+    "lambda_2.0_mttr_3": {
+      "arrival_rate": 2.0,
+      "mttr_days": 3.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.05581,
+        "urgency_heuristic": 0.00833,
+        "fcfs": 0.01022,
+        "greedy_proxy": 0.008
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.0003,
+        "interruption_harm": 0.05551,
+        "unscheduled_harm": 0.02456,
+        "total_harm": 0.05581
+      },
+      "mean_wait_days": {
+        "cpsat": 1.89,
+        "urgency_heuristic": 6.85,
+        "fcfs": 5.94
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 0.43,
+        "urgency_heuristic": 1.18,
+        "fcfs": 0.83
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 413,
+        "FEASIBLE": 443,
+        "TIMEOUT": 323,
+        "INFEASIBLE": 0,
+        "FALLBACK": 323
+      }
+    },
+    "lambda_2.0_mttr_7": {
+      "arrival_rate": 2.0,
+      "mttr_days": 7.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.07895,
+        "urgency_heuristic": 0.01692,
+        "fcfs": 0.01989,
+        "greedy_proxy": 0.01655
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00036,
+        "interruption_harm": 0.07858,
+        "unscheduled_harm": 0.03171,
+        "total_harm": 0.07895
+      },
+      "mean_wait_days": {
+        "cpsat": 2.66,
+        "urgency_heuristic": 9.14,
+        "fcfs": 8.53
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 0.69,
+        "urgency_heuristic": 1.98,
+        "fcfs": 1.15
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 435,
+        "FEASIBLE": 361,
+        "TIMEOUT": 321,
+        "INFEASIBLE": 0,
+        "FALLBACK": 321
+      }
+    },
+    "lambda_2.0_mttr_14": {
+      "arrival_rate": 2.0,
+      "mttr_days": 14.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.08982,
+        "urgency_heuristic": 0.02244,
+        "fcfs": 0.02511,
+        "greedy_proxy": 0.02114
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00023,
+        "interruption_harm": 0.08958,
+        "unscheduled_harm": 0.03844,
+        "total_harm": 0.08982
+      },
+      "mean_wait_days": {
+        "cpsat": 4.18,
+        "urgency_heuristic": 11.22,
+        "fcfs": 10.88
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 0.84,
+        "urgency_heuristic": 1.98,
+        "fcfs": 1.08
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 444,
+        "FEASIBLE": 373,
+        "TIMEOUT": 248,
+        "INFEASIBLE": 1,
+        "FALLBACK": 272
+      }
+    },
+    "lambda_2.5_mttr_3": {
+      "arrival_rate": 2.5,
+      "mttr_days": 3.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.05865,
+        "urgency_heuristic": 0.00772,
+        "fcfs": 0.00954,
+        "greedy_proxy": 0.00687
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00062,
+        "interruption_harm": 0.05804,
+        "unscheduled_harm": 0.0345,
+        "total_harm": 0.05865
+      },
+      "mean_wait_days": {
+        "cpsat": 5.76,
+        "urgency_heuristic": 11.34,
+        "fcfs": 10.66
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.01,
+        "urgency_heuristic": 1.26,
+        "fcfs": 1.02
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 298,
+        "FEASIBLE": 279,
+        "TIMEOUT": 604,
+        "INFEASIBLE": 0,
+        "FALLBACK": 604
+      }
+    },
+    "lambda_2.5_mttr_7": {
+      "arrival_rate": 2.5,
+      "mttr_days": 7.0,
+      "replications": 50,
+      "mean_harm": {
+        "cpsat": 0.09116,
+        "urgency_heuristic": 0.0188,
+        "fcfs": 0.02128,
+        "greedy_proxy": 0.01674
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00073,
+        "interruption_harm": 0.09044,
+        "unscheduled_harm": 0.04132,
+        "total_harm": 0.09116
+      },
+      "mean_wait_days": {
+        "cpsat": 6.28,
+        "urgency_heuristic": 13.11,
+        "fcfs": 12.72
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.27,
+        "urgency_heuristic": 1.82,
+        "fcfs": 1.0
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 765,
+        "FEASIBLE": 749,
+        "TIMEOUT": 1298,
+        "INFEASIBLE": 21,
+        "FALLBACK": 1326
+      }
+    },
+    "lambda_2.5_mttr_14": {
+      "arrival_rate": 2.5,
+      "mttr_days": 14.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.09576,
+        "urgency_heuristic": 0.02216,
+        "fcfs": 0.02435,
+        "greedy_proxy": 0.01992
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00075,
+        "interruption_harm": 0.095,
+        "unscheduled_harm": 0.04876,
+        "total_harm": 0.09576
+      },
+      "mean_wait_days": {
+        "cpsat": 7.13,
+        "urgency_heuristic": 15.52,
+        "fcfs": 15.23
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.27,
+        "urgency_heuristic": 2.13,
+        "fcfs": 1.04
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 311,
+        "FEASIBLE": 317,
+        "TIMEOUT": 434,
+        "INFEASIBLE": 9,
+        "FALLBACK": 458
+      }
+    },
+    "lambda_3.0_mttr_3": {
+      "arrival_rate": 3.0,
+      "mttr_days": 3.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.04962,
+        "urgency_heuristic": 0.00668,
+        "fcfs": 0.00937,
+        "greedy_proxy": 0.00601
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00092,
+        "interruption_harm": 0.0487,
+        "unscheduled_harm": 0.04204,
+        "total_harm": 0.04962
+      },
+      "mean_wait_days": {
+        "cpsat": 9.82,
+        "urgency_heuristic": 14.55,
+        "fcfs": 14.32
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.24,
+        "urgency_heuristic": 1.58,
+        "fcfs": 1.18
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 228,
+        "FEASIBLE": 215,
+        "TIMEOUT": 739,
+        "INFEASIBLE": 0,
+        "FALLBACK": 739
+      }
+    },
+    "lambda_3.0_mttr_7": {
+      "arrival_rate": 3.0,
+      "mttr_days": 7.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.07523,
+        "urgency_heuristic": 0.01574,
+        "fcfs": 0.01802,
+        "greedy_proxy": 0.0126
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00113,
+        "interruption_harm": 0.07409,
+        "unscheduled_harm": 0.04826,
+        "total_harm": 0.07523
+      },
+      "mean_wait_days": {
+        "cpsat": 9.72,
+        "urgency_heuristic": 16.0,
+        "fcfs": 15.83
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.54,
+        "urgency_heuristic": 1.9,
+        "fcfs": 1.17
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 243,
+        "FEASIBLE": 250,
+        "TIMEOUT": 627,
+        "INFEASIBLE": 0,
+        "FALLBACK": 627
+      }
+    },
+    "lambda_3.0_mttr_14": {
+      "arrival_rate": 3.0,
+      "mttr_days": 14.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.08978,
+        "urgency_heuristic": 0.0221,
+        "fcfs": 0.02395,
+        "greedy_proxy": 0.02003
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00094,
+        "interruption_harm": 0.08884,
+        "unscheduled_harm": 0.05521,
+        "total_harm": 0.08978
+      },
+      "mean_wait_days": {
+        "cpsat": 11.13,
+        "urgency_heuristic": 18.12,
+        "fcfs": 18.08
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.47,
+        "urgency_heuristic": 2.04,
+        "fcfs": 1.27
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 254,
+        "FEASIBLE": 246,
+        "TIMEOUT": 558,
+        "INFEASIBLE": 14,
+        "FALLBACK": 579
+      }
+    },
+    "lambda_3.5_mttr_3": {
+      "arrival_rate": 3.5,
+      "mttr_days": 3.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.04582,
+        "urgency_heuristic": 0.00672,
+        "fcfs": 0.00908,
+        "greedy_proxy": 0.00522
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00096,
+        "interruption_harm": 0.04486,
+        "unscheduled_harm": 0.04809,
+        "total_harm": 0.04582
+      },
+      "mean_wait_days": {
+        "cpsat": 12.39,
+        "urgency_heuristic": 16.85,
+        "fcfs": 16.96
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.58,
+        "urgency_heuristic": 1.44,
+        "fcfs": 1.22
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 200,
+        "FEASIBLE": 224,
+        "TIMEOUT": 760,
+        "INFEASIBLE": 0,
+        "FALLBACK": 760
+      }
+    },
+    "lambda_3.5_mttr_7": {
+      "arrival_rate": 3.5,
+      "mttr_days": 7.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.06371,
+        "urgency_heuristic": 0.01516,
+        "fcfs": 0.01676,
+        "greedy_proxy": 0.01134
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.00136,
+        "interruption_harm": 0.06235,
+        "unscheduled_harm": 0.05349,
+        "total_harm": 0.06371
+      },
+      "mean_wait_days": {
+        "cpsat": 12.95,
+        "urgency_heuristic": 18.14,
+        "fcfs": 18.33
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.61,
+        "urgency_heuristic": 2.19,
+        "fcfs": 1.23
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 212,
+        "FEASIBLE": 225,
+        "TIMEOUT": 683,
+        "INFEASIBLE": 0,
+        "FALLBACK": 683
+      }
+    },
+    "lambda_3.5_mttr_14": {
+      "arrival_rate": 3.5,
+      "mttr_days": 14.0,
+      "replications": 20,
+      "mean_harm": {
+        "cpsat": 0.07727,
+        "urgency_heuristic": 0.02104,
+        "fcfs": 0.02183,
+        "greedy_proxy": 0.01786
+      },
+      "cpsat_harm_decomposition": {
+        "wait_harm": 0.0012,
+        "interruption_harm": 0.07607,
+        "unscheduled_harm": 0.05927,
+        "total_harm": 0.07727
+      },
+      "mean_wait_days": {
+        "cpsat": 14.15,
+        "urgency_heuristic": 20.07,
+        "fcfs": 20.21
+      },
+      "subgroup_disparity_days": {
+        "cpsat": 1.39,
+        "urgency_heuristic": 2.46,
+        "fcfs": 1.6
+      },
+      "cpsat_status_counts": {
+        "OPTIMAL": 235,
+        "FEASIBLE": 216,
+        "TIMEOUT": 608,
+        "INFEASIBLE": 14,
+        "FALLBACK": 631
+      }
     }
   },
   "sensitivity_analysis": {
@@ -278,5 +706,5 @@
       "P_tnbc_35"
     ]
   },
-  "wall_time_seconds": 102.14
+  "wall_time_seconds": 187.22
 }

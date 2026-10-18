@@ -2377,6 +2377,11 @@
             },
             "title": "Unassigned Patient Ids",
             "type": "array"
+          },
+          "validation_status": {
+            "default": "unvalidated in simulation",
+            "title": "Validation Status",
+            "type": "string"
           }
         },
         "required": [

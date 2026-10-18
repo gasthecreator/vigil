@@ -61,7 +61,17 @@ Evaluate whether Vigil's CP-SAT Radiotherapy Continuity Scheduler (`Radiotherapy
 
 ---
 
-## 6. Statistical Methods
+## 6. Statistical Methods & Reporting Protocol
 - **Effect Estimation:** Paired difference per replication: $\Delta_{\text{harm}} = \text{Harm}_{\text{baseline}} - \text{Harm}_{\text{CPSAT}}$.
+- **Harm Decomposition:** Every policy arm must report:
+  1. `wait_harm`: cumulative harm accumulated prior to first fraction delivery.
+  2. `interruption_harm`: cumulative harm accumulated from gaps between treatment fractions.
+  3. `total_harm`: sum of wait and interruption harm.
+  4. `unscheduled_harm`: harm from fractions never delivered during the simulation horizon.
+- **Solver Status Diagnostics:** Record solver status per decision step (OPTIMAL, FEASIBLE, TIMEOUT, INFEASIBLE, FALLBACK) and compute Pearson correlation between solver IP objective and realised total harm.
+- **Full 12-Cell Sweep Commitment:** All 12 cells ($\lambda \in \{2.0, 2.5, 3.0, 3.5\} \times \text{MTTR} \in \{3, 7, 14\}$) must be executed and committed to `reports/ml/STUDY_M7_DIGITAL_TWIN.json`.
+- **Seed Separation:** Calibration/tuning restricted to development seed (`seed=101`); final evaluation strictly frozen on evaluation seeds (`seed=20261017+`). All code changes after initial pre-registration must be documented in the study report.
 - **Uncertainty Quantification:** Single pre-registered method: paired bootstrap over replications with $B = 1,000$ resamples. 95% confidence intervals reported as percentile bootstrap bounds $[q_{0.025}, q_{0.975}]$.
 - **One Method Invariant:** No mixing of permutation p-values with bootstrap CIs; test decisions are governed strictly by whether the paired bootstrap 95% CI excludes zero.
+- **Clinical Readiness Gate ("Unvalidated in Simulation"):** Until CP-SAT is demonstrated to beat FCFS and the Clinical Urgency Heuristic on frozen evaluation seeds, the scheduler UI and API must prominently label recommendations as `"unvalidated in simulation"`.
+
