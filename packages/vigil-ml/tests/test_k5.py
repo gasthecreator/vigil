@@ -198,3 +198,27 @@ def test_cusum_detects_a_step_and_calibration_controls_the_null():
     idx = k5.cusum_first_alarm(shifted, 0.5, h)
     assert idx is not None and 200 <= idx < 260
     assert k5.cusum_first_alarm(np.zeros(100), 0.5, 2.0) is None
+
+
+def test_old_s5_is_retracted_and_cannot_produce_numbers():
+    import pytest as _pt
+    from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
+
+    with _pt.raises(NotImplementedError):
+        HierarchicalLabHarmoniserK5().run_study_s5()
+    assert not (ROOT / "reports" / "ml" / "S5_HARMONISATION").exists()
+    assert (ROOT / "reports" / "ml" / "RETRACTED" / "S5_HARMONISATION_V1" / "REPORT.md").exists()
+    src = (ROOT / "scripts" / "run_benchmarks.py").read_text(encoding="utf-8")
+    assert "34.2" not in src and "S5_HARMONISATION/REPORT" not in src
+
+
+def test_model_registry_is_current_and_cites_real_tests():
+    import subprocess
+    import sys
+
+    out = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_model_registry.py"), "--check"],
+        capture_output=True,
+        text=True,
+    )
+    assert out.returncode == 0, out.stdout + out.stderr

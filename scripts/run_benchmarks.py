@@ -67,7 +67,6 @@ from vigil_ml.baselines import (
 from vigil_ml.conformal_k8 import ProductionEnsembleK8
 from vigil_ml.deep_zoo_k4 import DeepZooK4
 from vigil_ml.features import WindowedFeatureExtractor
-from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
 from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_ml.sequential_k2 import SequentialDetectorBenchmark
@@ -617,60 +616,10 @@ def render_s4_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s5(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S5: MULTI-SITE HIERARCHICAL POOLING & LAB HARMONISATION")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-MULTILAB-HARMONISATION-S5",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate K5 hierarchical pooling and CUSUM changepoint detection under assay shifts",
-        num_samples=1500,
+    """Old S5 retracted (reports/ml/RETRACTED/README.md). Replaced by experiments/EXP-K5-001/run.py."""
+    raise NotImplementedError(
+        "Old S5 retracted: see reports/ml/RETRACTED/README.md. Run experiments/EXP-K5-001/run.py instead."
     )
-
-    k5 = HierarchicalLabHarmoniserK5()
-    s5_results = k5.run_study_s5()
-
-    s5_dir = ROOT / "reports" / "ml" / "S5_HARMONISATION"
-    s5_dir.mkdir(parents=True, exist_ok=True)
-    with open(s5_dir / "results.json", "w") as f:
-        json.dump(s5_results, f, indent=2)
-
-    render_s5_markdown(s5_results, s5_dir / "REPORT.md")
-    print("✅ Study S5 Complete. Results saved to reports/ml/S5_HARMONISATION/")
-    return s5_results
-
-
-def render_s5_markdown(results: Dict[str, Any], path: Path) -> None:
-    raw_far = results["unharmonised_false_alarm_rate"]
-    harm_far = results["harmonised_false_alarm_rate"]
-    brier_red = results["new_site_brier_reduction_pct"]
-    lines = [
-        "# Study S5 Report: Multi-Site Hierarchical Pooling & Lab Harmonisation",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC TIERS G1, G3**. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S5_HARMONISATION  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Shift Sensitivity):** CONFIRMED. Unharmonised surveillance models experienced a dramatic inflation in false alarms ({raw_far * 100:.1f}%) under a +5.5 U/mL analytical assay shift.",
-        f"- **H2 (Empirical Bayes Protection):** CONFIRMED. K5 hierarchical pooling shrunk site offsets, reducing false alarm rate to {harm_far * 100:.1f}% (a {(raw_far - harm_far) / raw_far * 100:.1f}% reduction).",
-        f"- **H3 (New-Site Calibration):** CONFIRMED. On held-out new clinical sites, K5 achieved a {brier_red:.1f}% reduction in Brier score.",
-        "",
-        "## 2. Multi-Site Harmonisation Benchmark",
-        "",
-        "| Evaluation Metric | Unharmonised Model | K5 Hierarchical Harmonised | Relative Improvement |",
-        "|---|---|---|---|",
-        f"| False Alarm Rate under Shift | {raw_far:.4f} | {harm_far:.4f} | **{(raw_far - harm_far) / raw_far * 100:.1f}% reduction** |",
-        f"| Held-Out Site Brier Score | Baseline (1.0x) | Recalibrated | **{brier_red:.1f}% reduction** |",
-        "",
-        "## 3. Decision Record",
-        "- **Mandate K5 Harmonisation in Multi-Center Deployment:** Laboratory test streams must pass through K5 empirical Bayes adjustment before feeding risk engines.",
-    ]
-    path.write_text("\n".join(lines))
 
 
 def run_study_s6(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
@@ -970,7 +919,6 @@ def render_master_benchmark_report(
     s1_res: Dict[str, Any],
     s2_res: Dict[str, Any],
     s3_res: Dict[str, Any],
-    s5_res: Dict[str, Any],
     s9_res: Dict[str, Any],
     path: Path,
 ) -> None:
@@ -1046,9 +994,8 @@ def render_master_benchmark_report(
             "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
             "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
-            "- **Study S5 (Multi-Site Lab Harmonisation):** [`reports/ml/S5_HARMONISATION/REPORT.md`](./S5_HARMONISATION/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
-            "- **Retracted Studies (Condition R1):** Studies S4, S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3 and deferred to sub-phases 3C and 3D.",
+            "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3 and deferred to sub-phases 3C and 3D.",
         ]
     )
 
@@ -1059,7 +1006,6 @@ def render_master_benchmark_report(
         "s1_sparsity": s1_res,
         "s2_sequential": s2_res,
         "s3_verification_bias": s3_res,
-        "s5_harmonisation": s5_res,
         "s9_cross_generator": s9_res,
         "leaderboard": leaderboard_dict,
     }
@@ -1085,8 +1031,7 @@ def main() -> int:
     # 3. Run Study S3 (Verification Bias)
     s3_results = run_study_s3(audit_logger)
 
-    # 4. Run Study S5 (Lab Harmonisation)
-    s5_results = run_study_s5(audit_logger)
+    # 4. Study S5 (Lab Harmonisation) is run by experiments/EXP-K5-001/run.py, not here (old S5 retracted)
 
     # 5. Run Study S9 (Cross-Generator Robustness)
     s9_results = run_study_s9(audit_logger)
@@ -1097,7 +1042,6 @@ def main() -> int:
         s1_results,
         s2_results,
         s3_results,
-        s5_results,
         s9_results,
         bench_report_path,
     )

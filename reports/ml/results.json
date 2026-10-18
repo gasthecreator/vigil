@@ -508,12 +508,6 @@
       "bias_specificity": -0.0008
     }
   },
-  "s5_harmonisation": {
-    "unharmonised_false_alarm_rate": 0.07,
-    "harmonised_false_alarm_rate": 0.0,
-    "new_site_brier_reduction_pct": 34.2,
-    "conclusion": "Hierarchical lab harmonisation reduces spurious threshold alerts caused by inter-assay shifts from 0.07 to 0.00, yielding 34.2% lower Brier score on held-out clinical facilities."
-  },
   "s9_cross_generator": {
     "B1_SingleThreshold": {
       "in_distribution": {
