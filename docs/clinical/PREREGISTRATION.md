@@ -1,6 +1,6 @@
 # Pre-registration of clinical validation (T-R retrospective and T-Q silent mode)
 
-**Status: DRAFT, NOT FROZEN.** This document is committed before any real-data evaluation exists. It becomes binding only when `docs/clinical/PREREG-FREEZE.json` records its SHA-256 and every row of section 7 reads `RATIFIED`. `scripts/check_prereg_freeze.py` enforces that; the partner evaluation entry point (`scripts/run_partner_evaluation.py`, Tier 1) refuses to read real data while the check fails. Ratification of the numbers in section 7 is a **clinical and owner decision that the executor cannot make**: the values below are proposals with their rationale.
+**Status: DRAFT, NOT FROZEN.** This document is committed before any real-data evaluation exists. It becomes binding only when `docs/clinical/PREREG-FREEZE.json` records its SHA-256 and carries a named ratification for every row of section 7 (the Status column of this file keeps reading PROPOSED; ratification lives in the freeze record so that this text is never edited after the freeze). `scripts/check_prereg_freeze.py` enforces that; the partner evaluation entry point (`scripts/run_partner_evaluation.py`, Tier 1) refuses to read real data while the check fails. Ratification of the numbers in section 7 is a **clinical and owner decision that the executor cannot make**: the values below are proposals with their rationale.
 
 Governing text: `docs/MASTER_PLAN.md` section 18.3 and `docs/ML_PROGRAM.md` sections 4 and 5. Study protocol: `docs/clinical/PARTNERSHIP/STUDY-PROTOCOL.md`. Everything here is a plan; no real-data result exists, and the only performance numbers in this repository are **synthetic** (`reports/ml/`).
 
@@ -67,7 +67,7 @@ A breach pauses further evaluation and triggers the review in `docs/clinical/PIL
 TRIPOD+AI checklist and PROBAST+AI self-appraisal accompany the report. Results are written only by scripts to `reports/clinical/` with the SHA-256 of this file and of the freeze record embedded.
 
 ## 10. Freeze procedure (owner and clinical lead)
-1. The clinical lead and owner review section 7 and record a named ratification per row in `docs/clinical/PREREG-FREEZE.json` (`ratifications`: id, value, ratifier, date).
+1. The clinical lead and owner review section 7 and record a named ratification per row (value may differ from the proposal; the ratified value is the one used) in `docs/clinical/PREREG-FREEZE.json` (`ratifications`: id, value, ratifier, date).
 2. The data steward records the partition key identifier and the bootstrap seed (the key itself is not committed).
 3. Run `python scripts/check_prereg_freeze.py`; it fails on any unratified row, any placeholder, or a SHA-256 mismatch.
 4. Commit the freeze record alone. Nothing in this document is edited afterwards.
