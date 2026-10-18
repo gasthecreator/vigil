@@ -459,6 +459,7 @@ export interface ScheduleAssignment {
   machine_id: string;
   marginal_harm: number;
   patient_id: string;
+  priority_rank?: number | null;
   scheduled_date: string /* ISO 8601 */;
   start_day: number;
 }
@@ -477,18 +478,29 @@ export interface ScheduleConfirmResponse {
   synthetic?: boolean;
 }
 
+/** Request a schedule proposal.
+
+``method`` defaults to the explainable urgency ranking (ADR-0019). The CP-SAT
+optimiser is a research module: it is only available to
+administrators (or when the deployment sets ``VIGIL_ENABLE_RESEARCH_SCHEDULER=1``)
+and is always labelled ``unvalidated in simulation``. ``fairness_disparity_bound``,
+``max_wait_days`` and ``stability_penalty`` apply to the CP-SAT method only. */
 export interface ScheduleSolveRequest {
   fairness_disparity_bound?: number;
   horizon_days?: number;
   max_wait_days?: number;
+  method?: string;
   stability_penalty?: number;
 }
 
 export interface ScheduleSolveResponse {
   assignments: ScheduleAssignment[];
+  fairness_bound_enforced?: boolean;
   fairness_disparity: number;
   max_delay_days: number;
   mean_delay_days: number;
+  method?: string;
+  method_label?: string;
   patients_included?: number;
   patients_unconsented_included?: number;
   solver_time_seconds: number;
@@ -496,6 +508,8 @@ export interface ScheduleSolveResponse {
   synthetic?: boolean;
   total_excess_harm: number;
   unassigned_patient_ids: string[];
+  validation_status?: string;
+  warnings?: string[];
 }
 
 export interface SecondLookCreateRequest {

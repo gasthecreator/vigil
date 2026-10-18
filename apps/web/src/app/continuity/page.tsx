@@ -45,6 +45,8 @@ export default function ContinuityPage() {
   const [horizonDays, setHorizonDays] = useState<number>(14);
   const [fairnessBound, setFairnessBound] = useState<number>(5.0);
   const [maxWaitDays, setMaxWaitDays] = useState<number>(30);
+  // ADR-0019: the explainable urgency ranking is the default; CP-SAT is an opt-in research module.
+  const [method, setMethod] = useState<"urgency_ranking" | "cpsat_research">("urgency_ranking");
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<"scheduler" | "courses" | "machines" | "ledger">("scheduler");
@@ -88,22 +90,27 @@ export default function ContinuityPage() {
     }
   };
 
-  // Run CP-SAT Solve
+  // Propose a schedule with the selected method
   const handleSolveSchedule = async () => {
     try {
       setIsSolving(true);
       setConfirmSuccess(null);
       const res = await apiClient.solveSchedule({
+        method,
         horizon_days: horizonDays,
         fairness_disparity_bound: fairnessBound,
         max_wait_days: maxWaitDays,
         stability_penalty: 0.01,
       });
       setSolveResult(res);
-      setStatusMessage(`CP-SAT solved in ${res.solver_time_seconds}s with ${res.assignments.length} assignments.`);
+      setStatusMessage(`${res.method_label ?? "Schedule"}: ${res.assignments.length} assignments proposed in ${res.solver_time_seconds}s.`);
     } catch (err) {
       console.error("Failed to solve schedule:", err);
-      setStatusMessage("Failed to solve schedule.");
+      setStatusMessage(
+        method === "cpsat_research"
+          ? "Failed to solve schedule. The CP-SAT research optimiser is available to administrators only."
+          : "Failed to solve schedule.",
+      );
     } finally {
       setIsSolving(false);
     }
@@ -116,7 +123,7 @@ export default function ContinuityPage() {
       setIsConfirming(true);
       const res = await apiClient.confirmSchedule({
         assignments: solveResult.assignments,
-        reason: "Clinician confirmed CP-SAT continuity reallocation following capacity triage",
+        reason: `Clinician confirmed schedule proposal (${solveResult.method_label ?? "schedule"}) following capacity triage`,
       });
       setConfirmSuccess(res.message);
       setSolveResult(null);
@@ -145,21 +152,20 @@ export default function ContinuityPage() {
               </span>
               <span className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-amber-700" />
-                Unvalidated in Simulation
+                Simulation-only evidence · no real-data validation
               </span>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Algorithmic Fairness
-              </span>
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">
-                Google OR-Tools CP-SAT
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" /> Clinician confirms every change
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Treatment Continuity & Radiotherapy Triage
             </h1>
             <p className="text-sm text-slate-600 mt-1 max-w-3xl">
-              Real-time linear accelerator (LINAC) capacity triage and mathematical schedule re-optimization.
-              Minimizes piecewise cancer recurrence delay harm while enforcing subgroup waiting time bounds and contiguity.
+              Linear accelerator (LINAC) capacity triage. By default Vigil proposes an explainable urgency ranking:
+              courses already in progress first, then clinician-flagged urgent courses, then clinical tier, then
+              waiting time. Every proposal shows why each patient is where they are; nothing is applied until a
+              clinician confirms it.
             </p>
           </div>
 
@@ -239,7 +245,7 @@ export default function ContinuityPage() {
           }`}
         >
           <Zap className="w-4 h-4" />
-          CP-SAT Scheduler
+          Schedule Proposal
         </button>
         <button
           role="tab"
@@ -282,12 +288,27 @@ export default function ContinuityPage() {
         </button>
       </div>
 
-      {/* Tab 1: CP-SAT Scheduler Studio */}
+      {/* Tab 1: Schedule proposal (urgency ranking default; CP-SAT research opt-in) */}
       {activeTab === "scheduler" && (
         <div className="space-y-6">
           {/* Controls Bar */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4 text-sm">
+              <div>
+                <label htmlFor="method-select" className="block text-xs font-semibold text-slate-700 mb-1">
+                  Method
+                </label>
+                <select
+                  id="method-select"
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value as "urgency_ranking" | "cpsat_research")}
+                  className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm"
+                >
+                  <option value="urgency_ranking">Explainable urgency ranking (default)</option>
+                  <option value="cpsat_research">CP-SAT optimiser (research, unvalidated in simulation)</option>
+                </select>
+              </div>
+
               <div>
                 <label htmlFor="horizon-input" className="block text-xs font-semibold text-slate-700 mb-1">
                   Horizon (Days)
@@ -305,7 +326,7 @@ export default function ContinuityPage() {
 
               <div>
                 <label htmlFor="fairness-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Fairness Bound (Days)
+                  Fairness Bound (Days, CP-SAT only)
                 </label>
                 <input
                   id="fairness-input"
@@ -321,7 +342,7 @@ export default function ContinuityPage() {
 
               <div>
                 <label htmlFor="maxwait-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Starvation Ceiling W_max
+                  Starvation Ceiling W_max (advisory warning for urgency ranking)
                 </label>
                 <input
                   id="maxwait-input"
@@ -343,7 +364,7 @@ export default function ContinuityPage() {
                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg"
               >
                 <Cpu className={`w-4 h-4 ${isSolving ? "animate-spin" : ""}`} />
-                {isSolving ? "Solving CP-SAT..." : "Solve Reallocation Schedule"}
+                {isSolving ? "Proposing schedule..." : "Propose Schedule"}
               </Button>
             </div>
           </div>
@@ -354,9 +375,19 @@ export default function ContinuityPage() {
               <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-medium flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0" />
                 <span>
-                  <strong>Clinical Notice (P13-A):</strong> Schedule reallocations are <em>unvalidated in simulation</em> against heuristic baselines under multi-week capacity crunches. Mandatory human oncologist review and sign-off is required before clinical execution.
+                  <strong>Clinical Notice:</strong> {solveResult.method_label ?? "Schedule proposal"} — <em>{solveResult.validation_status ?? "unvalidated in simulation"}</em>. Mandatory human oncologist review and sign-off is required before clinical execution.
                 </span>
               </div>
+              {(solveResult.warnings ?? []).length > 0 && (
+                <ul
+                  role="alert"
+                  className="p-3 bg-red-50 border border-red-300 rounded-lg text-xs text-red-900 font-medium space-y-1 list-disc list-inside"
+                >
+                  {(solveResult.warnings ?? []).map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -367,11 +398,14 @@ export default function ContinuityPage() {
                       Solve Time: {solveResult.solver_time_seconds}s
                     </span>
                     <span className="text-xs text-indigo-800 font-medium">
-                      Subgroup Disparity: {solveResult.fairness_disparity} days (&le; {fairnessBound}d bound)
+                      Subgroup Disparity: {solveResult.fairness_disparity} days{" "}
+                      {solveResult.fairness_bound_enforced
+                        ? `(bound ${fairnessBound}d enforced by this method)`
+                        : "(realised value; this method does not enforce a bound)"}
                     </span>
                   </div>
                   <h3 className="text-base font-bold text-indigo-950 mt-1">
-                    Optimal Continuity Schedule Generated ({solveResult.assignments.length} patients allocated)
+                    Proposed schedule — {solveResult.method_label ?? ""} ({solveResult.assignments.length} patients allocated)
                   </h3>
                 </div>
 

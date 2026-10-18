@@ -30,8 +30,8 @@ test.describe("M7 Radiotherapy Treatment Continuity & Triage E2E Suite (Real Bac
 
     // 1. Header & Badges
     await expect(page.locator("h1:has-text('Treatment Continuity & Radiotherapy Triage')")).toBeVisible();
-    await expect(page.locator("text=Algorithmic Fairness")).toBeVisible();
-    await expect(page.locator("text=Google OR-Tools CP-SAT")).toBeVisible();
+    await expect(page.locator("text=Clinician confirms every change")).toBeVisible();
+    await expect(page.locator("text=Simulation-only evidence")).toBeVisible();
 
     // 2. Metrics Bar
     await expect(page.locator("text=Operational LINACs")).toBeVisible();
@@ -48,25 +48,27 @@ test.describe("M7 Radiotherapy Treatment Continuity & Triage E2E Suite (Real Bac
     await expect(page.locator("text=16 fractions / day").first()).toBeVisible();
   });
 
-  test("CP-SAT Scheduler: Solves constrained schedule with fairness bounds & marginal harm explanations", async ({ page }) => {
+  test("Schedule proposal: default explainable urgency ranking with per-patient priority reasons and evidence badge", async ({ page }) => {
     await page.goto("/continuity");
     await page.waitForSelector("header");
 
-    // Click Solve Reallocation Schedule
-    await page.click("button:has-text('Solve Reallocation Schedule')");
+    // Propose a schedule with the default method (explainable urgency ranking)
+    await page.click("button:has-text('Propose Schedule')");
 
     // Wait for solver response banner
     await expect(
-      page.locator("h3:has-text('Optimal Continuity Schedule Generated')")
+      page.locator("h3:has-text('Proposed schedule')")
     ).toBeVisible({ timeout: 10000 });
 
     // Verify Solver Details
-    await expect(page.locator("text=Status: OPTIMAL")).toBeVisible();
+    await expect(page.locator("h3:has-text('Explainable urgency ranking')")).toBeVisible();
+    await expect(page.locator("text=no real-data validation").first()).toBeVisible();
+    await expect(page.locator("text=Priority 1 of")).toBeVisible();
     await expect(page.locator("table[aria-label='Proposed Schedule Table']")).toBeVisible();
     await expect(page.locator("td:has-text('PAT-001')")).toBeVisible();
     await expect(page.locator("td:has-text('PAT-002')")).toBeVisible();
 
-    // Capture visual snapshot of the CP-SAT Continuity Scheduler
+    // Capture visual snapshot of the schedule proposal
     await page.screenshot({
       path: path.join(SCREENS_DIR, "m7_workstation_continuity_scheduler.png"),
       fullPage: true,
@@ -78,8 +80,8 @@ test.describe("M7 Radiotherapy Treatment Continuity & Triage E2E Suite (Real Bac
     await page.waitForSelector("header");
 
     // 1. Solve schedule
-    await page.click("button:has-text('Solve Reallocation Schedule')");
-    await expect(page.locator("h3:has-text('Optimal Continuity Schedule Generated')")).toBeVisible({ timeout: 10000 });
+    await page.click("button:has-text('Propose Schedule')");
+    await expect(page.locator("h3:has-text('Proposed schedule')")).toBeVisible({ timeout: 10000 });
 
     // 2. Confirm schedule as clinician
     await page.click("button:has-text('Confirm & Commit Schedule')");

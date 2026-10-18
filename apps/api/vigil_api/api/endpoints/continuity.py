@@ -10,6 +10,7 @@ Implements:
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -43,7 +44,12 @@ from vigil_api.schemas.v2 import (
     ScheduleSolveResponse,
 )
 from vigil_ml.continuity import ContinuityHarmModel
-from vigil_ml.scheduler import MachineConfig, PatientCourse, RadiotherapyScheduler
+from vigil_ml.scheduler import (
+    CPSAT_VALIDATION_STATUS,
+    MachineConfig,
+    PatientCourse,
+    RadiotherapyScheduler,
+)
 
 router = APIRouter()
 _HARM_MODEL = ContinuityHarmModel()
@@ -299,16 +305,28 @@ def solve_radiotherapy_schedule(
         require_roles(UserRole.CLINICIAN, UserRole.ADMIN, UserRole.QUALITY_LEAD)
     ),
 ):
-    """Solves the multi-machine radiotherapy scheduling problem via Google OR-Tools CP-SAT.
+    """Propose a radiotherapy schedule. A clinician must confirm it (separate endpoint).
 
-    Enforces:
-    - Hard machine slot capacity limits per day
-    - Machine maintenance and breakdown downtime
-    - Course contiguity (fractions delivered on consecutive days)
-    - Clinical urgency ceilings (emergency ≤ 3d, urgent ≤ 7d)
-    - Algorithmic fairness: bounded delay disparity across subgroups (≤ disparity_bound)
-    - No-starvation: maximum waiting time bounded by max_wait_days
+    ``method="urgency_ranking"`` (default, ADR-0019): explainable ranking - courses in
+    progress first, then clinician-flagged urgent courses, then clinical tier, then waiting
+    time. No fairness bound is enforced; the response reports the realised disparity and
+    lists warnings (e.g. an emergency/urgent course not started inside its bound).
+
+    ``method="cpsat_research"``: Google OR-Tools CP-SAT research optimiser. Only for
+    administrators, or when ``VIGIL_ENABLE_RESEARCH_SCHEDULER=1`` is set by the operator;
+    always labelled ``unvalidated in simulation`` (ADR-0019, study M7-TWIN).
     """
+    if payload.method == "cpsat_research" and not (
+        current_user.role == UserRole.ADMIN.value
+        or os.environ.get("VIGIL_ENABLE_RESEARCH_SCHEDULER") == "1"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "The CP-SAT scheduler is a research module (unvalidated in simulation) and is "
+                "not enabled for this role. Use method='urgency_ranking'."
+            ),
+        )
     now = datetime.now(timezone.utc)
 
     # 1. Load machines
@@ -413,17 +431,33 @@ def solve_radiotherapy_schedule(
             )
         )
 
-    # 3. Run CP-SAT Scheduler
-    scheduler = RadiotherapyScheduler(
-        harm_model=_HARM_MODEL,
-        switch_penalty=payload.stability_penalty,
-        max_fairness_disparity_days=int(payload.fairness_disparity_bound),
-    )
-    result = scheduler.solve(
-        machines=machine_configs,
-        patients=patient_courses,
-        horizon_days=payload.horizon_days,
-    )
+    # 3. Run the selected scheduler
+    ranks: dict[str, int] = {}
+    rank_reasons: dict[str, str] = {}
+    if payload.method == "cpsat_research":
+        scheduler = RadiotherapyScheduler(
+            harm_model=_HARM_MODEL,
+            switch_penalty=payload.stability_penalty,
+            max_fairness_disparity_days=int(payload.fairness_disparity_bound),
+        )
+        result = scheduler.solve(
+            machines=machine_configs,
+            patients=patient_courses,
+            horizon_days=payload.horizon_days,
+        )
+        method_label = "CP-SAT optimiser (research module)"
+        validation_status = CPSAT_VALIDATION_STATUS
+    else:
+        scheduler = RadiotherapyScheduler(harm_model=_HARM_MODEL)
+        ranking = scheduler.rank_urgency(
+            machines=machine_configs,
+            patients=patient_courses,
+            horizon_days=payload.horizon_days,
+        )
+        result = ranking.schedule
+        ranks, rank_reasons = ranking.ranks, ranking.rank_reasons
+        method_label = "Explainable urgency ranking"
+        validation_status = result.validation_status
 
     # 4. Map allocations to assignments
     assignments: List[ScheduleAssignment] = []
@@ -466,6 +500,9 @@ def solve_radiotherapy_schedule(
                 pc.patient_id, f"Scheduled at day {start_day} with harm {harm:.4f}"
             )
         )
+        uid = pc.course_id or pc.patient_id
+        if uid in rank_reasons:
+            explanation = f"{rank_reasons[uid]} {explanation}"
 
         c = course_map[pc.course_id or pc.patient_id]
         is_moved = False
@@ -491,8 +528,34 @@ def solve_radiotherapy_schedule(
                 marginal_harm=round(harm, 5),
                 explanation=explanation,
                 is_moved=is_moved,
+                priority_rank=ranks.get(uid),
             )
         )
+
+    warnings: List[str] = []
+    started_in_horizon = {a.course_id: a.start_day for a in assignments}
+    for pc in patient_courses:
+        if pc.urgency_bound_days is None or pc.fractions_completed > 0:
+            continue
+        sd = started_in_horizon.get(pc.course_id)
+        if sd is None or sd > pc.urgency_bound_days:
+            warnings.append(
+                f"Course {pc.course_id}: clinician-flagged urgent course "
+                f"{'not started within the horizon' if sd is None else f'starts day {sd}'}"
+                f" (urgency bound {pc.urgency_bound_days} days). Review manually."
+            )
+    if payload.method == "urgency_ranking":
+        for pc in patient_courses:
+            if (
+                pc.fractions_completed == 0
+                and pc.course_id not in started_in_horizon
+                and pc.elapsed_delay_days >= payload.max_wait_days
+            ):
+                warnings.append(
+                    f"Course {pc.course_id}: waiting {pc.elapsed_delay_days} days and not started "
+                    f"within the horizon (starvation ceiling {payload.max_wait_days} days is "
+                    "advisory under the urgency ranking). Review manually."
+                )
 
     mean_delay = float(sum(delays) / len(delays)) if delays else 0.0
     max_delay = max(delays) if delays else 0
@@ -508,7 +571,11 @@ def solve_radiotherapy_schedule(
         unassigned_patient_ids=unassigned,
         patients_included=len(distinct_patients),
         patients_unconsented_included=len(unconsented_patients),
-        validation_status=result.validation_status,
+        method=payload.method,
+        method_label=method_label,
+        fairness_bound_enforced=payload.method == "cpsat_research",
+        warnings=warnings,
+        validation_status=validation_status,
         synthetic=True,
     )
 
