@@ -76,6 +76,10 @@ CONFIG: Dict[str, Any] = {
         "calibration": {"base": 500000, "step": 10},
         "frozen": {"base": 20261101, "step": 10},
     },
+    "control_noise_sd": 0.08,
+    "control_slope_sd_per_day": 0.0005,
+    "control_level_sd": 0.5,
+    "control_level_median": 30.0,
     "n_dev": 10,
     "n_calibration": 20,
     "n_frozen": 100,
@@ -97,6 +101,21 @@ def clinical_cohort(seed: int, n: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         num_patients=n, duration_days=CONFIG["duration_days"]
     )
     return cohort.to_observations_dataframe(), cohort.to_patients_dataframe()
+
+
+def loglinear_control(obs: pd.DataFrame, pts: pd.DataFrame, seed: int) -> pd.DataFrame:
+    """Control (Amendment 2): keep the simulator's visit schedule, replace CA 15-3 by values for which the K5 model
+    is exactly true: log y = a_i + b_i t + eps, with no recurrence dynamics. Not a clinical model."""
+    rng = np.random.default_rng(seed + 7)
+    o = obs[["patient_id", "day", "ca_15_3"]].dropna(subset=["ca_15_3"])
+    o = o[o["ca_15_3"] > 0].copy()
+    ids = o["patient_id"].unique()
+    a = dict(zip(ids, rng.normal(math.log(CONFIG["control_level_median"]), CONFIG["control_level_sd"], len(ids))))
+    b = dict(zip(ids, rng.normal(0.0, CONFIG["control_slope_sd_per_day"], len(ids))))
+    t = o["day"].to_numpy(dtype=float)
+    mu = o["patient_id"].map(a).to_numpy(dtype=float) + o["patient_id"].map(b).to_numpy(dtype=float) * t
+    o["ca_15_3"] = np.exp(mu + rng.normal(0.0, CONFIG["control_noise_sd"], len(o)))
+    return o
 
 
 def fit_inputs(c: MultiLabCohort) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -256,6 +275,7 @@ def calibrate_detector(n_rep: int, kind: str = "calibration") -> Dict[str, float
     tau, sw = CONFIG["detector_cell"]["tau"], CONFIG["detector_cell"]["switch_fraction"]
     resid: List[np.ndarray] = []
     per_stream: List[np.ndarray] = []
+    per_stream_nonrec: List[np.ndarray] = []
     for r in range(n_rep):
         s_tr, s_ev, s_lab = seeds_for(kind, r)
         beta = draw_true_beta(s_lab, tau, 6)
@@ -265,16 +285,39 @@ def calibrate_detector(n_rep: int, kind: str = "calibration") -> Dict[str, float
         ev = apply_multilab(ev_obs, ev_pts, MultiLabConfig(tau, sw, s_lab + 2_000_000), beta)
         harm = k5.LabHarmoniserK5().fit(*fit_inputs(train))
         h = np.log(harm.harmonise(ev.observations["lab"].to_numpy(), ev.observations["y"].to_numpy()))
+        rec = ev.patients.set_index("patient_id")["true_recurrence_event"].astype(bool)
+        pid_of_obs = ev.observations["patient_id"].to_numpy()
         for lab, st in lab_streams(ev, h).items():
             per_stream.append(st["r"])
             resid.append(st["r"])
+            nonrec = ~rec.reindex(pid_of_obs[st["obs_index"]]).to_numpy()
+            per_stream_nonrec.append(st["r"][nonrec])
     sigma_r = k5.mad_sd(np.concatenate(resid))
     std_streams = [s / sigma_r for s in per_stream]
+    n_res = int(sum(len(s) for s in std_streams))
     h_star = k5.calibrate_cusum_threshold(
         std_streams, slack=CONFIG["cusum_slack"], max_alarms_per_obs=CONFIG["cusum_max_alarms_per_obs"]
     )
-    return {"sigma_r": sigma_r, "h_star": h_star, "n_streams": len(std_streams),
-            "n_residuals": int(sum(len(s) for s in std_streams))}
+    slack = CONFIG["cusum_slack"]
+    achieved = k5.cusum_alarm_count(std_streams, slack, h_star) / max(n_res, 1)
+    # Diagnostic (added by Amendment 2; not used to choose anything): alarm rate against threshold, all residuals
+    # and only residuals of patients without a recurrence event.
+    nonrec_std = [s / sigma_r for s in per_stream_nonrec]
+    n_nonrec = int(sum(len(s) for s in nonrec_std))
+    curve = {
+        f"{t:g}": {
+            "all_per_1000": 1000.0 * k5.cusum_alarm_count(std_streams, slack, t) / max(n_res, 1),
+            "non_recurrent_per_1000": 1000.0 * k5.cusum_alarm_count(nonrec_std, slack, t) / max(n_nonrec, 1),
+        }
+        for t in (2, 5, 10, 15, 30, 60)
+    }
+    return {
+        "sigma_r": sigma_r, "h_star": h_star, "n_streams": len(std_streams), "n_residuals": n_res,
+        "achieved_alarms_per_1000_at_h_star": 1000.0 * achieved,
+        "target_alarms_per_1000": 1000.0 * CONFIG["cusum_max_alarms_per_obs"],
+        "target_attained": bool(achieved <= CONFIG["cusum_max_alarms_per_obs"]),
+        "diagnostic_alarm_rate_vs_threshold": curve,
+    }
 
 
 def e3_e4(
@@ -371,6 +414,16 @@ def replication(args: Tuple[str, int, Dict[str, float], bool]) -> Dict[str, Any]
             "e2": e2_rule(ev, off),
         }
 
+    # control: the K5 model is exactly true (Amendment 2); primary cell only
+    ptau, psw = pc["tau"], pc["switch_fraction"]
+    beta = draw_true_beta(s_lab, ptau, 6)
+    ctr = apply_multilab(loglinear_control(tr_obs, tr_pts, s_tr), tr_pts, MultiLabConfig(ptau, psw, s_lab + 1_000_000), beta)
+    off = estimate_offsets(ctr)
+    res["control_loglinear"] = {
+        "tau_hat": float(off["_fits"]["k5"].tau),
+        "e1": e1_contrasts(off, beta, [(a, b) for a in range(6) for b in range(a + 1, 6)]),
+    }
+
     # new-site scenario in the primary cell
     tau, sw = pc["tau"], pc["switch_fraction"]
     beta8 = draw_true_beta(s_lab, tau, 8)
@@ -460,6 +513,17 @@ def aggregate(reps: List[Dict[str, Any]]) -> Dict[str, Any]:
             else:
                 cell["recovered_fraction"][m] = None
         agg["cells"][key] = cell
+
+    ctl: Dict[str, Any] = {
+        "tau_hat_mean": float(np.mean([r["control_loglinear"]["tau_hat"] for r in reps])),
+        "e1_rmse": {m: float(np.mean([r["control_loglinear"]["e1"][m]["rmse"] for r in reps])) for m in METHODS},
+        "e1_coverage": {},
+    }
+    for m in ("fixed", "k5"):
+        cov = sum(r["control_loglinear"]["e1"][m]["covered"] for r in reps)
+        tot = sum(r["control_loglinear"]["e1"][m]["n_intervals"] for r in reps)
+        ctl["e1_coverage"][m] = cov / tot if tot else None
+    agg["control_loglinear"] = ctl
 
     for kk in reps[0]["new_site"]:
         ns: Dict[str, Any] = {"e1_rmse": {m: float(np.mean([r["new_site"][kk]["e1"][m]["rmse"] for r in reps])) for m in METHODS}}
@@ -566,7 +630,12 @@ def render_report(res: Dict[str, Any], det: Dict[str, float], elapsed: float) ->
     L: List[str] = []
     L.append("# EXP-K5-001 report (written by `run.py`; do not edit)\n")
     L.append("> **SYNTHETIC DATA ONLY.** Laboratory spreads: tau = 0.07 is anchored by E23 (a spread across laboratories in a Chinese EQA programme, not a bias estimate); tau = 0.15 and 0.30 are assumptions. Rule R (a 25 percent rise) is a study rule, not a clinical criterion. Pre-registration: `PREREG.md`.\n")
-    L.append(f"Replications: {a['n_replications']} (frozen seeds). Detector calibration: sigma_r = {det['sigma_r']:.4f}, threshold h* = {det['h_star']:.2f} from {det['n_streams']} null streams ({det['n_residuals']} residuals). Run time {elapsed:.0f} s.\n")
+    L.append(f"Replications: {a['n_replications']} (frozen seeds). Detector calibration: sigma_r = {det['sigma_r']:.4f}, threshold h* = {det['h_star']:.2f} from {det['n_streams']} null streams ({det['n_residuals']} residuals). **Calibration target of {det['target_alarms_per_1000']:.2f} alarms per 1,000 residuals attained: {det['target_attained']}** (achieved {det['achieved_alarms_per_1000_at_h_star']:.2f} per 1,000 at h* = {det['h_star']:.2f}). Run time {elapsed:.0f} s.\n")
+    L.append("Diagnostic added by Amendment 2 (alarm rate per 1,000 calibration residuals against threshold; not used to choose anything):\n")
+    L.append("| threshold | all residuals | residuals of patients without recurrence only |\n|---|---|---|")
+    for t, v in det["diagnostic_alarm_rate_vs_threshold"].items():
+        L.append(f"| {t} | {v['all_per_1000']:.2f} | {v['non_recurrent_per_1000']:.2f} |")
+    L.append("")
     L.append("## Hypotheses (computed)\n")
     h = a["hypotheses"]
     L.append("| Hypothesis | Result | Detail |\n|---|---|---|")
@@ -595,6 +664,11 @@ def render_report(res: Dict[str, Any], det: Dict[str, float], elapsed: float) ->
         e = c["e1_rmse"]
         cf, ck = c["e1_coverage"]["fixed"], c["e1_coverage"]["k5"]
         L.append(f"| `{k}` | {e['pooled']:.4f} | {e['legacy']:.4f} | {e['fixed']:.4f} | {e['k5']:.4f} | {c['tau_hat_mean']:.3f} ({c['tau']:.2f}) | {('%.3f' % cf) if cf is not None else 'n/a'} | {('%.3f' % ck) if ck is not None else 'n/a'} |")
+    c = a["control_loglinear"]
+    L.append("\n## Control (Amendment 2): the K5 model is exactly true (log-linear patient trajectories on the simulator's visit schedule), cell tau 0.15, switching 0.30\n")
+    L.append("| pooled | legacy | fixed | K5 | tau_hat mean (true 0.15) | coverage fixed | coverage K5 |\n|---|---|---|---|---|---|---|")
+    e = c["e1_rmse"]
+    L.append(f"| {e['pooled']:.4f} | {e['legacy']:.4f} | {e['fixed']:.4f} | {e['k5']:.4f} | {c['tau_hat_mean']:.3f} | {c['e1_coverage']['fixed']:.3f} | {c['e1_coverage']['k5']:.3f} |")
     L.append("\n## E2: rule R, false alarms (FAR) and sensitivity, mean over replications\n")
     L.append("| Cell | method | FAR | Sens | recovered fraction (95% CI) |\n|---|---|---|---|---|")
     for k, c in a["cells"].items():
@@ -643,10 +717,13 @@ def main() -> int:
     args = ap.parse_args()
     t0 = time.time()
     if args.smoke:
-        det = {"sigma_r": 0.2, "h_star": 6.0}
+        det = {"sigma_r": 0.2, "h_star": 6.0, "n_streams": 1, "n_residuals": 1, "target_alarms_per_1000": 0.67,
+               "achieved_alarms_per_1000_at_h_star": 0.0, "target_attained": True,
+               "diagnostic_alarm_rate_vs_threshold": {"2": {"all_per_1000": 1.0, "non_recurrent_per_1000": 1.0}}}
         reps = run("dev", 2, det, 1, smoke=True)
         agg = aggregate(reps)
-        print(json.dumps({"ok": True, "cells": list(agg["cells"])}))
+        report = render_report({"aggregate": agg}, det, 0.0)
+        print(json.dumps({"ok": "H1" in report and "Control" in report, "cells": list(agg["cells"])}))
         return 0
     if args.dev:
         det = calibrate_detector(CONFIG["n_calibration"], kind="calibration")

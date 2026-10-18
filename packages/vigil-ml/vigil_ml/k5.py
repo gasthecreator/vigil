@@ -395,6 +395,19 @@ def cusum_first_alarm(standardised: Sequence[float], slack: float, threshold: fl
     return None
 
 
+def cusum_alarm_count(streams: Sequence[Sequence[float]], slack: float, threshold: float) -> int:
+    """Number of alarms over the streams; an alarm restarts the chart."""
+    alarms = 0
+    for stream in streams:
+        c = 0.0
+        for x in stream:
+            c = max(0.0, c + float(x) - slack)
+            if c >= threshold:
+                alarms += 1
+                c = 0.0
+    return alarms
+
+
 def calibrate_cusum_threshold(
     null_streams: Sequence[Sequence[float]],
     slack: float = 0.5,
@@ -408,17 +421,9 @@ def calibrate_cusum_threshold(
     grid = list(np.arange(2.0, 15.0001, 0.25)) if grid is None else list(grid)
     total = sum(len(s) for s in null_streams)
     for h in grid:
-        alarms = 0
-        for s in null_streams:
-            c = 0.0
-            for x in s:
-                c = max(0.0, c + float(x) - slack)
-                if c >= h:
-                    alarms += 1
-                    c = 0.0
-        if alarms <= max_alarms_per_obs * total:
+        if cusum_alarm_count(null_streams, slack, h) <= max_alarms_per_obs * total:
             return float(h)
-    return float(grid[-1])
+    return float(grid[-1])  # target not attainable on the grid: the caller must check (see the study runner)
 
 
 __all__ = [
@@ -427,6 +432,7 @@ __all__ = [
     "ProjectedSystem",
     "build_projected_system",
     "calibrate_cusum_threshold",
+    "cusum_alarm_count",
     "cusum_first_alarm",
     "fit_fixed",
     "fit_k5",
