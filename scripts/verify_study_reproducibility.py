@@ -19,6 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+try:  # xgboost must be imported before torch on macOS (two OpenMP runtimes); harmless elsewhere
+    import xgboost  # noqa: F401
+except ImportError:  # pragma: no cover
+    pass
+
 
 def verify_m10_reproducibility() -> bool:
     print("🔬 Verifying deterministic reproduction of Study M10-V2...")
@@ -187,8 +192,50 @@ def verify_k5_study() -> bool:
     return True
 
 
+def verify_k4_study() -> bool:
+    print("🔬 Verifying EXP-K4-001 (K4 deep families, pre-training, scale) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-K4-001"
+    stored = json.loads((exp / "results.json").read_text())
+    spec = importlib.util.spec_from_file_location("exp_k4_run_verify", exp / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp_k4_run_verify"] = mod
+    spec.loader.exec_module(mod)
+    # (1) The committed code is the code that produced the committed result.
+    if stored["code_hash"] != mod.code_hash():
+        print("❌ EXP-K4-001: k4.py or run.py changed after the frozen run (code hash differs); re-run or file an amendment.")
+        return False
+    print("  ✅ code hash of k4.py and run.py equals the hash recorded by the frozen run.")
+    # (2) The aggregate and the verdicts are a pure function of the stored records.
+    agg = json.loads(json.dumps(mod.aggregate(stored)))
+    if not _close(agg, stored["aggregate"]):
+        print("❌ EXP-K4-001: aggregate does not equal a fresh derivation from the stored records.")
+        return False
+    print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored records.")
+    # (3) REPORT.md is the render of results.json.
+    if mod.render_report(stored) != (exp / "REPORT.md").read_text():
+        print("❌ EXP-K4-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    # (4) The classical baselines of frozen replication 0 are regenerated from the seeds. (The neural arms are not
+    # compared across machines: floating-point differences grow over epochs; same-machine determinism is tested.)
+    fresh = json.loads(json.dumps(mod.unit_baselines("frozen", 0, "full")["records"]))
+    old = [r for r in stored["records"] if r["rep"] == 0 and r["arm"] == "classical"]
+    drop = ("train_seconds",)
+    fresh = [{k: v for k, v in r.items() if k not in drop} for r in fresh]
+    old = [{k: v for k, v in r.items() if k not in drop} for r in old]
+    if not _close(fresh, old, tol=1e-4):
+        print("❌ EXP-K4-001: classical baselines of frozen replication 0 do not reproduce results.json.")
+        return False
+    print("  ✅ classical baselines of frozen replication 0 reproduce results.json (relative tolerance 1e-4).")
+    return True
+
+
 def main() -> int:
     ok = True
+    if not verify_k4_study():
+        ok = False
     if not verify_k5_study():
         ok = False
     if not verify_m10_reproducibility():
