@@ -200,3 +200,11 @@ def test_planted_signal_central_fedavg_and_mild_dp():
     )
     auc_d = float(roc_auc_score(y, m12.predict_proba(d, x)))
     assert auc_d > 0.70, auc_d
+
+
+def test_old_s10_is_retracted_and_cannot_produce_numbers():
+    src = (ROOT / "scripts" / "run_benchmarks.py").read_text(encoding="utf-8")
+    assert "Approve M12 Federated Training Architecture" not in src
+    assert "EXP-M12-001" in src
+    assert (ROOT / "reports" / "ml" / "RETRACTED" / "S10_MULTISITE_SYNTHETIC_TRIAL" / "REPORT.md").exists()
+    assert not (ROOT / "reports" / "ml" / "S10_MULTISITE_SYNTHETIC_TRIAL").exists()

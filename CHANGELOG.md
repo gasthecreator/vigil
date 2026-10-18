@@ -29,11 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - K6 active sensing rebuilt as a tested planner (`vigil_ml.k6`, calibrated multi-horizon hazard, finite-horizon cost-of-delay objective, XGBoost JSON export with round-trip tests), dense-world surveillance layer (`vigil_sim.surveillance`) and pre-registered study `experiments/EXP-K6-001/`: H1 and H2 met in simulation (2.3 and 0.8 days at equal assumed cost); H3 not met; K6 is a suggestion with reasons shown and only a simulation claim (ADR-0026).
 
 - K4 deep irregular-time risk models rebuilt as six tested families (`vigil_ml.k4`: GRU-D, GRU-ODE-Bayes encoder, Neural CDE, continuous-time transformer, GRUwE, state-space; masked-analyte pre-training code; safetensors and ONNX export with parity tests) and pre-registered study `experiments/EXP-K4-001/`: all three kill rules fired (pre-training lowered AUC; no deep family beat the strongest classical baseline; scale does not help), so K4 is not claimed to help (ADR-0025). Stub S-016 records the hand-written `ProductionEnsembleK8`.
+- M12 federated averaging and DP-SGD as in-process research code (`vigil_ml.m12`) and pre-registered study `experiments/EXP-M12-001/` (synthetic sites only; H3 met on this MLP, H2 not met, not wired; ADR-0027).
 
 ### Changed
 - Old study S4 and the `DeepZooK4` stub retracted (literal dictionaries; hand-written formula scored as `K4_DeepZoo` in S9); the S9 row is removed and disclosed; K4 model card rewritten without retracted numbers (ADR-0025).
 - Old study S5 retracted (hand-subtracted offset, literal 34.2) and moved to `reports/ml/RETRACTED/S5_HARMONISATION_V1/`; K5 model card rewritten.
 - Old study S6 and the `ActiveSensingEngineK6` stub retracted (hand-written if-ladder; literal visits/costs/delays); K6 model card rewritten without retracted numbers (ADR-0026).
+- Old study S10 renderer retracted (hard-coded site AUCs and a hard-coded approve-M12 decision); replaced by `experiments/EXP-M12-001/`.
 - `ObservationCreateResponse.risk_assessment` is optional and `outputs_withheld` was added (silent mode); `docs/api/openapi.json` regenerated.
 - Patient, caregiver and quality-lead tokens can no longer register patients or submit baselines and labs; caregivers can no longer mint shares (behaviour change, see ADR-0023).
 - `metabric_loader` and `tcga_loader` are marked superseded by `contracts.loaders.cbioportal`.

@@ -2,6 +2,29 @@
   "schema": "vigil-model-registry-v1",
   "models": [
     {
+      "id": "M12",
+      "name": "In-process FederatedAveraging and DP-SGD (research MLP)",
+      "module": "packages/vigil-ml/vigil_ml/m12.py",
+      "maturity": "L0",
+      "status": "research; simulation claim only (ADR-0027); not wired to any pipeline",
+      "data": "synthetic only",
+      "formats": {
+        "arrays": "in-process float32 weight lists; no pickle"
+      },
+      "parity_tests": [
+        "packages/vigil-ml/tests/test_m12.py::test_fedavg_identity_n_weighted_mean",
+        "packages/vigil-ml/tests/test_m12.py::test_accountant_recovers_abadi_example",
+        "packages/vigil-ml/tests/test_m12.py::test_no_raw_data_egress_or_pickle"
+      ],
+      "study": {
+        "prereg": "experiments/EXP-M12-001/PREREG.md",
+        "result_file": "experiments/EXP-M12-001/results.json",
+        "conclusion": "experiments/EXP-M12-001/CONCLUSION.md",
+        "result_sha256": "24823a15da8e19ed2ef0787d520b36e1c9ff56f41a8ec3ef4efad2d1521a3731"
+      },
+      "model_card": "docs/model_cards/MODEL-CARD-M12.md"
+    },
+    {
       "id": "K5",
       "name": "Laboratory harmonisation (REML partial pooling of laboratory offsets)",
       "module": "packages/vigil-ml/vigil_ml/k5.py",
