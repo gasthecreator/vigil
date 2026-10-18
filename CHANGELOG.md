@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/STUBS.md` rows corrected against the repository.
 
 ### Fixed
+- CI `e2e-and-lighthouse` on `main` after #59/#60: triage Lighthouse performance 74 (CI floor 75, ADR-0013). One Chrome is reused and a discarded warmup pass runs before scoring; the floor is not lowered (ADR-0013 Amendment 1).
 - Hazard H17 (bad news withheld from patients and caregivers) was enforced only on the explainer routes: `GET /patients/{id}`, `/risk-history`, `/trajectory`, `/observations` and `GET /alerts/stream` returned withheld results. All now use one gate (`vigil_api/disclosure.py`).
 - `POST /patients/`, `/baseline` and `/labs` accepted any authenticated role (role gates added). `/labs` still does not check patient consent: open, hazard H25, `PROP-0005`; `shares`, `second-look`, `symptoms` and `disclosure/request-release` accepted roles outside the intended set.
 - `restore_backup` failed when the target directory did not exist.
