@@ -241,3 +241,24 @@ def test_triage_statement_count_does_not_scale_with_patients(db):
     event.listen(eng, "before_cursor_execute", lambda *a, **k: counts.append(1))
     get_triage_queue(db=db, current_user=None)
     assert len(counts) <= 10, f"{len(counts)} SQL statements for 24 patients"
+
+
+def test_triage_does_not_materialise_every_pending_task(db):
+    _seed(db, 6)
+    for k in range(400):
+        db.add(FollowUpTask(patient_id="P01", task_type="repeat_lab", status="pending", due_date=NOW - timedelta(days=k % 30), escalation_level=k % 3))
+    db.commit()
+    loaded: List[int] = []
+
+    def _count(*_a, **_k):
+        loaded.append(1)
+
+    event.listen(FollowUpTask, "load", _count)
+    try:
+        new = _as_rows(get_triage_queue(db=db, current_user=None))
+    finally:
+        event.remove(FollowUpTask, "load", _count)
+    assert not loaded, f"{len(loaded)} FollowUpTask rows materialised"
+    old = {r["patient_id"]: r for r in _as_rows(_legacy_triage(db))}
+    for r in new:
+        assert r["action_urgency"] == pytest.approx(old[r["patient_id"]]["action_urgency"], abs=2e-3)

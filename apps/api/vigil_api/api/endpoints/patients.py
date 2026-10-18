@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, func, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, defer, selectinload
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.config import settings
@@ -243,7 +243,11 @@ def get_triage_queue(
     Master Plan §6.9 (M9) / Phase 5b.
     """
     now = datetime.now(timezone.utc)
-    patients = db.query(Patient).options(selectinload(Patient.baseline_profile)).all()
+    patients = (
+        db.query(Patient)
+        .options(selectinload(Patient.baseline_profile), defer(Patient.detector_state))
+        .all()
+    )
     triage_roster: List[TriageQueueItem] = []
 
     # Batched reads (constant number of statements, independent of the number of patients). This replaced a
@@ -257,11 +261,19 @@ def get_triage_queue(
             LabResult.patient_id, func.max(LabResult.date_drawn), func.count(LabResult.id)
         ).group_by(LabResult.patient_id)
     }
-    active_tasks_by_patient: Dict[str, List[FollowUpTask]] = {}
-    for task in db.query(FollowUpTask).filter(
-        FollowUpTask.status.in_(["pending", "in_progress", "escalated"])
-    ):
-        active_tasks_by_patient.setdefault(task.patient_id, []).append(task)
+    # Active tasks are reduced in SQL to what the urgency formula uses: the earliest due date (=> largest overdue
+    # days) and the highest escalation level per patient. Materialising every pending task made the cost grow with
+    # the number of unresolved tasks (thousands after a soak run).
+    task_stats = {
+        pid: (earliest_due, max_escalation)
+        for pid, earliest_due, max_escalation in db.query(
+            FollowUpTask.patient_id,
+            func.min(FollowUpTask.due_date),
+            func.max(FollowUpTask.escalation_level),
+        )
+        .filter(FollowUpTask.status.in_(["pending", "in_progress", "escalated"]))
+        .group_by(FollowUpTask.patient_id)
+    }
 
     for patient in patients:
         latest_inference = latest_inference_by_patient.get(patient.id)
@@ -310,22 +322,15 @@ def get_triage_queue(
             s_unc = min(1.0, float(2.0 * margin))
 
         # 3. Overdue follow-up tasks component (weight 0.20)
-        active_tasks = active_tasks_by_patient.get(patient.id, [])
         max_overdue_days = 0.0
         max_escalation = 0
-        for task in active_tasks:
-            due = (
-                task.due_date
-                if task.due_date.tzinfo
-                else task.due_date.replace(tzinfo=timezone.utc)
-            )
-            overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
-            if overdue_days > max_overdue_days:
-                max_overdue_days = overdue_days
-            if task.escalation_level > max_escalation:
-                max_escalation = task.escalation_level
+        has_active_tasks = patient.id in task_stats
+        if has_active_tasks:
+            earliest_due, max_escalation = task_stats[patient.id]
+            due = earliest_due if earliest_due.tzinfo else earliest_due.replace(tzinfo=timezone.utc)
+            max_overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
 
-        if active_tasks:
+        if has_active_tasks:
             s_overdue = min(1.0, max(max_overdue_days / 14.0, max_escalation / 3.0))
         else:
             s_overdue = 0.0
