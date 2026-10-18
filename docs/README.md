@@ -24,6 +24,7 @@ Organised by who is reading and why. `docs/MASTER_PLAN.md` is the single canonic
 - GitHub configuration: [`ops/GITHUB-SETTINGS.md`](ops/GITHUB-SETTINGS.md)
 
 ## I review safety, security, privacy
+- [`clinical/SILENT-MODE.md`](clinical/SILENT-MODE.md) (silent-mode design, operation and limits), [`clinical/PILOT/`](clinical/PILOT/) (stop rules, training, incident template, go/no-go; all draft)
 - [`safety/HAZARD_LOG.md`](safety/HAZARD_LOG.md) (verified by `scripts/verify_hazard_log.py`), [`risk/RISK-REGISTER.md`](risk/RISK-REGISTER.md)
 - [`security/THREAT_MODEL.md`](security/THREAT_MODEL.md), [`security/VULNERABILITY_POLICY.md`](security/VULNERABILITY_POLICY.md)
 - [`regulatory/`](regulatory/) (all `DRAFT-UNREVIEWED`), [`usability/`](usability/), [`clinical/`](clinical/), [`data/`](data/)

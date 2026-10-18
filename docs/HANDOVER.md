@@ -22,6 +22,21 @@
 | H-004 | Production key management (cloud KMS / HSM) and field-encryption master key provisioning | `docs/runbooks/`, `.env.example` |
 | H-005 | Recruit participants for IEC 62366-1 summative usability testing | `docs/usability/USABILITY_TEST_PROTOCOL.md` |
 
+## B2. Phase 9 preparation (added in Tier 1)
+
+| ID | Action | Where the prepared material is | Status |
+|---|---|---|---|
+| H-101 | Ratify PR-01 to PR-09 (a named clinical lead and statistician; **PR-04, the alert budget, has no default and must be chosen**), then create `docs/clinical/PREREG-FREEZE.json` with the PREREGISTRATION and ANALYSIS-SPEC hashes, a bootstrap seed and a partition key id. Nothing real-data runs before `python scripts/check_prereg_freeze.py` exits 0 | `docs/clinical/PREREGISTRATION.md` section 7, `docs/clinical/ANALYSIS-SPEC.md`, `scripts/check_prereg_freeze.py` (describes the exact record) | READY; today the gate exits 1 |
+| H-102 | Find a retrospective partner and give them the de-identification checklist, data dictionary and loaders; run `scripts/run_partner_ingest.py` on **their** de-identified extract on **their** premises; return only the rejection report | `docs/clinical/PARTNERSHIP/DATA-DICTIONARY.md`, `DEIDENTIFICATION-CHECKLIST.md`, `scripts/run_partner_ingest.py`, `scripts/hl7_onsite_convert.py`; rehearsal on a synthetic messy dataset in `reports/clinical/dry_run/` | READY; BLOCKED on a partner |
+| H-103 | Submit the three public-data applications (MIMIC-IV credentialing, Project Data Sphere, SEER) under the owner's identity; nothing was submitted | `docs/clinical/APPLICATIONS/` (each file lists what is filled and what only the applicant can supply) | READY |
+| H-104 | Download METABRIC and TCGA-BRCA with the documented commands (network needed; `data/external/` is git-ignored) and re-run `scripts/compare_marginals_public_vs_sim.py` if the files change | `data/dataset_cards/DATASET-CARD-METABRIC.md`, `DATASET-CARD-TCGA-BRCA.md`, `scripts/fetch_public_clinical.py` | READY (the committed marginals report was made from a real download; CI cannot regenerate it) |
+| H-105 | Silent mode in a deployment: provision a **separate database and credentials** for the shadow store, restrict access to the data steward, set `VIGIL_SILENT_MODE=true` and `VIGIL_SILENT_SHADOW_DATABASE_URL`, route the exit code of `scripts/silent_mode_ctl.py report` to the on-call person, and arrange periodic reconciliation of clinical observations against shadow predictions (a crash between the two commits can leave an orphan) | `docs/clinical/SILENT-MODE.md`, `docs/adr/0022-silent-mode-shadow-store.md`, `docs/safety/HAZARD_LOG.md` H23 | READY; no deployment exists |
+| H-106 | Outcome import for silent mode: the data steward extracts recurrence, last follow-up and non-recurrence deaths from the chart as CSV and imports them with `scripts/silent_mode_ctl.py import-outcomes` | `docs/clinical/SILENT-MODE.md` section 4 | READY |
+| H-107 | Pilot safety kit: fill the names in `STOP-RULES.md` section 4, have the clinical lead review and sign stop rules, training, incident template and go/no-go; train staff and record competency; rehearse one synthetic incident | `docs/clinical/PILOT/` (all `DRAFT-UNREVIEWED`; go/no-go answer is NO-GO today) | READY |
+| H-108 | Rule on `docs/proposals/PROP-0004-penetration-suite-policy-table.md` (nine routes where the older security-test table and the server differ) | that file | READY (overseer) |
+| H-110 | Rule on `docs/proposals/PROP-0005-labs-route-consent.md`: the legacy `/labs` route does not check patient consent and an overseer-owned acceptance test currently forbids adding the check (hazard H25 OPEN). Until ruled, expose only `/observations` to clinical users | that file | READY (overseer) |
+| H-109 | Clinical-statistical review of the monitor definitions where the pre-registration leaves a choice (slope breach as a confidence interval wholly outside the band, zero-baseline handling, exposure definition, M3 `p_real` as the monitored score, competing death excluded) | `docs/clinical/SILENT-MODE.md` sections 3 and 5 | READY |
+
 ## C. Known unmet items that are not human actions (tracked so they are not forgotten)
 
 | ID | Item | Evidence | Plan |
