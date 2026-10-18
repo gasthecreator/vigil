@@ -104,6 +104,12 @@
 * **Limits:** non-oncology benchmarks; a preprint (E11 cites a TMLR 2026 version that was not retrieved); no figure from it is relied on.
 * **Used by:** K4 study `experiments/EXP-K4-001`.
 
+### E25 — ESMO (Pan-Asian adapted) Follow-up Recommendations for Early Breast Cancer — `SECONDARY` (guideline consensus statements; quoted text machine-checked against the open-access full text)
+* **Source:** Park KH, Loibl S, Sohn J, et al. "Pan-Asian adapted ESMO Clinical Practice Guidelines for the diagnosis, treatment and follow-up of patients with early breast cancer." *ESMO Open*. 2024;9(5):102974. doi:[10.1016/j.esmoop.2024.102974](https://doi.org/10.1016/j.esmoop.2024.102974). PMID:[38796284](https://pubmed.ncbi.nlm.nih.gov/38796284/). Excerpt: [`docs/evidence/excerpts/E25_park_2024_esmo_followup.md`](evidence/excerpts/E25_park_2024_esmo_followup.md).
+* **Figures:** follow-up visits every 3 months in the first 3 years (every 6 months for low-risk disease), every 6 months in years 4 to 5, annually after; the interval "can be adapted to the risk of relapse"; routine laboratory tests and tumour markers are **not recommended** in asymptomatic patients [I, D], though they "may be considered on an individual basis" [V, C].
+* **Limits:** consensus guideline for Asian systems; says nothing about Nigerian pathways; recommendation 8d runs against marker-based surveillance, so the K6 simulation study makes no claim about real patients.
+* **Used by:** K6 active-sensing study `experiments/EXP-K6-001` (named baseline schedules; the counter-indication is stated in its limits).
+
 ### E6 — Radiotherapy Capacity in Nigeria — `SECONDARY` / `STALE`
 * ~200M population, estimated shortfall of ~280 LINACs by IAEA benchmarks; high out-of-pocket costs and machine downtime. Current national facility assessment pending hospital partnership data.
 * Sources: PMC7456314; local press reports.
