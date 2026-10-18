@@ -351,6 +351,35 @@ export interface PlainLanguageExplainerResponse {
   word_count: number;
 }
 
+export interface QualityAuditRequest {
+  /** Optional facility identifier to filter trajectories */
+  facility_id?: string | null;
+  /** Whether to include synthetic benchmark cases if local facility data is small */
+  include_synthetic_benchmark?: boolean;
+  /** Lookback window in days for surveillance audit */
+  lookback_days?: number;
+  /** Bootstrap iterations for confidence intervals */
+  n_bootstrap?: number;
+}
+
+export interface QualityAuditResponse {
+  audit_id: string;
+  facility_id?: string | null;
+  narrative_summary: string;
+  overall_action_not_recorded_rate: number;
+  overall_bootstrap_ci_95: number[];
+  register_audit_verified?: boolean;
+  stage_breakdown: Record<string, StratumAuditMetricResponse>;
+  subgroup_breakdown: Record<string, StratumAuditMetricResponse>;
+  subtype_breakdown: Record<string, StratumAuditMetricResponse>;
+  suppressed_strata_count: number;
+  synthetic?: boolean;
+  total_action_not_recorded: number;
+  total_action_recorded: number;
+  total_patients_audited: number;
+  total_signals_detected: number;
+}
+
 export interface RadiotherapyCourseCreate {
   assigned_machine_id?: string | null;
   baseline_subgroup?: string | null;
@@ -460,6 +489,8 @@ export interface ScheduleSolveResponse {
   fairness_disparity: number;
   max_delay_days: number;
   mean_delay_days: number;
+  patients_included?: number;
+  patients_unconsented_included?: number;
   solver_time_seconds: number;
   status: string;
   synthetic?: boolean;
@@ -499,6 +530,14 @@ export interface SimulationResponse {
   justification_text: string;
   projected_risk: number;
   triage_flag: boolean;
+}
+
+export interface StratumAuditMetricResponse {
+  action_not_recorded_count: number | string;
+  action_not_recorded_rate?: number | null;
+  is_suppressed?: boolean;
+  stratum_name: string;
+  total_signals: number | string;
 }
 
 export interface SymptomCreateRequest {

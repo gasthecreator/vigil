@@ -325,7 +325,7 @@ def _worker_run_rep(args: Tuple[int, float, float]) -> Dict[str, Any]:
     }
 
 
-def execute_study(n_replications: int = 50) -> Dict[str, Any]:
+def execute_study(n_replications: int = 50) -> Dict[str, Any]:  # reality: allow(R1) simulation parameter sweep grid
     print(f"🏥 Starting Study M7-TWIN ({n_replications} replications per cell)...")
     start_time = time.perf_counter()
 
