@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "note": "Every number below is copied from the excerpt named in its source; tests check that each number appears there (packages/vigil-ml/tests/test_m4_ladder.py). An estimate with only a value has no published interval: M4 applies its assumed widening to it and flags the output.",
+  "rows": [
+    {
+      "organ": "liver",
+      "modality": "ultrasound",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E20",
+          "excerpt": "E20_kinkel_2002_liver_imaging.md",
+          "population": "colorectal, gastric and esophageal primaries (not breast cancer)",
+          "breast_population": false,
+          "design": "meta-analysis, 9 ultrasound data sets, 509 patients",
+          "sensitivity": [
+            {
+              "value": 0.55,
+              "lo": 0.41,
+              "hi": 0.68,
+              "basis": "ci"
+            }
+          ],
+          "specificity": [
+            {
+              "lo": 0.85,
+              "hi": 1.0,
+              "basis": "stratum",
+              "note": "sensitivity is reported only for data sets with specificity above 85 percent; 1.0 is a logical bound, not a result"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "liver",
+      "modality": "ct",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E20",
+          "excerpt": "E20_kinkel_2002_liver_imaging.md",
+          "population": "colorectal, gastric and esophageal primaries (not breast cancer)",
+          "breast_population": false,
+          "design": "meta-analysis, 25 CT data sets, 1,747 patients",
+          "sensitivity": [
+            {
+              "value": 0.72,
+              "lo": 0.63,
+              "hi": 0.8,
+              "basis": "ci"
+            }
+          ],
+          "specificity": [
+            {
+              "lo": 0.85,
+              "hi": 1.0,
+              "basis": "stratum"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "liver",
+      "modality": "mri",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E20",
+          "excerpt": "E20_kinkel_2002_liver_imaging.md",
+          "population": "colorectal, gastric and esophageal primaries (not breast cancer)",
+          "breast_population": false,
+          "design": "meta-analysis, 11 MR imaging data sets, 401 patients",
+          "sensitivity": [
+            {
+              "value": 0.76,
+              "lo": 0.57,
+              "hi": 0.91,
+              "basis": "ci"
+            }
+          ],
+          "specificity": [
+            {
+              "lo": 0.85,
+              "hi": 1.0,
+              "basis": "stratum"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "liver",
+      "modality": "fdg_pet",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E20",
+          "excerpt": "E20_kinkel_2002_liver_imaging.md",
+          "population": "colorectal, gastric and esophageal primaries (not breast cancer)",
+          "breast_population": false,
+          "design": "meta-analysis, 9 PET data sets, 423 patients",
+          "sensitivity": [
+            {
+              "value": 0.9,
+              "lo": 0.8,
+              "hi": 0.97,
+              "basis": "ci"
+            }
+          ],
+          "specificity": [
+            {
+              "lo": 0.85,
+              "hi": 1.0,
+              "basis": "stratum"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "bone",
+      "modality": "bone_scintigraphy",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21a_yang_2011_bone_imaging.md",
+          "population": "all cancers",
+          "breast_population": false,
+          "design": "meta-analysis, 67 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.86,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.814,
+              "basis": "point"
+            }
+          ]
+        },
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21b_liu_2011_bone_imaging_breast.md",
+          "population": "breast cancer",
+          "breast_population": true,
+          "design": "meta-analysis, 13 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.87,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.881,
+              "basis": "point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "bone",
+      "modality": "mri",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21a_yang_2011_bone_imaging.md",
+          "population": "all cancers",
+          "breast_population": false,
+          "design": "meta-analysis, 67 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.906,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.954,
+              "basis": "point"
+            }
+          ]
+        },
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21b_liu_2011_bone_imaging_breast.md",
+          "population": "breast cancer",
+          "breast_population": true,
+          "design": "meta-analysis, 13 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.971,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.97,
+              "basis": "point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "bone",
+      "modality": "ct",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21a_yang_2011_bone_imaging.md",
+          "population": "all cancers",
+          "breast_population": false,
+          "design": "meta-analysis, 67 articles, per-patient pooled estimate (single source: CT was not analysed in the breast-cancer meta-analysis)",
+          "sensitivity": [
+            {
+              "value": 0.729,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.948,
+              "basis": "point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "bone",
+      "modality": "fdg_pet",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21a_yang_2011_bone_imaging.md",
+          "population": "all cancers",
+          "breast_population": false,
+          "design": "meta-analysis, 67 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.897,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.968,
+              "basis": "point"
+            }
+          ]
+        },
+        {
+          "evidence_id": "E21",
+          "excerpt": "E21b_liu_2011_bone_imaging_breast.md",
+          "population": "breast cancer",
+          "breast_population": true,
+          "design": "meta-analysis, 13 articles, per-patient pooled estimate",
+          "sensitivity": [
+            {
+              "value": 0.833,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.945,
+              "basis": "point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "bone",
+      "modality": "plain_radiograph",
+      "status": "unsourced",
+      "reason": "No accuracy source retrieved; the threshold of bone loss needed for a lesion to show on a radiograph is a mechanism, not a sensitivity."
+    },
+    {
+      "organ": "bone",
+      "modality": "alp_calcium_trend",
+      "status": "unsourced",
+      "reason": "No accuracy source retrieved for alkaline phosphatase or calcium trends as a test for bone metastases."
+    },
+    {
+      "organ": "lung",
+      "modality": "chest_radiograph",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E22",
+          "excerpt": "E22_mahajan_2023_chest_xray_ct.md",
+          "population": "head and neck squamous cell cancer, single Indian centre, reference standard is chest CT (not breast cancer)",
+          "breast_population": false,
+          "design": "retrospective cohort, 837 patients",
+          "sensitivity": [
+            {
+              "value": 0.49,
+              "basis": "point"
+            },
+            {
+              "lo": 0.2,
+              "hi": 0.5,
+              "basis": "range",
+              "note": "range the authors quote from earlier literature"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.88,
+              "basis": "point"
+            },
+            {
+              "value": 0.89,
+              "basis": "point",
+              "note": "Discussion of the same paper"
+            },
+            {
+              "lo": 0.9,
+              "hi": 0.98,
+              "basis": "range",
+              "note": "range the authors quote from earlier literature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "lung",
+      "modality": "ct",
+      "status": "sourced",
+      "sources": [
+        {
+          "evidence_id": "E22",
+          "excerpt": "E22_mahajan_2023_chest_xray_ct.md",
+          "population": "head and neck squamous cell cancer, single Indian centre, reference standard is chest CT (not breast cancer)",
+          "breast_population": false,
+          "design": "retrospective cohort, 837 patients; the reference standard is the CT itself",
+          "sensitivity": [
+            {
+              "value": 0.973,
+              "basis": "point"
+            }
+          ],
+          "specificity": [
+            {
+              "value": 0.972,
+              "basis": "point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organ": "brain",
+      "modality": "mri_brain",
+      "status": "unsourced",
+      "reason": "No accuracy source retrieved."
+    },
+    {
+      "organ": "brain",
+      "modality": "ct_brain",
+      "status": "unsourced",
+      "reason": "No accuracy source retrieved."
+    }
+  ]
+}
