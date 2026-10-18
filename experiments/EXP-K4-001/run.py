@@ -64,6 +64,7 @@ CONFIG: Dict[str, Any] = {
     "n_h1": 100,
     "n_h2": 1000,
     "n_canary": 1000,
+    "n_canary_perms": 20,
     "families": list(k4.FAMILIES),
     "f3": ["grud", "ct_transformer", "ssm"],
     "sizes": dict(k4.SIZES),
@@ -105,6 +106,7 @@ SMOKE_CONFIG: Dict[str, Any] = {
     "n_h1": 50,
     "n_h2": 60,
     "n_canary": 60,
+    "n_canary_perms": 2,
     "pretrain_epochs": 1,
     "max_epochs": 3,
     "latency_repeats": 5,
@@ -429,9 +431,10 @@ def unit_family(kind: str, r: int, family: str, hp: Dict[str, Any], scope: str) 
     if r == 0:
         exports.append(export_check(rep, family, keep_net))
     if family == "grud":
-        rec, _ = fit_arm(rep, base | {"arm": "canary_permuted_labels"}, family, "medium", cfg["n_canary"], lr_s, seed,
-                         permute_seed=rep.seed + off["canary"])
-        recs.append(rec)
+        for k in range(cfg["n_canary_perms"]):  # A3: a model fitted to permuted labels scatters widely, so many permutations
+            rec, _ = fit_arm(rep, base | {"arm": "canary_permuted_labels", "perm": k}, family, "medium", cfg["n_canary"],
+                             lr_s, seed, permute_seed=rep.seed + off["canary"] + 1000 * k)
+            recs.append(rec)
     if in_f3:
         for corpus in CORPORA:
             state, info = pretrain(rep, family, "medium", corpus, seed)
@@ -657,7 +660,8 @@ def aggregate(payload: Dict[str, Any]) -> Dict[str, Any]:
     can = pick(df, arm="canary_permuted_labels")
     cmean = float(per_rep(can, reps).mean())
     lo, hi = cfg["canary_range"]
-    out["canary"] = {"mean_auc_g1": cmean, "range": [lo, hi], "void": bool(not (lo <= cmean <= hi)), "per_rep": per_rep(can, reps).tolist()}
+    out["canary"] = {"mean_auc_g1": cmean, "range": [lo, hi], "void": bool(not (lo <= cmean <= hi)), "per_rep": per_rep(can, reps).tolist(),
+                     "n_fits": int(len(can)), "sd_per_fit": float(can.auc_g1.std())}
 
     # tables: mean AUC [CI] per (family, size, arm, N), metrics on all three test cohorts
     table = []
@@ -800,8 +804,8 @@ def render_report(res: Dict[str, Any]) -> str:
     L.append("")
     L.append("## 2. Leakage canary")
     L.append("")
-    L.append(f"GRU-D, medium, N={cfg['n_canary']}, labels permuted over all training rows (amendment A1), true test labels: mean G1 AUC "
-             f"**{fmt(agg['canary']['mean_auc_g1'])}** (accepted range {agg['canary']['range']}) -> **{'VOID' if agg['canary']['void'] else 'passes'}**.")
+    L.append(f"GRU-D, medium, N={cfg['n_canary']}, {cfg['n_canary_perms']} label permutations per replication (all training rows, amendments A1 and A3), true test labels: mean G1 AUC "
+             f"**{fmt(agg['canary']['mean_auc_g1'])}** over {agg['canary']['n_fits']} fits (standard deviation of one fit {fmt(agg['canary']['sd_per_fit'])}; accepted range {agg['canary']['range']}) -> **{'VOID' if agg['canary']['void'] else 'passes'}**.")
     L.append("")
     L.append("## 3. Strongest classical baseline first (G1 test, IPCW AUC at 365 days, mean over replications)")
     L.append("")
