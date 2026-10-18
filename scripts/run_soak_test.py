@@ -69,8 +69,8 @@ def analyse(res: dict) -> dict:
     return res
 
 
-def run_soak_test(duration_seconds: float = 1800.0, concurrency: int = 8, interval_seconds: float = 10.0) -> dict:
-    return analyse(h.run(concurrency=concurrency, duration_seconds=duration_seconds, sample_interval=interval_seconds, label="soak"))
+def run_soak_test(duration_seconds: float = 1800.0, concurrency: int = 8, interval_seconds: float = 10.0, n_patients: int = 200) -> dict:
+    return analyse(h.run(concurrency=concurrency, duration_seconds=duration_seconds, sample_interval=interval_seconds, label="soak", n_patients=n_patients))
 
 
 def write_reports(res: dict, out_dir: Path) -> tuple[Path, Path]:
@@ -81,7 +81,7 @@ def write_reports(res: dict, out_dir: Path) -> tuple[Path, Path]:
     lines = [
         "# Vigil API soak test (real HTTP)", "", "> Written by `scripts/run_soak_test.py`. Do not edit by hand.", "",
         f"- Date (UTC): {res['timestamp_utc']}",
-        f"- Duration actually run: **{res['duration_seconds']} s** (requested {res['requested']['duration_seconds']} s), concurrency {res['concurrency']}, {res['total_requests']} requests ({res['throughput_req_per_sec']} req/s)",
+        f"- Duration actually run: **{res['duration_seconds']} s** (requested {res['requested']['duration_seconds']} s), concurrency {res['concurrency']}, {res['patients']} patients, {res['total_requests']} requests ({res['throughput_req_per_sec']} req/s)",
         f"- Transport: **{res['transport']}** to a separate `uvicorn` process (1 worker), staging profile, SQLite file, no TLS",
         f"- Host: {hst['platform']}, {hst['cpu_count']} CPUs, Python {hst['python']}",
         "", "## Verdicts against budgets fixed before the run", "", "| Metric | Measured | Budget | Verdict |", "|---|---|---|---|",
@@ -102,9 +102,10 @@ def main() -> int:
     ap.add_argument("--duration", type=float, default=1800.0, help="seconds (default 1800 = 30 min)")
     ap.add_argument("--concurrency", type=int, default=8)
     ap.add_argument("--interval", type=float, default=10.0)
+    ap.add_argument("--patients", type=int, default=200, help="synthetic patients provisioned (default 200; run 1 used 10, see reports/load/README.md)")
     ap.add_argument("--out-dir", type=Path, default=ROOT / "reports" / "load")
     a = ap.parse_args()
-    res = run_soak_test(a.duration, a.concurrency, a.interval)
+    res = run_soak_test(a.duration, a.concurrency, a.interval, a.patients)
     jp, _ = write_reports(res, a.out_dir)
     print(f"wrote {jp}")
     print(res["soak"]["verdicts"])

@@ -38,7 +38,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 PY_PATHS = [ROOT / "apps" / "api", *(ROOT / "packages" / p for p in ("vigil-core", "vigil-sim", "vigil-eval", "vigil-ml", "contracts"))]
 FACILITY = "LOAD-FAC-01"
-PATIENTS = [f"PAT-LOAD-{i:03d}" for i in range(10)]
+DEFAULT_PATIENTS = 10
+
+
+def patient_ids(n: int) -> list[str]:
+    return [f"PAT-LOAD-{i:03d}" for i in range(n)]
+
+
+PATIENTS = patient_ids(DEFAULT_PATIENTS)
 
 # (method, path, weight). Writes go through the canonical ingestion pipeline (M3/K2/M5, alerts, audit chain).
 WORKLOAD: list[tuple[str, str, int]] = [
@@ -71,7 +78,7 @@ def server_env(db_path: Path) -> dict[str, str]:
     return env
 
 
-def _provision() -> None:
+def _provision(n_patients: int = DEFAULT_PATIENTS) -> None:
     """Child-process entry: create schema, a facility, an admin and consented synthetic patients; print a token."""
     from vigil_api.auth import create_access_token
     from vigil_api.database import Base, SessionLocal, engine
@@ -83,7 +90,7 @@ def _provision() -> None:
         s.add(Facility(id=FACILITY, name="Load Test Facility", code="LTF-01"))
         s.add(User(id="USR-LOAD-ADMIN", username="load_admin", email="admin@loadtest.local", hashed_password="x", role="admin",
                    full_name="Load Admin", active=True, facility_id=FACILITY))
-        for i, pid in enumerate(PATIENTS):
+        for i, pid in enumerate(patient_ids(n_patients)):
             s.add(Patient(id=pid, mrn=f"MRN-LOAD-{i:03d}", facility_id=FACILITY, age=52, primary_cancer_type="breast",
                           initial_stage="IIB", synthetic=True))
             s.add(ConsentRecord(id=f"CNS-LOAD-{i:03d}", patient_id=pid, consent_type="surveillance_monitoring",
@@ -109,11 +116,11 @@ def rss_mb(pid: int) -> float | None:
 
 
 @contextmanager
-def running_server():
+def running_server(n_patients: int = DEFAULT_PATIENTS):
     """Start uvicorn on a free port with a freshly provisioned database; yield (base_url, token, pid)."""
     with tempfile.TemporaryDirectory(prefix="vigil-load-") as td:
         env = server_env(Path(td) / "load.db")
-        prov = subprocess.run([sys.executable, __file__, "--provision"], env=env, cwd=ROOT, capture_output=True, text=True)
+        prov = subprocess.run([sys.executable, __file__, "--provision", str(n_patients)], env=env, cwd=ROOT, capture_output=True, text=True)
         if prov.returncode != 0:
             raise RuntimeError(f"provisioning failed:\n{prov.stderr[-2000:]}")
         token = prov.stdout.strip().splitlines()[-1]
@@ -163,7 +170,7 @@ def _body(i: int) -> dict[str, Any]:
     }
 
 
-async def _worker(wid: int, client: httpx.AsyncClient, counter: dict, stop_at: float | None, max_requests: int | None, rec: list):
+async def _worker(wid: int, client: httpx.AsyncClient, counter: dict, stop_at: float | None, max_requests: int | None, rec: list, pids: list[str]):
     plan = _request_plan()
     while True:
         i = counter["n"]
@@ -173,7 +180,7 @@ async def _worker(wid: int, client: httpx.AsyncClient, counter: dict, stop_at: f
         method, path = plan[i % len(plan)]
         kwargs: dict[str, Any] = {}
         if "{pid}" in path:
-            path = path.format(pid=PATIENTS[i % len(PATIENTS)])
+            path = path.format(pid=pids[i % len(pids)])
             kwargs["json"] = _body(i)
         t0 = time.perf_counter()
         try:
@@ -193,7 +200,7 @@ def _stats(lats: list[float]) -> dict[str, float]:
             "mean_ms": round(float(a.mean()), 2), "max_ms": round(float(a.max()), 2)}
 
 
-async def _drive(base: str, token: str, concurrency: int, max_requests: int | None, duration: float | None, sampler) -> tuple[list, float, list]:
+async def _drive(base: str, token: str, concurrency: int, max_requests: int | None, duration: float | None, sampler, n_patients: int = DEFAULT_PATIENTS) -> tuple[list, float, list]:
     rec: list = []
     samples: list = []
     limits = httpx.Limits(max_connections=concurrency, max_keepalive_connections=concurrency)
@@ -201,7 +208,7 @@ async def _drive(base: str, token: str, concurrency: int, max_requests: int | No
         t_start = time.perf_counter()
         stop_at = t_start + duration if duration else None
         counter = {"n": 0}
-        workers = [asyncio.create_task(_worker(w, client, counter, stop_at, max_requests, rec)) for w in range(concurrency)]
+        workers = [asyncio.create_task(_worker(w, client, counter, stop_at, max_requests, rec, patient_ids(n_patients))) for w in range(concurrency)]
 
         async def sample_loop():
             while True:
@@ -220,15 +227,15 @@ def host_info() -> dict[str, Any]:
             "cpu_count": os.cpu_count(), "uvicorn_workers": 1, "database": "sqlite (single file)", "tls": False}
 
 
-def run(concurrency: int, max_requests: int | None = None, duration_seconds: float | None = None, sample_interval: float = 5.0, label: str = "load") -> dict[str, Any]:
+def run(concurrency: int, max_requests: int | None = None, duration_seconds: float | None = None, sample_interval: float = 5.0, label: str = "load", n_patients: int = DEFAULT_PATIENTS) -> dict[str, Any]:
     assert (max_requests is None) != (duration_seconds is None), "give exactly one of max_requests / duration_seconds"
-    with running_server() as (base, token, pid):
+    with running_server(n_patients) as (base, token, pid):
         warm = httpx.Client(base_url=base, headers={"Authorization": f"Bearer {token}"}, timeout=30)
         for _, p, _w in WORKLOAD[:5]:
             warm.get(p)  # warm caches/model load outside the measured window
         warm.close()
         rss_start = rss_mb(pid)
-        rec, wall, samples = asyncio.run(_drive(base, token, concurrency, max_requests, duration_seconds, {"pid": pid, "interval": sample_interval}))
+        rec, wall, samples = asyncio.run(_drive(base, token, concurrency, max_requests, duration_seconds, {"pid": pid, "interval": sample_interval}, n_patients))
         rss_end = rss_mb(pid)
     ok = lambda s: 200 <= s < 300  # noqa: E731
     lats = [r[3] for r in rec]
@@ -251,6 +258,7 @@ def run(concurrency: int, max_requests: int | None = None, duration_seconds: flo
         "host": host_info(),
         "workload": [{"method": m, "path": p, "weight": w} for m, p, w in WORKLOAD],
         "concurrency": concurrency,
+        "patients": n_patients,
         "requested": {"max_requests": max_requests, "duration_seconds": duration_seconds},
         "total_requests": len(rec),
         "duration_seconds": round(wall, 2),
@@ -270,6 +278,6 @@ def run(concurrency: int, max_requests: int | None = None, duration_seconds: flo
 
 if __name__ == "__main__":
     if "--provision" in sys.argv:
-        _provision()
+        _provision(int(sys.argv[sys.argv.index("--provision") + 1]) if len(sys.argv) > sys.argv.index("--provision") + 1 else DEFAULT_PATIENTS)
     else:
         raise SystemExit("library module; use run_load_test.py / run_soak_test.py")
