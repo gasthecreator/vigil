@@ -70,6 +70,28 @@
 
 ## Context: Nigeria
 
+### E20 — Imaging Sensitivity for Liver Metastases (ultrasound, CT, MRI) — `SECONDARY` (abstract-level; numbers machine-verified against the PubMed abstract by `scripts/audit_excerpts.py`)
+* **Primary source:** Kinkel K, Lu Y, Both M, Warren RS, Thoeni RF. "Detection of hepatic metastases from cancers of the gastrointestinal tract by using noninvasive imaging methods (US, CT, MR imaging, PET): a meta-analysis." *Radiology*. 2002;224(3):748-756. doi:[10.1148/radiol.2243011362](https://doi.org/10.1148/radiol.2243011362). PMID:[12202709](https://pubmed.ncbi.nlm.nih.gov/12202709/).
+* **Excerpt:** [`docs/evidence/excerpts/E20_kinkel_2002_liver_imaging.md`](evidence/excerpts/E20_kinkel_2002_liver_imaging.md).
+* **Figures (data sets with specificity above 85 percent):** weighted sensitivity 55 percent (95% CI 41 to 68) for ultrasound, 72 percent (63 to 80) for CT, 76 percent (57 to 91) for MRI, 90 percent (80 to 97) for FDG PET.
+* **Limits:** colorectal, gastric and esophageal primaries, not breast; publication date 2002 (older technology); sensitivity is reported within a specificity stratum, not as a pooled specificity; full text not read.
+* **Used by:** M4 test ladder (liver rows).
+
+### E21 — Imaging Accuracy for Bone Metastases (bone scintigraphy, MRI, CT, PET) — `SECONDARY` (abstract-level; numbers machine-verified against the PubMed abstracts)
+* **Primary sources:**
+  1. Yang HL, Liu T, Wang XM, Xu Y, Deng SM. "Diagnosis of bone metastases: a meta-analysis comparing 18FDG PET, CT, MRI and bone scintigraphy." *Eur Radiol*. 2011;21(12):2604-2617. doi:[10.1007/s00330-011-2221-4](https://doi.org/10.1007/s00330-011-2221-4). PMID:[21887484](https://pubmed.ncbi.nlm.nih.gov/21887484/). Excerpt: [`E21a`](evidence/excerpts/E21a_yang_2011_bone_imaging.md).
+  2. Liu T, Cheng T, Xu W, Yan WL, Liu J, Yang HL. "A meta-analysis of 18FDG-PET, MRI and bone scintigraphy for diagnosis of bone metastases in patients with breast cancer." *Skeletal Radiol*. 2011;40(5):523-531. doi:[10.1007/s00256-010-0963-8](https://doi.org/10.1007/s00256-010-0963-8). PMID:[20495798](https://pubmed.ncbi.nlm.nih.gov/20495798/). Excerpt: [`E21b`](evidence/excerpts/E21b_liu_2011_bone_imaging_breast.md).
+* **Figures (per patient, pooled point estimates; no confidence intervals in the abstracts):** all cancers (source 1) sensitivity 89.7 percent PET, 72.9 CT, 90.6 MRI, 86.0 bone scintigraphy; specificity 96.8, 94.8, 95.4, 81.4. Breast cancer (source 2) sensitivity 83.3 PET, 97.1 MRI, 87.0 bone scintigraphy; specificity 94.5, 97.0, 88.1; CT not analysed.
+* **Limits:** abstract-level; both papers share an author group and overlapping literature (they are not independent); both searched to January 2010.
+* **Not sourced (excluded by M4):** plain radiograph and alkaline-phosphatase or calcium trend for bone metastases: no accuracy source was retrieved.
+* **Used by:** M4 test ladder (bone rows).
+
+### E22 — Chest Radiograph versus Chest CT for Pulmonary Metastases — `SECONDARY` (single study, weak; figures NOT machine-verified)
+* **Source:** Mahajan A, Shukla S, Nandi D, et al. "CT-Based Screening for Pulmonary Metastases in Head and Neck Squamous Cell Cancers: Diagnostic Accuracy and Cost Comparison with PET-CECT." *Indian J Surg Oncol*. 2023;14(4):881-889. doi:[10.1007/s13193-023-01783-z](https://doi.org/10.1007/s13193-023-01783-z). PMID:[38187855](https://pubmed.ncbi.nlm.nih.gov/38187855/). Excerpt and caveats: [`docs/evidence/excerpts/E22_mahajan_2023_chest_xray_ct.md`](evidence/excerpts/E22_mahajan_2023_chest_xray_ct.md).
+* **Figures (read from the PMC full text, unverified by the audit script):** chest radiograph sensitivity 49 percent, specificity 88 percent (89 in the Discussion); chest CT sensitivity 97.3 percent, specificity 97.2 percent; the authors also cite a literature range of 20 to 50 percent sensitivity and 90 to 98 percent specificity for chest radiographs.
+* **Limits:** head and neck primaries (not breast), one centre, retrospective, reference standard is the CT itself, no confidence intervals.
+* **Used by:** M4 test ladder (lung rows). A breast-cancer-specific accuracy source for chest radiography was searched for and not found; one search result is a pooled detection-rate review, which is not an accuracy measure.
+
 ### E6 — Radiotherapy Capacity in Nigeria — `SECONDARY` / `STALE`
 * ~200M population, estimated shortfall of ~280 LINACs by IAEA benchmarks; high out-of-pocket costs and machine downtime. Current national facility assessment pending hospital partnership data.
 * Sources: PMC7456314; local press reports.
