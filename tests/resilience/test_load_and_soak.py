@@ -54,7 +54,7 @@ def test_load_goes_over_http_to_a_separate_authenticated_server(short_load):
 
 def test_load_budgets_are_evaluated_not_assumed(short_load):
     res, _, _ = short_load
-    assert set(res["budgets"]) == {"p95_latency_ms", "error_rate_percent"}
+    assert set(res["budgets"]) == {"p95_latency_ms", "error_rate_percent", "triage_p95_ms"}
     assert res["budgets"]["error_rate_percent"]["status"] == "PASS"
     assert res["budgets"]["p95_latency_ms"]["measured"] == res["overall_latency"]["p95_ms"]
 
@@ -105,3 +105,26 @@ def test_committed_load_result_is_http():
     assert p.exists(), "commit the result of `python scripts/run_load_test.py`"
     d = json.loads(p.read_text())
     assert d["transport"] == "http" and d["total_requests"] >= 1000
+
+
+def test_concurrent_writers_never_get_database_locked_errors():
+    """Smoke check: concurrent POSTs through the ingestion pipeline must all succeed. Before the audit-append and
+    SQLite fixes, the load test saw HTTP 500 ("database is locked") and connection resets at ~2000 requests. At
+    this smaller size the test also passes without the SQLite settings (the audit fix removes most contention),
+    so the lock itself is pinned by apps/api/tests/test_sqlite_write_serialization.py."""
+    import concurrent.futures as cf
+
+    import httpx
+
+    with h.running_server() as (base, token, _pid):
+        hdr = {"Authorization": f"Bearer {token}"}
+
+        def post(i: int) -> int:
+            try:
+                return httpx.post(f"{base}/api/v1/patients/{h.PATIENTS[i % 10]}/labs", json=h._body(i), headers=hdr, timeout=60).status_code
+            except httpx.HTTPError:
+                return 0
+
+        with cf.ThreadPoolExecutor(max_workers=16) as ex:
+            codes = list(ex.map(post, range(480)))
+    assert set(codes) == {200}, {c: codes.count(c) for c in set(codes)}

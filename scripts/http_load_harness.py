@@ -49,7 +49,11 @@ WORKLOAD: list[tuple[str, str, int]] = [
     ("GET", "/api/v1/continuity/machines", 2),
     ("POST", "/api/v1/patients/{pid}/labs", 2),  # write path
 ]
-BUDGETS = {"p95_latency_ms": 200.0, "error_rate_percent": 0.1}
+# Provenance (kept honest): "p95_latency_ms" 200 for the whole mix is the target claimed by the Phase 8b report
+# (PHASE-8B-REPORT errata E3), NOT a MASTER_PLAN section 9.5 figure. Section 9.5 gives "triage queue p95 < 400 ms"
+# (at 10^5 patients on PostgreSQL; this harness has 10 patients on SQLite, so that row only bounds this setup).
+BUDGETS = {"p95_latency_ms": 200.0, "error_rate_percent": 0.1, "triage_p95_ms": 400.0}
+TRIAGE_PATH = "/api/v1/patients/triage"
 
 
 def server_env(db_path: Path) -> dict[str, str]:
@@ -258,6 +262,7 @@ def run(concurrency: int, max_requests: int | None = None, duration_seconds: flo
         "budgets": {
             "p95_latency_ms": {"measured": overall.get("p95_ms"), "budget": BUDGETS["p95_latency_ms"], "status": "PASS" if overall.get("p95_ms", 1e9) <= BUDGETS["p95_latency_ms"] else "FAIL"},
             "error_rate_percent": {"measured": round(err, 4), "budget": BUDGETS["error_rate_percent"], "status": "PASS" if err <= BUDGETS["error_rate_percent"] else "FAIL"},
+            "triage_p95_ms": {"measured": by_ep.get(TRIAGE_PATH, {}).get("p95_ms"), "budget": BUDGETS["triage_p95_ms"], "status": "PASS" if by_ep.get(TRIAGE_PATH, {}).get("p95_ms", 1e9) <= BUDGETS["triage_p95_ms"] else "FAIL"},
         },
         "_records": rec,
     }

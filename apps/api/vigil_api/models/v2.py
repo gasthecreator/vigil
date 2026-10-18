@@ -435,7 +435,7 @@ class AuditEvent(Base):
     resource_type = Column(String(100), nullable=False, index=True)
     resource_id = Column(String(100), nullable=False, index=True)
     details = Column(JSON, nullable=False)
-    prev_hash = Column(String(64), nullable=False)
+    prev_hash = Column(String(64), nullable=False, index=True)
     curr_hash = Column(String(64), nullable=False, index=True)
 
 

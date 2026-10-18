@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from sqlalchemy import select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from vigil_api.models.v2 import (
@@ -22,8 +22,8 @@ from vigil_api.models.v2 import (
 )
 
 
-def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
-    """Find the current leaf node of the cryptographic audit chain."""
+def _scan_for_leaf(db: Session) -> Optional[AuditEvent]:
+    """Reference definition of the leaf: the event whose ``curr_hash`` is nobody's ``prev_hash``. O(N)."""
     all_events = db.execute(select(AuditEvent)).scalars().all()
     if not all_events:
         return None
@@ -32,6 +32,24 @@ def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
         if e.curr_hash not in prev_set:
             return e
     return all_events[-1]
+
+
+def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
+    """Find the current leaf node of the cryptographic audit chain.
+
+    Fast path (O(log N)): the chain head recorded in the AuditAnchor row, accepted only if that event exists
+    and no event names it as ``prev_hash`` (i.e. it really is a leaf). Anything else (no anchor, anchor pointing
+    at no event or at a non-leaf, an empty table) falls back to the full scan, so the result is the same as the
+    reference definition whenever the fast path applies and the legacy behaviour otherwise.
+    """
+    anchor = db.execute(select(AuditAnchor).order_by(AuditAnchor.created_at.desc())).scalars().first()
+    if anchor is not None:
+        candidate = db.execute(select(AuditEvent).where(AuditEvent.curr_hash == anchor.head_hash).limit(1)).scalars().first()
+        if candidate is not None:
+            has_child = db.execute(select(exists().where(AuditEvent.prev_hash == candidate.curr_hash))).scalar()
+            if not has_child:
+                return candidate
+    return _scan_for_leaf(db)
 
 
 def record_audit_event(
@@ -78,7 +96,7 @@ def record_audit_event(
     db.flush()
 
     # Update or persist external head-hash anchor (Condition S5-3 / P7-D)
-    total_events = len(db.execute(select(AuditEvent)).scalars().all())
+    total_events = db.execute(select(func.count()).select_from(AuditEvent)).scalar_one()
     anchor_path = os.environ.get("VIGIL_AUDIT_ANCHOR_PATH")
     if anchor_path:
         p = Path(anchor_path)

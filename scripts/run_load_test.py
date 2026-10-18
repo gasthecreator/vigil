@@ -4,7 +4,8 @@
 Concurrent load test of the Vigil API over real HTTP (uvicorn subprocess + httpx client).
 See scripts/http_load_harness.py for exactly what is and is not measured.
 
-Budgets (Master Plan §9.5): p95 <= 200 ms, error rate <= 0.1 %.
+Budgets: whole-mix p95 <= 200 ms (target claimed in the Phase 8b report, not a MASTER_PLAN figure), error rate <= 0.1 %,
+triage p95 < 400 ms (MASTER_PLAN §9.5; 10 patients on SQLite here, so it only bounds this setup).
 Output (script-written only): reports/load/LOAD_TEST_HTTP_RESULTS.json and .md
 (`--out-dir` redirects; tests always use a temporary directory).
 
@@ -45,8 +46,9 @@ def write_reports(results: dict, out_dir: Path) -> tuple[Path, Path]:
         f"- Workload: {res['total_requests']} requests, concurrency {res['concurrency']}, {res['duration_seconds']} s, {res['throughput_req_per_sec']} req/s; "
         "mix = reads of patients/triage/continuity plus POSTs through the lab-ingestion pipeline (audit chain, M3/K2/M5)",
         "", "## Budgets", "", "| Metric | Measured | Budget | Verdict |", "|---|---|---|---|",
-        f"| p95 latency (all requests) | {b['p95_latency_ms']['measured']} ms | <= {b['p95_latency_ms']['budget']} ms | {b['p95_latency_ms']['status']} |",
+        f"| p95 latency (all requests; target from the Phase 8b claim, not MASTER_PLAN) | {b['p95_latency_ms']['measured']} ms | <= {b['p95_latency_ms']['budget']} ms | {b['p95_latency_ms']['status']} |",
         f"| error rate | {b['error_rate_percent']['measured']} % | <= {b['error_rate_percent']['budget']} % | {b['error_rate_percent']['status']} |",
+        f"| triage queue p95 (MASTER_PLAN §9.5: < 400 ms at 10^5 patients/PostgreSQL; here 10 patients/SQLite) | {b['triage_p95_ms']['measured']} ms | < {b['triage_p95_ms']['budget']} ms | {b['triage_p95_ms']['status']} |",
         "", f"Latency: p50 {ov.get('p50_ms')} ms, p90 {ov.get('p90_ms')} ms, p95 {ov.get('p95_ms')} ms, p99 {ov.get('p99_ms')} ms, max {ov.get('max_ms')} ms.", "",
         "## Per endpoint", "", "| Endpoint | n | p50 | p95 | p99 | status codes |", "|---|---|---|---|---|---|",
     ]
