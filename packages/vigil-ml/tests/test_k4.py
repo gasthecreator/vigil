@@ -239,3 +239,18 @@ def test_symptom_channels_are_used_as_given_and_never_masked_for_pretraining():
     xi, mi, _, _, _, x_true, pick = _masked_batch(ds, np.array([0]), 1.0, _t.Generator().manual_seed(0))
     assert bool(pick[..., :n_lab][0, :2].all()) and not bool(pick[..., n_lab:].any())
     assert float(mi[0, 0, n_lab:].min()) == 1.0 and float(xi[0, 0, n_lab]) == pytest.approx(0.5)
+
+
+def test_the_old_k4_stub_is_retired_and_no_benchmark_scores_it():
+    import importlib.util
+    import json
+
+    import vigil_ml
+
+    assert importlib.util.find_spec("vigil_ml.deep_zoo_k4") is None
+    for name in ("DeepZooK4", "GRUDModel", "ContinuousTimeTransformer", "NeuralCDEModel"):
+        assert not hasattr(vigil_ml, name), name
+    for rel in ("reports/ml/S9_CROSS_GENERATOR/results.json", "reports/ml/results.json"):
+        assert "K4_DeepZoo" not in (ROOT / rel).read_text(encoding="utf-8"), rel
+    assert "DeepZooK4" not in (ROOT / "scripts" / "run_benchmarks.py").read_text(encoding="utf-8")
+    assert json.loads((ROOT / "reports" / "ml" / "S9_CROSS_GENERATOR" / "results.json").read_text())

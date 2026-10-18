@@ -1,3 +1,5 @@
+> **RETRACTED.** Do not cite anything below. The numbers were literal dictionaries returned by a stub; the model learned nothing (Overseer Verdict P3). Replaced by `experiments/EXP-K4-001/` (see `reports/ml/RETRACTED/README.md`).
+
 # Study S4 Pre-Registration: Deep Zoo Pre-Training and Scaling Analysis
 
 **Study ID:** S4_PRETRAINING_SCALING  

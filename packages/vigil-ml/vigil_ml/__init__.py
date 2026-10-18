@@ -22,7 +22,6 @@ from vigil_ml.conformal_k8 import (
     ConformalRiskControllerK8,
     ProductionEnsembleK8,
 )
-from vigil_ml.deep_zoo_k4 import ContinuousTimeTransformer, DeepZooK4, GRUDModel, NeuralCDEModel
 from vigil_ml.export import export_to_onnx, export_to_safetensors, verify_onnx_parity
 from vigil_ml.features import TRACKED_ANALYTES, WindowedFeatureExtractor
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5, LabHarmonisationProfile
@@ -85,11 +84,6 @@ __all__ = [
     "AlertTier",
     "SequentialAlertResult",
     "SequentialDetectorBenchmark",
-    # K4 Deep Zoo
-    "DeepZooK4",
-    "GRUDModel",
-    "ContinuousTimeTransformer",
-    "NeuralCDEModel",
     # K5 Harmonisation
     "HierarchicalLabHarmoniserK5",
     "LabHarmonisationProfile",

@@ -4,7 +4,7 @@ packages/vigil-ml/tests/test_phase3_models.py
 Comprehensive test suite for Phase 3 ML deliverables:
 1. K1 Kinetic Hybrid Model: Continuous ODE dynamics, online UKF filtering, SBC, and parameter recovery.
 2. K2 Anytime-Valid Sequential Detection: Test supermartingales (e-processes), Ville's inequality, and 5-scenario Null Stress Suite.
-3. K4 Deep Irregular-Time Zoo: GRU-D, Continuous-Time Transformer, Neural CDE, forward-only causality, and scaling study.
+3. K4 Deep Irregular-Time Zoo: moved to `packages/vigil-ml/tests/test_k4.py` (the earlier stub `deep_zoo_k4.py` is retired, ADR-0025).
 4. K5 Hierarchical Pooling & Lab Harmonisation: Site offsets, empirical Bayes shrinkage, and analytical changepoint detector.
 5. K6 Active Sensing: Expected Information Gain (EIG) scheduling, panel selection, and cost trade-off study S6.
 6. K8 Conformal Ensemble & Runtime: False Negative Rate bounds, Mahalanobis OOD detection, abstention policy, ONNX/Safetensors export, parity (< 1e-4), and CPU latency budget (p95 < 100 ms).
@@ -17,7 +17,6 @@ import pytest
 import torch
 from vigil_ml.active_sensing_k6 import ActiveSensingEngineK6, TestPanelTier
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
-from vigil_ml.deep_zoo_k4 import ContinuousTimeTransformer, DeepZooK4, GRUDModel, NeuralCDEModel
 from vigil_ml.export import (
     SurrogateInferenceNet,
     export_to_onnx,
@@ -100,39 +99,6 @@ def test_k2_validity_stress_suite_5_scenarios():
         assert sc_data["empirical_patient_level_far"] <= (0.05 + 0.05), (
             f"Scenario {scenario_name} violated patient-level false alarm bound: {sc_data}"
         )
-
-
-# ---------------------------------------------------------------------------
-# K4 Tests
-# ---------------------------------------------------------------------------
-
-def test_k4_deep_zoo_architectures():
-    x = torch.randn(4, 8, 7)
-    mask = torch.ones(4, 8, 7)
-    times = torch.linspace(0, 360, 8).expand(4, -1)
-
-    # GRU-D
-    grud = GRUDModel(input_dim=7, hidden_dim=32)
-    dt = times.diff(dim=1, prepend=times[:, :1])
-    out_grud = grud(x, mask, dt)
-    assert out_grud.shape == (4, 1)
-
-    # Continuous Time Transformer
-    trans = ContinuousTimeTransformer(input_dim=7, d_model=32, n_heads=2)
-    out_trans = trans(x, mask, times)
-    assert out_trans.shape == (4, 1)
-
-    # Neural CDE
-    cde = NeuralCDEModel(input_dim=7, hidden_dim=32)
-    out_cde = cde(x, times)
-    assert out_cde.shape == (4, 1)
-
-
-def test_k4_scaling_and_pretraining_study_retracted():
-    k4 = DeepZooK4(architecture="grud", hidden_dim=64)
-    with pytest.raises(NotImplementedError) as excinfo:
-        k4.run_pretraining_and_scaling_study()
-    assert "retracted" in str(excinfo.value).lower()
 
 
 # ---------------------------------------------------------------------------

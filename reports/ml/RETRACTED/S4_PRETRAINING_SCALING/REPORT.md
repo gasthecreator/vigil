@@ -1,3 +1,5 @@
+> **RETRACTED.** Do not cite anything below. The numbers were literal dictionaries returned by a stub; the model learned nothing (Overseer Verdict P3). Replaced by `experiments/EXP-K4-001/` (see `reports/ml/RETRACTED/README.md`).
+
 # Study S4 Report: Deep Zoo Pre-Training and Scaling Analysis
 
 > **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.
