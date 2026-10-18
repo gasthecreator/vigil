@@ -145,12 +145,14 @@ def run_study(n_patients: int = 5000, n_boot: int = 1000) -> Dict[str, Any]:
             },
             "H3_unmeasured_confounding_sensitivity": {
                 "statement": "AIPW fails under unmeasured confounding and the E-value only quantifies how strong a confounder would need to be",
-                "ground_truth_rr": 1.18,
+                "conditional_parameter_rr": 1.18,
+                "ground_truth_marginal_rr": cohort_unmeasured.true_rr,
                 "biased_aipw_rr": aipw_rr_b,
-                "bias": round(aipw_rr_b - 1.18, 4),
+                "bias_vs_marginal_truth": round(aipw_rr_b - cohort_unmeasured.true_rr, 4),
+                "bias_vs_conditional_parameter": round(aipw_rr_b - 1.18, 4),
                 "e_value_estimate": e_val_b["e_value_estimate"],
                 "e_value_ci_lower": e_val_b["e_value_ci_lower"],
-                "finding": "AIPW fails under unmeasured confounding (Scenario B biased 1.46 vs 1.12 truth); E-value (2.28) does not detect confounding, but quantifies required confounder strength.",
+                "finding": f"AIPW fails under unmeasured confounding (Scenario B biased {aipw_rr_b:.4f} vs {cohort_unmeasured.true_rr:.4f} marginal truth / 1.18 conditional parameter); E-value ({e_val_b['e_value_estimate']:.2f}) does not detect confounding, but quantifies required confounder strength.",
                 "verdict": "CONFIRMED_FAILURE_MODE",
             },
         },
@@ -214,10 +216,12 @@ Standardized Mean Differences (SMD) across baseline confounders between delayed 
 ## 3. Headline Finding: Estimator Failure Under Unmeasured Confounding and E-Value Quantification
 
 ### Scenario B as Headline Finding (Severe Estimator Bias under Unmeasured Confounder $U$)
-- **Ground Truth Marginal Effect:** $\\text{{RR}}^* = {sb["ground_truth_marginal_rr"]:.4f}$.
+- **Data-Generating Conditional Parameter:** $\\exp(\\beta_{{\\text{{delay}}}}) = 1.1800$.
+- **Ground Truth Marginal Potential Outcome Effect:** $\\text{{RR}}^* = \\frac{{\\mathbb{{E}}[Y(1)]}}{{\\mathbb{{E}}[Y(0)]}} = {sb["ground_truth_marginal_rr"]:.4f}$.
+  *(Note on Ground-Truth Definitions: The simulation data-generating process uses a conditional odds ratio parameter $\\exp(\\beta) = 1.18$. Due to non-collapsibility of the logistic link function, the true marginal risk ratio across the synthetic population is $\\text{{RR}}^* = 1.1436$ in Scenario A and $\\text{{RR}}^* = 1.1247$ in Scenario B due to the unmeasured confounder $U$. Target-trial estimators like AIPW estimate the marginal effect.)*
 - **Naive Observational Estimator:** $\\widehat{{\\text{{RR}}}} = {sb["estimates"]["naive"]["rr"]:.4f}$ (95% CI: [{sb["estimates"]["naive"]["ci_95"][0]:.4f}, {sb["estimates"]["naive"]["ci_95"][1]:.4f}]).
 - **AIPW Estimator:** $\\widehat{{\\text{{RR}}}} = {sb["estimates"]["aipw"]["rr"]:.4f}$ (95% CI: [{sb["estimates"]["aipw"]["ci_95"][0]:.4f}, {sb["estimates"]["aipw"]["ci_95"][1]:.4f}]).
-- **Severe Residual Bias:** Absolute bias is $+{sb["estimates"]["aipw"]["rr"] - sb["ground_truth_marginal_rr"]:.4f}$ (about 30% relative inflation). AIPW fails to recover the causal effect when key prognostic factors are unmeasured.
+- **Severe Residual Bias:** Absolute bias is $+{sb["estimates"]["aipw"]["rr"] - sb["ground_truth_marginal_rr"]:.4f}$ vs marginal ground truth (+{sb["estimates"]["aipw"]["rr"] - 1.18:.4f} vs conditional parameter). AIPW fails to recover the causal effect when key prognostic factors are unmeasured.
 - **Critical Reality Rule:** Nothing in the computational pipeline alerts or flags that the estimator is biased. Without structural verification of unconfoundedness, causal estimators will report spurious effect sizes with false precision.
 
 ### Role of the E-Value (Quantification, Not Detection)

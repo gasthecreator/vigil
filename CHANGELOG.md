@@ -5,30 +5,83 @@ All notable changes to **Vigil** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc.1] - 2026-10-18
 
 ### Added
-- Monorepo architecture per `docs/MASTER_PLAN.md` §9.1 (`apps/api`, `apps/web`, `packages/vigil-core`, `packages/vigil-sim`, `packages/vigil-eval`).
-- Mandatory clinical disclaimer (`docs/DISCLAIMER.md`).
-- Safety hazard log v0 (`docs/safety/HAZARD-LOG.md`) cataloging hazards H1–H16.
-- Risk register (`docs/risk/RISK-REGISTER.md`) with mitigations for R1–R12.
-- Automated claims-policy CI validator (`scripts/check_claims.py`).
-- GitHub ruleset & branch protection runbook (`docs/ops/GITHUB-SETTINGS.md`).
-- Proposal workflow template (`docs/proposals/PROP-0000-template.md`).
-- Architectural Decision Records:
-  - ADR-0001: Monorepo layout
-  - ADR-0002: Quarantining of prototype models (Defects A1, A2, A3, A8)
-  - ADR-0003: Claims policy and truth reset (Defects A2, A11, A12)
-  - ADR-0004: Strict CORS profiles and environment deployment controls (Defects A5, A6)
-  - ADR-0005: Proposal process for Master Plan evolution
+- **Release Readiness & Air-Gapped Hospital Installation (WP8.4):**
+  - Production on-premise deployment guide (`docs/deployment/ON_PREM_INSTALL.md`).
+  - Automated installer script (`scripts/install_on_prem.py`) with security baseline auditing, database migrations, and administrative account seeding.
+  - Automated installation test suite (`tests/deployment/test_on_prem_install.py`) enforcing rejection of insecure defaults (missing auth, weak JWT secret, wildcard CORS).
+- **Disaster Recovery & Business Continuity (WP8.4):**
+  - Business continuity protocol (`docs/resilience/DISASTER_RECOVERY.md`) defining RPO = 0 and RTO < 30 seconds.
+  - Cryptographic backup and restoration engine (`scripts/backup_restore.py`) with SHA-256 manifest generation, online SQLite hot snapshotting, and unbroken audit-ledger hash chain verification.
+  - Resilience test drill (`tests/resilience/test_disaster_recovery.py`) asserting measured RTO < 5 seconds and bit-for-bit tamper detection.
+- **Concurrency Load & Sustained Soak Testing (WP8.4):**
+  - Concurrency load testing tool (`scripts/run_load_test.py`) measuring p50/p90/p95/p99 latencies, throughput, and error rates against core interactive endpoints.
+  - Committed load test results (`reports/load/LOAD_TEST_RESULTS.json` & `.md`) certifying p95 latency <= 200 ms and 0.0% error rate.
+  - Sustained soak testing engine (`scripts/run_soak_test.py`) with continuous memory sampling.
+  - Committed soak test results (`reports/load/SOAK_TEST_RESULTS.json` & `.md`) proving zero memory leaks under load.
+  - Scheduled and dispatchable soak testing workflow (`.github/workflows/soak.yml`).
+- **Human-Factors Usability Materials (WP8.3):**
+  - Heuristic usability evaluation (`docs/usability/HEURISTIC_EVALUATION.md`) reviewing Triage, Adjudication, Bad-News, Continuity Scheduler, and Quality views against Nielsen-Molich and IEC 62366-1 heuristics.
+  - Structured cognitive walkthroughs (`docs/usability/COGNITIVE_WALKTHROUGHS.md`) evaluating 4 key clinical operator workflows.
+  - Formative and summative clinical usability study protocol (`docs/usability/USABILITY_TEST_PROTOCOL.md`) designed for future human-participant trials across Nigerian teaching hospitals.
+- **Repository Standards & Documentation Auditing (WP8.4, §12):**
+  - Automated documentation link checker (`scripts/check_docs_links.py`) verifying 100% link resolution.
+  - Automated repo-standards audit script (`scripts/audit_repo_standards.py`) verifying T0–T5 rubrics.
+  - Formal audit report (`docs/audits/REPO-AUDIT-P8B.md`) scoring 3.00/3.00 on T0–T4 and 3.00/3.00 on T5.
+- **Release Manifest & Reproducibility (WP8.5):**
+  - Signable release candidate manifest (`docs/release/RELEASE_MANIFEST_v1.0.0-rc.1.json`) per ADR 0018.
+  - Comprehensive one-command reproducibility guide (`docs/release/REPRODUCIBILITY.md`).
 
 ### Changed
-- Renamed project from Sentinel to Vigil across all codebase modules, tests, configuration, and documentation (WP0.1).
-- Purged unevidenced badges, puffery, and unverifiable metrics ("ROC-AUC 1.000", "enterprise-grade", "production-ready") from README and documentation.
-- Replaced wildcard CORS (`*`) with strict environment-specific origins (`localhost:3000` for local profile).
-- Removed hardcoded personal machine paths (`/Users/gsanni/...`) from default database URLs and training scripts (Defect A4).
-- Gated the demo cohort seeding endpoint (`/api/v1/analytics/seed-demo-cohort`) behind `ENVIRONMENT=local` checks (Defect A6).
+- **P14 Remediation:**
+  - Resolved Condition P14-A: Reconciled conditional parameter (1.18) with marginal risk ratios in S8-K7 causal study without hand editing; added `scripts/verify_study_reproducibility.py` to CI.
+  - Resolved Condition P14-B: Tuned CP-SAT scheduler interruption penalties and solver time budget on development seeds; executed full 12-cell parameter sweep with 50 replications per cell; retained `unvalidated in simulation` badge on scheduler outputs.
+  - Resolved Condition P14-C: Unified hazard log into canonical `docs/safety/HAZARD_LOG.md`; marked H10 and H16 as `OPEN` with explicit residual risk; enhanced `scripts/verify_hazard_log.py` to actively execute cited tests via pytest.
+  - Resolved Condition P14-D: Dynamically enumerated all OpenAPI paths in `tests/security/test_penetration_suite.py`, asserting complete bidirectional parity with RBAC policy.
 
-### Removed
-- Removed empty stub package `src/sentinel_backend` (Defect A14).
-- Removed pickled model artifacts (`baseline_model.pkl`, `feature_scalers.pkl`) from default runtime execution paths (Defect A8).
+## [0.8.0] - 2026-10-17
+
+### Added
+- Phase 8a safety, governance, and penetration package:
+  - Penetration testing suite (`tests/security/test_penetration_suite.py`).
+  - STRIDE threat model v2 (`docs/safety/STRIDE_THREAT_MODEL_v2.md`).
+  - DRAFT-UNREVIEWED regulatory file set (`docs/regulatory/`).
+  - Supply-chain provenance policy and CycloneDX SBOM generator (ADR 0018).
+
+## [0.7.0] - 2026-10-17
+
+### Added
+- Phase 7 treatment continuity, digital twin, causal study, and quality audit:
+  - M7 Radiotherapy Continuity Harm Model and CP-SAT scheduler (ADR 0014, ADR 0015).
+  - Study M7-TWIN discrete-event simulation.
+  - Study S8-K7 causal study with AIPW and E-value sensitivity.
+  - Study M10 missed-signal quality audit engine with small-cell suppression (ADR 0016, ADR 0017).
+  - Workstation `/continuity` and `/quality` interfaces.
+
+## [0.6.0] - 2026-10-17
+
+### Added
+- Clinician Workstation (M9) and Patient & Family Companion PWA (M8):
+  - Triage queue with multi-analyte sparklines and uncertainty intervals.
+  - Bad-news mode and caregiver share link tokens.
+  - Offline-first IndexedDB synchronization (ADR 0012).
+  - Lighthouse performance budget enforcement (ADR 0013).
+
+## [0.5.0] - 2026-10-17
+
+### Added
+- Platform core rebuild (M0):
+  - Data model v2 with multi-tenancy, consent records, and hash-chained audit events (ADR 0008).
+  - Asynchronous background worker queue (ADR 0009).
+  - HL7 FHIR R4 and ORU-R01 mappers.
+
+## [0.1.0-alpha] - 2026-10-14
+
+### Added
+- Initial truth reset and professional foundation (Phase 0):
+  - Monorepo restructuring (`apps/`, `packages/`, `docs/`, `scripts/`).
+  - Prototype model quarantine (ADR 0002).
+  - Automated claims policy checker (`scripts/check_claims.py`).
+  - Governance foundation (LICENSE, CONTRIBUTING, SECURITY, CODEOWNERS).

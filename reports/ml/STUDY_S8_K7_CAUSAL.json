@@ -5,7 +5,7 @@
   "timestamp": "2026-10-17T19:05:00Z",
   "sample_size": 5000,
   "bootstrap_replications": 1000,
-  "execution_time_seconds": 66.37,
+  "execution_time_seconds": 67.78,
   "scenario_a_measured_confounding": {
     "ground_truth_marginal_rr": 1.1436,
     "estimates": {
@@ -118,12 +118,14 @@
     },
     "H3_unmeasured_confounding_sensitivity": {
       "statement": "AIPW fails under unmeasured confounding and the E-value only quantifies how strong a confounder would need to be",
-      "ground_truth_rr": 1.1247,
+      "conditional_parameter_rr": 1.18,
+      "ground_truth_marginal_rr": 1.1247,
       "biased_aipw_rr": 1.4615,
-      "bias": 0.3368,
+      "bias_vs_marginal_truth": 0.3368,
+      "bias_vs_conditional_parameter": 0.2815,
       "e_value_estimate": 2.2828,
       "e_value_ci_lower": 1.9554,
-      "finding": "AIPW fails under unmeasured confounding (Scenario B biased 1.46 vs 1.12 truth); E-value (2.28) does not detect confounding, but quantifies required confounder strength.",
+      "finding": "AIPW fails under unmeasured confounding (Scenario B biased 1.4615 vs 1.1247 marginal truth / 1.18 conditional parameter); E-value (2.28) does not detect confounding, but quantifies required confounder strength.",
       "verdict": "CONFIRMED_FAILURE_MODE"
     }
   }

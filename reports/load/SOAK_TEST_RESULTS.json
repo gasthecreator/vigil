@@ -1,0 +1,56 @@
+{
+  "test_name": "Vigil API Sustained Soak Test",
+  "timestamp_utc": "2026-10-18T04:52:20Z",
+  "duration_seconds": 5.0,
+  "total_requests": 305,
+  "initial_rss_mb": 430.12,
+  "final_rss_mb": 430.12,
+  "rss_growth_mb": 0.0,
+  "growth_percent": 0.0,
+  "p95_latency_ms": 12.19,
+  "error_rate_percent": 0.0,
+  "samples": [
+    {
+      "elapsed_seconds": 0.0,
+      "rss_mb": 430.12,
+      "cumulative_requests": 5,
+      "recent_p95_ms": 3.63
+    },
+    {
+      "elapsed_seconds": 1.1,
+      "rss_mb": 430.12,
+      "cumulative_requests": 70,
+      "recent_p95_ms": 11.84
+    },
+    {
+      "elapsed_seconds": 2.2,
+      "rss_mb": 430.12,
+      "cumulative_requests": 135,
+      "recent_p95_ms": 12.32
+    },
+    {
+      "elapsed_seconds": 3.2,
+      "rss_mb": 430.12,
+      "cumulative_requests": 195,
+      "recent_p95_ms": 11.97
+    },
+    {
+      "elapsed_seconds": 4.2,
+      "rss_mb": 430.12,
+      "cumulative_requests": 255,
+      "recent_p95_ms": 12.42
+    }
+  ],
+  "budgets": {
+    "memory_stability": {
+      "growth_percent": 0.0,
+      "budget_max_percent": 15.0,
+      "status": "PASS"
+    },
+    "error_rate": {
+      "error_rate_percent": 0.0,
+      "budget_max_percent": 0.1,
+      "status": "PASS"
+    }
+  }
+}

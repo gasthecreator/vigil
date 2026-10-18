@@ -105,7 +105,7 @@ In accordance with Phase 0 of the Master Plan, the initial prototype's models ha
 - **Single Source of Truth:** [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md)
 - **Clinical Evidence Register:** [`docs/EVIDENCE.md`](docs/EVIDENCE.md)
 - **Progress Ledger:** [`docs/PROGRESS.md`](docs/PROGRESS.md)
-- **Safety Hazard Analysis:** [`docs/safety/HAZARD-LOG.md`](docs/safety/HAZARD-LOG.md)
+- **Safety Hazard Analysis:** [`docs/safety/HAZARD_LOG.md`](docs/safety/HAZARD_LOG.md)
 - **Architectural Decisions:** [`docs/adr/`](docs/adr/)
 - **Contributing Guide:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - **Security Policy:** [`SECURITY.md`](SECURITY.md)

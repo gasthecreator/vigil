@@ -67,6 +67,6 @@ Evaluated across 845 sequential surveillance visits with 3% injected gross error
 
 ## 5. Biological Variation Evidence Base (Evidence E9)
 
-- **CA 15-3:** $CV_i = 6.1\%$, $CV_g = 62.9\%$, $II = 0.10$. Status: **PRIMARY-VERIFIED** (Ricós et al. 1999 / Westgard QC Biodatabase specifications, Evidence E9, [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](../../evidence/excerpts/E9_westgard_ricos_biodatabase.md)).
-- **CEA:** $CV_i = 12.7\%$, $CV_g = 55.6\%$, $II = 0.23$. Status: **PRIMARY-VERIFIED** (Ricós et al. 1999 / Westgard QC Biodatabase specifications, Evidence E9, [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](../../evidence/excerpts/E9_westgard_ricos_biodatabase.md)).
+- **CA 15-3:** $CV_i = 6.1\%$, $CV_g = 62.9\%$, $II = 0.10$. Status: **PRIMARY-VERIFIED** (Ricós et al. 1999 / Westgard QC Biodatabase specifications, Evidence E9, [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](../../../docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)).
+- **CEA:** $CV_i = 12.7\%$, $CV_g = 55.6\%$, $II = 0.23$. Status: **PRIMARY-VERIFIED** (Ricós et al. 1999 / Westgard QC Biodatabase specifications, Evidence E9, [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](../../../docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)).
 - **Secondary Analytes:** Alkaline Phosphatase (ALP), ALT, AST, GGT, Total Bilirubin. Status: **SECONDARY** (EFLM Biological Variation Database 2019 / Ricós et al. 1999 update).

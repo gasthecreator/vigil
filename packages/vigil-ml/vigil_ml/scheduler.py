@@ -222,18 +222,17 @@ class RadiotherapyScheduler:
         # 8. Objective Formulation
         objective_terms = []
 
-        # (a) Reward for delivering fractions: heavily prioritize filling capacity and treating patients
-        FRACTION_DELIVERED_REWARD = 20000
-        FRACTION_CONTINUATION_REWARD = 60000
+        # (a) Reward for delivering fractions: ongoing continuation must receive overwhelming priority
+        FRACTION_DELIVERED_REWARD = 10000
+        FRACTION_CONTINUATION_REWARD = 100000
         for p in patients:
             uid = _course_uid(p)
-            rew = (
-                FRACTION_CONTINUATION_REWARD
-                if p.fractions_completed > 0
-                else FRACTION_DELIVERED_REWARD
-            )
             for d in range(num_days):
-                objective_terms.append(-rew * y[(uid, d)])
+                day_decay = max(10, 500 - d * 50)
+                if p.fractions_completed > 0:
+                    objective_terms.append(-(FRACTION_CONTINUATION_REWARD + day_decay) * y[(uid, d)])
+                else:
+                    objective_terms.append(-(FRACTION_DELIVERED_REWARD + day_decay) * y[(uid, d)])
 
         # (b) Delay harm while waiting (1 - started[uid, d])
         for p in patients:
@@ -257,21 +256,21 @@ class RadiotherapyScheduler:
                             objective_terms.append(x[(uid, d, m.machine_id)] * switch_cost_int)
 
         # (d) Interruption gap penalties during ongoing courses
-        int_gap_cost = int(round(self.interruption_penalty * self.SCALE))
+        # In radiotherapy, interruption causes severe clonogen repopulation (~0.040 harm/day).
+        # Interruption penalties must heavily penalize gaps so ongoing patients are never skipped for new starts.
+        ONGOING_INTERRUPTION_COST = 80000
         for p in patients:
             uid = _course_uid(p)
             remaining = p.fractions_total - p.fractions_completed
-            if remaining > 0:
-                # Direct interruption penalty for unscheduled days in ongoing courses
-                if p.fractions_completed > 0:
-                    for d in range(min(num_days, remaining)):
-                        daily_int_cost = int(round(self.interruption_penalty * self.SCALE)) + 150
-                        objective_terms.append(daily_int_cost * (1 - y[(uid, d)]))
+            if remaining > 0 and p.fractions_completed > 0:
+                for d in range(min(num_days, remaining)):
+                    day_urgency = max(10, 500 - d * 50)
+                    objective_terms.append((ONGOING_INTERRUPTION_COST + day_urgency) * (1 - y[(uid, d)]))
 
                 for d in range(num_days - 2):
                     gap_var = model.NewBoolVar(f"gap_{uid}_d{d}")
                     model.Add(gap_var >= y[(uid, d)] + y[(uid, d + 2)] - y[(uid, d + 1)] - 1)
-                    objective_terms.append(gap_var * int_gap_cost)
+                    objective_terms.append(gap_var * ONGOING_INTERRUPTION_COST)
 
         model.Minimize(sum(objective_terms))
 

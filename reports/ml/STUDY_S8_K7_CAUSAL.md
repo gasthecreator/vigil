@@ -6,7 +6,7 @@
 **Date:** 2026-10-17T19:05:00Z
 **Sample Size:** N = 5000 synthetic patients
 **Bootstrap Replications:** 1000
-**Execution Time:** 66.37s
+**Execution Time:** 67.78s
 
 ---
 
@@ -44,10 +44,12 @@ Standardized Mean Differences (SMD) across baseline confounders between delayed 
 ## 3. Headline Finding: Estimator Failure Under Unmeasured Confounding and E-Value Quantification
 
 ### Scenario B as Headline Finding (Severe Estimator Bias under Unmeasured Confounder $U$)
-- **Ground Truth Marginal Effect:** $\text{RR}^* = 1.1247$.
+- **Data-Generating Conditional Parameter:** $\exp(\beta_{\text{delay}}) = 1.1800$.
+- **Ground Truth Marginal Potential Outcome Effect:** $\text{RR}^* = \frac{\mathbb{E}[Y(1)]}{\mathbb{E}[Y(0)]} = 1.1247$.
+  *(Note on Ground-Truth Definitions: The simulation data-generating process uses a conditional odds ratio parameter $\exp(\beta) = 1.18$. Due to non-collapsibility of the logistic link function, the true marginal risk ratio across the synthetic population is $\text{RR}^* = 1.1436$ in Scenario A and $\text{RR}^* = 1.1247$ in Scenario B due to the unmeasured confounder $U$. Target-trial estimators like AIPW estimate the marginal effect.)*
 - **Naive Observational Estimator:** $\widehat{\text{RR}} = 1.5085$ (95% CI: [1.3609, 1.6852]).
 - **AIPW Estimator:** $\widehat{\text{RR}} = 1.4615$ (95% CI: [1.3136, 1.6321]).
-- **Severe Residual Bias:** Absolute bias is $+0.3368$ (about 30% relative inflation). AIPW fails to recover the causal effect when key prognostic factors are unmeasured.
+- **Severe Residual Bias:** Absolute bias is $+0.3368$ vs marginal ground truth (+0.2815 vs conditional parameter). AIPW fails to recover the causal effect when key prognostic factors are unmeasured.
 - **Critical Reality Rule:** Nothing in the computational pipeline alerts or flags that the estimator is biased. Without structural verification of unconfoundedness, causal estimators will report spurious effect sizes with false precision.
 
 ### Role of the E-Value (Quantification, Not Detection)
@@ -66,8 +68,7 @@ Standardized Mean Differences (SMD) across baseline confounders between delayed 
 ### Hypothesis H2 (Covariate Balance): SUPPORTED
 - Maximum weighted SMD is **0.0419** (Target: $< 0.10$).
 
-### Hypothesis H3 (AIPW Failure Under Unmeasured Confounding & E-Value Quantification): CONFIRMED FAILURE MODE
+### Hypothesis H3 (AIPW Failure Under Unmeasured Confounding & E-Value Quantification): CONFIRMED_FAILURE_MODE
 - **Headline Finding:** AIPW fails under unmeasured confounding ($\widehat{\text{RR}} = 1.4615$ vs truth $1.1247$, bias $+0.3368$).
 - **E-Value Interpretation:** The E-value (2.2828) quantifies how strong a confounder must be; it does not detect or correct confounding.
 - **Verdict:** **CONFIRMED FAILURE MODE** (Pipeline does not detect unmeasured confounding; E-values quantify sensitivity bounds).
-
