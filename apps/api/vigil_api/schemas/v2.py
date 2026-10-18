@@ -417,11 +417,18 @@ class StratumAuditMetricResponse(BaseModel):
 
 
 class QualityAuditRequest(BaseModel):
-    facility_id: Optional[str] = Field(None, description="Optional facility identifier to filter trajectories")
-    lookback_days: int = Field(365, ge=30, le=3650, description="Lookback window in days for surveillance audit")
-    n_bootstrap: int = Field(1000, ge=100, le=5000, description="Bootstrap iterations for confidence intervals")
+    facility_id: Optional[str] = Field(
+        None, description="Optional facility identifier to filter trajectories"
+    )
+    lookback_days: int = Field(
+        365, ge=30, le=3650, description="Lookback window in days for surveillance audit"
+    )
+    n_bootstrap: int = Field(
+        1000, ge=100, le=5000, description="Bootstrap iterations for confidence intervals"
+    )
     include_synthetic_benchmark: bool = Field(
-        True, description="Whether to include synthetic benchmark cases if local facility data is small"
+        False,
+        description="Run the audit on the built-in SYNTHETIC benchmark cohort only (never mixed with facility data)",
     )
 
 
