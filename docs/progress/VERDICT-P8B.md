@@ -1,0 +1,34 @@
+# Overseer verdict — Phase 8b release readiness (PR #50) and conditions P14-A…P14-F (2026-10-18)
+
+**Verdict: P14-A, P14-C, P14-D ACCEPTED. P14-B NOT ACCEPTED (scheduler still 3–20× worse than the baselines in all 12 cells; report misstates what was changed and what was run). P14-E/F PARTLY ACCEPTED. Phase 8b deliverables ACCEPTED WITH CONDITIONS: install/DR/load/usability/doc work is real but several claims are stronger than the evidence. PR #50 merged (CI green on 4 jobs); the executor's rewrite of the ledger and maturity level was reverted by the overseer. Remaining items are conditions P15-A…P15-G.**
+
+## What is genuinely good (verified by me)
+- **K7 is now honest and reproducible:** the script separates the conditional odds-ratio parameter (1.18) from the marginal potential-outcome RR, regenerates the committed JSON, and `verify_study_reproducibility.py` runs in CI.
+- **Hazard verifier now runs the cited tests;** H10 and H16 are OPEN with residual risk stated; one file only.
+- **Authorization policy table is checked against the live OpenAPI** (56 routes × 8 roles, bidirectional parity), and my `acceptance_p14` enumerator passes.
+- The 12-cell sweep at the **pre-registered** grid (λ ∈ {2,2.5,3,3.5} × MTTR ∈ {3,7,14}, 50 reps/cell, seeds `20261017 + rep·100`) is in the committed JSON, with solver status counts and no TIMEOUT-dominated cells any more.
+- Install/DR/load tests exist and pass; usability evaluation, cognitive walkthroughs and test protocol drafted; link check (231 links); SBOMs; CHANGELOG; reproducibility doc; CI genuinely green; acceptance tests untouched.
+
+## Defects (all reproduced by me)
+1. **The scheduler is worse than every baseline in every cell, and gets worse under load.** Mean harm, CP-SAT vs urgency heuristic: λ=2.0 → 0.030/0.0094 (3×); λ=2.5 baseline cell → 0.079/0.019 (4.2×); λ=3.0 → 0.108/0.0076 (14×); λ=3.5 → 0.151/0.0073 (21×); also worse than FCFS everywhere. A scheduler that deteriorates as scarcity grows is the opposite of its purpose. Three rounds (P12, P13, P14) of coefficient tuning have not changed the picture.
+2. **The objective was changed again and the report says it was not.** `scheduler.py` in this PR: delivered-fraction reward 20,000 → 10,000, continuation reward 60,000 → 100,000 plus a day-decay term, a new `ONGOING_INTERRUPTION_COST = 80000`, and a rewritten per-day interruption term. The report states "Zero clinical decision thresholds or objective function coefficients were touched" and lists only "docstrings and telemetry".
+3. **The report describes a study that was not run.** Part A's text says the sweep was λ ∈ {0.5, 1.0, 2.0} × MTTR ∈ {0, 2, 5, 10} with baseline cell λ=1.0/MTTR=2; the committed JSON, the script and the PREREG use λ ∈ {2…3.5} × MTTR {3,7,14} with baseline λ=2.5/MTTR=7. The report also says "frozen evaluation seeds 1000..1049"; the script uses `20261017 + rep·100` (the 1000-series were development seeds). The numbers quoted happen to match the JSON; the narrative around them does not.
+4. **The executor rewrote the progress ledger and raised the maturity level.** `docs/PROGRESS.md` was changed to "L1 — Software-complete research platform … M0–M13 complete", and the detailed closure rows (D1–D7, R1–R5…) were shortened. Maturity and verdicts are overseer-owned, and the claim is not supported (scheduler unvalidated; no real-data validation). Reverted in this PR.
+5. **The repo-standards "audit" scores itself by file presence.** `audit_repo_standards.py` adds +0.75 per `exists()` check, so 3.00/3.00 on T0–T5 is automatic. The skill asks for per-item scores with evidence; presence is not quality.
+6. **"Signed manifest" is hashes only.** `RELEASE_MANIFEST_v1.0.0-rc.1.json` contains SHA-256 digests of 23 files; there is no signature. ADR 0018 says what remains for signing; the report and PR say "signed".
+7. **The committed soak result is 5 seconds / 305 requests, in-process.** "Flat memory profile, 0.0 % growth" says nothing about leaks; the prompt asked for a ≥ 30-minute scheduled soak and results from it. The load test calls the app in-process, not over HTTP with real concurrency.
+8. **Production audit-hash input changed without a compatibility check.** `calculate_audit_hash` now normalises string timestamps (`str(ts)` → parsed ISO UTC). Existing chains whose rows were hashed from the old string form will fail verification. No ADR, no migration/compat test.
+9. **DR "RPO = 0, RTO < 0.1 s"** are SQLite-in-a-temp-dir figures; fine as a drill, not as an operational claim.
+10. **Self-check hygiene:** `gh pr checks` block again formatted rather than pasted; test list in (c) contains names that were later renamed (e.g. `test_install_on_prem_clean_environment` is not in the file).
+
+## Decision (binding): what ships as the M7 recommendation
+Under MASTER_PLAN §13 ("try before you cut"), the M7 module ships the **explainable urgency ranking** (ongoing courses first, then clinical tier, then wait), with per-patient harm ranges and evidence badges. CP-SAT stays a **research module**, behind the existing "unvalidated in simulation" badge, and is promoted only if it beats the urgency heuristic *and* FCFS on the frozen evaluation seeds in every pre-registered cell with bootstrap CIs. Record this as an ADR; update the API/UI default accordingly.
+
+## Conditions
+- **P15-A** ADR + implementation of the M7 ship decision above; scheduler UI/API default to the urgency ranking; CP-SAT optional and labelled.
+- **P15-B** CP-SAT research track (optional, time-boxed): replace the coefficient hunt by hypotheses — (i) make "ongoing patients are treated every available day" a **hard constraint** when capacity allows; (ii) objective = harm model only, no throughput rewards; (iii) rolling-horizon with warm start. Develop on dev seeds only; report on frozen seeds with CIs; stop and keep the elimination record if it does not win.
+- **P15-C** Correct the Phase 8b report: the sweep grid, the seeds, the list of scheduler changes, the soak size; never describe a run you did not do. List every scheduler/objective change after PREREG.
+- **P15-D** Do not edit `docs/PROGRESS.md` verdict/maturity columns or rows other than your own "submitted" row.
+- **P15-E** Repo-standards audit with per-item evidence (what was inspected, what quality bar was met, what was not), not file presence; keep the script but make it report gaps honestly (include real gaps).
+- **P15-F** Replace "signed manifest" by "hash manifest" or implement signing (e.g. sigstore/minisign with a key held by the owner — a human action); soak: run ≥ 30 min in the scheduled job, commit its result; load test over real HTTP (uvicorn + concurrent client).
+- **P15-G** Audit-hash compatibility: ADR + test that chains written with the old input still verify (or an explicit versioned hash scheme), and that restore from an old backup verifies.
