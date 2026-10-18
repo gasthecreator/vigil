@@ -69,4 +69,7 @@ All six cells for every endpoint, strongest baseline first; the development file
 Real laboratory data; reference-material (EQA) anchoring; scale and noise differences between laboratories; changes in laboratory over calendar time other than the single step; per-analyte offsets other than CA 15-3; integration of K5 into the ingestion pipeline. Each is stated as a limit, not hidden.
 
 ## Amendments
-(none)
+
+### Amendment 1 (before any run, any development run included): what the new-site evaluation cohort is
+**Reason.** Section 3 says the new-site evaluation cohort has patients whose *home* laboratory is new and who do not switch. Rule R (section 5) compares a patient's result with the same patient's earlier results, so a constant offset of the only laboratory a patient uses cancels exactly: such a cohort cannot show any effect of the offsets and the descriptive new-site false-alarm endpoint would be vacuous. This was noticed while writing the runner, before any code ran.
+**Change.** In the new-site scenario the evaluation cohort is: home laboratory among the network laboratories as in section 3, and each eligible patient switches to a **new** laboratory (uniform over ids 6 and 7) with probability `π_sw` (0.30). Rule R's FAR and Sens in that cohort are descriptive (no hypothesis). The new-site hypothesis H2 concerns E1 (contrast RMSE) only and is unchanged. Nothing else changes.
