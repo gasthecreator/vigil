@@ -3021,6 +3021,337 @@
         "title": "TargetOrganVector",
         "type": "object"
       },
+      "TestLadderFacility": {
+        "properties": {
+          "facility_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Facility Id",
+            "type": "string"
+          },
+          "modalities": {
+            "items": {
+              "$ref": "#/components/schemas/TestLadderModalityRow"
+            },
+            "maxItems": 40,
+            "title": "Modalities",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "tier": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facility_id",
+          "name",
+          "tier",
+          "modalities"
+        ],
+        "title": "TestLadderFacility",
+        "type": "object"
+      },
+      "TestLadderModalityRow": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "distance_band": {
+            "description": "1 nearest to 4 farthest",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Distance Band",
+            "type": "integer"
+          },
+          "modality": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Modality",
+            "type": "string"
+          },
+          "price_band": {
+            "description": "1 lowest to 4 highest",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Price Band",
+            "type": "integer"
+          },
+          "source": {
+            "description": "Who reported this row",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "turnaround_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turnaround Days"
+          },
+          "verified_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date the row was last confirmed",
+            "title": "Verified On"
+          }
+        },
+        "required": [
+          "modality",
+          "available",
+          "price_band",
+          "distance_band",
+          "source"
+        ],
+        "title": "TestLadderModalityRow",
+        "type": "object"
+      },
+      "TestLadderPrior": {
+        "description": "Probability that the organ is involved, as an interval with a stated provenance.",
+        "properties": {
+          "hi": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to value",
+            "title": "Hi"
+          },
+          "lo": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to value",
+            "title": "Lo"
+          },
+          "provenance": {
+            "description": "Where the prior came from",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Provenance",
+            "type": "string"
+          },
+          "value": {
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "provenance"
+        ],
+        "title": "TestLadderPrior",
+        "type": "object"
+      },
+      "TestLadderRequest": {
+        "description": "Stateless request. Exactly one of ``facility_id`` (registry template) or ``facility`` (inline rows).",
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date for staleness; defaults to the server date, never later",
+            "title": "As Of"
+          },
+          "facility": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestLadderFacility"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A registry facility id (illustrative templates ship)",
+            "title": "Facility Id"
+          },
+          "max_price_band": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Highest price band the patient has agreed to; tests above it are skipped",
+            "title": "Max Price Band"
+          },
+          "organ": {
+            "enum": [
+              "bone",
+              "liver",
+              "lung",
+              "brain"
+            ],
+            "title": "Organ",
+            "type": "string"
+          },
+          "prior": {
+            "$ref": "#/components/schemas/TestLadderPrior"
+          }
+        },
+        "required": [
+          "organ",
+          "prior"
+        ],
+        "title": "TestLadderRequest",
+        "type": "object"
+      },
+      "TestLadderResponse": {
+        "description": "Output of the pure M4 engine, unchanged. Probabilities are intervals, never single numbers.",
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "facility_id": {
+            "title": "Facility Id",
+            "type": "string"
+          },
+          "illustrative_facility": {
+            "title": "Illustrative Facility",
+            "type": "boolean"
+          },
+          "negative_result_excludes_involvement": {
+            "title": "Negative Result Excludes Involvement",
+            "type": "boolean"
+          },
+          "negative_result_statement": {
+            "title": "Negative Result Statement",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "organ": {
+            "title": "Organ",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "ladder",
+              "refer",
+              "no_sourced_option"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "prior": {
+            "additionalProperties": true,
+            "title": "Prior",
+            "type": "object"
+          },
+          "referrals": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Referrals",
+            "type": "array"
+          },
+          "rungs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rungs",
+            "type": "array"
+          },
+          "scope_statement": {
+            "title": "Scope Statement",
+            "type": "string"
+          },
+          "skipped": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "organ",
+          "outcome",
+          "prior",
+          "as_of",
+          "facility_id",
+          "illustrative_facility",
+          "rungs",
+          "referrals",
+          "skipped",
+          "notes",
+          "negative_result_excludes_involvement",
+          "negative_result_statement",
+          "scope_statement"
+        ],
+        "title": "TestLadderResponse",
+        "type": "object"
+      },
       "TrajectoryPoint": {
         "properties": {
           "alt_level": {
@@ -7971,6 +8302,163 @@
         "summary": "Process offline sync batch replay with idempotency and LWW conflict resolution",
         "tags": [
           "Offline Batch Sync"
+        ]
+      }
+    },
+    "/api/v1/test-ladder/facilities": {
+      "get": {
+        "description": "Registry facilities. Only illustrative tier templates ship; none is a real facility.",
+        "operationId": "list_registry_facilities_api_v1_test_ladder_facilities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Registry Facilities Api V1 Test Ladder Facilities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Registry Facilities",
+        "tags": [
+          "Resource-Aware Test Ladder (M4)"
+        ]
+      }
+    },
+    "/api/v1/test-ladder/recommend": {
+      "post": {
+        "description": "Which tests are worth doing at this facility, in what order, and what remains unknown after each.\n\nDecision support only: a negative result never excludes involvement (the remaining probability is\nreturned as an interval), tests without an accuracy source are never ranked, and no numeric weight\ntrades cost against information.",
+        "operationId": "recommend_test_ladder_api_v1_test_ladder_recommend_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestLadderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestLadderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recommend Test Ladder",
+        "tags": [
+          "Resource-Aware Test Ladder (M4)"
         ]
       }
     },

@@ -155,6 +155,11 @@ VALID_BODIES: Dict[Tuple[str, str], dict] = {
     },
     ("POST", "/api/v1/patients/{id}/second-look"): {"observation_id": "OBS-M"},
     ("POST", "/api/v1/patients/{id}/disclosure/request-release"): {},
+    ("POST", "/api/v1/test-ladder/recommend"): {
+        "organ": "liver",
+        "prior": {"value": 0.15, "provenance": "matrix"},
+        "facility_id": "TEMPLATE-TERTIARY",
+    },
 }
 
 
