@@ -272,3 +272,115 @@ def test_quality_audit_latest_endpoint(client):
         headers={"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "USR-DR-01"},
     )
     assert bad_resp.status_code == 403
+
+
+def test_quality_audit_consent_filtering_and_action_attribution(client):
+    """Condition P13-C & P13-F: Real-data audit must respect consent withdrawal and require clinician attribution."""
+    from datetime import datetime, timezone, timedelta
+    from vigil_api.database import get_db
+    from vigil_api.models.patient import Patient
+    from vigil_api.models.v2 import ConsentRecord, FollowUpTask, Observation
+
+    now = datetime.now(timezone.utc)
+    db = next(app.dependency_overrides[get_db]())
+    try:
+        # Patient 1: Active consent, rising marker, only pending system task (no clinician action) -> should be audited as missed signal
+        p1 = Patient(
+            id="PAT-QUAL-01",
+            mrn="MRN-Q01",
+            facility_id="FAC-01",
+            initial_stage="2",
+            primary_cancer_type="breast",
+        )
+        c1 = ConsentRecord(
+            id="CNS-Q01",
+            patient_id="PAT-QUAL-01",
+            consent_type="surveillance_monitoring",
+            granted=True,
+            scope="surveillance_monitoring",
+            granted_at=now - timedelta(days=200),
+        )
+        # 4 rising observations
+        obs1 = [
+            Observation(id=f"OBS-Q1-{i}", patient_id="PAT-QUAL-01", analyte_code="CA-15-3", value=val, unit="U/mL", raw_value=val, raw_unit="U/mL", specimen_collected_at=now - timedelta(days=180 - i*60))
+            for i, val in enumerate([16.0, 22.0, 38.0, 52.0])
+        ]
+        # System-generated pending task (never completed by clinician)
+        t1 = FollowUpTask(
+            id="TSK-Q01",
+            patient_id="PAT-QUAL-01",
+            task_type="imaging_referral",
+            status="pending",
+            due_date=now + timedelta(days=14),
+            created_at=now - timedelta(days=60),
+        )
+
+        # Patient 2: Consent withdrawn -> MUST BE EXCLUDED from audit
+        p2 = Patient(
+            id="PAT-QUAL-02",
+            mrn="MRN-Q02",
+            facility_id="FAC-01",
+            initial_stage="1",
+            primary_cancer_type="breast",
+        )
+        c2 = ConsentRecord(
+            id="CNS-Q02",
+            patient_id="PAT-QUAL-02",
+            consent_type="surveillance_monitoring",
+            granted=False,
+            scope="surveillance_monitoring",
+            granted_at=now - timedelta(days=200),
+            withdrawn_at=now - timedelta(days=100),
+        )
+        obs2 = [
+            Observation(id=f"OBS-Q2-{i}", patient_id="PAT-QUAL-02", analyte_code="CA-15-3", value=val, unit="U/mL", raw_value=val, raw_unit="U/mL", specimen_collected_at=now - timedelta(days=180 - i*60))
+            for i, val in enumerate([16.0, 22.0, 38.0, 52.0])
+        ]
+
+        # Patient 3: Active consent, rising marker, completed clinician action
+        p3 = Patient(
+            id="PAT-QUAL-03",
+            mrn="MRN-Q03",
+            facility_id="FAC-01",
+            initial_stage="2",
+            primary_cancer_type="breast",
+        )
+        c3 = ConsentRecord(
+            id="CNS-Q03",
+            patient_id="PAT-QUAL-03",
+            consent_type="surveillance_monitoring",
+            granted=True,
+            scope="surveillance_monitoring",
+            granted_at=now - timedelta(days=200),
+        )
+        obs3 = [
+            Observation(id=f"OBS-Q3-{i}", patient_id="PAT-QUAL-03", analyte_code="CA-15-3", value=val, unit="U/mL", raw_value=val, raw_unit="U/mL", specimen_collected_at=now - timedelta(days=180 - i*60))
+            for i, val in enumerate([16.0, 22.0, 38.0, 52.0])
+        ]
+        # Clinician completed follow-up task
+        t3 = FollowUpTask(
+            id="TSK-Q03",
+            patient_id="PAT-QUAL-03",
+            task_type="imaging_referral",
+            status="completed",
+            due_date=now - timedelta(days=50),
+            completed_at=now - timedelta(days=55),
+            created_at=now - timedelta(days=60),
+        )
+
+        db.add_all([p1, c1, *obs1, t1, p2, c2, *obs2, p3, c3, *obs3, t3])
+        db.commit()
+    finally:
+        db.close()
+
+    headers = {"X-Vigil-Role": "quality_lead", "X-Vigil-User-Id": "USR-QL-01"}
+    resp = client.post("/api/v1/quality/audit", json={"facility_id": "FAC-01", "include_synthetic_benchmark": False}, headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Total patients audited must be 2 (p1 and p3). p2 MUST BE EXCLUDED because consent was withdrawn!
+    assert data["total_patients_audited"] == 2, f"Expected 2 consented patients, got {data['total_patients_audited']}"
+    # Between p1 and p3, p1 has only pending system task (so action NOT recorded), while p3 has completed task (action recorded)
+    assert data["total_action_recorded"] == 1, "Completed task should be counted as recorded action"
+    assert data["total_action_not_recorded"] == 1, "Pending system task must NOT be counted as recorded action"
+

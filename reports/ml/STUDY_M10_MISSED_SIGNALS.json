@@ -1,125 +1,112 @@
 {
-  "study": "M10",
-  "description": "Missed-Signal Quality Audit Engine Evaluation",
+  "study_identifier": "M10-V2",
+  "timestamp_utc": "2026-10-18T00:00:00Z",
   "pre_registration": "docs/studies/PREREG-M10.md",
-  "governance_adr": "docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md",
-  "timestamp": "2026-10-17T19:10:00Z",
-  "execution_time_seconds": 0.07,
-  "cohort_alpha_ground_truth": {
-    "total_patients": 1003,
-    "total_signals_detected": 403,
-    "action_recorded": 250,
-    "action_not_recorded": 153,
-    "overall_rate": 0.3797,
-    "bootstrap_ci_95": [
-      0.3325,
-      0.4293
-    ],
-    "sensitivity": 1.0,
-    "specificity_stable": 1.0,
-    "subgroup_breakdown": {
-      "urban_referral": {
-        "total_signals": 212,
-        "action_not_recorded_count": 84,
-        "action_not_recorded_rate": 0.3962,
-        "is_suppressed": false
+  "governance_adrs": [
+    "docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md",
+    "docs/adr/0017-quality-audit-consent-and-aggregate-use.md"
+  ],
+  "all_hypotheses_met": true,
+  "facility_evaluations": {
+    "facility_1_mixed": {
+      "total_patients": 503,
+      "total_signals_detected": 233,
+      "action_recorded": 121,
+      "action_not_recorded": 112,
+      "overall_unaddressed_rate": 0.4807,
+      "bootstrap_ci_95": [
+        0.4163,
+        0.5451
+      ],
+      "sensitivity": {
+        "mean": 0.9655172413793104,
+        "ci_lower": 0.9310344827586207,
+        "ci_upper": 0.9913793103448276
       },
-      "rural_public": {
-        "total_signals": 188,
-        "action_not_recorded_count": 66,
-        "action_not_recorded_rate": 0.3511,
-        "is_suppressed": false
+      "precision": {
+        "mean": 1.0,
+        "ci_lower": 1.0,
+        "ci_upper": 1.0
       },
-      "isolated_island_clinic": {
-        "total_signals": "<5",
-        "action_not_recorded_count": "<5",
-        "action_not_recorded_rate": null,
-        "is_suppressed": true
-      }
+      "delay_error_days": {
+        "mean": 35.52360515021459,
+        "ci_lower": 31.97392703862661,
+        "ci_upper": 39.06931330472103
+      },
+      "suppressed_strata_count": 3
     },
-    "subtype_breakdown": {
-      "curative_tnbc": {
-        "total_signals": 123,
-        "action_not_recorded_count": 50,
-        "action_not_recorded_rate": 0.4065,
-        "is_suppressed": false
-      },
-      "adjuvant_post_mastectomy": {
-        "total_signals": 135,
-        "action_not_recorded_count": 49,
-        "action_not_recorded_rate": 0.363,
-        "is_suppressed": false
-      },
-      "adjuvant_post_lumpectomy": {
-        "total_signals": 142,
-        "action_not_recorded_count": 51,
-        "action_not_recorded_rate": 0.3592,
-        "is_suppressed": false
-      },
-      "rare_inflammatory_carcinoma": {
-        "total_signals": "<5",
-        "action_not_recorded_count": "<5",
-        "action_not_recorded_rate": null,
-        "is_suppressed": true
-      }
+    "facility_2_zero_miss": {
+      "total_patients": 200,
+      "total_signals_detected": 64,
+      "action_recorded": 64,
+      "action_not_recorded": 0,
+      "action_not_recorded_rate": 0.0
     },
-    "stage_breakdown": {
-      "stage_3": {
-        "total_signals": 126,
-        "action_not_recorded_count": 45,
-        "action_not_recorded_rate": 0.3571,
-        "is_suppressed": false
-      },
-      "stage_2": {
-        "total_signals": 152,
-        "action_not_recorded_count": 62,
-        "action_not_recorded_rate": 0.4079,
-        "is_suppressed": false
-      },
-      "stage_1": {
-        "total_signals": 122,
-        "action_not_recorded_count": 43,
-        "action_not_recorded_rate": 0.3525,
-        "is_suppressed": false
-      },
-      "stage_4_oligometastatic": {
-        "total_signals": "<5",
-        "action_not_recorded_count": "<5",
-        "action_not_recorded_rate": null,
-        "is_suppressed": true
-      }
+    "facility_3_recurrence_free": {
+      "total_patients": 300,
+      "total_signals_detected": 0,
+      "specificity": 1.0
     },
-    "suppressed_cells_count": 3,
-    "small_cell_leak_count": 0
-  },
-  "cohort_beta_noise_stress": {
-    "total_patients": 500,
-    "false_alarms": 0,
-    "false_positive_rate": 0.0
-  },
-  "governance": {
-    "neutral_register_verified": true,
-    "small_cell_floor_k": 5,
-    "no_clinician_names_present": true
-  },
-  "hypotheses": {
-    "H1_ground_truth_recovery": {
-      "statement": "Sensitivity >= 90.0% and Specificity >= 95.0% on injected truth",
-      "observed_sensitivity": 1.0,
-      "observed_specificity": 1.0,
-      "verdict": "SUPPORTED"
+    "facility_4_benign_spikes": {
+      "total_patients": 200,
+      "total_signals_detected": 0,
+      "false_alarm_rate": 0.0
     },
-    "H2_small_cell_privacy_guarantee": {
-      "statement": "All cells with 1 <= n < 5 suppressed (0 leaks, >= 1 suppressed)",
-      "suppressed_cells": 3,
-      "unsuppressed_leaks": 0,
-      "verdict": "SUPPORTED"
-    },
-    "H3_biological_noise_specificity": {
-      "statement": "False positive rate <= 2.0% under biological noise stress",
-      "observed_fpr": 0.0,
-      "threshold": 0.02,
-      "verdict": "SUPPORTED"
+    "facility_5_pipeline_only": {
+      "total_patients": 200,
+      "total_signals_detected": 93,
+      "action_recorded": 0,
+      "action_not_recorded": 93,
+      "action_not_recorded_rate": 1.0
     }
+  },
+  "hypotheses_evaluation": {
+    "H1_sensitivity_precision": {
+      "sensitivity_point": 0.9655172413793104,
+      "sensitivity_95_ci": [
+        0.9310344827586207,
+        0.9913793103448276
+      ],
+      "precision_point": 1.0,
+      "precision_95_ci": [
+        1.0,
+        1.0
+      ],
+      "criterion_sens_ci_lower_ge_0_80": true,
+      "criterion_prec_ci_lower_ge_0_75": true,
+      "status": "SUPPORTED"
+    },
+    "H2_delay_accuracy": {
+      "mean_delay_error_days": 35.52360515021459,
+      "delay_error_95_ci": [
+        31.97392703862661,
+        39.06931330472103
+      ],
+      "criterion_mean_delay_le_45d": true,
+      "status": "SUPPORTED"
+    },
+    "H3_specificity_and_benign_spikes": {
+      "recurrence_free_specificity": 1.0,
+      "benign_spike_false_alarm_rate": 0.0,
+      "criterion_false_alarms_le_0_05": true,
+      "status": "SUPPORTED"
+    },
+    "H4_pipeline_only_decoupling": {
+      "action_not_recorded_rate": 1.0,
+      "action_recorded_count": 0,
+      "criterion_rate_gt_0": true,
+      "status": "SUPPORTED"
+    },
+    "H5_small_cell_privacy": {
+      "suppressed_cells_identified": 3,
+      "small_cells_unsuppressed_leak": 0,
+      "criterion_zero_leaks": true,
+      "status": "SUPPORTED"
+    }
+  },
+  "privacy_and_governance": {
+    "neutral_register_verified": true,
+    "k_anonymity_floor": 5,
+    "backdoor_flags_removed": true
   }
 }

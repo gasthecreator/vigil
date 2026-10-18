@@ -38,11 +38,16 @@ from vigil_ml.quality import (
 
 logger = logging.getLogger(__name__)
 
+from vigil_api.consent import has_active_consent
+
 router = APIRouter()
 
 
 def _extract_trajectories_from_db(
-    db: Session, facility_id: Optional[str] = None, lookback_days: int = 365
+    db: Session,
+    current_user: User,
+    facility_id: Optional[str] = None,
+    lookback_days: int = 365,
 ) -> List[AuditTrajectory]:
     """Extract longitudinal surveillance trajectories from the facility database."""
     query = db.query(Patient)
@@ -52,6 +57,10 @@ def _extract_trajectories_from_db(
     trajectories: List[AuditTrajectory] = []
 
     for p in patients:
+        # ADR 0017: Enforce patient consent. Exclude patients without active consent.
+        if not has_active_consent(p.id, db, current_user):
+            continue
+
         obs_list = sorted(p.observations, key=lambda o: o.specimen_collected_at)
         if not obs_list:
             continue
@@ -60,42 +69,37 @@ def _extract_trajectories_from_db(
         for o in obs_list:
             dt = o.specimen_collected_at
             day = max(0, (dt - first_date).days)
-            # Find alert for this observation if any
-            alert_level = "none"
+
+            # Clinician-attributable actions check (Condition P13-C)
+            # Must come from clinician events: AlertAcknowledgement or completed FollowUpTask
+            action_rec = None
             if o.risk_assessment and o.risk_assessment.alerts:
                 for a in o.risk_assessment.alerts:
-                    if a.severity == AlertSeverity.CRITICAL.value:
-                        alert_level = "urgent"
-                        break
-                    elif a.severity == AlertSeverity.WARNING.value:
-                        alert_level = "review"
-            elif o.risk_assessment and o.risk_assessment.risk_tier in ("high", "critical"):
-                alert_level = "urgent"
-            elif o.risk_assessment and o.risk_assessment.risk_tier == "medium":
-                alert_level = "review"
-
-            # Check if any follow-up task or clinical action was scheduled/completed around this time
-            action_rec = None
-            if p.follow_up_tasks:
-                for t in p.follow_up_tasks:
-                    if t.created_at and 0 <= (t.created_at - dt).days <= 30:
-                        if t.task_type in (
-                            "imaging_referral",
-                            "repeat_specimen",
-                            "clinical_review",
-                        ):
-                            action_rec = (
-                                "imaging_ordered"
-                                if t.task_type == "imaging_referral"
-                                else "clinical_review_completed"
-                            )
+                    for ack in a.acknowledgements:
+                        if ack.acknowledged_at and 0 <= (ack.acknowledged_at - dt).days <= 30:
+                            action_rec = "clinical_review_completed"
                             break
+                    if action_rec:
+                        break
+
+            if not action_rec and p.follow_up_tasks:
+                for t in p.follow_up_tasks:
+                    if (
+                        t.status == "completed"
+                        and t.completed_at
+                        and 0 <= (t.completed_at - dt).days <= 30
+                    ):
+                        action_rec = (
+                            "imaging_ordered"
+                            if t.task_type == "imaging_referral"
+                            else "clinical_review_completed"
+                        )
+                        break
 
             visits.append(
                 AuditVisit(
                     day=day,
                     marker_value=float(o.value),
-                    alert_level=alert_level,
                     action_recorded=action_rec,
                 )
             )
@@ -199,7 +203,10 @@ def run_quality_audit(
         )
     else:
         trajectories = _extract_trajectories_from_db(
-            db, facility_id=payload.facility_id, lookback_days=payload.lookback_days
+            db,
+            current_user,
+            facility_id=payload.facility_id,
+            lookback_days=payload.lookback_days,
         )
 
     engine = MissedSignalAuditEngine()
