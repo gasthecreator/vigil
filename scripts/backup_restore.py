@@ -30,9 +30,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
 try:
-    from vigil_api.models.v2 import calculate_audit_hash
+    from vigil_api.models.v2 import audit_hash_candidates
 except ImportError:
-    calculate_audit_hash = None
+    audit_hash_candidates = None
 
 
 def compute_sha256(file_path: Path) -> str:
@@ -177,8 +177,8 @@ def verify_restored_audit_chain(db_path: Path) -> Tuple[bool, str]:
                 return False, f"Broken link at event {r_id}: prev_hash {r_prev} != expected {prev_hash}"
 
             parsed_details = json.loads(details) if isinstance(details, str) else details
-            if calculate_audit_hash:
-                expected_curr = calculate_audit_hash(
+            if audit_hash_candidates:
+                candidates = audit_hash_candidates(
                     prev_hash=r_prev,
                     timestamp=ts,
                     actor_id=actor_id,
@@ -188,8 +188,11 @@ def verify_restored_audit_chain(db_path: Path) -> Tuple[bool, str]:
                     resource_id=res_id,
                     details=parsed_details,
                 )
-                if expected_curr != r_curr:
-                    return False, f"Hash tampered at event {r_id}: record has {r_curr}, calculated {expected_curr}"
+                if r_curr not in candidates.values():
+                    return False, (
+                        f"Hash tampered at event {r_id}: record has {r_curr}, "
+                        f"calculated {candidates['v1-canonical-utc']}"
+                    )
 
             prev_hash = r_curr
 
@@ -214,6 +217,7 @@ def restore_backup(backup_folder: Path, target_db: Path, verify_audit_chain: boo
     print("  ✅ Backup package SHA-256 manifest verified.")
 
     # 2. Stage temporary database for inspection
+    target_db.parent.mkdir(parents=True, exist_ok=True)  # restore onto a fresh host/directory
     temp_restored = target_db.with_suffix(".restoring.tmp")
     shutil.copy2(backup_folder / "database.db", temp_restored)
 

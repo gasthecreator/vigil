@@ -439,9 +439,32 @@ class AuditEvent(Base):
     curr_hash = Column(String(64), nullable=False, index=True)
 
 
-def calculate_audit_hash(
+AUDIT_HASH_SCHEME_V1 = "v1-canonical-utc"
+AUDIT_HASH_SCHEME_V0 = "v0-raw-timestamp-string"
+
+
+def canonical_audit_timestamp(timestamp: Any) -> str:
+    """Canonical timestamp encoding of hash scheme v1 (ADR-0020).
+
+    A ``datetime`` is converted to UTC (naive values are taken as UTC) and rendered with
+    ``isoformat()``; this branch is byte-identical to every earlier version of the code.
+    A string (what raw SQLite/JSONL exports return) is parsed (space or ``T`` separator,
+    optional offset) and rendered the same way; an unparseable string is used verbatim.
+    """
+    if isinstance(timestamp, datetime):
+        ts_utc = timestamp if timestamp.tzinfo else timestamp.replace(tzinfo=timezone.utc)
+        return ts_utc.astimezone(timezone.utc).isoformat()
+    try:
+        dt = datetime.fromisoformat(str(timestamp).replace(" ", "T"))
+        ts_utc = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        return ts_utc.astimezone(timezone.utc).isoformat()
+    except Exception:
+        return str(timestamp)
+
+
+def _audit_hash_payload(
+    ts_str: str,
     prev_hash: str,
-    timestamp: datetime,
     actor_id: str,
     actor_role: str,
     action: str,
@@ -449,19 +472,6 @@ def calculate_audit_hash(
     resource_id: str,
     details: Dict[str, Any],
 ) -> str:
-    """Compute SHA-256 hash for immutable hash-chain audit log entry."""
-    if isinstance(timestamp, datetime):
-        ts_utc = timestamp if timestamp.tzinfo else timestamp.replace(tzinfo=timezone.utc)
-        ts_str = ts_utc.astimezone(timezone.utc).isoformat()
-    else:
-        try:
-            s = str(timestamp).replace(" ", "T")
-            dt = datetime.fromisoformat(s)
-            ts_utc = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-            ts_str = ts_utc.astimezone(timezone.utc).isoformat()
-        except Exception:
-            ts_str = str(timestamp)
-
     payload = {
         "prev_hash": prev_hash,
         "timestamp": ts_str,
@@ -474,6 +484,58 @@ def calculate_audit_hash(
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def calculate_audit_hash(
+    prev_hash: str,
+    timestamp: datetime,
+    actor_id: str,
+    actor_role: str,
+    action: str,
+    resource_type: str,
+    resource_id: str,
+    details: Dict[str, Any],
+) -> str:
+    """Hash scheme v1: SHA-256 over canonical JSON with the canonical UTC timestamp (ADR-0020).
+
+    All new audit rows are written with this scheme.
+    """
+    return _audit_hash_payload(
+        canonical_audit_timestamp(timestamp),
+        prev_hash,
+        actor_id,
+        actor_role,
+        action,
+        resource_type,
+        resource_id,
+        details,
+    )
+
+
+def audit_hash_candidates(
+    prev_hash: str,
+    timestamp: Any,
+    actor_id: str,
+    actor_role: str,
+    action: str,
+    resource_type: str,
+    resource_id: str,
+    details: Dict[str, Any],
+) -> Dict[str, str]:
+    """Hashes a stored row may legitimately carry: scheme -> digest (verification only).
+
+    ``v1`` is always a candidate. ``v0`` (the encoding used before Phase 8b when a timestamp
+    was handed over as a *string*: ``str(timestamp)`` verbatim) is a candidate only when the
+    timestamp is a string. Writers never produce v0; verifiers accept it so that chains and
+    backups created by earlier code still verify. Both candidates are deterministic encodings
+    of the same fields, so accepting either does not weaken tamper detection: any change of
+    prev_hash, actor, role, action, resource, details or the instant itself changes both.
+    """
+    args = (prev_hash, actor_id, actor_role, action, resource_type, resource_id, details)
+    out = {AUDIT_HASH_SCHEME_V1: _audit_hash_payload(canonical_audit_timestamp(timestamp), *args)}
+    if not isinstance(timestamp, datetime):
+        out[AUDIT_HASH_SCHEME_V0] = _audit_hash_payload(str(timestamp), *args)
+    return out
 
 
 # ==============================================================================

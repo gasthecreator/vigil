@@ -14,7 +14,12 @@ from typing import Any, Dict, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from vigil_api.models.v2 import AuditAnchor, AuditEvent, calculate_audit_hash
+from vigil_api.models.v2 import (
+    AuditAnchor,
+    AuditEvent,
+    audit_hash_candidates,
+    calculate_audit_hash,
+)
 
 
 def get_latest_audit_event(db: Session) -> Optional[AuditEvent]:
@@ -168,10 +173,11 @@ def verify_audit_chain(
     by_prev = {ev.prev_hash: ev for ev in events}
     expected_prev = "0" * 64
     verified_count = 0
+    scheme_counts: Dict[str, int] = {}
 
     while expected_prev in by_prev:
         ev = by_prev[expected_prev]
-        recomputed_hash = calculate_audit_hash(
+        candidates = audit_hash_candidates(
             prev_hash=ev.prev_hash,
             timestamp=ev.timestamp,
             actor_id=ev.actor_id,
@@ -181,16 +187,18 @@ def verify_audit_chain(
             resource_id=ev.resource_id,
             details=ev.details,
         )
+        matched = [scheme for scheme, digest in candidates.items() if digest == ev.curr_hash]
 
-        if ev.curr_hash != recomputed_hash:
+        if not matched:
             return {
                 "valid": False,
-                "error": f"Tampered payload at index {verified_count}: curr_hash '{ev.curr_hash}' does not match recomputed hash '{recomputed_hash}'",
+                "error": f"Tampered payload at index {verified_count}: curr_hash '{ev.curr_hash}' does not match recomputed hash '{candidates['v1-canonical-utc']}'",
                 "tampered_event_id": ev.id,
                 "verified_events": verified_count,
                 "total_events": len(events),
             }
 
+        scheme_counts[matched[0]] = scheme_counts.get(matched[0], 0) + 1
         expected_prev = ev.curr_hash
         verified_count += 1
 
@@ -242,4 +250,5 @@ def verify_audit_chain(
         "verified_events": verified_count,
         "total_events": len(events),
         "head_hash": expected_prev,
+        "hash_schemes": scheme_counts,
     }

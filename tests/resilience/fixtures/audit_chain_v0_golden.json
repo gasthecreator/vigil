@@ -1,0 +1,366 @@
+{
+  "chain_hashed_from_raw_string": [
+    {
+      "action": "observation.create",
+      "actor_id": "USR-NURSE-01",
+      "actor_role": "nurse_clerk",
+      "curr_hash": "036f6b5ff742d18a2eabb3c3f8118cad673331d4248c7efad41373551a2e1243",
+      "details": {
+        "nested": {
+          "a": [
+            1,
+            2,
+            {
+              "z": null
+            }
+          ],
+          "b": 2
+        },
+        "note": "Ọmọ́ Adébáyọ̀ — unicode ✓"
+      },
+      "id": "EVT-B-000",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "resource_id": "OBS-002",
+      "resource_type": "observation",
+      "timestamp_sqlite": "2026-03-01 09:30:15.123456"
+    },
+    {
+      "action": "alert.escalate",
+      "actor_id": "SYSTEM",
+      "actor_role": "admin",
+      "curr_hash": "849fd72382afa0b42fd0e420cf5bc71434c428dd9d0a3d54e7233b5cf1dda3f4",
+      "details": {
+        "p": 0.0123456789,
+        "tier": "REVIEW"
+      },
+      "id": "EVT-B-001",
+      "prev_hash": "036f6b5ff742d18a2eabb3c3f8118cad673331d4248c7efad41373551a2e1243",
+      "resource_id": "ALT-001",
+      "resource_type": "alert",
+      "timestamp_sqlite": "2026-03-01 09:33:15.123456"
+    },
+    {
+      "action": "consent.revoke",
+      "actor_id": "USR-ADMIN-01",
+      "actor_role": "admin",
+      "curr_hash": "972f4e03f7347780fd68eea94ec9ea9e79cc2bf2f4bd8c6f40ea6f0c2500f841",
+      "details": {},
+      "id": "EVT-B-002",
+      "prev_hash": "849fd72382afa0b42fd0e420cf5bc71434c428dd9d0a3d54e7233b5cf1dda3f4",
+      "resource_id": "CON-001",
+      "resource_type": "consent",
+      "timestamp_sqlite": "2026-03-01 09:36:15.123456"
+    },
+    {
+      "action": "continuity.schedule_confirmed",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "14855f0c8e74e03bc81c4afd77f3befc394acf9d5bfa891d08a6d1ac553fe4c8",
+      "details": {
+        "moves": 3
+      },
+      "id": "EVT-B-003",
+      "prev_hash": "972f4e03f7347780fd68eea94ec9ea9e79cc2bf2f4bd8c6f40ea6f0c2500f841",
+      "resource_id": "RTC-001",
+      "resource_type": "course",
+      "timestamp_sqlite": "2026-03-01 09:39:15.123456"
+    },
+    {
+      "action": "patient.read",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "3b123efd09d02b11b44a097fa4d1e1598a7f261ec3994820f799ac79c655b0d3",
+      "details": {
+        "fields": [
+          "name",
+          "mrn"
+        ]
+      },
+      "id": "EVT-B-004",
+      "prev_hash": "14855f0c8e74e03bc81c4afd77f3befc394acf9d5bfa891d08a6d1ac553fe4c8",
+      "resource_id": "PAT-001",
+      "resource_type": "patient",
+      "timestamp_sqlite": "2026-03-01 09:42:15.123456"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "91ad77060192ab68414f08a0dbc3026e0b552e6703c048b5791d04c2e83de614",
+      "details": {
+        "analyte": "CA15-3",
+        "unit": "U/mL",
+        "value": 41.2
+      },
+      "id": "EVT-B-005",
+      "prev_hash": "3b123efd09d02b11b44a097fa4d1e1598a7f261ec3994820f799ac79c655b0d3",
+      "resource_id": "OBS-001",
+      "resource_type": "observation",
+      "timestamp_sqlite": "2026-03-01 09:45:15.123456"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-NURSE-01",
+      "actor_role": "nurse_clerk",
+      "curr_hash": "c2334e481054814c214abceeb4392d0852398aa23c451555c2adfa6444dda378",
+      "details": {
+        "nested": {
+          "a": [
+            1,
+            2,
+            {
+              "z": null
+            }
+          ],
+          "b": 2
+        },
+        "note": "Ọmọ́ Adébáyọ̀ — unicode ✓"
+      },
+      "id": "EVT-B-006",
+      "prev_hash": "91ad77060192ab68414f08a0dbc3026e0b552e6703c048b5791d04c2e83de614",
+      "resource_id": "OBS-002",
+      "resource_type": "observation",
+      "timestamp_sqlite": "2026-03-01 09:48:15.123456"
+    },
+    {
+      "action": "alert.escalate",
+      "actor_id": "SYSTEM",
+      "actor_role": "admin",
+      "curr_hash": "687e7aaa33d44c28319d64fbdd28e7e3c4646bd8578e054fbda999438dc7359c",
+      "details": {
+        "p": 0.0123456789,
+        "tier": "REVIEW"
+      },
+      "id": "EVT-B-007",
+      "prev_hash": "c2334e481054814c214abceeb4392d0852398aa23c451555c2adfa6444dda378",
+      "resource_id": "ALT-001",
+      "resource_type": "alert",
+      "timestamp_sqlite": "2026-03-01 09:51:15.123456"
+    }
+  ],
+  "chain_written_from_datetime": [
+    {
+      "action": "patient.read",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "f49b42c33228eb2628a4185b82891f73c8b5c7033acfaf3deb1cc35ae5e27246",
+      "details": {
+        "fields": [
+          "name",
+          "mrn"
+        ]
+      },
+      "id": "EVT-A-000",
+      "input_kind": "aware",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "resource_id": "PAT-001",
+      "resource_type": "patient",
+      "timestamp_iso_utc": "2026-03-01T08:30:15.123456+00:00",
+      "timestamp_sqlite": "2026-03-01 08:30:15.123456"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "6c2e7b9d381ca86bfa36edda8bb5a434d2285c913368838913e2644a1c440970",
+      "details": {
+        "analyte": "CA15-3",
+        "unit": "U/mL",
+        "value": 41.2
+      },
+      "id": "EVT-A-001",
+      "input_kind": "aware",
+      "prev_hash": "f49b42c33228eb2628a4185b82891f73c8b5c7033acfaf3deb1cc35ae5e27246",
+      "resource_id": "OBS-001",
+      "resource_type": "observation",
+      "timestamp_iso_utc": "2026-03-01T08:37:15.124457+00:00",
+      "timestamp_sqlite": "2026-03-01 08:37:15.124457"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-NURSE-01",
+      "actor_role": "nurse_clerk",
+      "curr_hash": "8aad51f3eff6c14e06ce860ed753c1de4bcdc4cfa87c5d8d4ffcacb49401cf35",
+      "details": {
+        "nested": {
+          "a": [
+            1,
+            2,
+            {
+              "z": null
+            }
+          ],
+          "b": 2
+        },
+        "note": "Ọmọ́ Adébáyọ̀ — unicode ✓"
+      },
+      "id": "EVT-A-002",
+      "input_kind": "naive",
+      "prev_hash": "6c2e7b9d381ca86bfa36edda8bb5a434d2285c913368838913e2644a1c440970",
+      "resource_id": "OBS-002",
+      "resource_type": "observation",
+      "timestamp_iso_utc": "2026-03-01T08:44:15.125458+00:00",
+      "timestamp_sqlite": "2026-03-01 08:44:15.125458"
+    },
+    {
+      "action": "alert.escalate",
+      "actor_id": "SYSTEM",
+      "actor_role": "admin",
+      "curr_hash": "38b155fe7d77276fec2ed05f2ddd4bcaa8dccea1a5922ac852d9425479ace13d",
+      "details": {
+        "p": 0.0123456789,
+        "tier": "REVIEW"
+      },
+      "id": "EVT-A-003",
+      "input_kind": "aware",
+      "prev_hash": "8aad51f3eff6c14e06ce860ed753c1de4bcdc4cfa87c5d8d4ffcacb49401cf35",
+      "resource_id": "ALT-001",
+      "resource_type": "alert",
+      "timestamp_iso_utc": "2026-03-01T08:51:15.126459+00:00",
+      "timestamp_sqlite": "2026-03-01 08:51:15.126459"
+    },
+    {
+      "action": "consent.revoke",
+      "actor_id": "USR-ADMIN-01",
+      "actor_role": "admin",
+      "curr_hash": "d944f1c6fab87a8681abf637e23b8f23bc32a0499142b36436534ba42993eb07",
+      "details": {},
+      "id": "EVT-A-004",
+      "input_kind": "aware",
+      "prev_hash": "38b155fe7d77276fec2ed05f2ddd4bcaa8dccea1a5922ac852d9425479ace13d",
+      "resource_id": "CON-001",
+      "resource_type": "consent",
+      "timestamp_iso_utc": "2026-03-01T08:58:15.127460+00:00",
+      "timestamp_sqlite": "2026-03-01 08:58:15.127460"
+    },
+    {
+      "action": "continuity.schedule_confirmed",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "e1e77f4e542de286652dd48c5a61ed87c1084dc4360018882f382ef4cf3754f5",
+      "details": {
+        "moves": 3
+      },
+      "id": "EVT-A-005",
+      "input_kind": "naive",
+      "prev_hash": "d944f1c6fab87a8681abf637e23b8f23bc32a0499142b36436534ba42993eb07",
+      "resource_id": "RTC-001",
+      "resource_type": "course",
+      "timestamp_iso_utc": "2026-03-01T09:05:15.128461+00:00",
+      "timestamp_sqlite": "2026-03-01 09:05:15.128461"
+    },
+    {
+      "action": "patient.read",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "c9a28a7b5adeb112e19c15f4341a80a8de8c41b251ff49eae2c6093c07ead90b",
+      "details": {
+        "fields": [
+          "name",
+          "mrn"
+        ]
+      },
+      "id": "EVT-A-006",
+      "input_kind": "aware",
+      "prev_hash": "e1e77f4e542de286652dd48c5a61ed87c1084dc4360018882f382ef4cf3754f5",
+      "resource_id": "PAT-001",
+      "resource_type": "patient",
+      "timestamp_iso_utc": "2026-03-01T09:12:15.129462+00:00",
+      "timestamp_sqlite": "2026-03-01 09:12:15.129462"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "4beb8814ba9ac28229481f0987601d0ebae39bcf1ad40478a867d17648c90035",
+      "details": {
+        "analyte": "CA15-3",
+        "unit": "U/mL",
+        "value": 41.2
+      },
+      "id": "EVT-A-007",
+      "input_kind": "aware",
+      "prev_hash": "c9a28a7b5adeb112e19c15f4341a80a8de8c41b251ff49eae2c6093c07ead90b",
+      "resource_id": "OBS-001",
+      "resource_type": "observation",
+      "timestamp_iso_utc": "2026-03-01T09:19:15.130463+00:00",
+      "timestamp_sqlite": "2026-03-01 09:19:15.130463"
+    },
+    {
+      "action": "observation.create",
+      "actor_id": "USR-NURSE-01",
+      "actor_role": "nurse_clerk",
+      "curr_hash": "c9e9b0a4a6757d2da266a71fc0d522015e7efd0fef984836b2711645197619cb",
+      "details": {
+        "nested": {
+          "a": [
+            1,
+            2,
+            {
+              "z": null
+            }
+          ],
+          "b": 2
+        },
+        "note": "Ọmọ́ Adébáyọ̀ — unicode ✓"
+      },
+      "id": "EVT-A-008",
+      "input_kind": "naive",
+      "prev_hash": "4beb8814ba9ac28229481f0987601d0ebae39bcf1ad40478a867d17648c90035",
+      "resource_id": "OBS-002",
+      "resource_type": "observation",
+      "timestamp_iso_utc": "2026-03-01T09:26:15.131464+00:00",
+      "timestamp_sqlite": "2026-03-01 09:26:15.131464"
+    },
+    {
+      "action": "alert.escalate",
+      "actor_id": "SYSTEM",
+      "actor_role": "admin",
+      "curr_hash": "b86ba301797a3e10b9782eca14c36a3cff165375424a1cb51f4a9144ff3df79f",
+      "details": {
+        "p": 0.0123456789,
+        "tier": "REVIEW"
+      },
+      "id": "EVT-A-009",
+      "input_kind": "aware",
+      "prev_hash": "c9e9b0a4a6757d2da266a71fc0d522015e7efd0fef984836b2711645197619cb",
+      "resource_id": "ALT-001",
+      "resource_type": "alert",
+      "timestamp_iso_utc": "2026-03-01T09:33:15.132465+00:00",
+      "timestamp_sqlite": "2026-03-01 09:33:15.132465"
+    },
+    {
+      "action": "consent.revoke",
+      "actor_id": "USR-ADMIN-01",
+      "actor_role": "admin",
+      "curr_hash": "0dda13cf794b1971aac8ef57fb14dff16e1c2cf91b8027e688ed146d71c087f1",
+      "details": {},
+      "id": "EVT-A-010",
+      "input_kind": "aware",
+      "prev_hash": "b86ba301797a3e10b9782eca14c36a3cff165375424a1cb51f4a9144ff3df79f",
+      "resource_id": "CON-001",
+      "resource_type": "consent",
+      "timestamp_iso_utc": "2026-03-01T09:40:15.133466+00:00",
+      "timestamp_sqlite": "2026-03-01 09:40:15.133466"
+    },
+    {
+      "action": "continuity.schedule_confirmed",
+      "actor_id": "USR-DR-01",
+      "actor_role": "clinician",
+      "curr_hash": "db560c18b76a0280cea8690c732d0a08c290fc48453400c18556e943bcfa1b5e",
+      "details": {
+        "moves": 3
+      },
+      "id": "EVT-A-011",
+      "input_kind": "naive",
+      "prev_hash": "0dda13cf794b1971aac8ef57fb14dff16e1c2cf91b8027e688ed146d71c087f1",
+      "resource_id": "RTC-001",
+      "resource_type": "course",
+      "timestamp_iso_utc": "2026-03-01T09:47:15.134467+00:00",
+      "timestamp_sqlite": "2026-03-01 09:47:15.134467"
+    }
+  ],
+  "generated_by": "scripts/generate_audit_compat_fixture.py",
+  "old_function_commit": "9709295",
+  "old_function_source_sha256": "6150c614bd5d97b94deb27310b891296b6a64fbe726761b169dcf2a0d7197e38"
+}
