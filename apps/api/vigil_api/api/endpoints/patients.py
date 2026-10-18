@@ -157,7 +157,11 @@ def list_patients(
     mrn: Optional[str] = None,
     external_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.QUALITY_LEAD, UserRole.ADMIN
+        )
+    ),
 ):
     """Lists all registered patients, optionally filtering by blind-indexed MRN or external_id.
 
