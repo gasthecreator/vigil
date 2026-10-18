@@ -11,6 +11,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from vigil_api.auth import require_roles
 from vigil_api.config import settings
+from vigil_api.consent import has_active_consent
 from vigil_api.database import get_db
 from vigil_api.ml.inference import VigilEngine
 from vigil_api.ml.synthetic_generator import generate_longitudinal_labs, generate_patient_baseline
@@ -21,11 +22,18 @@ router = APIRouter()
 
 
 @router.get("/cohort")
-def get_cohort_analytics(db: Session = Depends(get_db)):
-    """Provides population-level surveillance KPIs and organ tropism distribution."""
-    total_patients = db.query(Patient).count()
+def get_cohort_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRole.CLINICIAN, UserRole.QUALITY_LEAD, UserRole.ADMIN)
+    ),
+):
+    """Provides population-level surveillance KPIs and organ tropism distribution.
 
-    patients = db.query(Patient).all()
+    Restricted to clinical/quality roles and computed only over patients with active consent.
+    """
+    patients = [p for p in db.query(Patient).all() if has_active_consent(p.id, db, current_user)]
+    total_patients = len(patients)
     critical_alerts = 0
     watch_cases = 0
     stable_cases = 0

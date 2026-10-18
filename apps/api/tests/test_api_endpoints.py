@@ -49,6 +49,7 @@ def test_patient_workflow(client):
     p_data = p_resp.json()
     patient_id = p_data["id"]
     assert p_data["age"] == 52
+    client.post(f"/api/v1/patients/{patient_id}/consent", json={"scope": "full", "granted": True})
 
     # 2. Submit Baseline Profile (Uses Literature/SEER priors)
     b_resp = client.post(
