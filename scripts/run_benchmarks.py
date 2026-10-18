@@ -578,42 +578,10 @@ def run_study_s5(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def run_study_s6(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    """Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."""
+    """Old S6 retracted (reports/ml/RETRACTED/README.md). Replaced by experiments/EXP-K6-001/run.py."""
     raise NotImplementedError(
-        "Study S6 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-005)."
+        "Old S6 retracted: see reports/ml/RETRACTED/README.md. Run experiments/EXP-K6-001/run.py instead."
     )
-
-
-def render_s6_markdown(results: Dict[str, Any], path: Path) -> None:
-    f3 = results["fixed_3month"]
-    f6 = results["fixed_6month"]
-    k6 = results["k6_active_sensing"]
-    lines = [
-        "# Study S6 Report: Active Sensing & Adaptive Surveillance Scheduling",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S6_ACTIVE_SENSING  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        "- **H1 (Surveillance Waste):** CONFIRMED. Fixed 3-month schedules mandated 20 visits ($400/patient) with low marginal utility during indolent phases.",
-        f"- **H2 (Adaptive Cost-Efficiency):** CONFIRMED. K6 Active Sensing achieved preclinical detection delay ({k6['mean_detection_delay_days']:.1f} days) competitive with 3-month follow-up ({f3['mean_detection_delay_days']:.1f} days) while reducing visits from 20 to {k6['mean_visits']:.1f} (a 44% reduction in visit burden).",
-        f"- **H3 (Expenditure Reduction):** CONFIRMED. Total surveillance cost dropped from ${f3['mean_cost_usd']:.2f} to ${k6['mean_cost_usd']:.2f} (a {results['cost_saving_vs_3mo_pct']:.1f}% saving).",
-        "",
-        "## 2. Policy Comparison (5-Year Surveillance Horizon)",
-        "",
-        "| Surveillance Policy | Mean Visits (5-Yr) | Mean Cumulative Cost ($) | Mean Detection Delay (Days) | Cost vs 3-Mo | Delay vs 6-Mo |",
-        "|---|---|---|---|---|---|",
-        f"| `Fixed 3-Month Intensive` | {f3['mean_visits']:.1f} | ${f3['mean_cost_usd']:.2f} | {f3['mean_detection_delay_days']:.1f} days | Baseline | -49.7 days |",
-        f"| `Fixed 6-Month Relaxed` | {f6['mean_visits']:.1f} | ${f6['mean_cost_usd']:.2f} | {f6['mean_detection_delay_days']:.1f} days | -50.0% | Baseline |",
-        f"| `K6 Active Sensing Engine` | {k6['mean_visits']:.1f} | ${k6['mean_cost_usd']:.2f} | {k6['mean_detection_delay_days']:.1f} days | **-{results['cost_saving_vs_3mo_pct']:.1f}%** | **-{results['delay_reduction_vs_6mo_days']:.1f} days** |",
-        "",
-        "## 3. Decision Record",
-        "- **Ship K6 as Dynamic Scheduling Recommender:** Suggests 6-month quiescent spacing vs 45-day rapid verification based on posterior epistemic variance.",
-    ]
-    path.write_text("\n".join(lines))
 
 
 def run_study_s10(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:

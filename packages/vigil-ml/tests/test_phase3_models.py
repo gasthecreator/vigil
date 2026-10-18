@@ -6,7 +6,7 @@ Comprehensive test suite for Phase 3 ML deliverables:
 2. K2 Anytime-Valid Sequential Detection: Test supermartingales (e-processes), Ville's inequality, and 5-scenario Null Stress Suite.
 3. K4 Deep Irregular-Time Zoo: moved to `packages/vigil-ml/tests/test_k4.py` (the earlier stub `deep_zoo_k4.py` is retired, ADR-0025).
 4. K5 Hierarchical Pooling & Lab Harmonisation: Site offsets, empirical Bayes shrinkage, and analytical changepoint detector.
-5. K6 Active Sensing: Expected Information Gain (EIG) scheduling, panel selection, and cost trade-off study S6.
+5. K6 Active Sensing: moved to `packages/vigil-ml/tests/test_k6.py` (the earlier stub `active_sensing_k6.py` is retired, ADR-0026).
 6. K8 Conformal Ensemble & Runtime: False Negative Rate bounds, Mahalanobis OOD detection, abstention policy, ONNX/Safetensors export, parity (< 1e-4), and CPU latency budget (p95 < 100 ms).
 """
 
@@ -15,7 +15,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
-from vigil_ml.active_sensing_k6 import ActiveSensingEngineK6, TestPanelTier
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
 from vigil_ml.export import (
     SurrogateInferenceNet,
@@ -123,27 +122,6 @@ def test_k5_hierarchical_pooling_and_changepoints():
             shift_detected = True
             break
     assert shift_detected, "Failed to detect systemic lab shift"
-
-
-# ---------------------------------------------------------------------------
-# K6 Tests
-# ---------------------------------------------------------------------------
-
-def test_k6_active_sensing_recommendations():
-    k6 = ActiveSensingEngineK6()
-    # Low risk -> 180 days
-    rec_low = k6.recommend_next_action(current_risk=0.05, risk_uncertainty=0.04)
-    assert rec_low.suggested_interval_days == 180
-    assert rec_low.recommended_panel == TestPanelTier.TIER_2_STANDARD
-
-    # High risk -> 14 days and Tier 3
-    rec_high = k6.recommend_next_action(current_risk=0.55, risk_uncertainty=0.10)
-    assert rec_high.suggested_interval_days == 14
-    assert rec_high.recommended_panel == TestPanelTier.TIER_3_COMPREHENSIVE
-
-    with pytest.raises(NotImplementedError) as excinfo:
-        k6.run_study_s6()
-    assert "retracted" in str(excinfo.value).lower()
 
 
 # ---------------------------------------------------------------------------
