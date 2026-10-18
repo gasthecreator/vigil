@@ -88,17 +88,19 @@ def test_aipw_recovers_known_ground_truth():
 
 
 def test_honest_failure_under_unmeasured_confounding():
-    """When unmeasured confounding is present, naive and causal estimators exhibit residual bias detected by E-values."""
-    true_rr = 1.15
+    """Condition P13-E: AIPW fails under unmeasured confounding and the E-value only quantifies how strong a confounder would need to be."""
+    true_rr = 1.12
     cohort = generate_synthetic_causal_cohort(
         n_patients=3000, seed=999, true_causal_rr=true_rr, inject_unmeasured_confounder=True
     )
     tte = TargetTrialEmulation()
     res = tte.estimate_effects(cohort)
 
-    # Injected confounder shifts naive and unadjusted estimates upward
+    # Injected confounder shifts naive and unadjusted estimates upward (AIPW failure mode)
     aipw_rr = res["estimates"]["aipw"]["rr"]
-    e_val = compute_e_value(aipw_rr)
+    bias = aipw_rr - true_rr
+    assert bias > 0.05, f"Expected substantial unmeasured confounding bias, got {bias}"
 
-    # The required unmeasured confounding strength (E-value) should be >= 1.5
+    # E-value quantifies sensitivity (how strong confounder must be), not confounding detection
+    e_val = compute_e_value(aipw_rr)
     assert e_val["e_value_estimate"] >= 1.5

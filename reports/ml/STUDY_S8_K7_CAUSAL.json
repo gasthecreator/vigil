@@ -117,11 +117,14 @@
       "verdict": "SUPPORTED"
     },
     "H3_unmeasured_confounding_sensitivity": {
-      "statement": "E-value correctly detects the strength of injected unmeasured confounding (>= 2.0)",
-      "observed_e_value": 2.2828,
-      "observed_e_value_ci": 1.9554,
-      "threshold": 2.0,
-      "verdict": "SUPPORTED"
+      "statement": "AIPW fails under unmeasured confounding and the E-value only quantifies how strong a confounder would need to be",
+      "ground_truth_rr": 1.1247,
+      "biased_aipw_rr": 1.4615,
+      "bias": 0.3368,
+      "e_value_estimate": 2.2828,
+      "e_value_ci_lower": 1.9554,
+      "finding": "AIPW fails under unmeasured confounding (Scenario B biased 1.46 vs 1.12 truth); E-value (2.28) does not detect confounding, but quantifies required confounder strength.",
+      "verdict": "CONFIRMED_FAILURE_MODE"
     }
   }
 }
