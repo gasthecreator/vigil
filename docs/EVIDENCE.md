@@ -98,6 +98,12 @@
 * **Limits:** Chinese national programme (not Nigerian laboratories); a spread across laboratories, not a bias estimate; abstract-level only.
 * **Used by:** K5 lab-harmonisation study `experiments/EXP-K5-001` (to anchor the simulated between-laboratory spread; larger spreads are assumptions).
 
+### E24 — GRUwE: Recurrent Model with Exponential Basis Functions for Irregular Time Series — `SECONDARY` (method description only; no performance figure is used)
+* **Source:** Joshi A, Hauskrecht M. "Still Competitive: Revisiting Recurrent Models for Irregular Time Series Prediction." arXiv:2510.16161 (October 2025). Excerpt: [`docs/evidence/excerpts/E24_joshi_2025_gruwe.md`](evidence/excerpts/E24_joshi_2025_gruwe.md).
+* **Content used:** the two-step state update (time-triggered exponential decay of the hidden state; observation-triggered GRU update with the mask as an input). Implemented in `vigil_ml.k4.GRUwE`.
+* **Limits:** non-oncology benchmarks; a preprint (E11 cites a TMLR 2026 version that was not retrieved); no figure from it is relied on.
+* **Used by:** K4 study `experiments/EXP-K4-001`.
+
 ### E6 — Radiotherapy Capacity in Nigeria — `SECONDARY` / `STALE`
 * ~200M population, estimated shortfall of ~280 LINACs by IAEA benchmarks; high out-of-pocket costs and machine downtime. Current national facility assessment pending hospital partnership data.
 * Sources: PMC7456314; local press reports.
