@@ -7,6 +7,14 @@
 
 The numbers are plumbing and null-behaviour checks on invented data. They are not performance results.
 `--check` re-runs everything and fails if a committed file differs (used by tests and CI).
+
+Reproducibility is byte-exact on the platform that wrote the committed files. XGBoost (the B4 candidate) is not
+bit-reproducible across operating systems or CPUs: the first CI run on Linux differed from the files written on
+macOS in `null/` and `signal/` (recalibration slope 0.374 vs 0.380, an operating threshold 0.182 vs 0.184,
+bootstrap intervals in the third decimal). So when bytes differ, `--check` falls back to `agree()`: the files must
+have the same structure, identical integers, strings and booleans (counts, verdicts, "met"/"not met"), and decimals
+within `ABS_TOL + REL_TOL * magnitude`. These tolerances were chosen after seeing that drift (disclosed in the Tier 1
+report); a hand-edited decimal that stays inside them is not caught.
 """
 
 from __future__ import annotations
@@ -15,6 +23,7 @@ import argparse
 import difflib
 import filecmp
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -22,6 +31,9 @@ import warnings
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+ABS_TOL = 0.03
+REL_TOL = 0.05
+_DECIMAL = re.compile(r"(?<![\w.])-?\d+\.\d+(?![\w.])")
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import make_dryrun_cohort as gen  # noqa: E402
@@ -92,6 +104,45 @@ def gen_seed() -> int:
     return 20261018
 
 
+def _close(a: float, b: float) -> bool:
+    return abs(a - b) <= ABS_TOL + REL_TOL * max(abs(a), abs(b))
+
+
+def _json_agree(a: object, b: object) -> bool:
+    if isinstance(a, bool) or isinstance(b, bool):
+        return a is b
+    if isinstance(a, float) and isinstance(b, float):
+        return _close(a, b)
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_json_agree(a[k], b[k]) for k in a)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_json_agree(x, y) for x, y in zip(a, b))
+    return type(a) is type(b) and a == b
+
+
+def _text_agree(a: str, b: str) -> bool:
+    """Same text except that decimals (digits.digits) may differ within tolerance."""
+    if _DECIMAL.sub("<d>", a) != _DECIMAL.sub("<d>", b):
+        return False
+    return all(_close(float(x), float(y)) for x, y in zip(_DECIMAL.findall(a), _DECIMAL.findall(b)))
+
+
+def agree(committed: Path, rebuilt: Path) -> bool:
+    """Byte-identical, or (platform float drift) equal structure with decimals within tolerance."""
+    if filecmp.cmp(committed, rebuilt, shallow=False):
+        return True
+    if committed.suffix == ".json":
+        return _json_agree(
+            json.loads(committed.read_text(encoding="utf-8")),
+            json.loads(rebuilt.read_text(encoding="utf-8")),
+        )
+    if committed.suffix == ".md":
+        return _text_agree(
+            committed.read_text(encoding="utf-8"), rebuilt.read_text(encoding="utf-8")
+        )
+    return False
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -112,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         bad = []
         for f in sorted(p for p in tmp.rglob("*") if p.is_file()):
             ref = OUT / f.relative_to(tmp)
-            if not ref.exists() or not filecmp.cmp(f, ref, shallow=False):
+            if not ref.exists() or not agree(ref, f):
                 bad.append(str(f.relative_to(tmp)))
         if bad:
             print("dry-run reports differ from the committed files:", *bad, sep="\n  ")
@@ -129,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     print(*list(delta)[:40], sep="\n")
             return 1
-        print("dry-run reports reproduce byte for byte")
+        print("dry-run reports reproduce (byte-exact, or within the documented float tolerance)")
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

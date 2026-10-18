@@ -513,7 +513,33 @@ def test_a_messy_extract_over_the_stop_rate_stops_the_analysis(tmp_path):
 
 
 def test_committed_dry_run_reports_reproduce_byte_for_byte():
-    """Result files are written only by their script; this re-runs it and diffs against the committed files."""
+    """Result files are written only by their script; this re-runs it and diffs against the committed files.
+    (Byte-exact on the platform that wrote them; elsewhere within the documented float tolerance, see
+    scripts/run_partner_dry_run.py. The name is kept for the CI history.)"""
     import run_partner_dry_run as dry
 
     assert dry.main(["--check"]) == 0
+
+
+def test_dry_run_tolerance_accepts_float_drift_but_not_changed_facts(tmp_path):
+    import run_partner_dry_run as dry
+
+    def pair(committed: str, rebuilt: str, suffix: str):
+        a, b = tmp_path / f"a{suffix}", tmp_path / f"b{suffix}"
+        a.write_text(committed, encoding="utf-8")
+        b.write_text(rebuilt, encoding="utf-8")
+        return dry.agree(a, b)
+
+    base = '{"slope": 0.374, "n": 49, "met": false, "name": "C1", "ci": [1.0, 2.0]}'
+    assert pair(base, base, ".json")
+    assert pair(base, base.replace("0.374", "0.380"), ".json")  # the drift seen between macOS and Linux
+    assert not pair(base, base.replace("0.374", "0.600"), ".json")  # a different number
+    assert not pair(base, base.replace("49", "50"), ".json")  # an integer count is exact
+    assert not pair(base, base.replace("false", "true"), ".json")  # a verdict is exact
+    assert not pair(base, base.replace('"C1"', '"C2"'), ".json")
+    assert not pair(base, base.replace('"slope"', '"slop"'), ".json")  # structure is exact
+    md = "slope 0.374, 49 patients, CI [1.000, 2.000] | no |"
+    assert pair(md, md.replace("0.374", "0.380"), ".md")
+    assert not pair(md, md.replace("0.374", "0.700"), ".md")
+    assert not pair(md, md.replace("49 patients", "50 patients"), ".md")
+    assert not pair(md, md.replace("| no |", "| yes |"), ".md")
