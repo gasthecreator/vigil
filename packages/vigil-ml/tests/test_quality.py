@@ -11,7 +11,6 @@ Verifies Master Plan §6.10, §11, ADR 0016, ADR 0017, and VERDICT-P7B (Conditio
 
 from __future__ import annotations
 
-import numpy as np
 from vigil_ml.quality import (
     AuditReport,
     AuditTrajectory,

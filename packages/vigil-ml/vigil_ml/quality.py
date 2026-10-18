@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+
 from vigil_ml.k2 import AlertTier, SequentialDetector
 from vigil_ml.m3 import adjudicate
 

@@ -26,7 +26,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
 
@@ -34,9 +34,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "packages" / "vigil-ml"))
 
 from vigil_ml.quality import (
-    AuditReport,
-    AuditTrajectory,
-    AuditVisit,
     MissedSignalAuditEngine,
     generate_facility_audit_cohort,
     verify_neutral_register,
@@ -85,7 +82,6 @@ def run_study() -> Dict[str, Any]:
 
     missed_truth = [e for e in evals_f1 if e["trajectory"].true_missed_signal is True]
     all_recurrences = [e for e in evals_f1 if e["trajectory"].true_escalation_day is not None]
-    stable_cases = [e for e in evals_f1 if e["trajectory"].true_escalation_day is None and not e["trajectory"].trajectory_id.startswith("TRJ-SMALLCELL")]
 
     # Sensitivity: true missed signals identified as action_not_recorded
     sens_hits = np.array([1 if (e["signal_present"] and e["action_not_recorded"]) else 0 for e in missed_truth])
@@ -275,11 +271,11 @@ def run_study() -> Dict[str, Any]:
     report_md_path = ROOT / "reports" / "ml" / "STUDY_M10_MISSED_SIGNALS.md"
     md_content = rf"""# Study M10-V2: Missed-Signal Quality Audit Engine Evaluation
 
-**Study Identifier:** M10-V2  
-**Pre-Registration:** [`docs/studies/PREREG-M10.md`](file://{ROOT / "docs" / "studies" / "PREREG-M10.md"})  
-**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](file://{ROOT / "docs" / "adr" / "0016-missed-signal-quality-audit-privacy-and-consent.md"})  
-**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](file://{ROOT / "docs" / "adr" / "0017-quality-audit-consent-and-aggregate-use.md"})  
-**Status:** COMPLETE (All 5 Pre-Registered Hypotheses SUPPORTED)  
+**Study Identifier:** M10-V2
+**Pre-Registration:** [`docs/studies/PREREG-M10.md`](file://{ROOT / "docs" / "studies" / "PREREG-M10.md"})
+**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](file://{ROOT / "docs" / "adr" / "0016-missed-signal-quality-audit-privacy-and-consent.md"})
+**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](file://{ROOT / "docs" / "adr" / "0017-quality-audit-consent-and-aggregate-use.md"})
+**Status:** COMPLETE (All 5 Pre-Registered Hypotheses SUPPORTED)
 
 ---
 

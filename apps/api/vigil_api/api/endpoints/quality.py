@@ -19,9 +19,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import require_roles
+from vigil_api.consent import has_active_consent
 from vigil_api.database import get_db
 from vigil_api.models.patient import Patient
-from vigil_api.models.v2 import AlertSeverity, User, UserRole
+from vigil_api.models.v2 import User, UserRole
 from vigil_api.schemas.v2 import (
     QualityAuditRequest,
     QualityAuditResponse,
@@ -37,8 +38,6 @@ from vigil_ml.quality import (
 )
 
 logger = logging.getLogger(__name__)
-
-from vigil_api.consent import has_active_consent
 
 router = APIRouter()
 

@@ -276,7 +276,8 @@ def test_quality_audit_latest_endpoint(client):
 
 def test_quality_audit_consent_filtering_and_action_attribution(client):
     """Condition P13-C & P13-F: Real-data audit must respect consent withdrawal and require clinician attribution."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
+
     from vigil_api.database import get_db
     from vigil_api.models.patient import Patient
     from vigil_api.models.v2 import ConsentRecord, FollowUpTask, Observation

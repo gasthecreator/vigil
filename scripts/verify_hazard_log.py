@@ -20,10 +20,9 @@ from __future__ import annotations
 
 import ast
 import re
-import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -47,7 +46,6 @@ def parse_hazard_log(file_path: Path) -> List[HazardEntry]:
     lines = content.splitlines()
 
     entries: List[HazardEntry] = []
-    in_table = False
 
     for line in lines:
         line_s = line.strip()

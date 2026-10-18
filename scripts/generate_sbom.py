@@ -13,7 +13,6 @@ Generates:
 from __future__ import annotations
 
 import json
-import sys
 import tomllib
 import uuid
 from datetime import datetime, timezone

@@ -18,12 +18,10 @@ Covers:
 from __future__ import annotations
 
 import datetime as dt
-import json
 import os
-import secrets
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
 import pytest
 from fastapi.testclient import TestClient
@@ -39,7 +37,7 @@ from vigil_api.auth import create_access_token
 from vigil_api.config import settings
 from vigil_api.database import Base, get_db
 from vigil_api.main import app
-from vigil_api.models.v2 import ConsentRecord, Facility, Patient, User, UserRole
+from vigil_api.models.v2 import Facility, Patient, User, UserRole
 
 settings.REQUIRE_AUTH = True
 
