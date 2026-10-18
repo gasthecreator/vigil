@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `restore_backup` failed when the target directory did not exist.
 - `docs/release/REPRODUCIBILITY.md` §5 referenced a manifest key that does not exist.
+- Audit-log append loaded the whole audit table twice per write (cost grew with history); now O(log N) with a fallback to the full scan, plus an index on `audit_events.prev_hash` (migration 007). Found by the real-HTTP load test.
+- Triage queue issued about six SQL statements per patient and materialised every pending task; now a constant number of statements (oracle test against the old implementation).
+- SQLite deployments: WAL, 30 s busy timeout and an in-process write lock (writers queue instead of failing with "database is locked").
+- Study report links of `STUDY_M10_MISSED_SIGNALS.md` were absolute local paths; now repo-relative.
 
 ### Corrected (documentation)
 - The rc.1 "signed"/"signable" manifest is an unsigned SHA-256 hash manifest; the Phase 8b audit score (3.00) was awarded for file presence and is void; the Phase 8b load/soak claims (50 virtual users, 5,000 operations) were not supported by the committed runs. See `docs/progress/PHASE-8B-REPORT.md` errata and ADR-0018 Amendment 1.
