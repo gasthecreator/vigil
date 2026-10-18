@@ -69,5 +69,5 @@ TRIPOD+AI checklist and PROBAST+AI self-appraisal accompany the report. Results 
 ## 10. Freeze procedure (owner and clinical lead)
 1. The clinical lead and owner review section 7 and record a named ratification per row (value may differ from the proposal; the ratified value is the one used) in `docs/clinical/PREREG-FREEZE.json` (`ratifications`: id, value, ratifier, date).
 2. The data steward records the partition key identifier and the bootstrap seed (the key itself is not committed).
-3. Run `python scripts/check_prereg_freeze.py`; it fails on any unratified row, any placeholder, or a SHA-256 mismatch.
+3. The freeze record also carries `analysis_spec_sha256`, the SHA-256 of `docs/clinical/ANALYSIS-SPEC.md` (the operational definitions this document leaves open: landmarks, features, candidate and comparator models, alert definition, recalibration, test statistics). Run `python scripts/check_prereg_freeze.py`; it fails on any unratified row, any placeholder, or a SHA-256 mismatch of either document.
 4. Commit the freeze record alone. Nothing in this document is edited afterwards.

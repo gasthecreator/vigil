@@ -384,6 +384,10 @@ def main() -> int:
         "The `hl7/` files contain a made-up patient name on purpose: they rehearse the on-site converter, which is the only place a name may exist.\n",
         encoding="utf-8",
     )
+    (OUT / "SYNTHETIC").write_text(
+        "All data in this folder are invented (scripts/make_messy_partner_dataset.py).\n",
+        encoding="utf-8",
+    )
     print(f"wrote {OUT} ({len(faults)} expected rejections)")
     return 0
 
