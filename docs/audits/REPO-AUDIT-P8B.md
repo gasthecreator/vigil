@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10-18).** The 3.00 scores below were awarded for file presence and are void (see `docs/progress/PHASE-8B-REPORT.md` errata E4-E6). The current, script-written audit that can fail is [`REPO-AUDIT-P15.md`](REPO-AUDIT-P15.md) (`scripts/audit_repo_standards.py`). This file is kept unedited below as a record.
+
 # Repository Standards Audit Report — Phase 8b Release Readiness
 
 > **Audit Date:** 2026-10-18  

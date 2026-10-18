@@ -1,0 +1,635 @@
+{
+  "critical": [],
+  "head": "22fcaeb",
+  "items": [
+    {
+      "critical": false,
+      "evidence": [
+        "git ls-files scanned: 626 files",
+        ".gitignore covers db/.env/node_modules/__pycache__: True",
+        "tracked data artifacts: 10 files under data/synthetic/ (synthetic generator output; verify none is real patient data: dataset cards in data/dataset_cards/)"
+      ],
+      "gap": "",
+      "ident": "T0.1",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "No hazards tracked",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "20 tracked root files",
+        "GEMINI.md is a <=10-line pointer to AGENTS.md (agent-tool shim, accepted)",
+        "present in the working tree but not tracked (ignored or untracked): ['vigil_dev.db', 'quarantine', '__pycache__', '.hypothesis']",
+        "tracked top-level dirs: ['.agent', '.github', 'apps', 'benchmarks', 'data', 'docs', 'experiments', 'packages', 'quarantine', 'reports', 'scripts', 'tests']"
+      ],
+      "gap": "",
+      "ident": "T0.2",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "Root is clean",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "sections present: ['purpose', 'quickstart', 'architecture', 'status', 'disclaimer']",
+        "README `make` targets and script paths checked against Makefile/git ls-files: 0 dangling",
+        "quickstart execution itself is exercised by CI (reproducibility job), not by this audit"
+      ],
+      "gap": "",
+      "ident": "T0.3",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "README",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "LICENSE is the full Apache-2.0 text: True",
+        "license metadata declared in pyproject/CITATION/package.json: True"
+      ],
+      "gap": "",
+      "ident": "T0.4",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "LICENSE",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        ".gitignore missing patterns: []",
+        ".editorconfig tracked: True"
+      ],
+      "gap": "",
+      "ident": "T0.5",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": ".gitignore and .editorconfig",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "PASS: uv.lock tracked",
+        "PASS: package-lock.json tracked",
+        "PASS: python version pinned (.python-version or exact requires-python upper bound)",
+        "PASS: node version pinned (.nvmrc or engines)",
+        "PASS: task runner with setup/test/lint",
+        "PASS: CI installs with frozen lockfiles"
+      ],
+      "gap": "",
+      "ident": "T0.6",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "Reproducible setup",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "packages: ['contracts', 'ui', 'vigil-core', 'vigil-eval', 'vigil-ml', 'vigil-sim']",
+        "packages without manifest: []",
+        "python packages without tests: []"
+      ],
+      "gap": "",
+      "ident": "T0.7",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T0",
+      "title": "Layout follows stack convention",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "CONTRIBUTING.md: 1684 bytes",
+        "CODE_OF_CONDUCT.md: 3318 bytes",
+        "SECURITY.md: 1985 bytes",
+        "problems: []"
+      ],
+      "gap": "",
+      "ident": "T1.1",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T1",
+      "title": "CONTRIBUTING / CODE_OF_CONDUCT / SECURITY",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "14 rules, distinct owners: ['@gasthecreator']",
+        "rules with >=2 owners: 0/14",
+        "workflows owned: True"
+      ],
+      "gap": "single owner for everything: no independent reviewer exists for safety-critical paths (rubric asks 2+ owners per critical area)",
+      "ident": "T1.2",
+      "na_reason": "",
+      "score": 1,
+      "tier": "T1",
+      "title": "CODEOWNERS",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "PR template 1100 bytes; checklist items: 13",
+        "issue templates: ['.github/ISSUE_TEMPLATE/bug_report.md', '.github/ISSUE_TEMPLATE/clinical_safety_concern.md']"
+      ],
+      "gap": "",
+      "ident": "T1.3",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T1",
+      "title": "Issue and PR templates",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "commit-message lint config tracked: []",
+        "CI step that enforces it: False",
+        "convention documented: True"
+      ],
+      "gap": "convention is documented but nothing rejects a non-conforming commit/PR title",
+      "ident": "T1.4",
+      "na_reason": "",
+      "score": 1,
+      "tier": "T1",
+      "title": "Conventional Commits enforced",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "last 56 commit subjects: 51 conventional (91%), 0 throwaway, 0 <10 chars"
+      ],
+      "gap": "",
+      "ident": "T1.5",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T1",
+      "title": "History readable",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "gh api branches/main/protection -> gh: Branch not protected (HTTP 404)",
+        "no rulesets"
+      ],
+      "gap": "main is not protected on GitHub (owner action: docs/ops/GITHUB-SETTINGS.md)",
+      "ident": "T1.6",
+      "na_reason": "",
+      "score": 0,
+      "tier": "T1",
+      "title": "Default branch protected (PR-only, required checks, review, no force-push)",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "PASS: ruff check in CI",
+        "FAIL: ruff format --check in CI",
+        "PASS: eslint in CI",
+        "FAIL: type check in CI (mypy/pyright/tsc)"
+      ],
+      "gap": "missing: ruff format --check in CI; missing: type check in CI (mypy/pyright/tsc)",
+      "ident": "T2.1",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T2",
+      "title": "Formatter and linter enforced in CI",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "71 python test files, 352 test functions",
+        "129 failure-path assertions (raises / 4xx / is False) => 0.37 per test"
+      ],
+      "gap": "",
+      "ident": "T2.2",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T2",
+      "title": "Unit tests cover behaviour and failure paths",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "4 e2e specs; 11 acceptance suites",
+        "PASS: playwright e2e in CI",
+        "PASS: acceptance suites run in CI",
+        "PASS: e2e specs",
+        "PASS: security suite in CI",
+        "PASS: lighthouse in CI"
+      ],
+      "gap": "",
+      "ident": "T2.3",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T2",
+      "title": "Integration/e2e for critical flows",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "flake tracking artifact/policy: []",
+        "median CI wall time over 19 successful main runs: 4.4 min"
+      ],
+      "gap": "no flake tracking",
+      "ident": "T2.4",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T2",
+      "title": "Flakes tracked; presubmit CI under ~10 min",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "FAIL: coverage measured in CI (--cov)",
+        "FAIL: threshold/ratchet (fail_under / --cov-fail-under)",
+        "FAIL: report published as artifact/summary"
+      ],
+      "gap": "missing: coverage measured in CI (--cov); missing: threshold/ratchet (fail_under / --cov-fail-under); missing: report published as artifact/summary",
+      "ident": "T2.5",
+      "na_reason": "",
+      "score": 0,
+      "tier": "T2",
+      "title": "Coverage reported as a signal",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "3 @given property tests across 2 files",
+        "input-parsing modules: ['apps/api/vigil_api/api/endpoints/batch_import.py', 'packages/contracts/contracts/loaders/metabric_loader.py', 'packages/contracts/contracts/loaders/mimic_loader.py', 'packages/contracts/contracts/loaders/pds_loader.py', 'packages/contracts/contracts/loaders/seer_loader.py', 'packages/contracts/contracts/loaders/tcga_loader.py']"
+      ],
+      "gap": "parsing modules without property/fuzz tests: ['apps/api/vigil_api/api/endpoints/batch_import.py', 'packages/contracts/contracts/loaders/metabric_loader.py', 'packages/contracts/contracts/loaders/mimic_loader.py', 'packages/contracts/contracts/loaders/pds_loader.py', 'packages/contracts/contracts/loaders/seer_loader.py', 'packages/contracts/contracts/loaders/tcga_loader.py']",
+      "ident": "T2.6",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T2",
+      "title": "Fuzz/property tests where input is parsed",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "README workflow badges: []; pointing at missing workflows: []",
+        "latest ci.yml run on main: {'conclusion': 'success', 'headSha': '7e1a97516c79cf2fbc9b44ab265b67593afc5ca7', 'status': 'completed'}"
+      ],
+      "gap": "",
+      "ident": "T2.7",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T2",
+      "title": "CI green on default branch; badge honest",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "secret-scan step in CI: False",
+        "GitHub secret_scanning=enabled, push_protection=enabled"
+      ],
+      "gap": "enable GitHub secret scanning + push protection and add a CI secret scan",
+      "ident": "T3.1",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T3",
+      "title": "Secret scanning and push protection",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "PASS: CodeQL analysis workflow (github/codeql-action/analyze)",
+        "PASS: python dependency audit (pip-audit/osv-scanner/safety)",
+        "FAIL: npm audit / osv for web",
+        "FAIL: static analysis other than ruff (bandit/semgrep)"
+      ],
+      "gap": "missing: npm audit / osv for web; missing: static analysis other than ruff (bandit/semgrep)",
+      "ident": "T3.2",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T3",
+      "title": "SAST and dependency vulnerability scanning",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "ecosystems configured: ['github-actions', 'npm', 'pip']; missing: []",
+        "merged Dependabot PRs found: 3"
+      ],
+      "gap": "",
+      "ident": "T3.3",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T3",
+      "title": "Dependabot/Renovate configured and PRs merged",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "5 workflows, 28 third-party `uses:`",
+        "unpinned: []",
+        "no top-level permissions: []",
+        "write-all: []",
+        "risky triggers: []",
+        "unpinned remote scripts piped to a shell (curl | sh): []"
+      ],
+      "gap": "",
+      "ident": "T3.4",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T3",
+      "title": "Actions pinned to SHAs; least privilege; no dangerous triggers",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "13867 bytes",
+        "PASS: assets",
+        "PASS: trust boundaries",
+        "PASS: threats (STRIDE or equivalent)",
+        "PASS: mitigations mapped to tests/code",
+        "PASS: review date"
+      ],
+      "gap": "",
+      "ident": "T3.5",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T3",
+      "title": "Threat model",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "CycloneDX SBOMs parsed with components: 2/2",
+        "signatures/attestations tracked: []",
+        "signing/provenance in CI: False",
+        "git tags: []"
+      ],
+      "gap": "no signed/attested release artifact exists: the release manifest is a hash manifest only (owner action: generate signing key, see docs/release/SIGNING.md)",
+      "ident": "T3.6",
+      "na_reason": "",
+      "score": 1,
+      "tier": "T3",
+      "title": "SBOM and signed releases/provenance",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "scorecard workflow with publish_results: True",
+        "recorded score artifact: []"
+      ],
+      "gap": "no recorded score / target (Master Plan: >= 8)",
+      "ident": "T3.7",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T3",
+      "title": "Scorecard run in CI; score tracked",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "PASS: structured (JSON) logging",
+        "PASS: request id correlation",
+        "PASS: health endpoints",
+        "FAIL: metrics endpoint",
+        "FAIL: tracing (OpenTelemetry)"
+      ],
+      "gap": "missing: metrics endpoint; missing: tracing (OpenTelemetry)",
+      "ident": "T4.1",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T4",
+      "title": "Structured logging, metrics, tracing, health",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "10 VIGIL_* environment variables read by the API",
+        ".env.example tracked: True",
+        "documented (in .env.example or install guide): 10/10"
+      ],
+      "gap": "",
+      "ident": "T4.2",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T4",
+      "title": "Config via environment; .env.example",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "runbooks: ['docs/runbooks/BACKUP_AND_RESTORE.md']",
+        "SLO documents: ['.agent/skills/repo-standards/assets/templates/postmortem.md', '.agent/skills/repo-standards/references/component-catalog.md', 'docs/MASTER_PLAN.md', 'docs/audits/REPO-AUDIT-P0.md']",
+        "alert definitions: ['apps/api/tests/test_alert_stream.py', 'apps/api/vigil_api/api/endpoints/alerts.py', 'apps/web/src/components/AlertInbox.tsx']"
+      ],
+      "gap": "1 runbook(s);  SLO doc; alert->runbook linkage present",
+      "ident": "T4.3",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T4",
+      "title": "Runbooks linked to alerts; SLOs defined",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "release docs: ['docs/release/COMPATIBILITY.md', 'docs/release/RELEASE_MANIFEST_v1.0.0-rc.1.json', 'docs/release/REPRODUCIBILITY.md', 'docs/release/SIGNING.md']",
+        "7 alembic migrations, 7 with a non-trivial downgrade",
+        "migration/rollback tests: ['apps/api/tests/test_migrations.py']"
+      ],
+      "gap": "",
+      "ident": "T4.4",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T4",
+      "title": "Release process; rollback tested; migrations compatible",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "no Dockerfile tracked (on-prem install is a Python installer script)"
+      ],
+      "gap": "no container image definition (Master Plan WP0.4 lists Docker/compose); installer-only distribution",
+      "ident": "T4.5",
+      "na_reason": "",
+      "score": 0,
+      "tier": "T4",
+      "title": "Dockerfile hardened",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "templates: ['.agent/skills/repo-standards/assets/templates/postmortem.md']"
+      ],
+      "gap": "",
+      "ident": "T4.6",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T4",
+      "title": "Incident/postmortem template",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "20 ADRs; duplicate numbers: []; numbering gaps: []",
+        "missing Status/Context/Decision: []"
+      ],
+      "gap": "",
+      "ident": "T5.1",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T5",
+      "title": "ADRs for significant decisions",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "link checker passes: True (\u2705 All documentation links successfully resolved. Zero broken links detected.)",
+        "docs index present: True",
+        "canonical docs present: True"
+      ],
+      "gap": "",
+      "ident": "T5.2",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T5",
+      "title": "Docs organised by reader need; canonical; fresh",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "CHANGELOG has Unreleased: True; release headings: 6",
+        "SemVer git tags: []",
+        "release notes docs: ['docs/release/COMPATIBILITY.md', 'docs/release/REPRODUCIBILITY.md', 'docs/release/SIGNING.md']"
+      ],
+      "gap": "no SemVer tag exists: the release candidate has never been tagged",
+      "ident": "T5.3",
+      "na_reason": "",
+      "score": 2,
+      "tier": "T5",
+      "title": "CHANGELOG + SemVer tags + release notes",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "documents mentioning deprecation/compat: ['docs/MASTER_PLAN.md', 'docs/README.md', 'docs/adr/0002-quarantine-prototype-models.md', 'docs/adr/0020-audit-hash-scheme-versioning.md']",
+        "documents with an explicit policy section: ['docs/release/COMPATIBILITY.md']"
+      ],
+      "gap": "",
+      "ident": "T5.4",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T5",
+      "title": "Deprecation and compatibility policy",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "load results: {'reports/load/LOAD_TEST_HTTP_RESULTS.json': 'http', 'reports/load/LOAD_TEST_RESULTS.json': 'unspecified', 'reports/load/SOAK_TEST_HTTP_RESULTS.json': 'http', 'reports/load/SOAK_TEST_HTTP_RESULTS_run1_10patients.json': 'http', 'reports/load/SOAK_TEST_HTTP_RESULTS_run2_200patients_before_triage_aggregation.json': 'http', 'reports/load/SOAK_TEST_RESULTS.json': 'unspecified'}",
+        "fault/resilience test files: 4"
+      ],
+      "gap": "",
+      "ident": "T5.5",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T5",
+      "title": "Benchmarks/load results committed; fault tests",
+      "verified": true
+    },
+    {
+      "critical": false,
+      "evidence": [
+        "OpenSSF Best Practices referenced: True",
+        "DORA metrics referenced: True"
+      ],
+      "gap": "",
+      "ident": "T5.6",
+      "na_reason": "",
+      "score": 3,
+      "tier": "T5",
+      "title": "OpenSSF Best Practices progress; DORA observed",
+      "verified": true
+    }
+  ],
+  "online": true,
+  "repo": "gasthecreator/vigil",
+  "tiers": {
+    "T0": {
+      "average": 3.0,
+      "items": 7,
+      "met": true,
+      "name": "Foundation",
+      "target": 3.0
+    },
+    "T1": {
+      "average": 1.83,
+      "items": 6,
+      "met": false,
+      "name": "Collaboration",
+      "target": 3.0
+    },
+    "T2": {
+      "average": 2.14,
+      "items": 7,
+      "met": false,
+      "name": "Quality gates",
+      "target": 3.0
+    },
+    "T3": {
+      "average": 2.29,
+      "items": 7,
+      "met": false,
+      "name": "Security & supply chain",
+      "target": 3.0
+    },
+    "T4": {
+      "average": 2.17,
+      "items": 6,
+      "met": false,
+      "name": "Operations",
+      "target": 3.0
+    },
+    "T5": {
+      "average": 2.83,
+      "items": 6,
+      "met": true,
+      "name": "Maturity",
+      "target": 2.0
+    }
+  }
+}
