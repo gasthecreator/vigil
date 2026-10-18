@@ -28,23 +28,17 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-# Setup isolated environment
-os.environ["ENVIRONMENT"] = "local"
-os.environ["REQUIRE_AUTH"] = "true"
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-
 from vigil_api.auth import create_access_token
 from vigil_api.config import settings
 from vigil_api.database import Base, get_db
 from vigil_api.main import app
 from vigil_api.models.v2 import Facility, Patient, User, UserRole
 
-settings.REQUIRE_AUTH = True
-
 
 @pytest.fixture
 def test_env(tmp_path):
     """Provides isolated SQLite database and seeded principals for penetration testing."""
+    orig_require_auth = settings.REQUIRE_AUTH
     settings.REQUIRE_AUTH = True
     db_file = tmp_path / "pen_suite.db"
     db_url = f"sqlite:///{db_file}"
@@ -78,12 +72,16 @@ def test_env(tmp_path):
         session.commit()
 
     client = TestClient(app, raise_server_exceptions=False)
-    yield {
-        "client": client,
-        "engine": engine,
-        "pat1_id": "PAT-SEC-01",
-        "pat2_id": "PAT-SEC-02",
-    }
+    try:
+        yield {
+            "client": client,
+            "engine": engine,
+            "pat1_id": "PAT-SEC-01",
+            "pat2_id": "PAT-SEC-02",
+        }
+    finally:
+        settings.REQUIRE_AUTH = orig_require_auth
+        app.dependency_overrides.pop(get_db, None)
 
 
 def _auth_header(role: str, patient_id: Optional[str] = None) -> Dict[str, str]:
