@@ -1,3 +1,5 @@
+> **RETRACTED (2026-10-18).** Do not cite anything below. `active_sensing_k6.py::recommend_next_action` is a hand-written if-ladder, and `run_study_s6` returned literal visit counts, dollar costs and delays. Replaced by `experiments/EXP-K6-001/` (see `reports/ml/RETRACTED/README.md`).
+
 # Study S6 Report: Active Sensing & Adaptive Surveillance Scheduling
 
 > **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.

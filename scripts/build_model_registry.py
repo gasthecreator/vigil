@@ -61,6 +61,25 @@ ENTRIES = [
         },
         "model_card": "docs/model_cards/MODEL-CARD-K4.md",
     },
+    {
+        "id": "K6",
+        "name": "Active sensing planner (finite-horizon cost-of-delay, calibrated multi-horizon hazard)",
+        "module": "packages/vigil-ml/vigil_ml/k6.py",
+        "maturity": "L0",
+        "status": "research; simulation claim only (H1 and H2 met on synthetic data, H3 not met, ADR-0026); not wired to any pipeline",
+        "data": "synthetic only",
+        "formats": {"xgboost_json": "one booster per horizon plus isotonic knots; no pickle"},
+        "parity_tests": [
+            "packages/vigil-ml/tests/test_k6.py::test_hazard_model_round_trips_through_text_with_identical_output_and_no_binary_object_format",
+            "packages/vigil-ml/tests/test_k6.py::test_policy_code_never_names_a_truth_column",
+        ],
+        "study": {
+            "prereg": "experiments/EXP-K6-001/PREREG.md",
+            "result_file": "experiments/EXP-K6-001/results.json",
+            "conclusion": "experiments/EXP-K6-001/CONCLUSION.md",
+        },
+        "model_card": "docs/model_cards/MODEL-CARD-K6.md",
+    },
 ]
 
 
