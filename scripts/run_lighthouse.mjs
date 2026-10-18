@@ -3,12 +3,14 @@
  * scripts/run_lighthouse.mjs
  *
  * Runs Google Lighthouse performance and accessibility audits on the Vigil Clinician Workstation.
- * Master Plan §9.7 / Condition P9-C.
- * Enforces budgets:
- * - Performance score >= 0.90 (90%)
- * - Accessibility score >= 0.90 (90%)
- * - Time to Interactive (TTI) <= 3500ms
- * Outputs committed HTML and JSON audit reports to docs/design/lighthouse/
+ * Master Plan §9.7 / Condition P9-C. Dual budget: ADR-0013.
+ *
+ * Local bare-metal: performance >= 90, accessibility >= 90, TTI <= 3500 ms.
+ * Virtualized CI (`process.env.CI`): performance >= 75 (not 90); accessibility stays >= 90.
+ *
+ * One Chrome instance is reused for a discarded warmup pass and every scored view so the
+ * first scored audit is not a cold Chromium on a 2-vCPU runner (main failed at triage 74
+ * after Playwright, while later views on the same job scored 98–100).
  */
 
 import fs from "fs";
@@ -25,65 +27,76 @@ const OUT_DIR = path.resolve(ROOT, "docs/design/lighthouse");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-async function runAudit(url, viewName, perfThreshold = 90, a11yThreshold = 90, ttiThreshold = 3500) {
-  console.log(`\n🔍 Starting Lighthouse audit for: ${viewName} (${url}) ...`);
+const LOCAL_PERF = 90;
+const CI_PERF = 75;
+const A11Y = 90;
+const TTI_MS = 3500;
 
-  let chrome;
-  try {
-    chrome = await chromeLauncher.launch({
-      chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
-      chromePath: process.env.CHROME_PATH || undefined,
-    });
-  } catch (err) {
-    console.error("Failed to launch Chrome:", err);
-    throw err;
+function perfFloor() {
+  if (process.env.LIGHTHOUSE_PERF_THRESHOLD) {
+    return parseInt(process.env.LIGHTHOUSE_PERF_THRESHOLD, 10);
   }
+  return process.env.CI ? CI_PERF : LOCAL_PERF;
+}
+
+function ttiFloor() {
+  if (process.env.LIGHTHOUSE_TTI_THRESHOLD) {
+    return parseInt(process.env.LIGHTHOUSE_TTI_THRESHOLD, 10);
+  }
+  return TTI_MS;
+}
+
+function budgetLabel(perfThreshold) {
+  if (perfThreshold === CI_PERF && process.env.CI) {
+    return `>= ${CI_PERF} (CI floor, ADR-0013; local target >= ${LOCAL_PERF})`;
+  }
+  return `>= ${perfThreshold}`;
+}
+
+async function runAudit(chromePort, url, viewName, { persist, perfThreshold, a11yThreshold, ttiThreshold }) {
+  console.log(`\n🔍 Starting Lighthouse audit for: ${viewName} (${url}) ...`);
 
   const options = {
     logLevel: "error",
-    output: ["json", "html"],
+    output: persist ? ["json", "html"] : ["json"],
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
-    port: chrome.port,
+    port: chromePort,
   };
 
-  try {
-    const runnerResult = await lighthouse(url, options);
-    const lhr = runnerResult.lhr;
+  const runnerResult = await lighthouse(url, options);
+  const lhr = runnerResult.lhr;
 
-    const perfScore = Math.round((lhr.categories.performance?.score || 0) * 100);
-    const a11yScore = Math.round((lhr.categories.accessibility?.score || 0) * 100);
-    const bestPracticesScore = Math.round((lhr.categories["best-practices"]?.score || 0) * 100);
-    const seoScore = Math.round((lhr.categories.seo?.score || 0) * 100);
-    const tti = Math.round(lhr.audits.interactive?.numericValue || 0);
+  const perfScore = Math.round((lhr.categories.performance?.score || 0) * 100);
+  const a11yScore = Math.round((lhr.categories.accessibility?.score || 0) * 100);
+  const bestPracticesScore = Math.round((lhr.categories["best-practices"]?.score || 0) * 100);
+  const seoScore = Math.round((lhr.categories.seo?.score || 0) * 100);
+  const tti = Math.round(lhr.audits.interactive?.numericValue || 0);
 
-    console.log(`📊 ${viewName} Results:`);
-    console.log(`   - Performance:    ${perfScore} / 100  (Budget: >= 90)`);
-    console.log(`   - Accessibility:  ${a11yScore} / 100  (Budget: >= 90)`);
-    console.log(`   - Best Practices: ${bestPracticesScore} / 100`);
-    console.log(`   - SEO:            ${seoScore} / 100`);
-    console.log(`   - TTI:            ${tti} ms  (Budget: <= 3500 ms)`);
+  console.log(`📊 ${viewName} Results:`);
+  console.log(`   - Performance:    ${perfScore} / 100  (Budget: ${budgetLabel(perfThreshold)})`);
+  console.log(`   - Accessibility:  ${a11yScore} / 100  (Budget: >= ${a11yThreshold})`);
+  console.log(`   - Best Practices: ${bestPracticesScore} / 100`);
+  console.log(`   - SEO:            ${seoScore} / 100`);
+  console.log(`   - TTI:            ${tti} ms  (Budget: <= ${ttiThreshold} ms)`);
 
-    // Write reports
+  if (persist) {
     const jsonPath = path.join(OUT_DIR, `${viewName.toLowerCase()}-report.json`);
     const htmlPath = path.join(OUT_DIR, `${viewName.toLowerCase()}-report.html`);
-
     fs.writeFileSync(jsonPath, JSON.stringify(lhr, null, 2), "utf-8");
     fs.writeFileSync(htmlPath, runnerResult.report[1], "utf-8");
     console.log(`   💾 Saved reports to:\n      ${jsonPath}\n      ${htmlPath}`);
-
-    return {
-      viewName,
-      url,
-      perfScore,
-      a11yScore,
-      bestPracticesScore,
-      seoScore,
-      tti,
-      passed: perfScore >= perfThreshold && a11yScore >= a11yThreshold && tti <= ttiThreshold,
-    };
-  } finally {
-    await chrome.kill();
   }
+
+  return {
+    viewName,
+    url,
+    perfScore,
+    a11yScore,
+    bestPracticesScore,
+    seoScore,
+    tti,
+    passed: perfScore >= perfThreshold && a11yScore >= a11yThreshold && tti <= ttiThreshold,
+  };
 }
 
 async function isUrlReady(url) {
@@ -107,6 +120,12 @@ async function waitForServer(url, timeoutMs = 30000) {
 async function main() {
   let backendProc = null;
   let frontendProc = null;
+  let chrome = null;
+
+  const perfThreshold = perfFloor();
+  const a11yThreshold = A11Y;
+  const ttiThreshold = ttiFloor();
+  const thresholds = { persist: true, perfThreshold, a11yThreshold, ttiThreshold };
 
   try {
     const backendReady = await isUrlReady("http://127.0.0.1:8000/docs");
@@ -133,14 +152,6 @@ async function main() {
       console.log("   ✅ Frontend server ready on http://127.0.0.1:3000");
     }
 
-    const perfThreshold = process.env.LIGHTHOUSE_PERF_THRESHOLD
-      ? parseInt(process.env.LIGHTHOUSE_PERF_THRESHOLD, 10)
-      : (process.env.CI ? 75 : 90);
-    const a11yThreshold = 90;
-    const ttiThreshold = process.env.LIGHTHOUSE_TTI_THRESHOLD
-      ? parseInt(process.env.LIGHTHOUSE_TTI_THRESHOLD, 10)
-      : 3500;
-
     const audits = [
       { url: "http://127.0.0.1:3000/", name: "triage" },
       { url: "http://127.0.0.1:3000/patients/PAT-001", name: "timeline" },
@@ -151,7 +162,7 @@ async function main() {
       { url: "http://127.0.0.1:3000/companion/symptoms", name: "symptoms" },
     ];
 
-    console.log("🔥 Warming up Next.js routes ...");
+    console.log("🔥 Warming up Next.js routes (HTTP) ...");
     for (const a of audits) {
       try {
         await fetch(a.url);
@@ -159,14 +170,26 @@ async function main() {
     }
     await new Promise((r) => setTimeout(r, 1500));
 
+    chrome = await chromeLauncher.launch({
+      chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+      chromePath: process.env.CHROME_PATH || undefined,
+    });
+
+    console.log("🔥 Discarded Lighthouse warmup pass on triage (not scored; Chromium JIT) ...");
+    await runAudit(chrome.port, audits[0].url, "triage-warmup", {
+      persist: false,
+      perfThreshold,
+      a11yThreshold,
+      ttiThreshold,
+    });
+
     const results = [];
     for (const a of audits) {
-      results.push(await runAudit(a.url, a.name, perfThreshold, a11yThreshold, ttiThreshold));
+      results.push(await runAudit(chrome.port, a.url, a.name, thresholds));
     }
 
     const allPassed = results.every((r) => r.passed);
-
-    let tableRows = results
+    const tableRows = results
       .map(
         (r) =>
           `| **${r.viewName.toUpperCase()}** (\`${r.url}\`) | **${r.perfScore}** | **${r.a11yScore}** | **${r.tti} ms** | **${r.bestPracticesScore}** | **${r.seoScore}** | ${r.passed ? "✅ MET" : "❌ FAILED"} |`
@@ -174,13 +197,14 @@ async function main() {
       .join("\n");
 
     const mdSummary = `# Lighthouse UX & Accessibility Audit Report
-**Master Plan §9.7 / Condition P9-C / P10-A**
+**Master Plan §9.7 / Condition P9-C / P10-A / ADR-0013**
 **Audit Date:** ${new Date().toISOString()}
 
 ## Committed Engineering Budgets
-- **Performance Budget:** $\\ge 90$
-- **Accessibility Budget (WCAG):** $\\ge 90$
-- **Time to Interactive (TTI):** $\\le 3500$ ms
+- **Local bare-metal performance:** $\\ge ${LOCAL_PERF}$
+- **Virtualized CI performance floor:** $\\ge ${CI_PERF}$ (ADR-0013; this run enforced $\\ge ${perfThreshold}$)
+- **Accessibility Budget (WCAG):** $\\ge ${A11Y}$
+- **Time to Interactive (TTI):** $\\le ${TTI_MS}$ ms
 
 | Audited View & Exact URL | Performance | Accessibility | TTI | Best Practices | SEO | Status |
 |---|---|---|---|---|---|---|
@@ -192,6 +216,7 @@ ${results.map((r) => `- **${r.viewName.toUpperCase()} View:** [\`${r.viewName.to
 ## Audit Methodology & Environment
 - **Device Profile:** Desktop / Emulated High-DPI Display
 - **Network / Throttling:** Real local loopback / unthrottled CPU benchmark
+- **Chrome:** one headless instance reused; discarded warmup pass on \`/\` before scoring
 - **Zero-Dismissal & Watermark State:** Confirmed active and visible during audit.
 `;
 
@@ -206,6 +231,9 @@ ${results.map((r) => `- **${r.viewName.toUpperCase()} View:** [\`${r.viewName.to
       console.log("\n✅ All Lighthouse performance and accessibility budgets MET across all views!");
     }
   } finally {
+    if (chrome) {
+      await chrome.kill();
+    }
     if (backendProc) {
       console.log("🛑 Stopping spawned backend server ...");
       backendProc.kill();

@@ -50,3 +50,11 @@ We formally define and document a dual-profile engineering budget for Lighthouse
 - **Positive:** Eliminates flaky CI job failures caused solely by cloud runner CPU throttling while maintaining zero tolerance for accessibility degradations.
 - **Positive:** Honest, auditable transparency regarding hardware-dependent web performance metrics.
 - **Negative:** Regressions between 75 and 89 would not block automated CI merges; however, local pre-push validation and PR checks require reporting local scores.
+
+## Amendment 1 (2026-10-18)
+HTTP `fetch` warmup of Next.js is not enough on GitHub's 2-vCPU runner when each view launched a **new** headless Chrome (and when Playwright has just finished in the same job). After M4/K5 landed, `main` failed `e2e-and-lighthouse` twice: triage scored **74** (CI floor 75, ADR above), while later views in the same job scored 98–100. Independent PRs on the same tree scored triage 82 and passed. The CI floor is **not** lowered.
+
+`scripts/run_lighthouse.mjs` now:
+1. Reuses **one** Chrome for every audit.
+2. Runs a discarded Lighthouse pass on `/` (not scored, not written) so Chromium JIT is warm before the first scored view.
+3. Prints and records the floor actually enforced (75 in CI, 90 locally). The scored reports still use the production build (`next start`).
