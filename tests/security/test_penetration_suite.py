@@ -20,7 +20,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Set, Tuple
 
 import pytest
 from fastapi.testclient import TestClient
@@ -184,7 +184,6 @@ OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
 def test_openapi_authorization_matrix(test_env):
     """Dynamically enumerates every route in the live OpenAPI schema, verifies comprehensive policy coverage, and enforces least privilege."""
     client: TestClient = test_env["client"]
-    p1 = test_env["pat1_id"]
 
     # 1. Enumerate live OpenAPI schema
     openapi_routes: Set[Tuple[str, str]] = set()

@@ -11,7 +11,6 @@ existing file on disk. Fails if any broken link is detected.
 
 from __future__ import annotations
 
-import os
 import re
 import sys
 from pathlib import Path

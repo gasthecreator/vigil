@@ -19,13 +19,12 @@ import argparse
 import datetime
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
@@ -68,7 +67,6 @@ def create_backup(db_path: Path, output_dir: Path) -> Path:
 
     # Export audit ledger
     cur = src_conn.cursor()
-    audit_rows: List[Dict[str, Any]] = []
     latest_hash = "GENESIS"
     total_events = 0
 

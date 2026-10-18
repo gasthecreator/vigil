@@ -25,12 +25,11 @@ from backup_restore import (
     create_backup,
     restore_backup,
     verify_backup_integrity,
-    verify_restored_audit_chain,
 )
-from vigil_api.database import Base
-from vigil_api.models.v2 import AuditEvent, Facility, Patient, User, calculate_audit_hash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from vigil_api.database import Base
+from vigil_api.models.v2 import AuditEvent, Facility, Patient, calculate_audit_hash
 
 
 def populate_test_database(db_path: Path) -> int:

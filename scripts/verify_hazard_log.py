@@ -214,7 +214,7 @@ def main() -> int:
         return 1
 
     print(f"✅ All {len(entries)} hazards cite valid, AST-verified test functions.")
-    print(f"  - H10 and H16 correctly marked OPEN with documented residual risk.")
+    print("  - H10 and H16 correctly marked OPEN with documented residual risk.")
 
     # Actively execute all cited tests
     if not run_tests_via_pytest(tests_to_run):

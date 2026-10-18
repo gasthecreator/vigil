@@ -17,12 +17,9 @@ Generates reports and exits 0 if all Phase 8b exit gates are met.
 
 from __future__ import annotations
 
-import json
-import os
-import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -172,8 +169,8 @@ def check_t3_security_supply_chain() -> Tuple[float, List[str], List[str]]:
     ci_yml = ROOT / ".github" / "workflows" / "ci.yml"
     if ci_yml.exists():
         content = ci_yml.read_text()
-        uses_lines = [l.strip() for l in content.splitlines() if l.strip().startswith("- uses:")]
-        unpinned = [l for l in uses_lines if "@" in l and len(l.split("@")[1].split()[0]) != 40]
+        uses_lines = [line.strip() for line in content.splitlines() if line.strip().startswith("- uses:")]
+        unpinned = [line for line in uses_lines if "@" in line and len(line.split("@")[1].split()[0]) != 40]
         if not unpinned:
             score += 0.75
             passed.append("All GitHub Actions pinned to 40-character commit SHAs.")

@@ -1,8 +1,8 @@
 {
   "release": "v1.0.0-rc.1",
   "description": "Vigil Precision Oncology CDSS - Release Candidate 1",
-  "timestamp": "2026-10-18T04:54:24.179309+00:00",
-  "git_commit": "970929535292af8d2433cadf748677fc8a812e7b",
+  "timestamp": "2026-10-18T04:59:13.808480+00:00",
+  "git_commit": "e66535e1f8a378511b744ccd07a104273664ef74",
   "artifact_count": 23,
   "artifacts": [
     {

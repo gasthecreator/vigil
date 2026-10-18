@@ -25,7 +25,6 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -86,7 +85,7 @@ def setup_load_test_environment() -> Tuple[str, str]:
                 session.add(p)
             else:
                 p.age = 52
-            
+
             c = session.query(ConsentRecord).filter(ConsentRecord.patient_id == pid).first()
             if not c:
                 c = ConsentRecord(
@@ -118,7 +117,7 @@ def execute_request(
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         success = r.status_code in (200, 201, 204)
         return path, r.status_code, elapsed_ms, success
-    except Exception as e:
+    except Exception:
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         return path, 500, elapsed_ms, False
 
@@ -237,11 +236,11 @@ def write_reports(results: Dict[str, Any]) -> None:
 
     md_content = rf"""# Vigil API Load & Concurrency Test Results
 
-**Date:** {results['timestamp_utc']}  
-**Standard Compliance:** Master Plan §9.5, §12, WP8.4  
-**Workload:** {results['total_requests']} requests at concurrency {results['concurrency']}  
-**Overall Throughput:** {results['throughput_req_per_sec']} req/sec  
-**Total Duration:** {results['total_duration_seconds']} seconds  
+**Date:** {results['timestamp_utc']}
+**Standard Compliance:** Master Plan §9.5, §12, WP8.4
+**Workload:** {results['total_requests']} requests at concurrency {results['concurrency']}
+**Overall Throughput:** {results['throughput_req_per_sec']} req/sec
+**Total Duration:** {results['total_duration_seconds']} seconds
 
 ---
 

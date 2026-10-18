@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import secrets
 import sys
 from pathlib import Path
@@ -106,8 +105,6 @@ def run_database_migrations(db_url: Optional[str] = None) -> bool:
         from sqlalchemy import create_engine
         from vigil_api.config import settings
         from vigil_api.database import Base
-        import vigil_api.models.v2
-        import vigil_api.models.patient
 
         target_url = db_url or os.environ.get("DATABASE_URL") or settings.DATABASE_URL
         connect_args = {"check_same_thread": False} if target_url.startswith("sqlite") else {}
@@ -126,9 +123,9 @@ def seed_admin_user(admin_email: str = "admin@hospital.local", admin_password: O
     print(f"👤 Provisioning administrator account ({admin_email})...")
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+    from vigil_api.auth import hash_password
     from vigil_api.config import settings
     from vigil_api.models.v2 import User
-    from vigil_api.auth import hash_password
 
     target_url = db_url or os.environ.get("DATABASE_URL") or settings.DATABASE_URL
     connect_args = {"check_same_thread": False} if target_url.startswith("sqlite") else {}
@@ -152,7 +149,7 @@ def seed_admin_user(admin_email: str = "admin@hospital.local", admin_password: O
         )
         session.add(user)
         session.commit()
-        print(f"  ✅ Admin account provisioned successfully.")
+        print("  ✅ Admin account provisioned successfully.")
         return password
     except Exception as e:
         session.rollback()

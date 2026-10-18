@@ -70,6 +70,8 @@ def verify_s8_k7_integrity() -> bool:
     # Verify ground truth reconciliation
     if h3.get("conditional_parameter_rr") != 1.18:
         errors.append("H3 conditional_parameter_rr must equal 1.18")
+    if round(sa["ground_truth_marginal_rr"], 4) != 1.1436:
+        errors.append(f"Scenario A marginal RR mismatch: expected 1.1436, got {sa['ground_truth_marginal_rr']}")
     if round(h3.get("ground_truth_marginal_rr", 0), 4) != round(sb["ground_truth_marginal_rr"], 4):
         errors.append("H3 ground_truth_marginal_rr does not match scenario B marginal RR")
 

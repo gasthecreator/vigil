@@ -6,18 +6,14 @@ Enforces Master Plan §6.0, §11, §12, and WP8.4.
 
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from install_on_prem import (
-    load_env_file,
     run_database_migrations,
     seed_admin_user,
     validate_security_configuration,

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import resource
 import sys
 import time
@@ -30,9 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 sys.path.insert(0, str(ROOT / "packages" / "vigil-core"))
 
-from vigil_api.auth import create_access_token
-from vigil_api.main import app
 from run_load_test import setup_load_test_environment
+from vigil_api.main import app
 
 
 def get_current_rss_mb() -> float:
@@ -144,10 +142,10 @@ def write_soak_reports(results: Dict[str, Any]) -> None:
 
     md_content = rf"""# Vigil API Sustained Soak Test Report
 
-**Date:** {results['timestamp_utc']}  
-**Duration:** {results['duration_seconds']} seconds  
-**Total Workload:** {results['total_requests']} requests  
-**Standard Compliance:** Master Plan §9.5, §12, WP8.4  
+**Date:** {results['timestamp_utc']}
+**Duration:** {results['duration_seconds']} seconds
+**Total Workload:** {results['total_requests']} requests
+**Standard Compliance:** Master Plan §9.5, §12, WP8.4
 
 ---
 

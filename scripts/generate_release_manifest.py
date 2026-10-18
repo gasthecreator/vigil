@@ -9,7 +9,6 @@ Covers clinical safety, regulatory files, threat models, SBOMs, study reports, a
 import hashlib
 import json
 import os
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 

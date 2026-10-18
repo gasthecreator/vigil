@@ -16,24 +16,28 @@ concurrency:
 jobs:
   claims-and-governance:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: uv sync --all-packages
       - name: Verify claims policy
-        run: python3 scripts/check_claims.py
+        run: uv run python scripts/check_claims.py
       - name: Verify evidence register and citations
-        run: python3 scripts/check_evidence.py
+        run: uv run python scripts/check_evidence.py
       - name: Verify evidence excerpts audit
-        run: python3 scripts/audit_excerpts.py
+        run: uv run python scripts/audit_excerpts.py
       - name: Verify reality audit and anti-fabrication policy
-        run: python3 scripts/reality_audit.py --require-stub-registry
+        run: uv run python scripts/reality_audit.py --require-stub-registry
       - name: Verify Hazard Log and safety controls
-        run: python3 scripts/verify_hazard_log.py
+        run: uv run python scripts/verify_hazard_log.py
       - name: Verify study reproducibility and anti-fabrication
-        run: python3 scripts/verify_study_reproducibility.py
+        run: uv run python scripts/verify_study_reproducibility.py
 
   backend-lint-and-test:
     runs-on: ubuntu-latest
