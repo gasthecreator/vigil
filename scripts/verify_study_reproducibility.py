@@ -122,8 +122,55 @@ def verify_m7_cpsat_v2() -> bool:
     return True
 
 
+def _close(a, b, tol=1e-9) -> bool:
+    """Recursive comparison; floats within a relative tolerance (BLAS differences across platforms)."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_close(a[k], b[k], tol) for k in a)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_close(x, y, tol) for x, y in zip(a, b))
+    if isinstance(a, float) or isinstance(b, float):
+        if a is None or b is None:
+            return a == b
+        return abs(float(a) - float(b)) <= tol * max(1.0, abs(float(a)), abs(float(b)))
+    return a == b
+
+
+def verify_k5_study() -> bool:
+    print("🔬 Verifying EXP-K5-001 (K5 lab harmonisation) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-K5-001"
+    stored = json.loads((exp / "results.json").read_text())
+    spec = importlib.util.spec_from_file_location("exp_k5_run_verify", exp / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp_k5_run_verify"] = mod
+    spec.loader.exec_module(mod)
+    # (1) Re-run frozen replication 0 and compare every number.
+    fresh = json.loads(json.dumps(mod.replication(("frozen", 0, stored["detector_calibration"], False))))
+    if not _close(fresh, stored["replications"][0]):
+        print("❌ EXP-K5-001: frozen replication 0 does not reproduce results.json.")
+        return False
+    print("  ✅ frozen replication 0 reproduces results.json (tolerance 1e-9).")
+    # (2) The aggregate and the hypothesis verdicts are a pure function of the stored replications.
+    agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
+    if not _close(agg, stored["aggregate"]):
+        print("❌ EXP-K5-001: aggregate does not equal a fresh derivation from the stored replications.")
+        return False
+    print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored replications.")
+    # (3) REPORT.md is the render of results.json.
+    report = mod.render_report(stored, stored["detector_calibration"], float(
+        __import__("re").search(r"Run time (\d+) s", (exp / "REPORT.md").read_text()).group(1)))
+    if report != (exp / "REPORT.md").read_text():
+        print("❌ EXP-K5-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    return True
+
+
 def main() -> int:
     ok = True
+    if not verify_k5_study():
+        ok = False
     if not verify_m10_reproducibility():
         ok = False
     if not verify_s8_k7_integrity():

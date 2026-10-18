@@ -1,48 +1,29 @@
-# Model Card: Model K5 — Hierarchical Lab Harmonisation Engine
+# Model Card: Model K5 — laboratory harmonisation (research module)
 
-**Model Identifier:** `MODEL-K5-HARMONISATION-POOLING`  
-**Model Version:** 1.0.0-alpha  
-**Date:** 2026-10-15  
-**Governing Documents:** `docs/MASTER_PLAN.md` §14 WP3.0; `docs/ML_PROGRAM.md` §1 (H-G), §3.5, §6  
-**Evaluation Status:** Evaluated under multi-site assay shift injection (`reports/ml/S5_HARMONISATION/REPORT.md`)  
+**Model identifier:** `MODEL-K5-HARMONISATION-POOLING`
+**Version:** 2.0.0-research (replaces 1.0.0-alpha, whose evaluation was retracted)
+**Maturity:** L0. Research code. **Not wired into ingestion, scoring or any API route.** `DRAFT-UNREVIEWED`.
+**Governing documents:** `docs/ML_PROGRAM.md` §3.5 and §6 (S5); `docs/adr/0024-k5-replaced-and-not-claimed.md`; `experiments/EXP-K5-001/`.
 
----
+## 1. What it is
+An estimator of proportional laboratory offsets on the log scale, for one analyte (CA 15-3 in the study). Offsets are identified only through patients who were tested at more than one laboratory. Implementation: `packages/vigil-ml/vigil_ml/k5.py`.
+Model: `log y_ij = a_i + b_i t_ij + beta_{lab(i,j)} + e_ij`, patient intercept and slope fixed and eliminated by within-patient projection, `beta ~ N(0, tau^2)`, `tau` and `sigma` by REML, closed-form posterior. A laboratory with no connecting patient receives offset 0 and posterior sd `tau_hat`; a laboratory never seen in fitting is left unchanged (offset 0).
+A CUSUM helper on one-step residuals with a calibrated threshold is included for the study; it is **not** a validated detector (section 3).
+Export: safetensors (weights plus JSON metadata, no pickle) and ONNX (Gather, Exp, Div); parity to 1e-6 is tested in `packages/vigil-ml/tests/test_k5.py`.
 
-## 1. Model Overview and Intended Use
-In decentralized clinical oncology surveillance, patients frequently undergo routine blood testing across different hospital systems, regional laboratories, and reference platforms (e.g., Roche Cobas, Abbott Architect, Siemens Atellica). Systematic inter-assay calibration differences ($\pm 10\text{--}15\%$) or reagent lot shifts mimic subclinical tumor marker acceleration if unadjusted.
+## 2. Intended use
+Research on synthetic data, to study whether partial pooling of laboratory offsets reduces false alarms of a fixed change rule. **Not for clinical use.** No claim of clinical validity, regulatory clearance or benefit.
 
-Model K5 provides a two-tier defense:
-1. **Hierarchical Empirical Bayes Partial Pooling:** Estimates site-specific baseline offsets $\beta_\ell$ and scale factors $\sigma_\ell$ by shrinking site distributions toward global reference population priors.
-2. **Online Analytical Changepoint Detector:** A CUSUM tracking chart operating on concurrent standardized residuals across all patients tested at the same facility, distinguishing systemic assay shifts from individual cancer recurrences.
+## 3. What was measured (synthetic data only; `experiments/EXP-K5-001/results.json`, `CONCLUSION.md`)
+- The pre-registered criterion for "K5 recovers at least half of the excess false alarms" was **not met** (0.520, 95% interval [0.438, 0.593]); the kill rule fired. K5 is not claimed to help.
+- In the primary simulated cell an older mean-shrinkage method recovered more (0.609 [0.535, 0.677]); it does worse when laboratory and case mix are linked (0.304 against K5's 0.476).
+- With few connecting patients for a new laboratory, K5 has lower error than per-lab fixed offsets (pre-registered H2 met), but per-lab fixed offsets are then worse than no adjustment at all.
+- K5 95% intervals under-cover on the simulator's clinical trajectories (0.615 to 0.897 across six cells) and cover 0.949 when the model is exactly true (control), which points to model misfit with the simulated disease dynamics.
+- The CUSUM could not be calibrated to the pre-registered false-alarm target on streams that contain disease progression (156.76 alarms per 1,000 residuals at the largest threshold tried); it is not a usable detector as specified.
+- At the spread anchored by an external quality-assessment study (tau 0.07, a spread across laboratories, not a bias estimate), laboratory differences did not materially change the simulated rule's false alarms.
 
----
+## 4. Limits
+Synthetic data; proportional bias only; no scale or noise differences; one analyte; no reference-material anchoring; identification only through switchers; a single step change as the only temporal drift; the change rule is a study rule, not a clinical criterion. No real multi-laboratory data have been analysed.
 
-## 2. Mathematical Formulation
-### Empirical Bayes Shrinkage
-For laboratory $\ell$ with $N_\ell$ observed test results $\{y_{\ell, 1}, \dots, y_{\ell, N_\ell}\}$ for analyte $k$:
-$$\hat{\mu}_{\ell, k} = w_\ell \bar{y}_{\ell, k} + (1 - w_\ell) \mu_0$$
-$$w_\ell = \frac{N_\ell}{N_\ell + \kappa_0}$$
-
-where $\mu_0$ is the global reference population median and $\kappa_0$ is the shrinkage strength hyperparameter ($\kappa_0 = 15$).
-
-### Observation Normalization
-$$y^* = \frac{y_{\text{raw}} - \hat{\beta}_{\ell, k}}{\hat{\sigma}_{\ell, k}}$$
-
-### Online CUSUM Residual Changepoint Detection
-$$z_t = \frac{y_{\ell, t} - \mathbb{E}[y]}{\sigma_0}$$
-$$C_t = \max\left(0, C_{t-1} + (z_t - 0.5)\right)$$
-
-When $C_t > 5.0$, an automated system alert flags potential reagent lot recalibration or analyzer drift at laboratory $\ell$.
-
----
-
-## 3. Evaluation and Stress Testing (Study S5)
-- **False Alarm Inflation Under Shift:** When an analytical step shift of $+5.5\text{ U/mL}$ on CA 15-3 was injected into simulated Lab 5, an unharmonised model's false alarm rate inflated from $4.0\%$ to $28.0\%$.
-- **Empirical Bayes Protection:** K5 hierarchical pooling correctly identified the site-specific offset, reducing the false alarm rate to $4.0\%$ (an $85.7\%$ relative reduction in spurious alerts).
-- **Out-of-Distribution Calibration:** On completely held-out new clinical sites (zero training observations), K5 achieved a $34.2\%$ reduction in Brier score compared to unadjusted models.
-
----
-
-## 4. Operational Directives
-- **Mandatory Pre-Processing Gate:** All raw laboratory telemetry must pass through K5 before entering downstream scoring engines (K1, K3, K8).
-- **Multi-Tenant Privacy:** K5 only aggregates summary statistics (means, standard deviations, sample counts) from participating sites, never patient-identifiable data.
+## 5. What this card replaces
+The earlier card claimed a 85.7 percent reduction in false alarms and a 34.2 percent Brier reduction on held-out sites. Those came from a study that subtracted the injected offset by hand and returned a literal; they are retracted (`reports/ml/RETRACTED/README.md`) and must not be cited.
