@@ -22,6 +22,7 @@ import json
 import os
 import secrets
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -404,7 +405,7 @@ def test_error_message_leakage_and_stack_trace_hygiene(test_env):
         "sqlalchemy.exc",
         "FIELD_ENCRYPTION_KEYS",
         "JWT_SECRET_KEY",
-        "/Users/gsanni/",
+        str(Path.home()),
         "WHERE observations.",
     ]
 
