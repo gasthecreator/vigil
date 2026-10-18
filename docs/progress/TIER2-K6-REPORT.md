@@ -24,7 +24,7 @@ K6 was rebuilt as a tested planner and evaluated once, as pre-registered, on 20 
 3. **H1 and H2 met as written** (no minimum effect size). The observed margins are 2.3 and 0.8 days. At B26, K6 versus risk-triggered includes 0. H3 not met. Strongest baseline reported first. "Infeasible" is not written.
 4. **What drives the margin.** `k6_P1` matches `k6_free`; tumour markers did not help under alert rule A (symptom grade ≥ 2 already gives panel-table sensitivity 1.000). `k6_prior` is near zero. Scenario A is dominated by symptomatic presentation (~60 days). On G3, S2 changes sign.
 5. **Not built, as declared:** nested-Monte-Carlo expected information gain on K1; reinforcement learning.
-6. **Commit hygiene slip.** Frozen run 1 and the K6 verifier were one commit (`ab9a869`). History not rewritten. Run 2 results are a results-only commit (`1bec6f4`).
+6. **Commit hygiene slips.** Frozen run 1 and the K6 verifier were one commit (`c1d2567`). Run 2 results are a results-only commit (`4c08fad`). Five subjects used type `exp`; they were rewritten to `feat(exp):` (content unchanged; PREREG-through-runner SHAs unchanged) so the commit-message gate can pass.
 7. **Cross-platform reproducibility.** CI re-derives the aggregate, the report, and the fixed/heuristic arms of replication 0. Hazard-model arms are not compared bit-for-bit across machines (`VIGIL_VERIFY_K6_FULL=1` is opt-in).
 
 ## Files changed outside this tier's scope
