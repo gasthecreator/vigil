@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Triage queue (`GET /patients/triage`) listed every patient regardless of consent; it now lists only patients with active consent (one batched query). Found by the overseer review of Tier 0; `tests/acceptance_p15`.
 - Web tier upgraded from `next@14.2.35` to `next@15.5.28` (production `npm audit` 1 critical/1 high -> 0); stale `apps/web/package-lock.json` removed; `postcss` pinned to a patched release by override; production `npm audit` is now a CI gate. e2e (26 tests) and Lighthouse budgets re-run green on the new version.
 
 ### Added

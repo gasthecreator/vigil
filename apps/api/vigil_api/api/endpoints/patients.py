@@ -16,7 +16,7 @@ from vigil_api import silent_mode
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
 from vigil_api.config import settings
-from vigil_api.consent import has_active_consent, verify_patient_consent
+from vigil_api.consent import consented_patient_ids, has_active_consent, verify_patient_consent
 from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
 from vigil_api.disclosure import DISCLOSURE_LOCKED_DETAIL, withheld_for
@@ -263,6 +263,9 @@ def get_triage_queue(
         .options(selectinload(Patient.baseline_profile), defer(Patient.detector_state))
         .all()
     )
+    # Every read of patient data requires active consent: patients without it are not in the queue.
+    consented = consented_patient_ids(db)
+    patients = [p for p in patients if p.id in consented]
     triage_roster: List[TriageQueueItem] = []
 
     # Batched reads (constant number of statements, independent of the number of patients). This replaced a

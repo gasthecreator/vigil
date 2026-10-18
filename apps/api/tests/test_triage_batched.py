@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from vigil_api.api.endpoints.patients import get_triage_queue
 from vigil_api.database import Base
 from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
-from vigil_api.models.v2 import FollowUpTask, RiskAssessment
+from vigil_api.models.v2 import ConsentRecord, FollowUpTask, RiskAssessment
 from vigil_api.schemas.inference import TriageQueueItem
 
 
@@ -190,6 +190,8 @@ def _seed(s: Session, n: int = 14) -> None:
         p = Patient(id=f"P{i:02d}", mrn=f"M{i}", age=40 + i, synthetic=True, status="active" if i % 5 else "monitoring")
         s.add(p)
         s.flush()
+        # the triage queue only lists patients with active consent
+        s.add(ConsentRecord(patient_id=p.id, consent_type="surveillance_monitoring", granted=True, scope="full", granted_at=NOW))
         if i % 3 != 2:  # some patients have no baseline
             s.add(BaselineProfile(patient_id=p.id, tumor_stage=1 + i % 4, er_status=i % 2 == 0, pr_status=i % 4 == 0,
                                   her2_status=i % 3 == 0, target_organ_susceptibility_vector={"bone": 0.1 * (i % 5)}))
