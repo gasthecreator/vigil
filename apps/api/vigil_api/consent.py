@@ -131,3 +131,31 @@ def has_active_consent(
         return True
     except HTTPException:
         return False
+
+
+def consented_patient_ids(db: Session) -> set[str]:
+    """Ids of patients with an active consent, computed in ONE query.
+
+    Same rule as ``verify_patient_consent``: the most recent record per (patient, consent type) decides; it is
+    active only if granted, not withdrawn and not expired. Used by roster-style endpoints (triage) so consent is
+    enforced without one query per patient.
+    """
+    now = datetime.now(timezone.utc)
+    active: set[str] = set()
+    seen: set[tuple[str, str]] = set()
+    rows = (
+        db.execute(select(ConsentRecord).order_by(ConsentRecord.granted_at.desc())).scalars().all()
+    )
+    for c in rows:
+        key = (c.patient_id, c.consent_type)
+        if key in seen:
+            continue
+        seen.add(key)
+        if not c.granted or c.withdrawn_at is not None:
+            continue
+        if c.expires_at is not None:
+            exp = c.expires_at if c.expires_at.tzinfo else c.expires_at.replace(tzinfo=timezone.utc)
+            if exp <= now:
+                continue
+        active.add(c.patient_id)
+    return active
