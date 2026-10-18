@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Web tier upgraded from `next@14.2.35` to `next@15.5.28` (production `npm audit` 1 critical/1 high -> 0); stale `apps/web/package-lock.json` removed; `postcss` pinned to a patched release by override; production `npm audit` is now a CI gate. e2e (26 tests) and Lighthouse budgets re-run green on the new version.
+
 ### Added
 - M7 ships the explainable urgency ranking (`RadiotherapyScheduler.rank_urgency`); CP-SAT is opt-in research behind the `unvalidated in simulation` badge and an admin/operator gate (ADR-0019).
 - Research CP-SAT formulation and pre-registered study `experiments/EXP-M7-001/` (`scheduler_research.py`, `scripts/run_study_m7_cpsat_v2.py`).
