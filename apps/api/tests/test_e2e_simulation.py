@@ -45,6 +45,7 @@ def test_e2e_surveillance_simulation(client):
     assert p_resp.status_code == 201, f"Failed to create patient: {p_resp.text}"
     patient = p_resp.json()
     patient_id = patient["id"]
+    client.post(f"/api/v1/patients/{patient_id}/consent", json={"scope": "full", "granted": True})
 
     # Step 2: Submit Baseline Pathology: Stage IIb, ER+, PR-, HER2+
     b_resp = client.post(

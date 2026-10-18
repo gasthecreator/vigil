@@ -950,15 +950,17 @@ def submit_lab_result(
 
 
 @router.get("/{id}/trajectory", response_model=List[TrajectoryPoint])
-def get_patient_trajectory(id: str, db: Session = Depends(get_db)):
+def get_patient_trajectory(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Returns full longitudinal surveillance trajectory for a patient, joining
     each lab draw with its corresponding calculated_metastasis_risk, triage_flag,
-    and clinical justification_text.
+    and clinical justification_text. Requires authentication and active consent.
     """
-    patient = db.query(Patient).filter(Patient.id == id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+    verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     labs = (
         db.query(LabResult)
@@ -1016,15 +1018,19 @@ def get_patient_trajectory(id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{id}/simulate", response_model=SimulationResponse)
-def simulate_future_lab(id: str, payload: SimulationRequest, db: Session = Depends(get_db)):
+def simulate_future_lab(
+    id: str,
+    payload: SimulationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
     """
     'What-If' Simulation Endpoint.
     Allows oncologists to project the impact of a hypothetical future lab draw
-    on the patient's continuous metastasis risk trajectory.
+    on the patient's continuous metastasis risk trajectory. Clinician/admin only,
+    requires active consent.
     """
-    patient = db.query(Patient).filter(Patient.id == id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     labs = (
         db.query(LabResult)
