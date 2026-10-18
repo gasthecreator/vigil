@@ -28,7 +28,7 @@ def test_empty_repo_fails_every_tier(tmp_path):
 
 
 def test_tracked_private_key_is_critical_and_fails_even_in_ci_mode(tmp_path):
-    root = _git_repo(tmp_path, {"README.md": "x", "deploy/id.pem": "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n"})
+    root = _git_repo(tmp_path, {"README.md": "x", "deploy/id.pem": "-----" + "BEGIN PRIVATE KEY" + "-----\nabc\n-----" + "END PRIVATE KEY" + "-----\n"})
     res = audit.run_audit(root, online=False)
     assert "T0.1" in res["critical"]
     assert audit.main(["--root", str(root), "--critical-only"]) == 1
