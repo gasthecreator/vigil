@@ -1,0 +1,125 @@
+{
+  "study": "M10",
+  "description": "Missed-Signal Quality Audit Engine Evaluation",
+  "pre_registration": "docs/studies/PREREG-M10.md",
+  "governance_adr": "docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md",
+  "timestamp": "2026-10-17T19:10:00Z",
+  "execution_time_seconds": 0.07,
+  "cohort_alpha_ground_truth": {
+    "total_patients": 1003,
+    "total_signals_detected": 403,
+    "action_recorded": 250,
+    "action_not_recorded": 153,
+    "overall_rate": 0.3797,
+    "bootstrap_ci_95": [
+      0.3325,
+      0.4293
+    ],
+    "sensitivity": 1.0,
+    "specificity_stable": 1.0,
+    "subgroup_breakdown": {
+      "urban_referral": {
+        "total_signals": 212,
+        "action_not_recorded_count": 84,
+        "action_not_recorded_rate": 0.3962,
+        "is_suppressed": false
+      },
+      "rural_public": {
+        "total_signals": 188,
+        "action_not_recorded_count": 66,
+        "action_not_recorded_rate": 0.3511,
+        "is_suppressed": false
+      },
+      "isolated_island_clinic": {
+        "total_signals": "<5",
+        "action_not_recorded_count": "<5",
+        "action_not_recorded_rate": null,
+        "is_suppressed": true
+      }
+    },
+    "subtype_breakdown": {
+      "curative_tnbc": {
+        "total_signals": 123,
+        "action_not_recorded_count": 50,
+        "action_not_recorded_rate": 0.4065,
+        "is_suppressed": false
+      },
+      "adjuvant_post_mastectomy": {
+        "total_signals": 135,
+        "action_not_recorded_count": 49,
+        "action_not_recorded_rate": 0.363,
+        "is_suppressed": false
+      },
+      "adjuvant_post_lumpectomy": {
+        "total_signals": 142,
+        "action_not_recorded_count": 51,
+        "action_not_recorded_rate": 0.3592,
+        "is_suppressed": false
+      },
+      "rare_inflammatory_carcinoma": {
+        "total_signals": "<5",
+        "action_not_recorded_count": "<5",
+        "action_not_recorded_rate": null,
+        "is_suppressed": true
+      }
+    },
+    "stage_breakdown": {
+      "stage_3": {
+        "total_signals": 126,
+        "action_not_recorded_count": 45,
+        "action_not_recorded_rate": 0.3571,
+        "is_suppressed": false
+      },
+      "stage_2": {
+        "total_signals": 152,
+        "action_not_recorded_count": 62,
+        "action_not_recorded_rate": 0.4079,
+        "is_suppressed": false
+      },
+      "stage_1": {
+        "total_signals": 122,
+        "action_not_recorded_count": 43,
+        "action_not_recorded_rate": 0.3525,
+        "is_suppressed": false
+      },
+      "stage_4_oligometastatic": {
+        "total_signals": "<5",
+        "action_not_recorded_count": "<5",
+        "action_not_recorded_rate": null,
+        "is_suppressed": true
+      }
+    },
+    "suppressed_cells_count": 3,
+    "small_cell_leak_count": 0
+  },
+  "cohort_beta_noise_stress": {
+    "total_patients": 500,
+    "false_alarms": 0,
+    "false_positive_rate": 0.0
+  },
+  "governance": {
+    "neutral_register_verified": true,
+    "small_cell_floor_k": 5,
+    "no_clinician_names_present": true
+  },
+  "hypotheses": {
+    "H1_ground_truth_recovery": {
+      "statement": "Sensitivity >= 90.0% and Specificity >= 95.0% on injected truth",
+      "observed_sensitivity": 1.0,
+      "observed_specificity": 1.0,
+      "verdict": "SUPPORTED"
+    },
+    "H2_small_cell_privacy_guarantee": {
+      "statement": "All cells with 1 <= n < 5 suppressed (0 leaks, >= 1 suppressed)",
+      "suppressed_cells": 3,
+      "unsuppressed_leaks": 0,
+      "verdict": "SUPPORTED"
+    },
+    "H3_biological_noise_specificity": {
+      "statement": "False positive rate <= 2.0% under biological noise stress",
+      "observed_fpr": 0.0,
+      "threshold": 0.02,
+      "verdict": "SUPPORTED"
+    }
+  }
+}
