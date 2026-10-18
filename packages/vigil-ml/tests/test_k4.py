@@ -12,7 +12,7 @@ from vigil_ml import k4
 
 ROOT = Path(__file__).resolve().parents[3]
 FAMILIES = list(k4.FAMILIES)
-A, S = len(k4.ANALYTES), k4.N_STATIC
+A, S = k4.N_CHANNELS, k4.N_STATIC
 
 
 @pytest.fixture(autouse=True)
@@ -80,7 +80,7 @@ def test_values_under_a_zero_mask_have_no_influence(family):
     assert torch.allclose(clean, net(junk, m, t, s, v).detach(), atol=1e-6)
 
 
-def planted(n, seed, shuffle=False):
+def planted(n, seed, shuffle=0):
     """Label at visit j: the last observed value of analyte 0 (carried forward) plus a long-gap bonus is high."""
     g = np.random.default_rng(seed)
     T = 7
@@ -94,8 +94,8 @@ def planted(n, seed, shuffle=False):
     for j in range(T):
         ff = np.where(m[:, j, 0] > 0, x[:, j, 0], ff)
         y[:, j] = ((ff + 0.8 * (gaps[:, j] > 150)) > 0.5).astype(np.float32)
-    if shuffle:
-        y = y.ravel()[g.permutation(y.size)].reshape(y.shape)  # permute the labels among all rows
+    if shuffle:  # a positive integer selects the permutation of the labels among all rows
+        y = y.ravel()[np.random.default_rng(10_000 + shuffle).permutation(y.size)].reshape(y.shape)
     ds = k4.SequenceSet(
         [f"p{i}" for i in range(n)], x * m, m, t, g.normal(0, 1, (n, S)).astype(np.float32),
         np.ones((n, T), dtype=bool), y, np.ones((n, T), dtype=bool),
@@ -113,14 +113,18 @@ def auc(y, p):
 
 @pytest.mark.parametrize("family", FAMILIES)
 def test_each_family_learns_a_planted_signal_and_not_shuffled_labels(family):
-    train, test = planted(600, 1), planted(300, 2)
+    train, test = planted(1000, 1), planted(300, 2)
     cfg = k4.FitConfig(lr=3e-3, max_epochs=40, patience=8)
     res = k4.fit_risk_model(family, "small", train, cfg, seed=0)
     p = k4.predict_probabilities(res.network, test)
     assert auc(test.y.ravel(), p.ravel()) > 0.9
-    res0 = k4.fit_risk_model(family, "small", planted(600, 1, shuffle=True), cfg, seed=0)
-    p0 = k4.predict_probabilities(res0.network, test)
-    assert auc(test.y.ravel(), p0.ravel()) < 0.6
+    # A network fitted to shuffled labels is a near-arbitrary function of the inputs: one fit scatters by about 0.1 AUC
+    # (see the canary in the study), so the criterion is the mean over five fixed shuffles.
+    scores = []
+    for k in range(1, 6):
+        r0 = k4.fit_risk_model(family, "small", planted(1000, 1, shuffle=k), cfg, seed=k)
+        scores.append(auc(test.y.ravel(), k4.predict_probabilities(r0.network, test).ravel()))
+    assert float(np.mean(scores)) < 0.6, scores
 
 
 def correlated_corpus(n, seed):
@@ -218,3 +222,20 @@ def test_attach_labels_marks_only_rows_that_exist():
     ds = k4.build_sequences(["a", "b"], [[0.0, 5.0], [0.0]], [np.ones((2, A)), np.ones((1, A))], np.zeros((2, S)), np.ones(A))
     lab = k4.attach_labels(ds, {("a", 5.0): 1.0, ("b", 0.0): 0.0})
     assert lab.row_mask[0].tolist()[:2] == [False, True] and lab.row_mask[1, 0] and lab.y[0, 1] == 1.0
+
+
+def test_symptom_channels_are_used_as_given_and_never_masked_for_pretraining():
+    n_lab = k4.N_LAB
+    ref = np.ones(n_lab)
+    vals = np.zeros((2, A))
+    vals[:, :n_lab] = np.e
+    vals[:, n_lab:] = 0.5
+    ds = k4.build_sequences(["a"], [[0.0, 10.0]], [vals], np.zeros((1, S)), ref)
+    assert ds.x[0, 0, 0] == pytest.approx(1.0) and ds.x[0, 0, n_lab] == pytest.approx(0.5)
+    assert ds.m[0, 0, n_lab:].min() == 1.0
+    import torch as _t
+    from vigil_ml.k4 import _masked_batch
+
+    xi, mi, _, _, _, x_true, pick = _masked_batch(ds, np.array([0]), 1.0, _t.Generator().manual_seed(0))
+    assert bool(pick[..., :n_lab][0, :2].all()) and not bool(pick[..., n_lab:].any())
+    assert float(mi[0, 0, n_lab:].min()) == 1.0 and float(xi[0, 0, n_lab]) == pytest.approx(0.5)

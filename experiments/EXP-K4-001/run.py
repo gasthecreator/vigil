@@ -32,8 +32,8 @@ ROOT = Path(__file__).resolve().parents[2]
 for _pkg in ("vigil-sim", "vigil-ml", "vigil-core", "vigil-eval"):
     sys.path.insert(0, str(ROOT / "packages" / _pkg))
 
-import xgboost  # noqa: E402,F401  (must be imported before torch: the two OpenMP runtimes clash on macOS)
 import torch  # noqa: E402
+import xgboost  # noqa: E402,F401  (must be imported before torch: the two OpenMP runtimes clash on macOS)
 from vigil_core.analytes import ANALYTE_REGISTRY  # noqa: E402
 from vigil_eval import compute_calibration_curve, ipcw_brier_score, ipcw_time_dependent_roc_auc  # noqa: E402
 from vigil_ml import k4  # noqa: E402
@@ -152,17 +152,20 @@ def cohort_arrays(cohort) -> Tuple[List[str], List[np.ndarray], List[np.ndarray]
     obs = cohort.to_observations_dataframe()
     pts = cohort.to_patients_dataframe()
     ids = list(pts["patient_id"])
-    cols = ["patient_id", "day"] + ANALYTE_ORDER
+    sym_cols = [f"symptom_{x}" for x in k4.SYMPTOMS]
+    cols = ["patient_id", "day"] + ANALYTE_ORDER + sym_cols
     grouped = {pid: g.sort_values("day", kind="stable") for pid, g in obs[cols].groupby("patient_id", sort=False)}
     days, values = [], []
     for pid in ids:
         g = grouped.get(pid)
         if g is None:
             days.append(np.zeros(0))
-            values.append(np.zeros((0, len(ANALYTE_ORDER))))
+            values.append(np.zeros((0, k4.N_CHANNELS)))
         else:
             days.append(g["day"].to_numpy(dtype=float))
-            values.append(g[ANALYTE_ORDER].to_numpy(dtype=float))
+            # laboratory values as drawn (NaN = not drawn), then symptom grades / 4 (amendment A4)
+            values.append(np.concatenate([g[ANALYTE_ORDER].to_numpy(dtype=float),
+                                          g[sym_cols].to_numpy(dtype=float) / k4.SYMPTOM_SCALE], axis=1))
     stage = pts["stage"].astype(str).str.upper().isin(["STAGE III", "STAGE IV"]).to_numpy(dtype=float)
     sub = pts["subtype"].astype(str)
     statics = np.stack(
@@ -201,8 +204,10 @@ def randomise_cohort(days, values, rng: np.random.Generator, spec: Dict[str, Any
             keep[np.sort(rng.choice(n, size=spec["min_visits"], replace=False))] = True
         d2, v2 = d[keep] * scale, v[keep].copy()
         beta = float(rng.normal(0.0, tau))
-        v2 = v2 * np.exp(beta) * np.exp(rng.normal(0.0, sd, size=v2.shape))
-        v2[rng.random(v2.shape) < p_miss] = np.nan
+        lab = v2[:, : k4.N_LAB]  # randomisation touches laboratory values only; symptom grades are kept
+        lab = lab * np.exp(beta) * np.exp(rng.normal(0.0, sd, size=lab.shape))
+        lab[rng.random(lab.shape) < p_miss] = np.nan
+        v2[:, : k4.N_LAB] = lab
         out_d.append(d2)
         out_v.append(v2)
     return out_d, out_v
@@ -433,7 +438,7 @@ def unit_family(kind: str, r: int, family: str, hp: Dict[str, Any], scope: str) 
     if family == "grud":
         for k in range(cfg["n_canary_perms"]):  # A3: a model fitted to permuted labels scatters widely, so many permutations
             rec, _ = fit_arm(rep, base | {"arm": "canary_permuted_labels", "perm": k}, family, "medium", cfg["n_canary"],
-                             lr_s, seed, permute_seed=rep.seed + off["canary"] + 1000 * k)
+                             lr_s, seed + 1000 * (k + 1), permute_seed=rep.seed + off["canary"] + 1000 * k)
             recs.append(rec)
     if in_f3:
         for corpus in CORPORA:
@@ -510,8 +515,8 @@ def unit_baselines(kind: str, r: int, scope: str) -> Dict[str, Any]:
             model = make_baseline(name)
             try:
                 model.fit(X, y)
-            except Exception as exc:  # a one-class or degenerate set: recorded, constant prediction used
-                failed, reason = True, type(exc).__name__
+            except Exception:  # a one-class or degenerate set: recorded, constant prediction used
+                failed = True  # recorded in the record as fit_failed
             rec = {"kind": kind, "rep": r, "family": name, "arm": "classical", "size": "-", "N": n, "lr": None,
                    "n_rows": int(len(y)), "n_events": int(y.sum()), "fit_failed": failed,
                    "train_seconds": round(time.time() - t0, 2)}

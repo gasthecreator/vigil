@@ -42,6 +42,17 @@ ANALYTES: Tuple[str, ...] = (
     "creatinine",
     "wbc",
 )
+SYMPTOMS: Tuple[str, ...] = (
+    "bone_pain",
+    "jaundice",
+    "ruq_pain",
+    "cough_dyspnea",
+    "headache_neuro",
+    "fatigue_weight_loss",
+)
+N_LAB = len(ANALYTES)
+N_CHANNELS = N_LAB + len(SYMPTOMS)  # laboratory channels first (log-scaled, maskable), then symptom grades / 4
+SYMPTOM_SCALE = 4.0
 N_STATIC = 8
 MAX_STEPS = 24
 FAMILIES: Tuple[str, ...] = ("grud", "gru_ode_bayes", "neural_cde", "ct_transformer", "gruwe", "ssm")
@@ -103,25 +114,30 @@ def build_sequences(
     reference_mid: np.ndarray,
     max_steps: int = MAX_STEPS,
 ) -> SequenceSet:
-    """Pad per-patient visit lists. `values[i]` is [n_visits_i, A] with NaN for an analyte not drawn.
+    """Pad per-patient visit lists. `values[i]` is [n_visits_i, C] with NaN for a channel not drawn.
 
-    A patient with more than `max_steps` visits raises (the study never truncates silently).
+    The first `len(reference_mid)` columns are laboratory values (log-scaled against the fixed reference midpoints);
+    any further columns (symptom grades) are used as given. A patient with more than `max_steps` visits raises (the
+    study never truncates silently).
     """
-    P, A = len(patient_ids), len(reference_mid)
-    x = np.zeros((P, max_steps, A), dtype=np.float32)
-    m = np.zeros((P, max_steps, A), dtype=np.float32)
+    P, n_lab = len(patient_ids), len(reference_mid)
+    C = np.asarray(values[0]).shape[-1] if P else n_lab
+    x = np.zeros((P, max_steps, C), dtype=np.float32)
+    m = np.zeros((P, max_steps, C), dtype=np.float32)
     t = np.zeros((P, max_steps), dtype=np.float32)
     valid = np.zeros((P, max_steps), dtype=bool)
     for i in range(P):
         d = np.asarray(days[i], dtype=float)
-        v = np.asarray(values[i], dtype=float).reshape(len(d), A)
+        v = np.asarray(values[i], dtype=float).reshape(len(d), C)
         if len(d) > max_steps:
             raise ValueError(f"patient {patient_ids[i]} has {len(d)} visits; max_steps is {max_steps}")
         order = np.argsort(d, kind="stable")
         d, v = d[order], v[order]
         n = len(d)
         obs = ~np.isnan(v)
-        x[i, :n] = np.where(obs, log_reference(np.where(obs, v, 1.0), reference_mid), 0.0)
+        scaled = np.where(obs, v, 0.0)
+        scaled[:, :n_lab] = np.where(obs[:, :n_lab], log_reference(np.where(obs[:, :n_lab], v[:, :n_lab], 1.0), reference_mid), 0.0)
+        x[i, :n] = scaled
         m[i, :n] = obs
         t[i, :n] = d
         if n:
@@ -395,7 +411,7 @@ _ENCODERS = {
 class K4Network(nn.Module):
     """Encoder + per-visit risk head (+ a reconstruction head used only for pre-training)."""
 
-    def __init__(self, family: str, hidden: int, n_a: int = len(ANALYTES), n_s: int = N_STATIC):
+    def __init__(self, family: str, hidden: int, n_a: int = N_CHANNELS, n_s: int = N_STATIC):
         super().__init__()
         if family not in _ENCODERS:
             raise ValueError(f"unknown family {family!r}; choose from {FAMILIES}")
@@ -570,6 +586,7 @@ class PretrainResult:
 def _masked_batch(ds: SequenceSet, idx: np.ndarray, rate: float, gen: torch.Generator):
     x, m, t, s, v = _tensors(ds, idx)
     pick = (torch.rand(m.shape, generator=gen) < rate) & (m > 0.5) & (v.unsqueeze(-1) > 0.5)
+    pick[..., N_LAB:] = False  # only laboratory values are hidden; symptom grades are covariates
     sel = pick.to(x.dtype)
     return x * (1.0 - sel), m * (1.0 - sel), t, s, v, x, pick
 
@@ -637,6 +654,7 @@ def save_safetensors(net: K4Network, path: Path, extra: Optional[Dict[str, str]]
         "n_analytes": str(net.n_a),
         "n_static": str(net.n_s),
         "analytes": json.dumps(list(ANALYTES)),
+        "symptoms": json.dumps(list(SYMPTOMS)),
     }
     meta.update({str(k): str(v) for k, v in (extra or {}).items()})
     save_file({k: v.contiguous() for k, v in net.state_dict().items()}, str(path), metadata=meta)
@@ -722,6 +740,9 @@ def state_bytes(net: nn.Module) -> int:
 __all__ = [
     "ANALYTES",
     "FAMILIES",
+    "N_CHANNELS",
+    "N_LAB",
+    "SYMPTOMS",
     "SIZES",
     "FitConfig",
     "K4Network",
