@@ -1,0 +1,165 @@
+{
+  "synthetic_vs_public": true,
+  "simulator": {
+    "generator": "ContinuousSecretionGenerator.sample_nigerian_baseline",
+    "seed": 20261018,
+    "n": 5000
+  },
+  "sources": {
+    "METABRIC": {
+      "METABRIC_patient.tsv": "db528e6ded1e4a2cb690635ca185559bc25161d44a78df45614650b3f6e8cca3",
+      "METABRIC_sample.tsv": "f9dbbda0d928e8f58bbafe35e329d54a043a5d6de4da576eb35e9e2370aee9eb"
+    },
+    "TCGA-BRCA": {
+      "TCGA-BRCA_patient.tsv": "4e1344029f0a0197a7ca50c5b4c341bda3c9e08110a52ea11e51d78ba921d1ad",
+      "TCGA-BRCA_sample.tsv": "1c55669e11a3a2aa6ecd6d1848af94ad6f7b04efe12fd035a4c75086dd849cb7"
+    }
+  },
+  "loader_reports": {
+    "METABRIC": {
+      "study": "METABRIC",
+      "patients_in_file": 2509,
+      "patients_loaded": 1981,
+      "rows_rejected": 528,
+      "rejection_codes": {
+        "MISSING_REQUIRED": 1067
+      },
+      "rejections_by_code_and_field": {
+        "MISSING_REQUIRED:age": 11,
+        "MISSING_REQUIRED:os_months": 528,
+        "MISSING_REQUIRED:os_status": 528
+      },
+      "patients_with_more_than_one_sample_row": 0
+    },
+    "TCGA-BRCA": {
+      "study": "TCGA-BRCA",
+      "patients_in_file": 1084,
+      "patients_loaded": 1084,
+      "rows_rejected": 0,
+      "rejection_codes": {},
+      "rejections_by_code_and_field": {},
+      "patients_with_more_than_one_sample_row": 0
+    }
+  },
+  "marginals": {
+    "simulator (Nigerian priors, SYNTHETIC)": {
+      "n": 5000,
+      "age_mean": 48.56708712242674,
+      "age_sd": 9.2879687805213,
+      "age_quantiles_10_50_90": [
+        36.78267889607852,
+        48.50727492561287,
+        60.71384308962958
+      ],
+      "stage_known": 5000,
+      "stage_fraction": {
+        "I": 0.049,
+        "II": 0.2088,
+        "III": 0.4974,
+        "IV": 0.2448
+      },
+      "er_positive": {
+        "known": 5000,
+        "fraction": 0.5178
+      },
+      "pr_positive": {
+        "known": 5000,
+        "fraction": 0.4216
+      },
+      "her2_positive": {
+        "known": 5000,
+        "fraction": 0.1816
+      },
+      "subtype_fraction": {
+        "TNBC-like": 0.3952,
+        "HER2+": 0.1816,
+        "HR+HER2-": 0.4232
+      },
+      "subtype_known": 5000
+    },
+    "METABRIC": {
+      "n": 1981,
+      "age_mean": 61.086986370519945,
+      "age_sd": 12.949709932179637,
+      "age_quantiles_10_50_90": [
+        43.4,
+        61.81,
+        77.31
+      ],
+      "stage_known": 1466,
+      "stage_fraction": {
+        "I": 0.3417462482946794,
+        "II": 0.562755798090041,
+        "III": 0.08049113233287858,
+        "IV": 0.0068212824010914054
+      },
+      "er_positive": {
+        "known": 1981,
+        "fraction": 0.7607269056032306
+      },
+      "pr_positive": {
+        "known": 1980,
+        "fraction": 0.5252525252525253
+      },
+      "her2_positive": {
+        "known": 1980,
+        "fraction": 0.12474747474747475
+      },
+      "subtype_fraction": {
+        "TNBC-like": 0.23384446878422782,
+        "HER2+": 0.12267250821467689,
+        "HR+HER2-": 0.6434830230010953
+      },
+      "subtype_known": 1826,
+      "age_ks_vs_simulator": {
+        "statistic": 0.4615649671882888,
+        "p_value": 4.998651733049848e-274
+      }
+    },
+    "TCGA-BRCA": {
+      "n": 1084,
+      "age_mean": 58.420664206642066,
+      "age_sd": 13.21972061124944,
+      "age_quantiles_10_50_90": [
+        41.0,
+        58.0,
+        77.0
+      ],
+      "stage_known": 1065,
+      "stage_fraction": {
+        "I": 0.1699530516431925,
+        "II": 0.5784037558685446,
+        "III": 0.23380281690140844,
+        "IV": 0.01784037558685446
+      },
+      "er_positive": {
+        "known": 0,
+        "fraction": null
+      },
+      "pr_positive": {
+        "known": 0,
+        "fraction": null
+      },
+      "her2_positive": {
+        "known": 0,
+        "fraction": null
+      },
+      "subtype_fraction": {
+        "TNBC-like": 0.18095238095238095,
+        "HER2+": 0.08253968253968254,
+        "HR+HER2-": 0.7365079365079366
+      },
+      "subtype_known": 945,
+      "age_ks_vs_simulator": {
+        "statistic": 0.3696627306273063,
+        "p_value": 3.4375557689442007e-109
+      }
+    }
+  },
+  "notes": [
+    "Subtype for the public cohorts is the PAM50/Claudin-low label mapped to receptor-style groups (Basal and claudin-low to TNBC-like); the simulator draws receptor-style groups directly. The mapping is approximate and is the reader's to judge.",
+    "Stage fractions use stage-known patients only; METABRIC stage 0 is excluded from the four-way split. METABRIC and TCGA are surgical cohorts, so stage IV is rare by design; the simulator's stage IV share is a de novo metastatic presentation prior.",
+    "TCGA-BRCA PanCancer Atlas clinical attributes carry no receptor status, so TCGA receptor rows are empty.",
+    "Differences are expected. The simulator's priors come from the Nigerian evidence in docs/EVIDENCE.md (E7, E12; both currently graded SECONDARY), not from these cohorts; the report quantifies the gap and does not claim the simulator fits any of them."
+  ]
+}
