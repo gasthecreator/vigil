@@ -22,23 +22,29 @@ def harm_model():
 
 def test_supported_contexts_and_evidence_citations(harm_model):
     """Verifies that all 4 clinical contexts are supported with honest evidence labels."""
-    # 1. Adjuvant post-lumpectomy (E8-backed)
+    # 1. Adjuvant post-lumpectomy (E8-backed, downgraded to SECONDARY per EVIDENCE.md)
     lump = harm_model.compute_harm(ClinicalContext.ADJUVANT_POST_LUMPECTOMY.value, delay_days=60)
-    assert lump.evidence_level == "HIGH"
+    assert lump.evidence_level == "SECONDARY"
     assert "E8" in lump.evidence_citation
     assert "Mackillop" in lump.evidence_citation
     assert lump.grace_period_days == 56
+    assert lump.details["is_assumption"] is False
+    assert lump.details["rr_bounds_type"] == "empirical_95ci"
 
     # 2. Adjuvant post-mastectomy (labeled ASSUMPTION)
     pmrt = harm_model.compute_harm(ClinicalContext.ADJUVANT_POST_MASTECTOMY.value, delay_days=60)
     assert lump.evidence_level != pmrt.evidence_level
     assert pmrt.evidence_level == "ASSUMPTION"
     assert "ASSUMPTION" in pmrt.evidence_citation
+    assert pmrt.details["is_assumption"] is True
+    assert pmrt.details["rr_bounds_type"] == "assumption_range"
+    assert pmrt.details["parameter_assumption_ranges"]["base_event_rate"] == [0.06, 0.15]
 
     # 3. Curative TNBC (accelerated proliferation, labeled ASSUMPTION)
     tnbc = harm_model.compute_harm(ClinicalContext.CURATIVE_TNBC.value, delay_days=50)
     assert tnbc.evidence_level == "ASSUMPTION"
     assert tnbc.grace_period_days == 42  # 6 weeks
+    assert tnbc.details["parameter_assumption_ranges"]["grace_period_days"] == [28, 56]
 
     # 4. Palliative bone/brain (zero grace period, acute complication)
     pal = harm_model.compute_harm(ClinicalContext.PALLIATIVE_BONE_BRAIN.value, delay_days=5)
@@ -46,6 +52,35 @@ def test_supported_contexts_and_evidence_citations(harm_model):
     assert pal.grace_period_days == 0
     assert not pal.in_grace_period
     assert pal.expected_harm > 0.0
+    assert pal.details["parameter_assumption_ranges"]["rr_per_month"] == [1.15, 1.50]
+
+
+def test_multi_parameter_sensitivity_analysis(harm_model):
+    """Verifies parameter_sensitivity_analysis sweeps across grace, ramp, base rate, and daily penalty."""
+    res = harm_model.parameter_sensitivity_analysis(
+        ClinicalContext.CURATIVE_TNBC.value, delay_days=55, interruption_days=4
+    )
+    assert res["clinical_context"] == "curative_tnbc"
+    assert res["evidence_level"] == "ASSUMPTION"
+    # Grace sweep: shorter grace (min) increases harm, longer grace (max) decreases harm
+    assert res["grace_period_sweep"]["harm_at_min"] >= res["grace_period_sweep"]["harm_at_max"]
+    # Base rate sweep: higher base rate increases harm
+    assert res["base_rate_sweep"]["harm_at_max"] >= res["base_rate_sweep"]["harm_at_min"]
+    # Interruption penalty sweep: higher penalty increases harm
+    assert res["interruption_penalty_sweep"]["harm_at_max"] >= res["interruption_penalty_sweep"]["harm_at_min"]
+
+
+def test_scheduler_ranking_stability(harm_model):
+    """Verifies that patient triage ranking remains highly concordant under parameter perturbations."""
+    cohort = [
+        {"id": "P_PAL", "clinical_context": "palliative_bone_brain", "delay_days": 10},
+        {"id": "P_TNBC", "clinical_context": "curative_tnbc", "delay_days": 60},
+        {"id": "P_PMRT", "clinical_context": "adjuvant_post_mastectomy", "delay_days": 75},
+        {"id": "P_LUMP", "clinical_context": "adjuvant_post_lumpectomy", "delay_days": 65},
+    ]
+    stability = harm_model.evaluate_ranking_stability(cohort)
+    assert stability["spearman_correlation"] >= 0.80
+    assert stability["concordant_pairs_fraction"] >= 0.80
 
 
 def test_piecewise_delay_curve_lumpectomy(harm_model):

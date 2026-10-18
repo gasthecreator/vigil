@@ -94,7 +94,16 @@ def seed_database():
             full_name="Hospital Data Admin",
             created_at=now - timedelta(days=100),
         )
-        db.add_all([clinician, admin])
+        ql = User(
+            id="USR-QL-01",
+            username="quality_lead_chioma",
+            email="chioma.okeke@uch.edu.ng",
+            hashed_password="pw",
+            role=UserRole.QUALITY_LEAD.value,
+            full_name="Chioma Okeke, MSc Quality Lead",
+            created_at=now - timedelta(days=100),
+        )
+        db.add_all([clinician, admin, ql])
 
         # 2. Patient PAT-001 (Consented, active surveillance, has observation history)
         p1 = Patient(

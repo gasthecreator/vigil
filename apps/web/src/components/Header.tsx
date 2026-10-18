@@ -81,6 +81,12 @@ export const Header: React.FC = () => {
             RT Continuity (M7)
           </Link>
           <Link
+            href="/quality"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100 transition-colors"
+          >
+            Quality Audit (M10)
+          </Link>
+          <Link
             href="/companion"
             className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors"
           >

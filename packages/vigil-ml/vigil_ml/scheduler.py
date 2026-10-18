@@ -44,6 +44,7 @@ class PatientCourse:
     subgroup: str = "general"  # demographic / geographic subgroup for fairness verification
     max_wait_days: Optional[int] = None  # hard starvation prevention bound (W_max)
     urgency_bound_days: Optional[int] = None  # hard clinical urgency ceiling (e.g. palliative)
+    course_id: Optional[str] = None
 
 
 @dataclass
@@ -52,6 +53,7 @@ class SlotAllocation:
     day: int
     machine_id: str
     fraction_number: int
+    course_id: Optional[str] = None
 
 
 @dataclass
@@ -66,8 +68,13 @@ class ScheduleResult:
     subgroup_disparity_days: float
     machine_utilization: Dict[str, float]
     solver_wall_time_seconds: float
+    course_start_days: Dict[str, Optional[int]] = field(default_factory=dict)
     is_fairness_certified: bool = True
     synthetic: bool = True
+
+
+def _course_uid(p: PatientCourse) -> str:
+    return p.course_id if p.course_id else p.patient_id
 
 
 class RadiotherapyScheduler:
@@ -101,22 +108,23 @@ class RadiotherapyScheduler:
         num_days = max(1, horizon_days)
         active_machines = [m for m in machines]
 
-        # 1. Variables: x[p, d, m] = 1 if patient p treated on machine m on day d
+        # 1. Variables: x[uid, d, m] = 1 if course/patient uid treated on machine m on day d
         x: Dict[tuple[str, int, str], cp_model.IntVar] = {}
-        # y[p, d] = 1 if patient p treated on ANY machine on day d
+        # y[uid, d] = 1 if course/patient uid treated on ANY machine on day d
         y: Dict[tuple[str, int], cp_model.IntVar] = {}
 
         for p in patients:
+            uid = _course_uid(p)
             for d in range(num_days):
                 y_pd_vars = []
                 for m in active_machines:
-                    var = model.NewBoolVar(f"x_{p.patient_id}_d{d}_{m.machine_id}")
-                    x[(p.patient_id, d, m.machine_id)] = var
+                    var = model.NewBoolVar(f"x_{uid}_d{d}_{m.machine_id}")
+                    x[(uid, d, m.machine_id)] = var
                     y_pd_vars.append(var)
 
-                # At most 1 machine per patient per day
-                y_var = model.NewBoolVar(f"y_{p.patient_id}_d{d}")
-                y[(p.patient_id, d)] = y_var
+                # At most 1 machine per course per day
+                y_var = model.NewBoolVar(f"y_{uid}_d{d}")
+                y[(uid, d)] = y_var
                 model.Add(sum(y_pd_vars) == y_var)
 
         # 2. Hard Capacity Constraints per Machine and Day
@@ -127,61 +135,62 @@ class RadiotherapyScheduler:
                 else:
                     cap = m.daily_capacity
 
-                slot_vars = [x[(p.patient_id, d, m.machine_id)] for p in patients]
+                slot_vars = [x[(_course_uid(p), d, m.machine_id)] for p in patients]
                 model.Add(sum(slot_vars) <= cap)
 
         # 3. Total Fractions Needed per Patient in Horizon
         for p in patients:
+            uid = _course_uid(p)
             remaining = max(0, p.fractions_total - p.fractions_completed)
-            model.Add(sum(y[(p.patient_id, d)] for d in range(num_days)) <= remaining)
+            model.Add(sum(y[(uid, d)] for d in range(num_days)) <= remaining)
 
         # 4. Start Day & Waiting Variables
-        # started[p, d] = 1 if patient p has started treatment on or before day d
+        # started[uid, d] = 1 if patient p has started treatment on or before day d
         started: Dict[tuple[str, int], cp_model.IntVar] = {}
         start_day_var: Dict[str, cp_model.IntVar] = {}
 
         for p in patients:
+            uid = _course_uid(p)
             if p.fractions_completed == 0:
-                s_var = model.NewIntVar(0, num_days, f"start_{p.patient_id}")
-                start_day_var[p.patient_id] = s_var
+                s_var = model.NewIntVar(0, num_days, f"start_{uid}")
+                start_day_var[uid] = s_var
 
                 for d in range(num_days):
-                    st = model.NewBoolVar(f"started_{p.patient_id}_d{d}")
-                    started[(p.patient_id, d)] = st
+                    st = model.NewBoolVar(f"started_{uid}_d{d}")
+                    started[(uid, d)] = st
 
                     # Treatment on day d implies started on or before day d
-                    model.Add(y[(p.patient_id, d)] <= st)
+                    model.Add(y[(uid, d)] <= st)
 
                     if d == 0:
-                        model.Add(st == y[(p.patient_id, 0)])
+                        model.Add(st == y[(uid, 0)])
                     else:
                         # Monotonic: once started, remains started
-                        model.Add(st >= started[(p.patient_id, d - 1)])
+                        model.Add(st >= started[(uid, d - 1)])
                         # Cannot become started unless was started before or treated today
-                        model.Add(st <= started[(p.patient_id, d - 1)] + y[(p.patient_id, d)])
+                        model.Add(st <= started[(uid, d - 1)] + y[(uid, d)])
 
-                # Linear identity for start day: S_p = sum(1 - started[p, d])
-                # If started on day 0 -> S_p = 0
-                # If started on day d -> S_p = d
-                # If never started in horizon -> S_p = num_days
-                model.Add(s_var == sum(1 - started[(p.patient_id, d)] for d in range(num_days)))
+                # Linear identity for start day: S_p = sum(1 - started[uid, d])
+                model.Add(s_var == sum(1 - started[(uid, d)] for d in range(num_days)))
             else:
                 # Ongoing patient already started prior to horizon
-                start_day_var[p.patient_id] = model.NewConstant(0)
+                start_day_var[uid] = model.NewConstant(0)
                 for d in range(num_days):
-                    started[(p.patient_id, d)] = model.NewConstant(1)
+                    started[(uid, d)] = model.NewConstant(1)
 
         # 5. Hard Urgency Constraints (palliative / acute cord compression)
         for p in patients:
+            uid = _course_uid(p)
             if p.urgency_bound_days is not None and p.fractions_completed == 0:
                 max_allowed_day = min(num_days - 1, p.urgency_bound_days)
-                model.Add(sum(y[(p.patient_id, d)] for d in range(max_allowed_day + 1)) >= 1)
+                model.Add(sum(y[(uid, d)] for d in range(max_allowed_day + 1)) >= 1)
 
         # 6. Hard No-Starvation Bounds (W_max)
         for p in patients:
+            uid = _course_uid(p)
             if p.max_wait_days is not None and p.fractions_completed == 0:
                 max_wait = min(num_days, p.max_wait_days)
-                model.Add(start_day_var[p.patient_id] <= max_wait)
+                model.Add(start_day_var[uid] <= max_wait)
 
         # 7. Subgroup Fairness Constraints
         # Bounded wait disparity: difference in average wait between subgroups <= max_fairness_disparity_days
@@ -203,8 +212,8 @@ class RadiotherapyScheduler:
                         n_b = len(pts_b)
                         # n_b * sum(S_a) - n_a * sum(S_b) <= bound * n_a * n_b
                         bound_scaled = self.max_fairness_disparity_days * n_a * n_b
-                        sum_a = sum(start_day_var[p.patient_id] for p in pts_a)
-                        sum_b = sum(start_day_var[p.patient_id] for p in pts_b)
+                        sum_a = sum(start_day_var[_course_uid(p)] for p in pts_a)
+                        sum_b = sum(start_day_var[_course_uid(p)] for p in pts_b)
                         model.Add(n_b * sum_a - n_a * sum_b <= bound_scaled)
                         model.Add(n_a * sum_b - n_b * sum_a <= bound_scaled)
 
@@ -213,46 +222,53 @@ class RadiotherapyScheduler:
 
         # (a) Reward for delivering fractions: heavily prioritize filling capacity and treating patients
         FRACTION_DELIVERED_REWARD = 20000
+        FRACTION_CONTINUATION_REWARD = 60000
         for p in patients:
+            uid = _course_uid(p)
+            rew = (
+                FRACTION_CONTINUATION_REWARD
+                if p.fractions_completed > 0
+                else FRACTION_DELIVERED_REWARD
+            )
             for d in range(num_days):
-                objective_terms.append(-FRACTION_DELIVERED_REWARD * y[(p.patient_id, d)])
+                objective_terms.append(-rew * y[(uid, d)])
 
-        # (b) Delay harm while waiting (1 - started[p, d])
+        # (b) Delay harm while waiting (1 - started[uid, d])
         for p in patients:
+            uid = _course_uid(p)
             if p.fractions_completed == 0:
                 for d in range(num_days):
                     current_delay = p.elapsed_delay_days + d
                     marginal = self.harm_model.marginal_harm(p.clinical_context, current_delay, 1)
                     # Integer cost: marginal harm + 50 baseline idle penalty
                     daily_wait_cost = int(round(marginal * self.SCALE)) + 50
-                    objective_terms.append(daily_wait_cost * (1 - started[(p.patient_id, d)]))
+                    objective_terms.append(daily_wait_cost * (1 - started[(uid, d)]))
 
         # (c) Machine switching stability penalties
         switch_cost_int = int(round(self.switch_penalty * self.SCALE))
         for p in patients:
+            uid = _course_uid(p)
             if p.current_machine_id:
                 for d in range(num_days):
                     for m in active_machines:
                         if m.machine_id != p.current_machine_id:
-                            objective_terms.append(
-                                x[(p.patient_id, d, m.machine_id)] * switch_cost_int
-                            )
+                            objective_terms.append(x[(uid, d, m.machine_id)] * switch_cost_int)
 
         # (d) Interruption gap penalties during ongoing courses
         int_gap_cost = int(round(self.interruption_penalty * self.SCALE))
         for p in patients:
+            uid = _course_uid(p)
             remaining = p.fractions_total - p.fractions_completed
             if remaining > 0:
+                # Direct interruption penalty for unscheduled days in ongoing courses
+                if p.fractions_completed > 0:
+                    for d in range(min(num_days, remaining)):
+                        daily_int_cost = int(round(self.interruption_penalty * self.SCALE)) + 150
+                        objective_terms.append(daily_int_cost * (1 - y[(uid, d)]))
+
                 for d in range(num_days - 2):
-                    gap_var = model.NewBoolVar(f"gap_{p.patient_id}_d{d}")
-                    # gap_var >= y[d] + y[d+2] - y[d+1] - 1
-                    model.Add(
-                        gap_var
-                        >= y[(p.patient_id, d)]
-                        + y[(p.patient_id, d + 2)]
-                        - y[(p.patient_id, d + 1)]
-                        - 1
-                    )
+                    gap_var = model.NewBoolVar(f"gap_{uid}_d{d}")
+                    model.Add(gap_var >= y[(uid, d)] + y[(uid, d + 2)] - y[(uid, d + 1)] - 1)
                     objective_terms.append(gap_var * int_gap_cost)
 
         model.Minimize(sum(objective_terms))
@@ -273,17 +289,19 @@ class RadiotherapyScheduler:
 
         allocations: List[SlotAllocation] = []
         patient_start_days: Dict[str, Optional[int]] = {}
+        course_start_days: Dict[str, Optional[int]] = {}
         patient_fractions_scheduled: Dict[str, int] = {}
 
         if status_str in ("OPTIMAL", "FEASIBLE"):
             for p in patients:
+                uid = _course_uid(p)
                 frac_count = p.fractions_completed
                 first_d: Optional[int] = None
                 p_scheduled = 0
 
                 for d in range(num_days):
                     for m in active_machines:
-                        if solver.Value(x[(p.patient_id, d, m.machine_id)]) == 1:
+                        if solver.Value(x[(uid, d, m.machine_id)]) == 1:
                             frac_count += 1
                             p_scheduled += 1
                             if first_d is None:
@@ -294,24 +312,36 @@ class RadiotherapyScheduler:
                                     day=d,
                                     machine_id=m.machine_id,
                                     fraction_number=frac_count,
+                                    course_id=p.course_id,
                                 )
                             )
                 patient_start_days[p.patient_id] = first_d
+                if p.course_id:
+                    course_start_days[p.course_id] = first_d
                 patient_fractions_scheduled[p.patient_id] = p_scheduled
         else:
             for p in patients:
                 patient_start_days[p.patient_id] = None
+                if p.course_id:
+                    course_start_days[p.course_id] = None
                 patient_fractions_scheduled[p.patient_id] = 0
 
         # Compute harm, utilization, and marginal explanations
         total_harm = 0.0
         for p in patients:
-            s_day = patient_start_days.get(p.patient_id)
+            uid = _course_uid(p)
+            s_day = (
+                course_start_days.get(p.course_id)
+                if p.course_id
+                else patient_start_days.get(p.patient_id)
+            )
             effective_delay = p.elapsed_delay_days + (s_day if s_day is not None else num_days)
             p_harm = self.harm_model.compute_harm(p.clinical_context, effective_delay).expected_harm
             total_harm += p_harm
 
-        explanations = self._generate_marginal_explanations(patients, patient_start_days, num_days)
+        explanations = self._generate_marginal_explanations(
+            patients, patient_start_days, num_days, course_start_days=course_start_days
+        )
 
         # Machine utilization
         utilization = {
@@ -333,7 +363,11 @@ class RadiotherapyScheduler:
         subgroup_waits: Dict[str, List[int]] = {}
         for p in patients:
             if p.fractions_completed == 0:
-                s_day = patient_start_days.get(p.patient_id)
+                s_day = (
+                    course_start_days.get(p.course_id)
+                    if p.course_id
+                    else patient_start_days.get(p.patient_id)
+                )
                 w = s_day if s_day is not None else num_days
                 subgroup_waits.setdefault(p.subgroup, []).append(w)
 
@@ -357,6 +391,7 @@ class RadiotherapyScheduler:
             subgroup_disparity_days=disparity,
             machine_utilization=utilization,
             solver_wall_time_seconds=round(wall_time, 4),
+            course_start_days=course_start_days,
             is_fairness_certified=True,
             synthetic=True,
         )
@@ -366,11 +401,16 @@ class RadiotherapyScheduler:
         patients: List[PatientCourse],
         start_days: Dict[str, Optional[int]],
         horizon_days: int,
+        course_start_days: Optional[Dict[str, Optional[int]]] = None,
     ) -> Dict[str, str]:
         """Generates clinically interpretable marginal harm rationales for each patient schedule decision."""
         explanations = {}
         for p in patients:
-            s_day = start_days.get(p.patient_id)
+            s_day = (
+                course_start_days.get(p.course_id)
+                if course_start_days and p.course_id and p.course_id in course_start_days
+                else start_days.get(p.patient_id)
+            )
             current_delay = p.elapsed_delay_days + (s_day if s_day is not None else horizon_days)
             marginal_daily_harm = self.harm_model.marginal_harm(
                 p.clinical_context, current_delay, 1
@@ -403,6 +443,8 @@ class RadiotherapyScheduler:
                     f"Evidence: {harm_info.evidence_citation}."
                 )
             explanations[p.patient_id] = reason
+            if p.course_id:
+                explanations[p.course_id] = reason
         return explanations
 
     def solve_fcfs(
@@ -452,8 +494,11 @@ class RadiotherapyScheduler:
         """Helper to greedily assign slots day by day to an ordered list of patients."""
         allocations: List[SlotAllocation] = []
         patient_start_days: Dict[str, Optional[int]] = {p.patient_id: None for p in sorted_patients}
+        course_start_days: Dict[str, Optional[int]] = {
+            p.course_id: None for p in sorted_patients if p.course_id
+        }
         patient_fractions: Dict[str, int] = {
-            p.patient_id: p.fractions_completed for p in sorted_patients
+            _course_uid(p): p.fractions_completed for p in sorted_patients
         }
 
         for d in range(horizon_days):
@@ -462,38 +507,52 @@ class RadiotherapyScheduler:
                     continue
                 available_slots = m.daily_capacity
                 for p in sorted_patients:
+                    uid = _course_uid(p)
                     if available_slots <= 0:
                         break
                     # Check if already treated today
                     already_today = any(
-                        a.day == d and a.patient_id == p.patient_id for a in allocations
+                        a.day == d
+                        and (
+                            (a.course_id == p.course_id)
+                            if p.course_id and a.course_id
+                            else a.patient_id == p.patient_id
+                        )
+                        for a in allocations
                     )
                     if already_today:
                         continue
-                    if patient_fractions[p.patient_id] < p.fractions_total:
-                        patient_fractions[p.patient_id] += 1
+                    if patient_fractions[uid] < p.fractions_total:
+                        patient_fractions[uid] += 1
                         available_slots -= 1
-                        if patient_start_days[p.patient_id] is None:
+                        if patient_start_days.get(p.patient_id) is None:
                             patient_start_days[p.patient_id] = d
+                        if p.course_id and course_start_days.get(p.course_id) is None:
+                            course_start_days[p.course_id] = d
                         allocations.append(
                             SlotAllocation(
                                 patient_id=p.patient_id,
                                 day=d,
                                 machine_id=m.machine_id,
-                                fraction_number=patient_fractions[p.patient_id],
+                                fraction_number=patient_fractions[uid],
+                                course_id=p.course_id,
                             )
                         )
 
         total_harm = 0.0
         for p in sorted_patients:
-            s_day = patient_start_days.get(p.patient_id)
+            s_day = (
+                course_start_days.get(p.course_id)
+                if p.course_id
+                else patient_start_days.get(p.patient_id)
+            )
             effective_delay = p.elapsed_delay_days + (s_day if s_day is not None else horizon_days)
             total_harm += self.harm_model.compute_harm(
                 p.clinical_context, effective_delay
             ).expected_harm
 
         explanations = self._generate_marginal_explanations(
-            sorted_patients, patient_start_days, horizon_days
+            sorted_patients, patient_start_days, horizon_days, course_start_days=course_start_days
         )
 
         utilization = {
@@ -514,7 +573,11 @@ class RadiotherapyScheduler:
         subgroup_waits: Dict[str, List[int]] = {}
         for p in sorted_patients:
             if p.fractions_completed == 0:
-                s_day = patient_start_days.get(p.patient_id)
+                s_day = (
+                    course_start_days.get(p.course_id)
+                    if p.course_id
+                    else patient_start_days.get(p.patient_id)
+                )
                 w = s_day if s_day is not None else horizon_days
                 subgroup_waits.setdefault(p.subgroup, []).append(w)
 
@@ -532,7 +595,7 @@ class RadiotherapyScheduler:
             allocations=allocations,
             patient_start_days=patient_start_days,
             patient_fractions_scheduled={
-                p.patient_id: patient_fractions[p.patient_id] - p.fractions_completed
+                p.patient_id: patient_fractions[_course_uid(p)] - p.fractions_completed
                 for p in sorted_patients
             },
             total_expected_harm=round(total_harm, 4),
@@ -541,6 +604,7 @@ class RadiotherapyScheduler:
             subgroup_disparity_days=disparity,
             machine_utilization=utilization,
             solver_wall_time_seconds=round(time.perf_counter() - start_time, 4),
+            course_start_days=course_start_days,
             is_fairness_certified=True,
             synthetic=True,
         )

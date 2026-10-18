@@ -1631,6 +1631,147 @@
         "title": "PlainLanguageExplainerResponse",
         "type": "object"
       },
+      "QualityAuditRequest": {
+        "properties": {
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional facility identifier to filter trajectories",
+            "title": "Facility Id"
+          },
+          "include_synthetic_benchmark": {
+            "default": true,
+            "description": "Whether to include synthetic benchmark cases if local facility data is small",
+            "title": "Include Synthetic Benchmark",
+            "type": "boolean"
+          },
+          "lookback_days": {
+            "default": 365,
+            "description": "Lookback window in days for surveillance audit",
+            "maximum": 3650.0,
+            "minimum": 30.0,
+            "title": "Lookback Days",
+            "type": "integer"
+          },
+          "n_bootstrap": {
+            "default": 1000,
+            "description": "Bootstrap iterations for confidence intervals",
+            "maximum": 5000.0,
+            "minimum": 100.0,
+            "title": "N Bootstrap",
+            "type": "integer"
+          }
+        },
+        "title": "QualityAuditRequest",
+        "type": "object"
+      },
+      "QualityAuditResponse": {
+        "properties": {
+          "audit_id": {
+            "title": "Audit Id",
+            "type": "string"
+          },
+          "facility_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facility Id"
+          },
+          "narrative_summary": {
+            "title": "Narrative Summary",
+            "type": "string"
+          },
+          "overall_action_not_recorded_rate": {
+            "title": "Overall Action Not Recorded Rate",
+            "type": "number"
+          },
+          "overall_bootstrap_ci_95": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Overall Bootstrap Ci 95",
+            "type": "array"
+          },
+          "register_audit_verified": {
+            "default": true,
+            "title": "Register Audit Verified",
+            "type": "boolean"
+          },
+          "stage_breakdown": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StratumAuditMetricResponse"
+            },
+            "title": "Stage Breakdown",
+            "type": "object"
+          },
+          "subgroup_breakdown": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StratumAuditMetricResponse"
+            },
+            "title": "Subgroup Breakdown",
+            "type": "object"
+          },
+          "subtype_breakdown": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StratumAuditMetricResponse"
+            },
+            "title": "Subtype Breakdown",
+            "type": "object"
+          },
+          "suppressed_strata_count": {
+            "title": "Suppressed Strata Count",
+            "type": "integer"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "total_action_not_recorded": {
+            "title": "Total Action Not Recorded",
+            "type": "integer"
+          },
+          "total_action_recorded": {
+            "title": "Total Action Recorded",
+            "type": "integer"
+          },
+          "total_patients_audited": {
+            "title": "Total Patients Audited",
+            "type": "integer"
+          },
+          "total_signals_detected": {
+            "title": "Total Signals Detected",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "audit_id",
+          "total_patients_audited",
+          "total_signals_detected",
+          "total_action_recorded",
+          "total_action_not_recorded",
+          "overall_action_not_recorded_rate",
+          "overall_bootstrap_ci_95",
+          "subgroup_breakdown",
+          "subtype_breakdown",
+          "stage_breakdown",
+          "suppressed_strata_count",
+          "narrative_summary"
+        ],
+        "title": "QualityAuditResponse",
+        "type": "object"
+      },
       "RadiotherapyCourseCreate": {
         "properties": {
           "assigned_machine_id": {
@@ -2203,6 +2344,16 @@
             "title": "Mean Delay Days",
             "type": "number"
           },
+          "patients_included": {
+            "default": 0,
+            "title": "Patients Included",
+            "type": "integer"
+          },
+          "patients_unconsented_included": {
+            "default": 0,
+            "title": "Patients Unconsented Included",
+            "type": "integer"
+          },
           "solver_time_seconds": {
             "title": "Solver Time Seconds",
             "type": "number"
@@ -2392,6 +2543,59 @@
           "delta_risk"
         ],
         "title": "SimulationResponse",
+        "type": "object"
+      },
+      "StratumAuditMetricResponse": {
+        "properties": {
+          "action_not_recorded_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Action Not Recorded Count"
+          },
+          "action_not_recorded_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Not Recorded Rate"
+          },
+          "is_suppressed": {
+            "default": false,
+            "title": "Is Suppressed",
+            "type": "boolean"
+          },
+          "stratum_name": {
+            "title": "Stratum Name",
+            "type": "string"
+          },
+          "total_signals": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Total Signals"
+          }
+        },
+        "required": [
+          "stratum_name",
+          "total_signals",
+          "action_not_recorded_count"
+        ],
+        "title": "StratumAuditMetricResponse",
         "type": "object"
       },
       "SymptomCreateRequest": {
@@ -7331,6 +7535,176 @@
         "summary": "Get Patient Trajectory",
         "tags": [
           "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/quality/audit": {
+      "post": {
+        "description": "Executes a retrospective missed-signal quality audit (M10).\n\nAccess Control:\n- Restricted to quality_lead and admin roles.\n- Clinicians, nurse clerks, radiographers, patients, and caregivers are rejected with 403.\n\nPrivacy & Register:\n- Small-cell suppression (k >= 5) on all demographic and clinical breakdown strata.\n- Strictly neutral descriptive register ('signal present, action not recorded').\n- Zero clinician or identifiable patient information returned.\n- Chained AuditEvent recorded for institutional auditability.",
+        "operationId": "run_quality_audit_api_v1_quality_audit_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityAuditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityAuditResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Quality Audit",
+        "tags": [
+          "Quality & Missed-Signal Audit (M10)"
+        ]
+      }
+    },
+    "/api/v1/quality/audit/latest": {
+      "get": {
+        "description": "Retrieves the latest retrospective missed-signal quality audit for the workstation.\n\nAccess Control:\n- Restricted to quality_lead and admin roles.",
+        "operationId": "get_latest_quality_audit_api_v1_quality_audit_latest_get",
+        "parameters": [
+          {
+            "description": "Optional facility identifier",
+            "in": "query",
+            "name": "facility_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional facility identifier",
+              "title": "Facility Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityAuditResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Latest Quality Audit",
+        "tags": [
+          "Quality & Missed-Signal Audit (M10)"
         ]
       }
     },

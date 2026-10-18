@@ -373,8 +373,18 @@ def solve_radiotherapy_schedule(
 
     patient_courses: List[PatientCourse] = []
     course_map: dict[str, RadiotherapyCourse] = {}
+    consent_cache: dict[str, bool] = {}
+    distinct_patients = {c.patient_id for c in courses}
+    unconsented_patients = {
+        c.patient_id
+        for c in courses
+        if not consent_cache.setdefault(
+            c.patient_id, has_active_consent(c.patient_id, db, current_user)
+        )
+    }
+
     for c in courses:
-        course_map[c.patient_id] = c
+        course_map[c.id] = c
         prescribed_dt = (
             c.prescribed_start_date
             if c.prescribed_start_date.tzinfo
@@ -391,6 +401,7 @@ def solve_radiotherapy_schedule(
         patient_courses.append(
             PatientCourse(
                 patient_id=c.patient_id,
+                course_id=c.id,
                 clinical_context=c.clinical_context,
                 fractions_total=c.total_fractions,
                 fractions_completed=c.fractions_delivered,
@@ -419,20 +430,26 @@ def solve_radiotherapy_schedule(
     unassigned: List[str] = []
     delays: List[int] = []
 
-    # Map allocations per patient to find their machine assignment
-    patient_assigned_machine: dict[str, str] = {}
+    # Map allocations per course/patient to find their machine assignment
+    course_assigned_machine: dict[str, str] = {}
     for alloc in result.allocations:
-        if alloc.patient_id not in patient_assigned_machine:
-            patient_assigned_machine[alloc.patient_id] = alloc.machine_id
+        key = alloc.course_id or alloc.patient_id
+        if key not in course_assigned_machine:
+            course_assigned_machine[key] = alloc.machine_id
 
     for pc in patient_courses:
-        start_day = result.patient_start_days.get(pc.patient_id)
+        start_day = (
+            result.course_start_days.get(pc.course_id)
+            if pc.course_id and pc.course_id in result.course_start_days
+            else result.patient_start_days.get(pc.patient_id)
+        )
         if start_day is None:
             unassigned.append(pc.patient_id)
             continue
 
-        assigned_machine_id = patient_assigned_machine.get(
-            pc.patient_id, machine_configs[0].machine_id
+        assigned_machine_id = course_assigned_machine.get(
+            pc.course_id or pc.patient_id,
+            course_assigned_machine.get(pc.patient_id, machine_configs[0].machine_id),
         )
         sched_date = now + timedelta(days=start_day)
         total_delay = pc.elapsed_delay_days + start_day
@@ -442,11 +459,15 @@ def solve_radiotherapy_schedule(
             harm = _HARM_MODEL.compute_harm(pc.clinical_context, total_delay).expected_harm
         except (ValueError, KeyError):
             harm = 0.0
-        explanation = result.marginal_explanations.get(
-            pc.patient_id, f"Scheduled at day {start_day} with harm {harm:.4f}"
+        explanation = (
+            result.marginal_explanations.get(pc.course_id)
+            if pc.course_id and pc.course_id in result.marginal_explanations
+            else result.marginal_explanations.get(
+                pc.patient_id, f"Scheduled at day {start_day} with harm {harm:.4f}"
+            )
         )
 
-        c = course_map[pc.patient_id]
+        c = course_map[pc.course_id or pc.patient_id]
         is_moved = False
         if c.scheduled_start_date:
             cur_sched_dt = (
@@ -485,6 +506,8 @@ def solve_radiotherapy_schedule(
         fairness_disparity=round(result.subgroup_disparity_days, 2),
         assignments=assignments,
         unassigned_patient_ids=unassigned,
+        patients_included=len(distinct_patients),
+        patients_unconsented_included=len(unconsented_patients),
         synthetic=True,
     )
 

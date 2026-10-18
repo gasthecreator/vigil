@@ -35,6 +35,12 @@ export const apiClient = new VigilApiClient({
   userId: "USR-CLINICIAN-01",
 });
 
+export const qualityApiClient = new VigilApiClient({
+  baseUrl: API_BASE,
+  role: "quality_lead",
+  userId: "USR-QL-01",
+});
+
 // Offline Sync Queue Storage
 const OFFLINE_QUEUE_KEY = "vigil_offline_mutations";
 

@@ -63,6 +63,8 @@ jobs:
         run: VIGIL_ACCEPT_P9=1 uv run pytest tests/acceptance_p9 -v
       - name: Run Phase 11 acceptance contract tests
         run: VIGIL_ACCEPT_P11=1 uv run pytest tests/acceptance_p11 -v
+      - name: Run Phase 12 acceptance contract tests
+        run: VIGIL_ACCEPT_P12=1 uv run pytest tests/acceptance_p12 -v
 
 
   frontend-lint-and-build:

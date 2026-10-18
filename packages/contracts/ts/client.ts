@@ -191,4 +191,14 @@ export class VigilApiClient {
   async getPatientDelayNotice(patientId: string): Promise<Types.PatientDelayNoticeResponse> {
     return this.request(`/api/v1/continuity/patients/${patientId}/delay-notice`);
   }
+
+  // Missed-Signal Quality Audit (M10)
+  async runQualityAudit(req: Types.QualityAuditRequest): Promise<Types.QualityAuditResponse> {
+    return this.request("/api/v1/quality/audit", { method: "POST", body: JSON.stringify(req) });
+  }
+
+  async getLatestQualityAudit(facilityId?: string): Promise<Types.QualityAuditResponse> {
+    const qs = facilityId ? `?facility_id=${encodeURIComponent(facilityId)}` : '';
+    return this.request(`/api/v1/quality/audit/latest${qs}`);
+  }
 }

@@ -13,6 +13,7 @@ from vigil_api.api.endpoints import (
     follow_up,
     hl7,
     patients,
+    quality,
     sync,
 )
 
@@ -35,3 +36,6 @@ api_router.include_router(alerts.router, prefix="/alerts", tags=["Alerts & Ackno
 api_router.include_router(follow_up.router, prefix="/follow-up", tags=["Follow-Up Guardian (M6)"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Cryptographic Audit Trail"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics & Cohort"])
+api_router.include_router(
+    quality.router, prefix="/quality", tags=["Quality & Missed-Signal Audit (M10)"]
+)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -368,6 +368,8 @@ class ScheduleSolveResponse(BaseModel):
     fairness_disparity: float
     assignments: List[ScheduleAssignment]
     unassigned_patient_ids: List[str]
+    patients_included: int = 0
+    patients_unconsented_included: int = 0
     synthetic: bool = True
 
 
@@ -398,4 +400,44 @@ class PatientDelayNoticeResponse(BaseModel):
     expected_start_date: Optional[datetime] = None
     plain_language_notice: str
     delay_history: List[DelayLedgerEntryResponse] = []
+    synthetic: bool = True
+
+
+# ==============================================================================
+# 8. Missed-Signal Quality Audit Schemas (M10)
+# ==============================================================================
+
+
+class StratumAuditMetricResponse(BaseModel):
+    stratum_name: str
+    total_signals: Union[int, str]
+    action_not_recorded_count: Union[int, str]
+    action_not_recorded_rate: Optional[float] = None
+    is_suppressed: bool = False
+
+
+class QualityAuditRequest(BaseModel):
+    facility_id: Optional[str] = Field(None, description="Optional facility identifier to filter trajectories")
+    lookback_days: int = Field(365, ge=30, le=3650, description="Lookback window in days for surveillance audit")
+    n_bootstrap: int = Field(1000, ge=100, le=5000, description="Bootstrap iterations for confidence intervals")
+    include_synthetic_benchmark: bool = Field(
+        True, description="Whether to include synthetic benchmark cases if local facility data is small"
+    )
+
+
+class QualityAuditResponse(BaseModel):
+    audit_id: str
+    facility_id: Optional[str] = None
+    total_patients_audited: int
+    total_signals_detected: int
+    total_action_recorded: int
+    total_action_not_recorded: int
+    overall_action_not_recorded_rate: float
+    overall_bootstrap_ci_95: List[float]
+    subgroup_breakdown: Dict[str, StratumAuditMetricResponse]
+    subtype_breakdown: Dict[str, StratumAuditMetricResponse]
+    stage_breakdown: Dict[str, StratumAuditMetricResponse]
+    suppressed_strata_count: int
+    register_audit_verified: bool = True
+    narrative_summary: str
     synthetic: bool = True

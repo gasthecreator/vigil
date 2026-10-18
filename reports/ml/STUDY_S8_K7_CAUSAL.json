@@ -1,0 +1,127 @@
+{
+  "study": "S8-K7",
+  "description": "Causal Inference of Treatment Delay and Recurrence (Target-Trial Emulation)",
+  "pre_registration": "docs/studies/PREREG-S8-K7.md",
+  "timestamp": "2026-10-17T19:05:00Z",
+  "sample_size": 5000,
+  "bootstrap_replications": 1000,
+  "execution_time_seconds": 66.37,
+  "scenario_a_measured_confounding": {
+    "ground_truth_marginal_rr": 1.1436,
+    "estimates": {
+      "naive": {
+        "rr": 1.2396,
+        "ci_95": [
+          1.0998,
+          1.4104
+        ]
+      },
+      "iptw": {
+        "rr": 1.1859,
+        "ci_95": [
+          1.0417,
+          1.3621
+        ]
+      },
+      "gcomp": {
+        "rr": 1.1882,
+        "ci_95": [
+          1.0468,
+          1.3613
+        ]
+      },
+      "aipw": {
+        "rr": 1.1883,
+        "ci_95": [
+          1.0412,
+          1.369
+        ]
+      }
+    },
+    "covariate_balance": {
+      "unweighted_smd": {
+        "subtype_pmrt": 0.0641,
+        "subtype_tnbc": 0.1457,
+        "age": 0.1758,
+        "stage": 0.0067,
+        "travel_distance_km": 0.4756,
+        "breakdown_exposure": 0.2743
+      },
+      "weighted_smd": {
+        "subtype_pmrt": 0.0003,
+        "subtype_tnbc": 0.009,
+        "age": 0.009,
+        "stage": 0.0044,
+        "travel_distance_km": 0.0419,
+        "breakdown_exposure": 0.0008
+      },
+      "max_weighted_smd": 0.0419
+    },
+    "weights_diagnostics": {
+      "mean": 0.994,
+      "min": 0.368,
+      "max": 2.202,
+      "p99": 2.202
+    },
+    "sensitivity_e_values": {
+      "e_value_estimate": 1.6655,
+      "e_value_ci_lower": 1.2483
+    }
+  },
+  "scenario_b_unmeasured_confounding": {
+    "ground_truth_marginal_rr": 1.1247,
+    "estimates": {
+      "naive": {
+        "rr": 1.5085,
+        "ci_95": [
+          1.3609,
+          1.6852
+        ]
+      },
+      "iptw": {
+        "rr": 1.4496,
+        "ci_95": [
+          1.3031,
+          1.6182
+        ]
+      },
+      "aipw": {
+        "rr": 1.4615,
+        "ci_95": [
+          1.3136,
+          1.6321
+        ]
+      }
+    },
+    "sensitivity_e_values": {
+      "e_value_estimate": 2.2828,
+      "e_value_ci_lower": 1.9554
+    }
+  },
+  "hypotheses": {
+    "H1_ground_truth_recovery": {
+      "statement": "AIPW recovers true causal RR within 95% CI and with lower bias than Naive",
+      "true_rr": 1.1436,
+      "aipw_rr": 1.1883,
+      "aipw_ci_95": [
+        1.0412,
+        1.369
+      ],
+      "naive_rr": 1.2396,
+      "verdict": "SUPPORTED"
+    },
+    "H2_covariate_balance": {
+      "statement": "IPTW weighting balances all baseline covariates with maximum SMD < 0.10",
+      "max_weighted_smd": 0.0419,
+      "threshold": 0.1,
+      "verdict": "SUPPORTED"
+    },
+    "H3_unmeasured_confounding_sensitivity": {
+      "statement": "E-value correctly detects the strength of injected unmeasured confounding (>= 2.0)",
+      "observed_e_value": 2.2828,
+      "observed_e_value_ci": 1.9554,
+      "threshold": 2.0,
+      "verdict": "SUPPORTED"
+    }
+  }
+}
