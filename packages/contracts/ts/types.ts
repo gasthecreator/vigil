@@ -354,7 +354,7 @@ export interface PlainLanguageExplainerResponse {
 export interface QualityAuditRequest {
   /** Optional facility identifier to filter trajectories */
   facility_id?: string | null;
-  /** Whether to include synthetic benchmark cases if local facility data is small */
+  /** Run the audit on the built-in SYNTHETIC benchmark cohort only (never mixed with facility data) */
   include_synthetic_benchmark?: boolean;
   /** Lookback window in days for surveillance audit */
   lookback_days?: number;

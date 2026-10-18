@@ -1646,8 +1646,8 @@
             "title": "Facility Id"
           },
           "include_synthetic_benchmark": {
-            "default": true,
-            "description": "Whether to include synthetic benchmark cases if local facility data is small",
+            "default": false,
+            "description": "Run the audit on the built-in SYNTHETIC benchmark cohort only (never mixed with facility data)",
             "title": "Include Synthetic Benchmark",
             "type": "boolean"
           },

@@ -113,9 +113,7 @@ def _extract_trajectories_from_db(
     return trajectories
 
 
-def _build_audit_response(
-    report: AuditReport, facility_id: Optional[str]
-) -> QualityAuditResponse:
+def _build_audit_response(report: AuditReport, facility_id: Optional[str]) -> QualityAuditResponse:
     """Transform an AuditReport dataclass into an API response schema with neutral narrative summary."""
 
     def _convert_breakdown(
@@ -189,22 +187,20 @@ def run_quality_audit(
     - Zero clinician or identifiable patient information returned.
     - Chained AuditEvent recorded for institutional auditability.
     """
-    db_trajectories = _extract_trajectories_from_db(
-        db, facility_id=payload.facility_id, lookback_days=payload.lookback_days
-    )
-
-    # Use facility data if sufficient; augment with benchmark cohort if requested or if DB is small
-    if payload.include_synthetic_benchmark or len(db_trajectories) < 20:
-        synth_cohort = generate_synthetic_audit_cohort(
+    # Facility data and the synthetic benchmark are NEVER mixed: padding a small facility with
+    # fabricated trajectories would produce official-looking quality statistics that are mostly invented.
+    if payload.include_synthetic_benchmark:
+        trajectories = generate_synthetic_audit_cohort(
             n_missed=150,
             n_acted=250,
             n_stable=600,
             inject_small_cell_strata=True,
             seed=20261017,
         )
-        trajectories = db_trajectories + synth_cohort
     else:
-        trajectories = db_trajectories
+        trajectories = _extract_trajectories_from_db(
+            db, facility_id=payload.facility_id, lookback_days=payload.lookback_days
+        )
 
     engine = MissedSignalAuditEngine()
     report = engine.generate_audit_report(trajectories, n_bootstrap=payload.n_bootstrap)
@@ -229,7 +225,12 @@ def run_quality_audit(
     )
     db.commit()
 
-    return _build_audit_response(report, payload.facility_id)
+    response = _build_audit_response(report, payload.facility_id)
+    if payload.include_synthetic_benchmark:
+        response.narrative_summary = (
+            "SYNTHETIC BENCHMARK ONLY - this is not facility data. " + response.narrative_summary
+        )
+    return response
 
 
 @router.get("/audit/latest", response_model=QualityAuditResponse)
