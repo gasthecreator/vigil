@@ -1,0 +1,39 @@
+name: soak-test
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: "Duration for sustained soak testing in seconds"
+        required: false
+        default: "120"
+  schedule:
+    # Run weekly soak tests on Sunday night
+    - cron: "0 2 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soak-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  soak-and-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Run concurrency load test
+        run: uv run python scripts/run_load_test.py --requests 500 --concurrency 10
+      - name: Run sustained soak test
+        run: uv run python scripts/run_soak_test.py --duration ${{ github.event.inputs.duration_seconds || 60 }}
+      - name: Verify load and soak test assertion suite
+        run: uv run pytest tests/resilience/test_load_and_soak.py -v

@@ -183,7 +183,8 @@ def simulate_policy_run(
                 for p in candidate_pool
             ]
 
-            res = scheduler.solve(m_configs, courses, horizon_days=h_win, max_time_in_seconds=0.05)
+            # Realistic solver budget (0.35s per daily rolling-horizon solve)
+            res = scheduler.solve(m_configs, courses, horizon_days=h_win, max_time_in_seconds=0.35)
             status_counts[res.status] = status_counts.get(res.status, 0) + 1
             if res.solver_objective is not None:
                 solver_objs.append(res.solver_objective)
@@ -361,7 +362,7 @@ def _worker_run_rep(args: Tuple[int, float, float]) -> Dict[str, Any]:
     }
 
 
-def execute_study(n_replications: int = 50, sweep_reps: int = 20) -> Dict[str, Any]:  # reality: allow(R1) simulation parameter sweep grid
+def execute_study(n_replications: int = 50, sweep_reps: int = 50) -> Dict[str, Any]:  # reality: allow(R1) simulation parameter sweep grid
     print(f"🏥 Starting Study M7-TWIN ({n_replications} reps baseline, {sweep_reps} reps per sweep cell)...")
     start_time = time.perf_counter()
 
@@ -738,6 +739,6 @@ Per condition P13-A and Reality Rules:
 
 
 if __name__ == "__main__":
-    res = execute_study(n_replications=50, sweep_reps=20)
+    res = execute_study(n_replications=50, sweep_reps=50)
     write_reports(res)
 

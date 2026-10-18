@@ -1,10 +1,10 @@
 # Study M10-V2: Missed-Signal Quality Audit Engine Evaluation
 
-**Study Identifier:** M10-V2  
-**Pre-Registration:** [`docs/studies/PREREG-M10.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/studies/PREREG-M10.md)  
-**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md)  
-**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/adr/0017-quality-audit-consent-and-aggregate-use.md)  
-**Status:** COMPLETE (All 5 Pre-Registered Hypotheses SUPPORTED)  
+**Study Identifier:** M10-V2
+**Pre-Registration:** [`docs/studies/PREREG-M10.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/studies/PREREG-M10.md)
+**Governance:** [`docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/adr/0016-missed-signal-quality-audit-privacy-and-consent.md)
+**Consent Governance:** [`docs/adr/0017-quality-audit-consent-and-aggregate-use.md`](file:///Users/gsanni/.gemini/antigravity/scratch/vigil/docs/adr/0017-quality-audit-consent-and-aggregate-use.md)
+**Status:** COMPLETE (All 5 Pre-Registered Hypotheses SUPPORTED)
 
 ---
 

@@ -43,7 +43,7 @@ def verify_phase_0() -> bool:
         ".gitignore",
         "Makefile",
         "docs/DISCLAIMER.md",
-        "docs/safety/HAZARD-LOG.md",
+        "docs/safety/HAZARD_LOG.md",
         "docs/risk/RISK-REGISTER.md",
         "docs/ops/GITHUB-SETTINGS.md",
         "docs/proposals/PROP-0000-template.md",

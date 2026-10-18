@@ -30,7 +30,7 @@ from vigil_api.auth import create_access_token
 from vigil_api.config import settings
 from vigil_api.database import Base, get_db
 from vigil_api.main import app
-from vigil_api.models.v2 import Facility, Patient, User, UserRole
+from vigil_api.models.v2 import ConsentRecord, Facility, Patient, User, UserRole
 
 
 @pytest.fixture
@@ -57,7 +57,18 @@ def test_env(tmp_path):
         # Seed Patients
         p1 = Patient(id="PAT-SEC-01", facility_id="FAC-SEC-01", mrn="MRN-SEC-01", status="active", age=52)
         p2 = Patient(id="PAT-SEC-02", facility_id="FAC-SEC-01", mrn="MRN-SEC-02", status="active", age=61)
-        session.add_all([p1, p2])
+        p_cons = Patient(id="PAT-SEC-CONSENT", facility_id="FAC-SEC-01", mrn="MRN-SEC-CONSENT", status="active", age=45)
+        session.add_all([p1, p2, p_cons])
+
+        c_cons = ConsentRecord(
+            id="CNS-SEC-CONSENT",
+            patient_id="PAT-SEC-CONSENT",
+            consent_type="surveillance_monitoring",
+            granted=True,
+            granted_at=dt.datetime.now(dt.timezone.utc),
+            scope="clinical_care,caregiver",
+        )
+        session.add(c_cons)
 
         # Seed Users across all roles
         u_clin = User(id="USR-CLIN", username="dr_sec", email="clin@test.org", full_name="Dr Sec", role=UserRole.CLINICIAN.value, facility_id="FAC-SEC-01", hashed_password="mock")
@@ -76,6 +87,7 @@ def test_env(tmp_path):
             "engine": engine,
             "pat1_id": "PAT-SEC-01",
             "pat2_id": "PAT-SEC-02",
+            "pat_consented_id": "PAT-SEC-CONSENT",
         }
     finally:
         settings.REQUIRE_AUTH = orig_require_auth
@@ -85,8 +97,9 @@ def test_env(tmp_path):
 def _auth_header(role: str, patient_id: Optional[str] = None) -> Dict[str, str]:
     if role == "unauthenticated":
         return {}
+    sub = patient_id if (role == "patient" and patient_id) else f"sub_{role}"
     token = create_access_token(
-        subject=f"sub_{role}",
+        subject=sub,
         role=role,
         patient_id=patient_id,
         expires_delta=dt.timedelta(hours=1),
@@ -95,14 +108,99 @@ def _auth_header(role: str, patient_id: Optional[str] = None) -> Dict[str, str]:
 
 
 # ==============================================================================
-# 1. Complete OpenAPI Authorization Matrix
+# 1. Complete OpenAPI Authorization Matrix (Condition P14-D)
 # ==============================================================================
+
+# Complete RBAC policy mapping (method, path) -> set of allowed roles (or "public")
+OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
+    # Public & self-authenticating share routes
+    ("GET", "/"): {"public"},
+    ("GET", "/health"): {"public"},
+    ("GET", "/api/v1/companion/share/{share_token}"): {"public"},
+    ("GET", "/api/v1/companion/share/{share_token}/observations/{obs_id}/explainer"): {"public"},
+    ("POST", "/api/v1/companion/share/{share_token}/disclosure/request-release"): {"public"},
+    ("POST", "/api/v1/companion/share/{share_token}/symptoms"): {"public"},
+
+    # Patient & Caregiver scoped routes
+    ("GET", "/api/v1/patients/{id}"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/patients/{id}/observations"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/patients/{id}/observations/{obs_id}/explainer"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/patients/{id}/risk-history"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/patients/{id}/symptoms"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/patients/{id}/trajectory"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("GET", "/api/v1/continuity/patients/{id}/delay-notice"): {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"},
+    ("POST", "/api/v1/patients/{id}/symptoms"): {"patient", "caregiver", "nurse_clerk", "clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/disclosure/request-release"): {"patient", "caregiver", "clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/second-look"): {"patient", "caregiver", "clinician", "admin"},
+    ("GET", "/api/v1/patients/{id}/shares"): {"patient", "clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/shares"): {"patient", "clinician", "admin"},
+    ("DELETE", "/api/v1/patients/{id}/shares/{share_id}"): {"patient", "clinician", "admin"},
+
+    # Clinical & Administrative operations
+    ("GET", "/api/v1/patients/"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/patients/"): {"clinician", "nurse_clerk", "admin"},
+    ("GET", "/api/v1/patients/triage"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("PATCH", "/api/v1/patients/{id}"): {"clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/baseline"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/patients/{id}/consent"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/patients/{id}/disclosure/lock"): {"clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/disclosure/unlock"): {"clinician", "admin"},
+    ("POST", "/api/v1/patients/{id}/labs"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/patients/{id}/observations"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/patients/{id}/simulate"): {"clinician", "admin"},
+    ("GET", "/api/v1/alerts/"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("GET", "/api/v1/alerts/stream"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/alerts/{alert_id}/acknowledge"): {"clinician", "admin"},
+    ("GET", "/api/v1/fhir/Observation/{id}"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/fhir/Observation"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/hl7/oru-r01"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/observations/batch-import"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/sync/batch"): {"clinician", "nurse_clerk", "admin"},
+    ("GET", "/api/v1/follow-up/outreach"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("GET", "/api/v1/follow-up/reminders/receipts"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/follow-up/reminders/run"): {"clinician", "admin"},
+    ("POST", "/api/v1/follow-up/{task_id}/transition"): {"clinician", "nurse_clerk", "admin"},
+
+    # Quality / Analytics / Audit / Key Rotation
+    ("GET", "/api/v1/analytics/cohort"): {"clinician", "quality_lead", "admin"},
+    ("POST", "/api/v1/analytics/seed-demo-cohort"): {"clinician", "quality_lead", "admin"},
+    ("GET", "/api/v1/quality/audit/latest"): {"clinician", "quality_lead", "admin"},
+    ("POST", "/api/v1/quality/audit"): {"quality_lead", "admin"},
+    ("GET", "/api/v1/audit/events"): {"quality_lead", "admin"},
+    ("GET", "/api/v1/audit/verify"): {"quality_lead", "admin", "clinician"},
+    ("POST", "/api/v1/patients/rotate-keys"): {"admin"},
+
+    # Treatment Continuity (M7)
+    ("GET", "/api/v1/continuity/courses"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/continuity/courses"): {"clinician", "admin"},
+    ("GET", "/api/v1/continuity/ledger"): {"clinician", "quality_lead", "admin"},
+    ("GET", "/api/v1/continuity/machines"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
+    ("POST", "/api/v1/continuity/machines/{id}/status"): {"clinician", "admin"},
+    ("POST", "/api/v1/continuity/schedule/solve"): {"clinician", "quality_lead", "admin"},
+    ("POST", "/api/v1/continuity/schedule/confirm"): {"clinician", "admin"},
+}
 
 
 def test_openapi_authorization_matrix(test_env):
-    """Tests all canonical routes across all 8 security roles to verify least privilege."""
+    """Dynamically enumerates every route in the live OpenAPI schema, verifies comprehensive policy coverage, and enforces least privilege."""
     client: TestClient = test_env["client"]
     p1 = test_env["pat1_id"]
+
+    # 1. Enumerate live OpenAPI schema
+    openapi_routes: Set[Tuple[str, str]] = set()
+    for path, ops in app.openapi()["paths"].items():
+        for m in ops:
+            if m.lower() in ("get", "post", "put", "patch", "delete"):
+                openapi_routes.add((m.upper(), path))
+
+    assert len(openapi_routes) >= 50, f"Suspiciously few OpenAPI routes enumerated: {len(openapi_routes)}"
+
+    # 2. Assert exact bidirectional parity with OPENAPI_RBAC_POLICY
+    missing_policies = openapi_routes - set(OPENAPI_RBAC_POLICY.keys())
+    assert not missing_policies, f"OpenAPI routes missing authorization policy in OPENAPI_RBAC_POLICY: {missing_policies}"
+
+    extra_policies = set(OPENAPI_RBAC_POLICY.keys()) - openapi_routes
+    assert not extra_policies, f"OPENAPI_RBAC_POLICY contains dead routes not in OpenAPI: {extra_policies}"
 
     roles = [
         "clinician",
@@ -115,30 +213,53 @@ def test_openapi_authorization_matrix(test_env):
         "attacker",
     ]
 
-    # Matrix: (method, path, body, allowed_roles)
-    endpoints = [
-        ("GET", "/api/v1/patients/", None, {"clinician", "nurse_clerk", "quality_lead", "admin"}),
-        ("GET", f"/api/v1/patients/{p1}", None, {"clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"}),
-        ("POST", "/api/v1/quality/audit", {"facility_id": "FAC-SEC-01", "include_synthetic_benchmark": False}, {"quality_lead", "admin"}),
-        ("GET", "/api/v1/audit/events", None, {"quality_lead", "admin", "clinician"}),
-        ("POST", "/api/v1/continuity/courses", {"patient_id": p1, "clinical_context": "curative_tnbc", "total_fractions": 25}, {"clinician", "admin"}),
-        ("POST", "/api/v1/continuity/schedule/solve", {"horizon_days": 14, "fairness_disparity_bound": 5.0, "max_wait_days": 30}, {"clinician", "admin", "quality_lead"}),
+    p_cons = test_env["pat_consented_id"]
+
+    # Sample test representative subset across all route categories to verify RBAC enforcement
+    test_endpoints = [
+        ("GET", "/api/v1/patients/"),
+        ("GET", f"/api/v1/patients/{p_cons}"),
+        ("GET", f"/api/v1/patients/{p_cons}/trajectory"),
+        ("POST", f"/api/v1/patients/{p_cons}/simulate"),
+        ("GET", "/api/v1/analytics/cohort"),
+        ("POST", "/api/v1/quality/audit"),
+        ("GET", "/api/v1/audit/events"),
+        ("POST", "/api/v1/continuity/courses"),
+        ("POST", "/api/v1/continuity/schedule/solve"),
+        ("POST", "/api/v1/patients/rotate-keys"),
+        ("GET", "/health"),
     ]
 
-    for method, path, body, allowed in endpoints:
+    for method, path in test_endpoints:
+        # Match template key
+        template_key = path
+        if p_cons in path:
+            template_key = path.replace(p_cons, "{id}")
+        allowed = OPENAPI_RBAC_POLICY.get((method, template_key), set())
+
         for role in roles:
-            headers = _auth_header(role, patient_id=p1 if role in ("patient", "caregiver") else None)
+            headers = _auth_header(role, patient_id=p_cons if role in ("patient", "caregiver") else None)
             if method == "GET":
                 resp = client.get(path, headers=headers)
+            elif method == "DELETE":
+                resp = client.delete(path, headers=headers)
+            elif method == "PATCH":
+                resp = client.patch(path, json={}, headers=headers)
             else:
-                resp = client.post(path, json=body, headers=headers)
+                resp = client.post(path, json={}, headers=headers)
 
-            if role == "unauthenticated":
+            if "public" in allowed:
+                # Public routes succeed for all callers
+                assert resp.status_code not in (401, 403), f"Public route {method} {path} rejected role {role} with {resp.status_code}"
+            elif role == "unauthenticated":
                 assert resp.status_code in (401, 403), f"Unauthenticated request to {method} {path} returned {resp.status_code}"
             elif role == "attacker":
                 assert resp.status_code in (401, 403), f"Attacker role on {method} {path} returned {resp.status_code}"
             elif role not in allowed:
                 assert resp.status_code in (401, 403), f"Role '{role}' unexpectedly allowed on {method} {path} (got {resp.status_code})"
+            else:
+                # Allowed roles must not be denied with 401 or 403
+                assert resp.status_code not in (401, 403), f"Allowed role '{role}' denied on {method} {path} (got {resp.status_code})"
 
 
 # ==============================================================================
@@ -413,3 +534,51 @@ def test_error_message_leakage_and_stack_trace_hygiene(test_env):
         body_str = resp.text
         for forbidden in forbidden_substrings:
             assert forbidden not in body_str, f"Sensitive error leakage detected on {method} {path}! Found: '{forbidden}'"
+
+
+# ==============================================================================
+# 8. Cross-Patient Isolation & Role/Consent Combinations over HTTP (Condition P14-D)
+# ==============================================================================
+
+
+def test_role_consent_and_tenant_combinations(test_env):
+    """Verifies cross-patient multi-tenant isolation and HTTP-level consent gating combinations."""
+    client: TestClient = test_env["client"]
+    p_cons = test_env["pat_consented_id"]
+    p2 = test_env["pat2_id"]
+
+    # 1. Patient 1 token accessing Patient 2 record -> 403 Forbidden
+    h_pat1 = _auth_header("patient", patient_id=p_cons)
+    r_cross_pat = client.get(f"/api/v1/patients/{p2}", headers=h_pat1)
+    assert r_cross_pat.status_code == 403, f"Cross-patient access allowed: {r_cross_pat.status_code}"
+
+    r_cross_obs = client.get(f"/api/v1/patients/{p2}/observations", headers=h_pat1)
+    assert r_cross_obs.status_code == 403, f"Cross-patient observation read allowed: {r_cross_obs.status_code}"
+
+    # 2. Caregiver token accessing non-delegated patient -> 403 Forbidden
+    h_cg = _auth_header("caregiver", patient_id=p_cons)
+    r_cg_cross = client.get(f"/api/v1/patients/{p2}/trajectory", headers=h_cg)
+    assert r_cg_cross.status_code == 403, f"Caregiver cross-patient read allowed: {r_cg_cross.status_code}"
+
+    # 3. Patient revokes consent over HTTP -> immediate 403 block for clinician
+    h_clin = _auth_header("clinician")
+    r_revoke = client.post(
+        f"/api/v1/patients/{p_cons}/consent",
+        json={"scope": "clinical_care", "granted": False},
+        headers=h_clin,
+    )
+    assert r_revoke.status_code == 201
+
+    r_blocked = client.get(f"/api/v1/patients/{p_cons}/trajectory", headers=h_clin)
+    assert r_blocked.status_code == 403, f"Expected 403 after revocation, got {r_blocked.status_code}"
+
+    # 4. Re-grant restores access over HTTP
+    r_regrant = client.post(
+        f"/api/v1/patients/{p_cons}/consent",
+        json={"scope": "clinical_care,caregiver", "granted": True},
+        headers=h_clin,
+    )
+    assert r_regrant.status_code == 201
+
+    r_restored = client.get(f"/api/v1/patients/{p_cons}/trajectory", headers=h_clin)
+    assert r_restored.status_code == 200, f"Expected 200 after regrant, got {r_restored.status_code}"

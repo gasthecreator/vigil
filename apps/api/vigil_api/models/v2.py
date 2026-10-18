@@ -454,7 +454,13 @@ def calculate_audit_hash(
         ts_utc = timestamp if timestamp.tzinfo else timestamp.replace(tzinfo=timezone.utc)
         ts_str = ts_utc.astimezone(timezone.utc).isoformat()
     else:
-        ts_str = str(timestamp)
+        try:
+            s = str(timestamp).replace(" ", "T")
+            dt = datetime.fromisoformat(s)
+            ts_utc = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            ts_str = ts_utc.astimezone(timezone.utc).isoformat()
+        except Exception:
+            ts_str = str(timestamp)
 
     payload = {
         "prev_hash": prev_hash,

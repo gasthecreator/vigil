@@ -1,0 +1,92 @@
+{
+  "test_name": "Vigil API Concurrency Load Test",
+  "timestamp_utc": "2026-10-18T04:52:15Z",
+  "total_requests": 150,
+  "concurrency": 5,
+  "total_duration_seconds": 0.65,
+  "throughput_req_per_sec": 232.1,
+  "error_rate_percent": 0.0,
+  "budgets": {
+    "p95_latency_ms": {
+      "measured": 41.04,
+      "budget": 200.0,
+      "status": "PASS"
+    },
+    "error_rate_percent": {
+      "measured": 0.0,
+      "budget": 0.1,
+      "status": "PASS"
+    }
+  },
+  "overall_latency": {
+    "count": 150,
+    "p50_ms": 15.32,
+    "p90_ms": 38.05,
+    "p95_ms": 41.04,
+    "p99_ms": 43.38,
+    "mean_ms": 21.38,
+    "max_ms": 48.23
+  },
+  "endpoints": {
+    "/health": {
+      "count": 30,
+      "p50_ms": 8.03,
+      "p90_ms": 9.25,
+      "p95_ms": 9.77,
+      "p99_ms": 10.72,
+      "mean_ms": 8.05,
+      "max_ms": 11.02,
+      "status_codes": {
+        "200": 30
+      }
+    },
+    "/api/v1/patients/": {
+      "count": 30,
+      "p50_ms": 30.1,
+      "p90_ms": 34.97,
+      "p95_ms": 35.32,
+      "p99_ms": 35.85,
+      "mean_ms": 30.91,
+      "max_ms": 36.02,
+      "status_codes": {
+        "200": 30
+      }
+    },
+    "/api/v1/patients/triage": {
+      "count": 30,
+      "p50_ms": 38.07,
+      "p90_ms": 41.91,
+      "p95_ms": 43.46,
+      "p99_ms": 47.11,
+      "mean_ms": 38.37,
+      "max_ms": 48.23,
+      "status_codes": {
+        "200": 30
+      }
+    },
+    "/api/v1/continuity/courses": {
+      "count": 30,
+      "p50_ms": 14.18,
+      "p90_ms": 16.21,
+      "p95_ms": 17.09,
+      "p99_ms": 29.41,
+      "mean_ms": 14.87,
+      "max_ms": 34.28,
+      "status_codes": {
+        "200": 30
+      }
+    },
+    "/api/v1/continuity/machines": {
+      "count": 30,
+      "p50_ms": 14.16,
+      "p90_ms": 16.91,
+      "p95_ms": 17.7,
+      "p99_ms": 28.52,
+      "mean_ms": 14.71,
+      "max_ms": 32.81,
+      "status_codes": {
+        "200": 30
+      }
+    }
+  }
+}

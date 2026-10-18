@@ -75,6 +75,20 @@ def verify_patient_consent(
         )
 
     # 3. Role-specific authorization checks
+    valid_roles = {
+        UserRole.CLINICIAN.value,
+        UserRole.NURSE_CLERK.value,
+        UserRole.QUALITY_LEAD.value,
+        UserRole.ADMIN.value,
+        UserRole.PATIENT.value,
+        UserRole.CAREGIVER.value,
+    }
+    if user.role not in valid_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: role '{user.role}' is not authorized to access patient records.",
+        )
+
     if user.role == UserRole.PATIENT.value:
         # Patient can only access their own record
         is_own = (

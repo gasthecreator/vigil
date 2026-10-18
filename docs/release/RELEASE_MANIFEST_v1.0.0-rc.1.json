@@ -1,0 +1,124 @@
+{
+  "release": "v1.0.0-rc.1",
+  "description": "Vigil Precision Oncology CDSS - Release Candidate 1",
+  "timestamp": "2026-10-18T04:54:24.179309+00:00",
+  "git_commit": "970929535292af8d2433cadf748677fc8a812e7b",
+  "artifact_count": 23,
+  "artifacts": [
+    {
+      "path": "docs/safety/HAZARD_LOG.md",
+      "sha256": "dd7b1ae4ec28a327d5377ac8f2ed1aca5e44210b154f9f9535e3a28ea408c77b",
+      "size_bytes": 13249
+    },
+    {
+      "path": "docs/security/THREAT_MODEL.md",
+      "sha256": "70f9e0e8708d1fe82921681bcdcef32560e4613324ac9d259856f00da772aaea",
+      "size_bytes": 13999
+    },
+    {
+      "path": "docs/security/VULNERABILITY_POLICY.md",
+      "sha256": "365ae05e823acb71d0b5246bd4239c7ed57652d2a6e387249d34fba00095308f",
+      "size_bytes": 2854
+    },
+    {
+      "path": "docs/regulatory/INTENDED_USE.md",
+      "sha256": "458aa56db9defeac7215524f5a5f85e0cfe1f228a03c438b472804e0f4a2c9e1",
+      "size_bytes": 4767
+    },
+    {
+      "path": "docs/regulatory/DPIA.md",
+      "sha256": "4cb70a581d57a1e1af4921e63a2cf322f01b6f624930d9e11f6eb1d94cd67c62",
+      "size_bytes": 6466
+    },
+    {
+      "path": "docs/regulatory/PCCP.md",
+      "sha256": "e0e5f48ac4c079d967c0fb03d7827fc9c5c9c237d00a71818bd929b918b12811",
+      "size_bytes": 4836
+    },
+    {
+      "path": "docs/regulatory/CLINICAL_EVALUATION_PLAN.md",
+      "sha256": "8b6056626a5da30369cff5947245b5c758364315442a6d6421a2abb06dfc770e",
+      "size_bytes": 4849
+    },
+    {
+      "path": "docs/regulatory/RISK_MANAGEMENT_FILE.md",
+      "sha256": "2954f6a7ac11905edb6ce788d79511024361f8a5a757f9b6f492c3d9a1a43543",
+      "size_bytes": 8398
+    },
+    {
+      "path": "docs/studies/PREREG-M7-TWIN.md",
+      "sha256": "de53e33e8d45fd66e782678fb5f5c73ba2beb00947241bd9b64d507b1b433ea7",
+      "size_bytes": 7643
+    },
+    {
+      "path": "docs/studies/PREREG-S8-K7.md",
+      "sha256": "c15579f7b12843bbe9019b6c0f6548eecbd8b645bf6658d84c4a016a011cd318",
+      "size_bytes": 6186
+    },
+    {
+      "path": "docs/studies/PREREG-M10.md",
+      "sha256": "0e05e289a2a2823eb733e7d1678c9c25bf33a47341e304d6d05ccc250536e633",
+      "size_bytes": 5147
+    },
+    {
+      "path": "docs/usability/HEURISTIC_EVALUATION.md",
+      "sha256": "9f00f9015189d6d5bd0dc5759e3e8fe2f647757015c43aac9bbf807f6240d4c8",
+      "size_bytes": 8223
+    },
+    {
+      "path": "docs/usability/COGNITIVE_WALKTHROUGHS.md",
+      "sha256": "31f739859dcbf4bc3bc3ea50f523a4bec2a2957d90555e372ed3abb68a2d4b32",
+      "size_bytes": 9424
+    },
+    {
+      "path": "docs/usability/USABILITY_TEST_PROTOCOL.md",
+      "sha256": "8c0d3758793455c451779a794689186283561dd127f4b1e00f05df9823553716",
+      "size_bytes": 6102
+    },
+    {
+      "path": "docs/deployment/ON_PREM_INSTALL.md",
+      "sha256": "16aaa54d938eceaf640dca937e997a33e3c1d5d5fa08c4475160dfdf1efd4858",
+      "size_bytes": 6806
+    },
+    {
+      "path": "docs/resilience/DISASTER_RECOVERY.md",
+      "sha256": "f5a0b070075c5477eea5431d8963fe0c94524b880e13557bedab7d3e34dabe3d",
+      "size_bytes": 4680
+    },
+    {
+      "path": "reports/sbom/sbom-python.cdx.json",
+      "sha256": "42d1cac108118c524199780e8ab1987e688931ac066f2c339f41c3282acd9ecf",
+      "size_bytes": 37634
+    },
+    {
+      "path": "reports/sbom/sbom-npm.cdx.json",
+      "sha256": "c5a23f4ac9c68c90fd312e5d880ffb9445d028ae063cac6ac589ecf92a2f4aee",
+      "size_bytes": 109364
+    },
+    {
+      "path": "reports/load/LOAD_TEST_RESULTS.json",
+      "sha256": "dd1dcebfe4c8b1f90f96ad378aadbaba749f1c38601c0206adc14b5b3aaf00fd",
+      "size_bytes": 1873
+    },
+    {
+      "path": "reports/load/SOAK_TEST_RESULTS.json",
+      "sha256": "2192d058d5a01185752b000836d6e3ed5b5071c8f8958c424a9f69b2f230b242",
+      "size_bytes": 1223
+    },
+    {
+      "path": "reports/ml/STUDY_S8_K7_CAUSAL.json",
+      "sha256": "fb711592d0c0a86531fe020602d20a7fc6c746de9676030e6097c5ace4a46391",
+      "size_bytes": 3405
+    },
+    {
+      "path": "reports/ml/STUDY_M10_MISSED_SIGNALS.json",
+      "sha256": "f3ca2e225f2d1f478866de6bca3a7abe640af7bdc9e8b505b5099747a806c86e",
+      "size_bytes": 3113
+    },
+    {
+      "path": "reports/ml/STUDY_M7_DIGITAL_TWIN.json",
+      "sha256": "dffe93498d6e7519b15cd5d3e621df6205021bc41611d71708ad2b4571c88fa6",
+      "size_bytes": 17874
+    }
+  ]
+}

@@ -141,10 +141,10 @@ def check_mandatory_artifacts(root: Path) -> list[str]:
         if "research prototype and decision-support aid" not in text:
             errors.append("docs/DISCLAIMER.md does not contain required disclaimer text per §11.1")
 
-    hazard_log = root / "docs" / "safety" / "HAZARD-LOG.md"
+    hazard_log = root / "docs" / "safety" / "HAZARD_LOG.md"
     if not hazard_log.exists():
         errors.append(
-            "docs/safety/HAZARD-LOG.md is missing (Mandatory safety hazard log per §11.2)"
+            "docs/safety/HAZARD_LOG.md is missing (Mandatory safety hazard log per §11.2)"
         )
 
     return errors
