@@ -53,7 +53,7 @@ def main() -> int:
         print("Seeded failure: make reproduce / scripts/reproduce.py --seed-fail")
         return 1
 
-    steps = [
+    steps: list[tuple[list[str], str]] = [
         (
             [sys.executable, str(ROOT / "scripts" / "verify_study_reproducibility.py")],
             "Study report regeneration + bit-diff (verify_study_reproducibility)",
@@ -66,26 +66,6 @@ def main() -> int:
             [sys.executable, str(ROOT / "scripts" / "generate_sbom.py")],
             "Regenerate SBOM JSON under reports/sbom/",
         ),
-        (
-            [
-                sys.executable,
-                str(ROOT / "scripts" / "generate_release_manifest.py"),
-                "generate",
-                "--release",
-                "v1.0.0-rc.2",
-            ],
-            "Regenerate release hash manifest (v1.0.0-rc.2)",
-        ),
-        (
-            [
-                sys.executable,
-                str(ROOT / "scripts" / "generate_release_manifest.py"),
-                "verify",
-                "--release",
-                "v1.0.0-rc.2",
-            ],
-            "Verify release hash manifest (v1.0.0-rc.2)",
-        ),
     ]
 
     ok = True
@@ -95,6 +75,41 @@ def main() -> int:
         results.append({"label": label, "command": cmd, "ok": passed})
         if not passed:
             ok = False
+
+    # SBOM must match what is committed (no silent drift after lockfile changes).
+    sbom_diff = subprocess.run(
+        ["git", "diff", "--exit-code", "--", "reports/sbom/"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    sbom_ok = sbom_diff.returncode == 0
+    results.append(
+        {
+            "label": "Committed SBOM matches regeneration",
+            "command": ["git", "diff", "--exit-code", "--", "reports/sbom/"],
+            "ok": sbom_ok,
+        }
+    )
+    if sbom_ok:
+        print("✅ Committed SBOM matches regeneration")
+    else:
+        print("❌ reports/sbom/ drifted after generate_sbom.py — commit the refreshed files")
+        print(sbom_diff.stdout[:2000])
+        ok = False
+
+    # Verify committed release hashes (does not rewrite the manifest; refuses dirty listed files).
+    verify_cmd = [
+        sys.executable,
+        str(ROOT / "scripts" / "generate_release_manifest.py"),
+        "verify",
+        "--release",
+        "v1.0.0-rc.2",
+    ]
+    verify_ok = _run(verify_cmd, label="Verify release hash manifest (v1.0.0-rc.2)")
+    results.append({"label": "Verify release hash manifest (v1.0.0-rc.2)", "command": verify_cmd, "ok": verify_ok})
+    if not verify_ok:
+        ok = False
 
     payload = {
         "ok": ok,
