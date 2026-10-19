@@ -23,3 +23,20 @@ H10 (RT inequity/error) and H16 (over-trust in harm model) remain open per ADR-0
 
 ## 4. Package layout
 Scheduler code remains in `vigil-ml` (not `packages/vigil-opt`); see ADR-0031.
+
+<!-- measured:start -->
+## Measured results (script-written)
+
+Source: `reports/ml/STUDY_M7_DIGITAL_TWIN.json` (pre-registered `docs/studies/PREREG-M7-TWIN.md`; 50 simulated replications; synthetic department, 2 linacs). Simulation only: no clinical data.
+
+| Arm | Mean harm | Mean wait (days) | Subgroup disparity (days) |
+|---|---|---|---|
+| cpsat | 0.07935 | 7.09 | 1.25 |
+| urgency_heuristic | 0.0188 | 13.11 | 1.82 |
+| fcfs | 0.02128 | 12.72 | 1.0 |
+| greedy_proxy | 0.01674 | n/a | n/a |
+
+- H1 (CP-SAT lower harm than FCFS): **REFUTED** (mean difference -0.05807, 95% CI [-0.06892, -0.0478]).
+- H2 (CP-SAT vs urgency heuristic): **URGENCY_ACHIEVES_LOWER_RAW_HARM** (mean difference -0.06055).
+- Consequence: CP-SAT is research-only; the shipped default is the explainable urgency ranking.
+<!-- measured:end -->

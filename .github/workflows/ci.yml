@@ -69,8 +69,20 @@ jobs:
           fi
       - name: README version claims
         run: uv run python scripts/check_readme_version_claims.py
-      - name: Licence inventory + NOTICE
-        run: uv run python scripts/generate_licence_inventory.py
+      - name: Licence inventory + NOTICE are fresh and policy-clean
+        run: uv run python scripts/generate_licence_inventory.py --check
+      - name: Generated docs are fresh (API reference, indexes)
+        run: |
+          uv run python scripts/generate_api_reference.py --check
+          uv run python scripts/generate_docs_indexes.py --check
+          uv run python scripts/generate_card_metrics.py --check
+      - name: Seed-fail generated docs (must exit non-zero)
+        run: |
+          for s in generate_api_reference generate_docs_indexes generate_card_metrics; do
+            if uv run python "scripts/${s}.py" --seed-fail >/dev/null 2>&1; then
+              echo "::error::${s} --seed-fail unexpectedly passed"; exit 1
+            fi
+          done
       - name: MkDocs Material build
         run: uv run --group docs mkdocs build --config-file mkdocs.yml
       - name: Docs link check

@@ -47,21 +47,16 @@ nav:
       - Install (on-prem): deployment/ON_PREM_INSTALL.md
       - Disclaimer: DISCLAIMER.md
   - How-to:
-      - SLOs: operations/SLOS.md
+      - Runbooks: diataxis/runbooks.md
+      - SLOs and alerts: operations/SLOS.md
       - Backup & restore: runbooks/BACKUP_AND_RESTORE.md
-      - Restore: runbooks/RESTORE.md
-      - Audit chain break: runbooks/AUDIT_CHAIN_BREAK.md
-      - Queue backlog: runbooks/QUEUE_BACKLOG.md
-      - Silent-mode leak: runbooks/SILENT_MODE_LEAK.md
-      - Consent gate: runbooks/CONSENT_GATE_FAILURE.md
-      - Migration rollback: runbooks/MIGRATION_ROLLBACK.md
   - Reference:
-      - API (OpenAPI): api/openapi.md
+      - API reference: api/reference.md
+      - ADRs: diataxis/adrs.md
+      - Model cards: diataxis/model-cards.md
+      - Dataset cards: diataxis/dataset-cards.md
       - Progress ledger: PROGRESS.md
       - STATUS: STATUS.md
-      - ADR-0001 layout: adr/0001-monorepo-layout.md
-      - ADR-0031 worker/opt: adr/0031-worker-and-vigil-opt-layout.md
-      - Model cards: models/MODEL-CARD-M5.md
   - Explanation:
       - Reality rules: REALITY_RULES.md
       - Evidence: EVIDENCE.md

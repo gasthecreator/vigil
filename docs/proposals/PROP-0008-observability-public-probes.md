@@ -1,6 +1,6 @@
-# PROP-0007: Extend acceptance P14 public allowlist for G-09 probes
+# PROP-0008: Extend acceptance P14 public allowlist for G-09 probes
 
-**Status:** OPEN (acceptance tests are overseer-owned; executor must not edit them)  
+**Status:** RESOLVED by the overseer in PR #75 (renumbered from a duplicate PROP-0007). `/live` and `/ready` are public and in the OpenAPI schema (added to `PUBLIC_EXACT`); `/metrics` is **not** public: it needs `VIGIL_METRICS_TOKEN` as a bearer token and returns 403 when unset, so `acceptance_p14` still requires it to reject unauthenticated calls.  
 **Related:** G-09, `tests/acceptance_p14/test_p14_contract.py`, PROMPT-P16 PR3
 
 ## Problem

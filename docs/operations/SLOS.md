@@ -26,13 +26,25 @@
 | Consent gate | Zero successful patient-scoped reads without active consent (security suite) | [`runbooks/CONSENT_GATE_FAILURE.md`](../runbooks/CONSENT_GATE_FAILURE.md) |
 | Migration rollback | Failed Alembic upgrade leaves DB restorable to prior revision | [`runbooks/MIGRATION_ROLLBACK.md`](../runbooks/MIGRATION_ROLLBACK.md) |
 
+## How each SLO is verified
+
+| Objective | Verified by | Alert rule |
+|---|---|---|
+| API ready, error rate, latency | Prometheus metrics + blackbox probe | [`infra/prometheus/alerts.yml`](../../infra/prometheus/alerts.yml) (`VigilApiNotReady`, `VigilApiHighErrorRate`, `VigilApiSlowRequests`) |
+| Audit chain unbroken | Scheduled `verify_audit_chain` run by the operator (no metric yet) | None: run on a schedule and page on non-zero exit |
+| Outbox backlog | Worker logs; **no honest gauge exists** (pending follow-up tasks legitimately stay pending for days) | None |
+| Silent-mode leak, consent gate | Security / acceptance suites in CI (`acceptance_p11`, `acceptance_p15`) | None: these are test-time invariants, not runtime metrics |
+| Migration rollback | Postgres migration job in CI | None |
+
+Only the first row is alerting today. The other rows are stated as objectives with a runbook, not as monitored SLIs; turning them into metrics is future work and is not claimed here.
+
 ## Probes
 
-| Endpoint | OpenAPI | Purpose |
+| Endpoint | Access | Purpose |
 |---|---|---|
-| `GET /live` | excluded until PROP-0007 | Liveness (process up) |
-| `GET /ready` | excluded until PROP-0007 | Readiness (DB reachable) |
+| `GET /live` | public | Liveness (process up); no dependency detail |
+| `GET /ready` | public | Readiness (DB reachable); 503 with `{"status":"not_ready","database":"unavailable"}` and no error detail |
 | `GET /health` | public | Compatibility probe (ML status + DB claim) |
-| `GET /metrics` | excluded until PROP-0007 | Prometheus text exposition |
+| `GET /metrics` | bearer token (`VIGIL_METRICS_TOKEN`); 403 when unset | Prometheus text exposition |
 
 OpenTelemetry: set `VIGIL_OTEL_ENABLED=true` (optional `OTEL_EXPORTER_OTLP_ENDPOINT`). Default is **off**.

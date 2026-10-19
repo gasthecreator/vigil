@@ -22,7 +22,7 @@ if os.environ.get("VIGIL_ACCEPT_P14") != "1":
 ROOT = Path(__file__).resolve().parents[2]
 
 # Public by design: liveness/landing, and bearer-token (share link) routes that authenticate themselves.
-PUBLIC_EXACT = {"/", "/health"}
+PUBLIC_EXACT = {"/", "/health", "/live", "/ready"}  # /metrics is token-gated, so it must reject unauthenticated calls
 PUBLIC_PREFIXES = ("/api/v1/companion/share/",)
 
 CODE = """

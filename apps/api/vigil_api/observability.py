@@ -45,7 +45,7 @@ def check_database() -> dict[str, Any]:
         return {"database": "ok"}
     except Exception as exc:  # noqa: BLE001 — readiness must not raise
         logger.warning("readiness database check failed: %s", exc)
-        return {"database": "unavailable", "detail": type(exc).__name__}
+        return {"database": "unavailable"}
 
 
 def readiness_body() -> tuple[dict[str, Any], int]:

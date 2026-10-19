@@ -1,5 +1,6 @@
 """Vigil FastAPI Application Entrypoint."""
 
+import hmac
 import json
 import logging
 import os
@@ -125,14 +126,14 @@ def health_check():
     }
 
 
-# G-09 probes/metrics: include_in_schema=False until acceptance_p14 PUBLIC_EXACT is extended
-# (docs/proposals/PROP-0007-observability-public-probes.md). Endpoints are live and scrapable.
-@app.get("/live", include_in_schema=False)
+# G-09 probes/metrics. /live and /ready are public and minimal (no dependency detail beyond ok/unavailable).
+# /metrics is bearer-token gated (VIGIL_METRICS_TOKEN) in every profile; with no token it is disabled (403).
+@app.get("/live")
 def live():
     return liveness_body()
 
 
-@app.get("/ready", include_in_schema=False)
+@app.get("/ready")
 def ready():
     body, status_code = readiness_body()
     return Response(
@@ -142,8 +143,14 @@ def ready():
     )
 
 
-@app.get("/metrics", include_in_schema=False)
-def metrics():
+@app.get("/metrics")
+def metrics(request: Request):
+    token = settings.METRICS_TOKEN
+    if not token:
+        return Response(status_code=403)  # disabled until the operator sets VIGIL_METRICS_TOKEN
+    supplied = request.headers.get("authorization", "")
+    if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
+        return Response(status_code=401, headers={"WWW-Authenticate": "Bearer"})
     body, content_type = metrics_payload()
     return Response(content=body, media_type=content_type)
 

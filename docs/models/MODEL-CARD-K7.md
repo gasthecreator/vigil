@@ -22,3 +22,13 @@ IPTW / AIPW (and related) estimators over a synthetic causal cohort generator wi
 
 ## 4. Evaluation
 See committed `reports/ml/STUDY_S8_K7_CAUSAL.json` and phase reports for S8. Numbers are **synthetic**.
+
+<!-- measured:start -->
+## Measured results (script-written)
+
+Source: `reports/ml/STUDY_S8_K7_CAUSAL.json` (pre-registered `docs/studies/PREREG-S8-K7.md`; n = 5000 synthetic, 1000 bootstrap replications).
+
+- Measured confounding: true RR 1.1436; AIPW 1.1883 (95% CI [1.0412, 1.369]), naive 1.2396: **SUPPORTED**. Max weighted SMD 0.0419 (threshold 0.1): **SUPPORTED**.
+- Unmeasured confounding: true RR 1.1247; naive 1.5085, IPTW 1.4496, AIPW 1.4615 (95% CI [1.3136, 1.6321]). **All estimators are biased; adjustment does not rescue unmeasured confounding.** E-value 2.2828 (CI bound 1.9554) only quantifies how strong a confounder would need to be.
+- The module outputs sensitivity analysis, not a causal claim, on real data.
+<!-- measured:end -->

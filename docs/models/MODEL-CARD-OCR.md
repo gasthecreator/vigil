@@ -19,3 +19,20 @@ Parse uploaded lab-report images/PDFs into a **draft** the clinician/clerk must 
 
 ## 3. Evaluation
 `experiments/EXP-OCR-001/` — synthetic; not a clinical accuracy claim.
+
+<!-- measured:start -->
+## Measured results (script-written)
+
+Source: `experiments/EXP-OCR-001/results.json` (synthetic lab reports, n = 40, Tesseract; kill rule fired: False).
+
+| Condition | Exact-match rate |
+|---|---|
+| clean_png | 1.000 |
+| jpeg | 1.000 |
+| pdf | 1.000 |
+| rotate | 0.975 |
+| speckle | 0.825 |
+
+- Pre-registered criteria: H1_pdf_exact_ge_0.95: met, H2_clean_image_ge_0.80: met, H3_noisy_image_ge_0.50: met.
+- Synthetic, rendered text only: real scans, handwriting and other layouts are untested. The human confirm gate stays mandatory whatever these rates are.
+<!-- measured:end -->

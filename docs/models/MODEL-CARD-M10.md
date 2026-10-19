@@ -17,3 +17,21 @@ Consent-gated aggregate use; raw patient export paths must remain closed (accept
 
 ## 3. Limitations
 Partner real-world performance unknown until Phase 9. Reproduction via `make reproduce` / study verify scripts.
+
+<!-- measured:start -->
+## Measured results (script-written)
+
+Source: `reports/ml/STUDY_M10_MISSED_SIGNALS.json` (pre-registered `docs/studies/PREREG-M10.md`; synthetic facilities with injected ground truth).
+
+| Hypothesis | Status |
+|---|---|
+| H1_sensitivity_precision | SUPPORTED |
+| H2_delay_accuracy | SUPPORTED |
+| H3_specificity_and_benign_spikes | SUPPORTED |
+| H4_pipeline_only_decoupling | SUPPORTED |
+| H5_small_cell_privacy | SUPPORTED |
+
+- Sensitivity 0.966, precision 1.000; mean delay error 35.5 days.
+- Privacy: k-anonymity floor 5, neutral register verified: True.
+- These are synthetic-data results with injected signals; they say nothing about real-world performance.
+<!-- measured:end -->

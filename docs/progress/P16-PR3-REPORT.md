@@ -24,7 +24,7 @@ Prometheus `/metrics`, `/live`/`/ready`, optional OTel (off by default), SLOs + 
 | MkDocs | broken `mkdocs.yml` nav path | `uv run --group docs mkdocs build` |
 
 ## Deviations
-1. **`/live`, `/ready`, `/metrics` use `include_in_schema=False`** until overseer extends `acceptance_p14` `PUBLIC_EXACT` ([PROP-0007](../proposals/PROP-0007-observability-public-probes.md)). Endpoints work; OpenAPI omits them temporarily.
+1. *(Resolved by overseer, see below.)* Probes were hidden from OpenAPI pending [PROP-0008](../proposals/PROP-0008-observability-public-probes.md).
 2. **`packages/vigil-opt` not extracted** — ADR-0031.
 3. **Cosign** runs only when `COSIGN_PRIVATE_KEY` secret exists (owner).
 4. **MkDocs `strict: false`**; link integrity is `check_docs_links.py` (full tree), not MkDocs nav-subset strict mode.
@@ -52,6 +52,23 @@ Prometheus `/metrics`, `/live`/`/ready`, optional OTel (off by default), SLOs + 
 | A17 | “Complete” after one pass | CLOSED | Progress ledger process §16; no completion claims without verdict |
 
 ## Pending human
-- PROP-0007 (P14 public allowlist)
 - Tag `v*` to exercise `release.yml`; cosign key (H-209 / H-304)
 - H-305 dependency graph (from PR2)
+
+## Overseer notes (PR #75 review)
+Verified independently, then fixed or completed:
+1. **`/metrics` was public and unauthenticated** and hidden from OpenAPI to dodge `acceptance_p14`. Now bearer-token gated (`VIGIL_METRICS_TOKEN`; 403 when unset), in the schema, and attacked in `apps/api/tests/test_observability_probes.py` (missing/wrong/raw token, identifier leakage in labels, no error detail in `/ready` 503). A seeded open `/metrics` fails both P14 and the unit tests. `/live` and `/ready` are public and in `PUBLIC_EXACT`.
+2. **Three `--seed-fail` demos were hardcoded** (README claims, licence inventory, and no real gate behind them). Rewritten so each runs the real checker on bad input.
+3. **README version gate did not compare against lockfiles.** It now extracts the README's own claims (Python, Node, npm, Next.js, FastAPI, React, SQLAlchemy, Pydantic, PostgreSQL, Master Plan version) and compares them with `requires-python`, `uv.lock`, `package.json` engines (added: it had none), `package-lock.json`, CI pins and the compose image.
+4. **NOTICE embedded licence bodies and `UNKNOWN`, covered dev tools, ignored npm.** Rewritten: runtime closure only (uv export --no-dev, npm production), normalised identifiers, `needs_review` flagged, deterministic, forbidden-licence policy applied, `--check` freshness in CI. 204 packages, 0 need review.
+5. **API reference was a link stub and its "checked for drift in CI" claim was false.** `scripts/generate_api_reference.py` writes `openapi.json` + `reference.md` (59 paths) and CI checks both are fresh. Diataxis index pages (ADRs, model/dataset cards, runbooks) generated and checked so no document is orphaned.
+6. **SLOs overstated monitoring.** Added `infra/prometheus/alerts.yml` for the three metric-backed SLOs with runbook links; `tests/governance/test_alert_rules.py` rejects phantom metrics and missing runbooks. `SLOS.md` now says which SLOs are only objectives. No outbox-backlog gauge was invented (pending follow-ups legitimately stay pending for days).
+7. **Model cards had no results.** K7, M7, M10, OCR now carry script-written measured blocks from the committed reports, including the unfavourable ones (K7: all estimators biased under unmeasured confounding; M7: CP-SAT refuted vs FCFS), checked in CI.
+8. **Real defect found via mutation testing (carried from PR2 G-06): `m5` rendered a reference change value above 100% wrongly** (RCV 1.49 became "1%"; the verifier accepted it because both sides shared the bug). Fixed; `packages/vigil-ml/tests/test_m5_golden.py` (85 tests) pins patient/clinician wording to a reviewed golden file (`scripts/update_m5_golden.py` regenerates it after a deliberate change).
+9. Duplicate `PROP-0007` renumbered to PROP-0008.
+
+Not done / disclosed:
+- MkDocs stays `strict: false` with 102 warnings, all links from docs to files outside `docs/` (experiments, scripts) that are valid in the repo and covered by `check_docs_links.py`.
+- `packages/vigil-opt` not extracted (ADR-0031 records the deviation; the prompt allowed this).
+- The release workflow is untested until a `v*` tag exists (owner action H-304).
+- Audit-chain, outbox, silent-mode and consent SLOs have no runtime metric.
