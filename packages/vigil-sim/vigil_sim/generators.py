@@ -857,6 +857,12 @@ class BaseCohortGenerator(ABC):
             for d, analyte_vals, mask, latent_st in zip(
                 visit_days, trajectories, obs_masks, pt_latents
             ):
+                if (
+                    pt.observed_recurrence_event
+                    and pt.observed_recurrence_day is not None
+                    and d > pt.observed_recurrence_day + 90.0
+                ):
+                    break
                 obs_id = f"OBS-{pt.patient_id}-{int(d):04d}"
                 date_drawn = (start_date + timedelta(days=float(d))).isoformat()
                 symptoms = self.generate_symptoms(pt, d, latent_st)

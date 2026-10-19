@@ -98,7 +98,10 @@ The existing synthetic profile also sampled analyzer offsets/scales independentl
 
 ### Additional package-B finding: oracle labels ignored loss to follow-up (2026-10-19)
 
-`CohortDataset.get_survival_training_examples(use_observed_labels=False)` could label a latent recurrence after loss to follow-up as observed, because it selected the latent event day without comparing it with the censoring time. This contaminated the documented oracle-only path and could make simulator checks overstate what is learnable. The event selection now accepts recurrence only when it occurs on or before the observation end; a regression test sets loss at day 10 and latent recurrence at day 100 and asserts censored/unknown at a 180-day horizon. The focused simulator and feature-contract suite passed (15 tests); Ruff and `git diff --check` passed. This does not complete package B: every historical study and production/serving path still needs its source-contract classification and affected outputs need reconciliation.
+
+EXP-CORE-ML-005 ran once from `ce897a1` after preregistration. Across three generators and five seeds, configured per-visit imaging propensity, result sensitivity/specificity, assay missingness, and shared facility effects were checked; per-facility effects had zero within-facility inconsistencies, and binomial rates were consistent with the registered synthetic probabilities at the reported Monte Carlo precision. These are implementation checks only. A further source audit found generated visits continued after a diagnosis first occurred during the longitudinal loop: the schedule was filtered before confirmation, not as confirmation happened. The source is now fixed to stop after the configured 90-day transition window. EXP-CORE-ML-005 remains immutable evidence for `ce897a1`, not this corrected source. EXP-CORE-ML-006 preregisters an independent follow-up boundary and process audit before new cohorts are generated. The regression test forces a confirmed diagnosis and checks no later observation exceeds the 90-day transition window.
+
+This does not complete package B: every historical study and production/serving path still needs its source-contract classification and affected outputs need reconciliation.
 
 ## Work order to maximize valid model output
 

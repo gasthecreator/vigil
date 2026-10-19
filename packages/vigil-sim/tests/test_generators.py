@@ -156,6 +156,36 @@ def test_positive_imaging_below_visibility_threshold_is_not_confirmed_recurrence
     assert patient.observed_recurrence_day is None
 
 
+def test_surveillance_visits_stop_after_confirmed_recurrence_transition():
+    profile_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    generator = get_generator(GeneratorType.G1_SMOOTH, seed=48104, population_config=profile)
+
+    def confirm_when_recurrence_has_started(patient, day, _symptoms, _analytes, _state):
+        if (
+            patient.true_recurrence_event
+            and patient.true_recurrence_day is not None
+            and day >= patient.true_recurrence_day
+            and not patient.observed_recurrence_event
+        ):
+            patient.observed_recurrence_event = True
+            patient.observed_recurrence_day = day
+            patient.observed_recurrence_site = patient.true_recurrence_site
+        return True, True, 1.0
+
+    generator.evaluate_verification_mechanism = confirm_when_recurrence_has_started
+    cohort = generator.generate_cohort(num_patients=80, duration_days=730.0)
+    observations = cohort.to_observations_dataframe()
+    patients = cohort.to_patients_dataframe().set_index("patient_id")
+    diagnosed = patients[patients["observed_recurrence_event"]]
+    assert len(diagnosed) > 0
+    for patient_id, patient in diagnosed.iterrows():
+        observed_days = observations.loc[
+            observations["patient_id"] == patient_id, "day"
+        ]
+        assert observed_days.max() <= patient["observed_recurrence_day"] + 90.0
+
+
 def test_latent_states_export_for_recovery_studies():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=42)
     cohort = gen.generate_cohort(num_patients=10, duration_days=365.0)
