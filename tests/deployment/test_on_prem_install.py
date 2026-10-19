@@ -79,7 +79,11 @@ def test_on_prem_install_full_flow(tmp_path, monkeypatch):
     """Tests migrations, admin seeding, and verification in a clean temporary environment."""
     db_file = tmp_path / "on_prem_test.db"
     from vigil_api.config import settings
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+
+    db_url = f"sqlite:///{db_file}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    # settings is process-global; CI may have already loaded a Postgres DATABASE_URL.
+    monkeypatch.setattr(settings, "DATABASE_URL", db_url)
     monkeypatch.setenv("REQUIRE_AUTH", "true")
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
     monkeypatch.setenv("JWT_SECRET_KEY", "a8f5c9e2b4d13708e5f2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9")
