@@ -61,6 +61,10 @@ pythonpath = [
     "packages/vigil-ml",
     "packages/contracts",
 ]
+markers = [
+    "postgres: requires Postgres (VIGIL_POSTGRES_TEST_URL)",
+    "sqlite_only: exercises SQLite-specific mechanisms; skipped on Postgres CI",
+]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

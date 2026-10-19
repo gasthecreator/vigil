@@ -1,7 +1,7 @@
 # Vigil On-Premise Installation & Air-Gapped Deployment Guide
 
 **Document ID:** VIG-DEPLOY-001  
-**Version:** 1.0.0-rc.1  
+**Version:** 1.0.0-rc.2  
 **Target Audience:** Hospital Systems Engineers, Clinical IT Administrators, Lead DevSecOps  
 **Compliance Standards:** ISO 14971:2019, IEC 62304:2006/AMD 1:2015, NDPA 2023, HIPAA Security Rule  
 
@@ -14,7 +14,18 @@ Vigil is engineered for deployment within low-resource, intermittent-connectivit
 ### Key Deployment Characteristics
 - **Air-Gapped Operation:** All Python wheels, Node dependencies, font assets, and ML model weights are vendored locally; no runtime internet access required.
 - **Data Sovereignty:** All Protected Health Information (PHI) and clinical trial emulation records remain entirely within hospital-controlled perimeter boundaries.
-- **Fail-Safe Persistence:** Robust dual database support (PostgreSQL 16+ for enterprise multi-workstation clusters, SQLite 3.40+ in Write-Ahead-Logging mode for single-workstation provincial facilities).
+- **Fail-Safe Persistence:** **PostgreSQL 16+ is the supported production database** (compose stack under `infra/`). SQLite 3.40+ in Write-Ahead-Logging mode remains available for single-workstation development and provincial demos only.
+
+### Docker Compose stack (recommended multi-service install)
+Pinned multi-stage images and a four-service compose file live under `infra/`:
+
+```bash
+cp infra/.env.compose.example infra/.env.compose
+# edit POSTGRES_PASSWORD, JWT_SECRET_KEY, VIGIL_FIELD_ENCRYPTION_KEYS
+docker compose -f infra/docker-compose.yml --env-file infra/.env.compose up --build
+```
+
+Services: `postgres` (healthchecked), `api` (runs `alembic upgrade head` then uvicorn as non-root), `worker` (`python -m vigil_api.worker`), `web` (Next.js). Dockerfiles are digest-pinned (`infra/Dockerfile.{api,web,worker}`). Scale probe: `scripts/run_scale_test_postgres.py` → `reports/perf/SCALE_TEST_RESULTS.json`.
 
 ---
 

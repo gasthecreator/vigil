@@ -136,3 +136,20 @@ DATABASE_URL=sqlite:///{db_file}
     assert proc.returncode == 0, f"CLI installer failed:\nSTDOUT: {proc.stdout}\nSTDERR: {proc.stderr}"
     assert "Production Security Audit PASSED" in proc.stdout
     assert "Vigil On-Premise installation and setup completed successfully." in proc.stdout
+
+
+def test_compose_stack_files_exist_and_are_non_root():
+    """G-01: compose + Dockerfiles present; runtime USER is non-root vigil."""
+    compose = (ROOT / "infra" / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "postgres:16.6-alpine@sha256:" in compose
+    assert "Dockerfile.api" in compose
+    assert "Dockerfile.web" in compose
+    assert "Dockerfile.worker" in compose
+    assert "healthcheck:" in compose
+    for name in ("Dockerfile.api", "Dockerfile.web", "Dockerfile.worker"):
+        text = (ROOT / "infra" / name).read_text(encoding="utf-8")
+        assert "USER vigil" in text
+        assert "@sha256:" in text
+    env_ex = ROOT / "infra" / ".env.compose.example"
+    assert env_ex.exists()
+    assert "POSTGRES_PASSWORD" in env_ex.read_text(encoding="utf-8")

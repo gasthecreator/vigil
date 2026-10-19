@@ -13,7 +13,13 @@ from sqlalchemy import create_engine
 from vigil_api import database
 from vigil_api.models.v2 import Facility
 
-pytestmark = pytest.mark.skipif(not database.settings.DATABASE_URL.startswith("sqlite"), reason="SQLite-only mechanism")
+pytestmark = [
+    pytest.mark.sqlite_only,
+    pytest.mark.skipif(
+        not database.settings.DATABASE_URL.startswith("sqlite"),
+        reason="SQLite-only mechanism",
+    ),
+]
 
 
 @pytest.fixture

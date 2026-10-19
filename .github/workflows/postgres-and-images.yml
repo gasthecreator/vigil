@@ -1,0 +1,121 @@
+name: postgres-and-images
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pg-img-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build API image
+        run: docker build -f infra/Dockerfile.api -t vigil-api:ci .
+      - name: Build worker image
+        run: docker build -f infra/Dockerfile.worker -t vigil-worker:ci .
+      - name: Build web image
+        run: docker build -f infra/Dockerfile.web -t vigil-web:ci .
+      - name: Compose config validates
+        run: |
+          cp infra/.env.compose.example infra/.env.compose
+          # Satisfy required password for config parsing (example already has a placeholder)
+          docker compose -f infra/docker-compose.yml --env-file infra/.env.compose config >/tmp/vigil-compose.yml
+          grep -q 'vigil-api\|Dockerfile.api\|postgres:16' /tmp/vigil-compose.yml || grep -q postgres /tmp/vigil-compose.yml
+
+  postgres-api-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:16.6-alpine@sha256:1d04b9ba1d4996401f2552b51beda8187f175c0645c091e4781134fc9c9a3eef
+        env:
+          POSTGRES_USER: vigil
+          POSTGRES_PASSWORD: vigil_ci_password
+          POSTGRES_DB: vigil_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vigil -d vigil_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      VIGIL_POSTGRES_TEST_URL: postgresql+psycopg://vigil:vigil_ci_password@localhost:5432/vigil_test
+      DATABASE_URL: postgresql+psycopg://vigil:vigil_ci_password@localhost:5432/vigil_test
+      ENVIRONMENT: local
+      REQUIRE_AUTH: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Install Tesseract
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr fonts-dejavu-core
+      - name: Alembic upgrade on Postgres
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+      - name: Seeded failure — alembic against sqlite URL must not be used here
+        run: |
+          # Gate can fail: pointing migrations at an empty bogus host exits non-zero
+          set +e
+          DATABASE_URL=postgresql+psycopg://vigil:bad@127.0.0.1:1/nope \
+            uv run alembic -c apps/api/alembic.ini upgrade head
+          code=$?
+          set -e
+          test "$code" -ne 0
+          echo "Seeded migration failure observed (exit $code)"
+      - name: Alembic downgrade one revision then upgrade (Postgres)
+        working-directory: apps/api
+        run: |
+          uv run alembic downgrade b2c3d4e5f6a8
+          uv run alembic upgrade head
+      - name: Postgres migration test + API suite (honours VIGIL_POSTGRES_TEST_URL)
+        run: |
+          uv run pytest apps/api/tests/test_migrations_postgres.py apps/api/tests \
+            -m "not sqlite_only" -v --tb=short
+      - name: Security suite on Postgres fixtures
+        run: uv run pytest tests/security -v --tb=short
+      - name: Deployment / compose install checks
+        run: uv run pytest tests/deployment -v --tb=short
+      - name: Acceptance suites (self-manage DB; see PROP-0006)
+        run: |
+          VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -q --tb=line
+          VIGIL_ACCEPT_3B=1 uv run pytest tests/acceptance_3b -q --tb=line
+          VIGIL_ACCEPT_P4=1 VIGIL_CONTRACT_P4V2=1 uv run pytest tests/acceptance_p4 -q --tb=line
+          VIGIL_ACCEPT_P5=1 uv run pytest tests/acceptance_p5 -q --tb=line
+          VIGIL_ACCEPT_P7=1 uv run pytest tests/acceptance_p7 -q --tb=line
+          VIGIL_ACCEPT_P8=1 uv run pytest tests/acceptance_p8 -q --tb=line
+          VIGIL_ACCEPT_P9=1 uv run pytest tests/acceptance_p9 -q --tb=line
+          VIGIL_ACCEPT_P11=1 uv run pytest tests/acceptance_p11 -q --tb=line
+          VIGIL_ACCEPT_P12=1 uv run pytest tests/acceptance_p12 -q --tb=line
+          VIGIL_ACCEPT_P13=1 uv run pytest tests/acceptance_p13 -q --tb=line
+          VIGIL_ACCEPT_P14=1 uv run pytest tests/acceptance_p14 -q --tb=line
+          VIGIL_ACCEPT_P15=1 uv run pytest tests/acceptance_p15 -q --tb=line
+      - name: Scale probe (honest size; nightly larger)
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            export SCALE_N_PATIENTS=10000
+          else
+            export SCALE_N_PATIENTS=2000
+          fi
+          export SCALE_OBS_PER_PATIENT=50
+          uv run python scripts/run_scale_test_postgres.py
+          test -f reports/perf/SCALE_TEST_RESULTS.json
+          python3 -c "import json; d=json.load(open('reports/perf/SCALE_TEST_RESULTS.json')); print(d['metrics']['triage_p95_ms'], d['metrics']['timeline_p95_ms'], d['verdicts'])"

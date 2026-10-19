@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Production reality (P16 PR1 / G-01…G-03): `infra/` Dockerfiles + compose (api/web/worker/postgres), `psycopg` driver, Alembic on Postgres in CI, scale probe `scripts/run_scale_test_postgres.py` → `reports/perf/SCALE_TEST_RESULTS.json`.
+
 ## [1.0.0-rc.2] - 2026-10-19
 
 ### Added

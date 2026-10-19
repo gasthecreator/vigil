@@ -63,6 +63,9 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
           {"context": "frontend-lint-and-build"},
           {"context": "e2e-and-lighthouse"},
           {"context": "dependency-audit"},
+          {"context": "clean-clone-reproducibility"},
+          {"context": "docker-build"},
+          {"context": "postgres-api-suite"},
           {"context": "analyze (python)"},
           {"context": "analyze (javascript-typescript)"}
         ]
@@ -101,7 +104,7 @@ gh api --method PATCH -H "Accept: application/vnd.github+json" \
 - [ ] `main` branch cannot be force-pushed or deleted.
 - [ ] Direct pushes to `main` are blocked; all changes must pass through pull requests.
 - [ ] Required status checks include:
-  - `claims-and-governance`, `backend-lint-and-test`, `frontend-lint-and-build`, `e2e-and-lighthouse`, `dependency-audit`, `analyze (python)`, `analyze (javascript-typescript)`
+  - `claims-and-governance`, `backend-lint-and-test`, `frontend-lint-and-build`, `e2e-and-lighthouse`, `dependency-audit`, `clean-clone-reproducibility`, `docker-build`, `postgres-api-suite`, `analyze (python)`, `analyze (javascript-typescript)`
   - (names verified against `gh api repos/gasthecreator/vigil/commits/main/check-runs`; a required context that no job reports blocks every merge forever)
 - [ ] Review requirement: see the note below.
 - [ ] Secret scanning and Dependabot alerts are active.

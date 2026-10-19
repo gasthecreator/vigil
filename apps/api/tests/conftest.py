@@ -6,6 +6,7 @@ is written once; patients and consents are created through the API like any clie
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -51,12 +52,43 @@ class ApiEnv:
         return pid
 
 
+def _test_db_urls(tmp_path) -> tuple[str, str, dict]:
+    """Prefer Postgres when VIGIL_POSTGRES_TEST_URL is set (G-02); else isolated SQLite files."""
+    pg = os.environ.get("VIGIL_POSTGRES_TEST_URL", "")
+    if pg.startswith("postgresql"):
+        suffix = tmp_path.name.replace("-", "")[:8]
+        clinical = f"{pg}{_url_sep(pg)}options=-csearch_path%3Dvigil_t_{suffix}"
+        shadow = f"{pg}{_url_sep(pg)}options=-csearch_path%3Dvigil_s_{suffix}"
+        return clinical, shadow, {}
+    return (
+        f"sqlite:///{tmp_path / 'clinical.db'}",
+        f"sqlite:///{tmp_path / 'shadow.db'}",
+        {"check_same_thread": False},
+    )
+
+
+def _url_sep(url: str) -> str:
+    return "&" if "?" in url else "?"
+
+
 @pytest.fixture
 def api_env(tmp_path, monkeypatch):
     """Isolated clinical database, a separate shadow database, strict authentication."""
-    db_url = f"sqlite:///{tmp_path / 'clinical.db'}"
-    shadow_url = f"sqlite:///{tmp_path / 'shadow.db'}"
-    engine = create_engine(db_url, connect_args={"check_same_thread": False})
+    db_url, shadow_url, connect_args = _test_db_urls(tmp_path)
+    if db_url.startswith("postgresql"):
+        from sqlalchemy import text as sa_text
+
+        admin = create_engine(os.environ["VIGIL_POSTGRES_TEST_URL"])
+        schema_c = f"vigil_t_{tmp_path.name.replace('-', '')[:8]}"
+        schema_s = f"vigil_s_{tmp_path.name.replace('-', '')[:8]}"
+        with admin.begin() as conn:
+            conn.execute(sa_text(f"DROP SCHEMA IF EXISTS {schema_c} CASCADE"))
+            conn.execute(sa_text(f"DROP SCHEMA IF EXISTS {schema_s} CASCADE"))
+            conn.execute(sa_text(f"CREATE SCHEMA {schema_c}"))
+            conn.execute(sa_text(f"CREATE SCHEMA {schema_s}"))
+        admin.dispose()
+
+    engine = create_engine(db_url, connect_args=connect_args)
     Base.metadata.create_all(bind=engine)
 
     def override_get_db():
