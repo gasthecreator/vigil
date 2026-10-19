@@ -108,7 +108,7 @@ def test_unleaked_training_examples_contract():
     X, y = cohort.get_unleaked_training_examples(horizon_days=180.0)
 
     assert len(X) == len(y)
-    assert set(y.unique()).issubset({0, 1})
+    assert set(y.dropna().unique()).issubset({0, 1})
 
     # Strict anti-leakage checks on feature columns
     forbidden_tokens = [
@@ -125,5 +125,51 @@ def test_unleaked_training_examples_contract():
         for tok in forbidden_tokens:
             assert tok not in col_lower, f"Leaky token '{tok}' found in feature column '{col}'"
 
-    # Verify no NaNs in feature matrix
-    assert not X.isna().any().any()
+    # Missing measurements stay missing; the helper must not impute or expose
+    # simulator-side values for tests that were not observed.
+    assert X.filter(regex=r"^lab_.*_observed$").isin([0.0, 1.0]).all().all()
+    assert X.filter(regex=r"^lab_.*_observed$").shape[1] > 0
+    assert X.filter(regex=r"^lab_(?!.*_observed$)").isna().any().any()
+
+
+def test_unobserved_simulator_value_cannot_change_training_features():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=81).generate_cohort(
+        num_patients=20, duration_days=365.0
+    )
+    observation = next(
+        obs
+        for obs in cohort.observations
+        if any(not measured for measured in obs.observed_mask.values())
+    )
+    analyte = next(
+        key for key, measured in observation.observed_mask.items() if not measured
+    )
+    before_X, before_y = cohort.get_unleaked_training_examples()
+    row = before_X.index[before_X["patient_id"] == observation.patient_id]
+    row = row[before_X.loc[row, "day"] == observation.day][0]
+    observation.analytes[analyte] += 1_000_000.0
+    after_X, after_y = cohort.get_unleaked_training_examples()
+    pd.testing.assert_series_equal(before_X.loc[row], after_X.loc[row])
+    assert before_y.loc[row] == after_y.loc[row]
+
+
+def test_training_labels_are_unknown_when_loss_to_follow_up_precedes_horizon():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=82).generate_cohort(
+        num_patients=10, duration_days=365.0
+    )
+    patient = cohort.patients[0]
+    first_observation = min(
+        (obs for obs in cohort.observations if obs.patient_id == patient.patient_id),
+        key=lambda obs: obs.day,
+    )
+    patient.observed_recurrence_event = False
+    patient.observed_recurrence_day = None
+    patient.competing_event = "lost_to_follow_up"
+    patient.competing_event_day = first_observation.day + 10.0
+    patient.administrative_censor_day = first_observation.day + 365.0
+
+    X, y, times, event_codes = cohort.get_survival_training_examples(horizon_days=180.0)
+    row = X.index[(X["patient_id"] == patient.patient_id) & (X["day"] == first_observation.day)][0]
+    assert np.isnan(y.iloc[row])
+    assert times[row] == pytest.approx(10.0)
+    assert event_codes[row] == 0

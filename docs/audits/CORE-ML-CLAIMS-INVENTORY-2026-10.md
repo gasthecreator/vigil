@@ -1,0 +1,50 @@
+# Core ML claim and implementation inventory — 2026-10
+
+> Q-7 package A working crosswalk. Synthetic results are not clinical evidence. This is an audit inventory, not a promotion or validation record. Owner for source, data, and report discrepancies: executor; acceptance contracts and verdict disposition: overseer.
+
+## Canonical baseline identities
+
+| ID | Implementation / inputs | Evidence and status |
+|---|---|---|
+| B0 prevalence | `packages/vigil-ml/vigil_ml/baselines.py::PrevalenceBaseline`; fitted training prevalence | Valid comparator definition. EXP-CORE-ML-004 reports it per generator; no clinical claim. |
+| B1 single threshold | `SingleThresholdBaseline`; cutoff sourced from analyte registry, missing values fall back to training prevalence | Synthetic rule comparator in EXP-CORE-ML-004. Not a calibrated clinical threshold. |
+| B2 velocity | `VelocityBaseline`; fixed velocity rule parameters in source | Synthetic comparator in EXP-CORE-ML-004. Rule cutoffs/scaling are research assumptions, not validated operating points. |
+| B3 logistic horizon | `RegularizedCoxHazardBaseline` (compatibility name is misleading; it is logistic regression) | Fit/preprocessing and validation selection recorded by EXP-CORE-ML-004. The two fixed legacy AUC gates remain red; see `PROP-CORE-ML-CENSOR-AWARE-GATE.md`. |
+| B4 XGBoost horizon | `GradientBoostingBaseline`; validation-selected in EXP-CORE-ML-004 | Strongest of B0–B4 in that synthetic study; no real-world or clinical claim. |
+
+## Model and engine claims
+
+| ID | Source / route / registry record | Claim status and evidence pointer |
+|---|---|---|
+| K1 | `vigil_ml/k1.py`; `kinetic_k1.py` compatibility shim; trained safetensors; not in exportable-model registry | Research-only. EXP-K1-001–003 are retracted. EXP-K1-004 is valid only for its registered synthetic parameter and marker-forecast estimands; transfer lost to both marker baselines in all nine generator/seed comparisons, acceptance had two failures, recurrence output fails closed. See `docs/models/MODEL-CARD-K1.md`, `experiments/EXP-K1-004/`, S-001–S-003/S-010. |
+| K2 | `vigil_ml/k2.py`; legacy `sequential_k2.py`; governance candidate `K2-SHADOW-1` | Patient-level Ville guarantee not established; S2 reports/results retracted. Model card's equations are explanatory, not proof. See S-018 and `docs/models/MODEL-CARD-K2.md`. |
+| K3 | `vigil_ml/joint_model.py::BayesianJointModelK3` and `FastLandmarkJointModel` | Bayesian joint-model claim unsupported: current likelihood/diagnostics are not the registered patient-grouped competing-risk model; fast path is logistic research baseline. Legacy S1/S9/BENCHMARK_REPORT values are not selection evidence. See `CORE-ML-AUDIT-2026-10.md`, S-008, `PROP-K3-JOINT-MODEL-REIMPLEMENTATION.md`; package E remains open. |
+| K4 | `vigil_ml/k4.py`; absent from production/ensemble | EXP-K4-001 is synthetic and records failed pretraining/model/scale criteria; claim not earned. Old hard-coded S4 and old K4_DeepZoo S9 row retracted. See S-004, ADR-0025, card and experiment. |
+| K5 | `vigil_ml/k5.py`; absent from production | EXP-K5-001 synthetic; primary criterion failed and intervals under-cover in misspecified cells. Old hand-offset S5/v1 is retracted. No benefit claim. See S-009, ADR-0024, card and experiment. |
+| K6 | `vigil_ml/k6.py` / `k6_engine.py`; absent from product routes | EXP-K6-001 is a simulation-only scheduling result: H1/H2 met in that simulator, H3 failed; one attempt does not establish infeasibility or clinical benefit. Old literal S6 is retracted. See S-005, ADR-0026, card and experiment. |
+| K7 | `vigil_ml/causal_k7.py` | S8 synthetic causal-estimator diagnostics only. Unmeasured-confounding case remains biased; no real target-trial emulation or causal effect claim. Result provenance and generated card/report still require package F/G verification. |
+| K8 | `vigil_ml/k8.py`, legacy `conformal_k8.py`, and `ProductionEnsembleK8` | Conformal/OOD primitives have contract tests, but broad guarantees require their stated assumptions and calibration data. `ProductionEnsembleK8` is a fixed handwritten formula, does not call member models, and is not a trained ensemble (S-016); no ensemble claim is supported. |
+| M1 | `vigil_ml/organ_susceptibility.py` and `MODEL-CARD-M1.md` | Population prior implementation; evidence mapping and posterior behaviour require source-level verification. Card's reported precision/latency claims are not independently substantiated by the cited population counts alone. No patient-specific metastasis prediction claim is supported by that citation. |
+| M2 | `features.py`, `baselines.py`, `scripts/run_benchmarks.py` | Corrected horizon labels and IPCW workflow are present, but the old benchmark report remains stale and K3 is invalid. Q-7 B/C/G must establish complete data, fitting, metric and report parity. |
+| M3 | `vigil_ml/m3.py`; S7 and P4 acceptance suite | Synthetic/contract-only. Acceptance and S7 claims must be read with the rejected P4a verdict and current hazard/stub ledger; not clinically calibrated. |
+| M5 | `vigil_ml/m5.py`; fact table and template renderer | P4a verdict rejected the semantic verifier (blacklist; contract-v2 did not pass). Historical card claims about semantic grounding are unsupported until the fixed acceptance contract passes. |
+| M12 | `vigil_ml/m12.py`; model registry entry | EXP-M12-001 synthetic in-process FedAvg/DP-SGD; H3 met for the registered comparison, but B4 outperformed it and epsilon was loose. Not Flower, not wired, and not a privacy/legal clearance. Old hard-coded S10 retracted. |
+
+## Historical result and training artifact map
+
+| Artifact family | Producer / result paths | Disposition |
+|---|---|---|
+| Old all-model leaderboard and S1 numbers | `scripts/run_benchmarks.py`; `reports/ml/BENCHMARK_REPORT.md`; `reports/ml/results.json`; `reports/ml/S1_SPARSITY/` | Stale/retracted as model-selection evidence: censoring, patient grouping, test-derived operating points, typed verdict prose, and invalid K1/K3 identities. Preserve as history; do not quote as current performance. |
+| EXP-CORE-ML-001/002 | `experiments/EXP-CORE-ML-00{1,2}/` | Aborted/withdrawn; not selection evidence. See `CORE-ML-RERUN-2026-10.md`. |
+| EXP-CORE-ML-003/004 | Per-study `run.py`, PREREG, results and report | Corrected synthetic baseline contract; 003 is one G1 and 004 cross-generator; observed-diagnosis outcome, not verification-bias-corrected latent recurrence. G3 B4 AUC 0.7727/Brier 0.1030 in 004. Never clinical claims. |
+| EXP-K1-001/002/003 | Each experiment's `run.py`, `results.json`, `REPORT.md` | Retracted: boolean measurement masks used as numeric markers; post-hoc transforms did not implement registered model changes. Preserve files, exclude from claims/selection. |
+| S2, S3, old S4/S5/S6/S10 | `reports/ml/{S2_SEQUENTIAL,S3_VERIFICATION_BIAS,RETRACTED}/` | S2 retracted; S3 verification-bias report is historical and its claimed estimates need source/protocol audit; old S4/S5/S6/S10 retracted and replaced by EXP-K4/K5/K6/M12 as above. |
+| S7/S8/S9 and current model studies | `reports/ml/` plus `experiments/EXP-{K4,K5,K6,M12}-001/` | Individual status in STUBS and corresponding model cards. S9 still needs full report/result/source reconciliation after K4 row removal; S8 needs producer/card parity audit. |
+| Model registry | `scripts/build_model_registry.py`; `packages/vigil-ml/vigil_ml/registry/model_registry.json` and digest | Generated registry covers exportable research artifacts (currently K4/K5/K6/M12), not every model class. It must not be read as the complete model inventory; crosswalk above is authoritative for Q-7 review until generator contract is expanded. |
+
+## Confirmed discrepancies and closure still required
+
+1. `docs/models/MODEL-CARD-K3.md` still presents unsupported Bayesian, benchmark, S1, S9, and latency claims; replace with an honest research-baseline card after package E and regenerated benchmark evidence.
+2. `reports/ml/BENCHMARK_REPORT.md`, `reports/ml/results.json`, S1/S3/S9 reports/cards, and the K1/K2/K3 claims require generated-output/source reconciliation (package G). Historical files must remain intact when retracted; current front-door outputs must not continue presenting stale values as live benchmark results.
+3. K2, K3, K8 ensemble, M1, M3/M5, M12, registry and production/runtime consumers still need the per-source, data, call-site, test, and claim audit required by packages E/F. This inventory does not imply those reviews are complete.
+4. Historical quantitative claims not linked to a producer or explicitly retracted are defects. Package G will enumerate and close them; this first crosswalk is intentionally not the phase-exit report.

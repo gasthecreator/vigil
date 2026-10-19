@@ -91,6 +91,10 @@ S1 uses 100 bootstrap replications, while the plan calls for larger repeated pat
 3. S1 benchmark performance claims are provisional/retracted pending correction of censored binary targets, operating-point selection and generated-report logic. Do not use the recorded K1/K3/B4 ranking to justify deployment or further tuning.
 4. No model is “optimized” by this audit. Model optimization must follow corrected data/label semantics, a development/calibration/test split by patient, frozen evaluation seeds and a new preregistration. Existing reported cohorts are not tuning data.
 
+### Additional package-B finding (Q-7, identified 2026-10-19)
+
+The public `CohortDataset.get_unleaked_training_examples` helper bypassed the safer dataframe export: it read `LongitudinalObservation.analytes` without consulting `observed_mask`, exposing simulator-side values for tests that were not measured. It also assigned 0 to every non-event landmark, including landmarks censored by loss to follow-up before the requested horizon. The helper had a test caller but no production or experiment training caller. Fixed on this branch by routing it through `get_survival_training_examples`, masking unobserved values to NaN, emitting an observedness feature, representing early-censored horizon labels as NaN, and returning follow-up/event metadata from the new survival API. Regression tests perturb hidden measurements and construct an early-loss-to-follow-up case. `packages/vigil-sim/tests/test_generators.py`: 8 passed. This does not resolve the separate question of diagnosis-time labels versus latent recurrence under partial verification; that remains an explicit Q-7 B audit item.
+
 ## Work order to maximize valid model output
 
 1. Correct the target contract: define event, competing event, censoring, horizon, landmark eligibility, and label observability. Make invalid binary labels impossible to pass silently to classifier fitting and calibration.

@@ -236,14 +236,41 @@ class CohortDataset:
             use_observed_labels: If True, uses clinically verified labels (with partial verification bias).
                                  If False, uses latent ground-truth recurrence labels.
 
-        Guarantees:
-            - Never contains future observations
-            - Never contains generator anomaly flags or outcome-derived indicators
-            - Strictly historical features up to observation timestamp
+        Unmeasured lab values are emitted as NaN, never as their simulator-side
+        latent values. Outcomes censored before the horizon are NaN, not negative.
+        For IPCW evaluation, use `get_survival_training_examples`, which also
+        returns follow-up times and event codes.
         """
+        X, y, _, _ = self.get_survival_training_examples(
+            horizon_days=horizon_days, use_observed_labels=use_observed_labels
+        )
+        return X, y
+
+    def get_survival_training_examples(
+        self,
+        horizon_days: float = 180.0,
+        use_observed_labels: bool = True,
+    ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
+        """Build current-visit features and censor-aware outcomes.
+
+        Event codes are 0=censored, 1=recurrence and 2=terminal competing event.
+        Loss to follow-up is censoring, not a competing event. `y` is the
+        recurrence-by-horizon label and remains missing when the horizon is not
+        observed. The observed-label mode estimates diagnosed recurrence;
+        setting `use_observed_labels=False` is an oracle-only simulation path.
+        """
+        if not np.isfinite(horizon_days) or horizon_days <= 0:
+            raise ValueError("horizon_days must be finite and positive")
         pt_map = {p.patient_id: p for p in self.patients}
+        last_observation_day: dict[str, float] = {}
+        for item in self.observations:
+            last_observation_day[item.patient_id] = max(
+                last_observation_day.get(item.patient_id, -np.inf), float(item.day)
+            )
         features_list = []
         labels_list = []
+        follow_up_times: list[float] = []
+        event_codes: list[int] = []
 
         for obs in self.observations:
             pt = pt_map[obs.patient_id]
@@ -256,18 +283,39 @@ class CohortDataset:
                 rec_event = pt.true_recurrence_event
                 rec_day = pt.true_recurrence_day
 
-            # Check if competing death / censoring occurred prior to observation
-            if pt.competing_event_day is not None and pt.competing_event_day <= obs.day:
+            competing_day = pt.competing_event_day
+            has_competing_day = competing_day is not None and np.isfinite(competing_day)
+            loss_to_follow_up = pt.competing_event == "lost_to_follow_up"
+            terminal_competing = has_competing_day and not loss_to_follow_up
+            if has_competing_day and competing_day <= obs.day:
                 continue
 
-            # Construct prospective clinical event label
-            y_label = 0
-            if rec_event and rec_day is not None:
-                if obs.day < rec_day <= (obs.day + horizon_days):
-                    y_label = 1
-                elif rec_day <= obs.day:
-                    # Already diagnosed clinically prior to this visit; excluded from screening window
-                    continue
+            if rec_event and rec_day is not None and np.isfinite(rec_day) and rec_day <= obs.day:
+                # Already diagnosed before this landmark; it is not a prospective case.
+                continue
+
+            admin_end = pt.administrative_censor_day
+            if admin_end is None or not np.isfinite(admin_end):
+                admin_end = last_observation_day[pt.patient_id]
+            first_event_day: float | None = None
+            event_code = 0
+            if rec_event and rec_day is not None and np.isfinite(rec_day) and rec_day <= admin_end:
+                first_event_day, event_code = float(rec_day), 1
+            if terminal_competing and competing_day <= admin_end and (
+                first_event_day is None or competing_day < first_event_day
+            ):
+                first_event_day, event_code = float(competing_day), 2
+            censor_day = min(float(admin_end), float(competing_day) if loss_to_follow_up and has_competing_day else float(admin_end))
+            end_day = first_event_day if first_event_day is not None else censor_day
+            time_from_landmark = max(0.0, end_day - obs.day)
+            if event_code == 1 and time_from_landmark <= horizon_days:
+                y_label = 1.0
+            elif event_code == 2 and time_from_landmark <= horizon_days:
+                y_label = 0.0
+            elif time_from_landmark >= horizon_days:
+                y_label = 0.0
+            else:
+                y_label = float("nan")
 
             # Construct safe feature dict (strictly historical/current)
             feat: Dict[str, Any] = {
@@ -283,17 +331,21 @@ class CohortDataset:
             }
             # Lab features (clean standardized naming)
             for k, v in obs.analytes.items():
-                feat[f"lab_{k}"] = v
+                measured = bool(obs.observed_mask.get(k, False)) and np.isfinite(v)
+                feat[f"lab_{k}"] = float(v) if measured else float("nan")
+                feat[f"lab_{k}_observed"] = float(measured)
             # Symptom features
             for s, g in obs.symptoms.items():
                 feat[f"sym_{s}"] = float(g)
 
             features_list.append(feat)
             labels_list.append(y_label)
+            follow_up_times.append(time_from_landmark)
+            event_codes.append(event_code)
 
         X = pd.DataFrame(features_list)
         y = pd.Series(labels_list, name=f"recurrence_within_{int(horizon_days)}d")
-        return X, y
+        return X, y, np.asarray(follow_up_times, dtype=float), np.asarray(event_codes, dtype=int)
 
 
 # ==============================================================================
