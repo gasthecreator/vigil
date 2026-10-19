@@ -17,6 +17,7 @@ Organised by who is reading and why. `docs/MASTER_PLAN.md` is the single canonic
 - API: [`api/openapi.json`](api/openapi.json) (generated), design screens: [`design/`](design/)
 - ML contracts and model cards: [`ml/`](ml/) (M4 ladder: [`M4-CONTRACT.md`](ml/M4-CONTRACT.md), [`M4-WORKED-EXAMPLES.md`](ml/M4-WORKED-EXAMPLES.md); K5 harmonisation: [`experiments/EXP-K5-001/CONCLUSION.md`](../experiments/EXP-K5-001/CONCLUSION.md); K4 deep families: [`experiments/EXP-K4-001/CONCLUSION.md`](../experiments/EXP-K4-001/CONCLUSION.md); K6 active sensing: [`experiments/EXP-K6-001/CONCLUSION.md`](../experiments/EXP-K6-001/CONCLUSION.md); M12 federated/DP: [`experiments/EXP-M12-001/CONCLUSION.md`](../experiments/EXP-M12-001/CONCLUSION.md); OCR lab drafts: [`experiments/EXP-OCR-001/CONCLUSION.md`](../experiments/EXP-OCR-001/CONCLUSION.md)), [`model_cards/`](model_cards/) and the older [`models/`](models/) (duplicate cards; consolidation tracked in the repo audit)
 - Studies: pre-registrations in [`studies/`](studies/) and `experiments/EXP-*/`; results are written only by their scripts
+- Localisation: [`localization/`](localization/) (review workflow); ledger and glossary in `packages/ui/i18n/` (ADR-0029)
 
 ## I operate it
 - [`deployment/ON_PREM_INSTALL.md`](deployment/ON_PREM_INSTALL.md), [`runbooks/`](runbooks/), [`resilience/DISASTER_RECOVERY.md`](resilience/DISASTER_RECOVERY.md), [`operations/`](operations/)

@@ -1,0 +1,283 @@
+{
+  "schema": "vigil-medical-glossary-v1",
+  "path": "packages/ui/i18n/glossary/terms.json",
+  "note": "English (en-NG) is the source. pcm/yo/ha/ig entries are machine-draft placeholders that fall back to English with an UNREVIEWED DRAFT marker. Native-speaker clinician/community review is HANDOVER H-118. Do not remove the marker until review_state flips.",
+  "terms": [
+    {
+      "id": "ca_15_3",
+      "en-NG": {
+        "label": "CA 15-3",
+        "definition": "Blood tumour marker used in breast-cancer follow-up. A change alone is not a diagnosis."
+      },
+      "pcm": {
+        "label": "CA 15-3",
+        "definition": "[UNREVIEWED DRAFT] Blood tumour marker used in breast-cancer follow-up. A change alone is not a diagnosis."
+      },
+      "yo": {
+        "label": "CA 15-3",
+        "definition": "[UNREVIEWED DRAFT] Blood tumour marker used in breast-cancer follow-up. A change alone is not a diagnosis."
+      },
+      "ha": {
+        "label": "CA 15-3",
+        "definition": "[UNREVIEWED DRAFT] Blood tumour marker used in breast-cancer follow-up. A change alone is not a diagnosis."
+      },
+      "ig": {
+        "label": "CA 15-3",
+        "definition": "[UNREVIEWED DRAFT] Blood tumour marker used in breast-cancer follow-up. A change alone is not a diagnosis."
+      }
+    },
+    {
+      "id": "cea",
+      "en-NG": {
+        "label": "CEA",
+        "definition": "Carcinoembryonic antigen; another blood tumour marker. Not specific to breast cancer."
+      },
+      "pcm": {
+        "label": "CEA",
+        "definition": "[UNREVIEWED DRAFT] Carcinoembryonic antigen; another blood tumour marker. Not specific to breast cancer."
+      },
+      "yo": {
+        "label": "CEA",
+        "definition": "[UNREVIEWED DRAFT] Carcinoembryonic antigen; another blood tumour marker. Not specific to breast cancer."
+      },
+      "ha": {
+        "label": "CEA",
+        "definition": "[UNREVIEWED DRAFT] Carcinoembryonic antigen; another blood tumour marker. Not specific to breast cancer."
+      },
+      "ig": {
+        "label": "CEA",
+        "definition": "[UNREVIEWED DRAFT] Carcinoembryonic antigen; another blood tumour marker. Not specific to breast cancer."
+      }
+    },
+    {
+      "id": "recurrence",
+      "en-NG": {
+        "label": "Recurrence",
+        "definition": "Return of cancer after a period with no clinical evidence of disease."
+      },
+      "pcm": {
+        "label": "Recurrence",
+        "definition": "[UNREVIEWED DRAFT] Return of cancer after a period with no clinical evidence of disease."
+      },
+      "yo": {
+        "label": "Recurrence",
+        "definition": "[UNREVIEWED DRAFT] Return of cancer after a period with no clinical evidence of disease."
+      },
+      "ha": {
+        "label": "Recurrence",
+        "definition": "[UNREVIEWED DRAFT] Return of cancer after a period with no clinical evidence of disease."
+      },
+      "ig": {
+        "label": "Recurrence",
+        "definition": "[UNREVIEWED DRAFT] Return of cancer after a period with no clinical evidence of disease."
+      }
+    },
+    {
+      "id": "metastasis",
+      "en-NG": {
+        "label": "Metastasis",
+        "definition": "Cancer that has spread from the breast to another organ. The system never diagnoses this."
+      },
+      "pcm": {
+        "label": "Metastasis",
+        "definition": "[UNREVIEWED DRAFT] Cancer that has spread from the breast to another organ. The system never diagnoses this."
+      },
+      "yo": {
+        "label": "Metastasis",
+        "definition": "[UNREVIEWED DRAFT] Cancer that has spread from the breast to another organ. The system never diagnoses this."
+      },
+      "ha": {
+        "label": "Metastasis",
+        "definition": "[UNREVIEWED DRAFT] Cancer that has spread from the breast to another organ. The system never diagnoses this."
+      },
+      "ig": {
+        "label": "Metastasis",
+        "definition": "[UNREVIEWED DRAFT] Cancer that has spread from the breast to another organ. The system never diagnoses this."
+      }
+    },
+    {
+      "id": "radiotherapy",
+      "en-NG": {
+        "label": "Radiotherapy",
+        "definition": "Treatment with ionising radiation. Capacity is limited in many Nigerian centres."
+      },
+      "pcm": {
+        "label": "Radiotherapy",
+        "definition": "[UNREVIEWED DRAFT] Treatment with ionising radiation. Capacity is limited in many Nigerian centres."
+      },
+      "yo": {
+        "label": "Radiotherapy",
+        "definition": "[UNREVIEWED DRAFT] Treatment with ionising radiation. Capacity is limited in many Nigerian centres."
+      },
+      "ha": {
+        "label": "Radiotherapy",
+        "definition": "[UNREVIEWED DRAFT] Treatment with ionising radiation. Capacity is limited in many Nigerian centres."
+      },
+      "ig": {
+        "label": "Radiotherapy",
+        "definition": "[UNREVIEWED DRAFT] Treatment with ionising radiation. Capacity is limited in many Nigerian centres."
+      }
+    },
+    {
+      "id": "plausibility",
+      "en-NG": {
+        "label": "Plausibility check",
+        "definition": "A software check that asks whether a lab change could be noise, mix-up or true biology — never a dismissal."
+      },
+      "pcm": {
+        "label": "Plausibility check",
+        "definition": "[UNREVIEWED DRAFT] A software check that asks whether a lab change could be noise, mix-up or true biology — never a dismissal."
+      },
+      "yo": {
+        "label": "Plausibility check",
+        "definition": "[UNREVIEWED DRAFT] A software check that asks whether a lab change could be noise, mix-up or true biology — never a dismissal."
+      },
+      "ha": {
+        "label": "Plausibility check",
+        "definition": "[UNREVIEWED DRAFT] A software check that asks whether a lab change could be noise, mix-up or true biology — never a dismissal."
+      },
+      "ig": {
+        "label": "Plausibility check",
+        "definition": "[UNREVIEWED DRAFT] A software check that asks whether a lab change could be noise, mix-up or true biology — never a dismissal."
+      }
+    },
+    {
+      "id": "synthetic_data",
+      "en-NG": {
+        "label": "Synthetic data",
+        "definition": "Computer-generated data used for testing. Not a real patient's record."
+      },
+      "pcm": {
+        "label": "Synthetic data",
+        "definition": "[UNREVIEWED DRAFT] Computer-generated data used for testing. Not a real patient's record."
+      },
+      "yo": {
+        "label": "Synthetic data",
+        "definition": "[UNREVIEWED DRAFT] Computer-generated data used for testing. Not a real patient's record."
+      },
+      "ha": {
+        "label": "Synthetic data",
+        "definition": "[UNREVIEWED DRAFT] Computer-generated data used for testing. Not a real patient's record."
+      },
+      "ig": {
+        "label": "Synthetic data",
+        "definition": "[UNREVIEWED DRAFT] Computer-generated data used for testing. Not a real patient's record."
+      }
+    },
+    {
+      "id": "second_look",
+      "en-NG": {
+        "label": "Second-look request",
+        "definition": "A family request for a clinician to re-check a worrying result."
+      },
+      "pcm": {
+        "label": "Second-look request",
+        "definition": "[UNREVIEWED DRAFT] A family request for a clinician to re-check a worrying result."
+      },
+      "yo": {
+        "label": "Second-look request",
+        "definition": "[UNREVIEWED DRAFT] A family request for a clinician to re-check a worrying result."
+      },
+      "ha": {
+        "label": "Second-look request",
+        "definition": "[UNREVIEWED DRAFT] A family request for a clinician to re-check a worrying result."
+      },
+      "ig": {
+        "label": "Second-look request",
+        "definition": "[UNREVIEWED DRAFT] A family request for a clinician to re-check a worrying result."
+      }
+    },
+    {
+      "id": "bad_news_mode",
+      "en-NG": {
+        "label": "Protected results",
+        "definition": "The patient chooses when to see a result that may be distressing."
+      },
+      "pcm": {
+        "label": "Protected results",
+        "definition": "[UNREVIEWED DRAFT] The patient chooses when to see a result that may be distressing."
+      },
+      "yo": {
+        "label": "Protected results",
+        "definition": "[UNREVIEWED DRAFT] The patient chooses when to see a result that may be distressing."
+      },
+      "ha": {
+        "label": "Protected results",
+        "definition": "[UNREVIEWED DRAFT] The patient chooses when to see a result that may be distressing."
+      },
+      "ig": {
+        "label": "Protected results",
+        "definition": "[UNREVIEWED DRAFT] The patient chooses when to see a result that may be distressing."
+      }
+    },
+    {
+      "id": "specimen",
+      "en-NG": {
+        "label": "Specimen",
+        "definition": "The blood or other sample the laboratory measured."
+      },
+      "pcm": {
+        "label": "Specimen",
+        "definition": "[UNREVIEWED DRAFT] The blood or other sample the laboratory measured."
+      },
+      "yo": {
+        "label": "Specimen",
+        "definition": "[UNREVIEWED DRAFT] The blood or other sample the laboratory measured."
+      },
+      "ha": {
+        "label": "Specimen",
+        "definition": "[UNREVIEWED DRAFT] The blood or other sample the laboratory measured."
+      },
+      "ig": {
+        "label": "Specimen",
+        "definition": "[UNREVIEWED DRAFT] The blood or other sample the laboratory measured."
+      }
+    },
+    {
+      "id": "confirm_gate",
+      "en-NG": {
+        "label": "Confirm before save",
+        "definition": "A human must type the values before a lab report draft enters the medical record."
+      },
+      "pcm": {
+        "label": "Confirm before save",
+        "definition": "[UNREVIEWED DRAFT] A human must type the values before a lab report draft enters the medical record."
+      },
+      "yo": {
+        "label": "Confirm before save",
+        "definition": "[UNREVIEWED DRAFT] A human must type the values before a lab report draft enters the medical record."
+      },
+      "ha": {
+        "label": "Confirm before save",
+        "definition": "[UNREVIEWED DRAFT] A human must type the values before a lab report draft enters the medical record."
+      },
+      "ig": {
+        "label": "Confirm before save",
+        "definition": "[UNREVIEWED DRAFT] A human must type the values before a lab report draft enters the medical record."
+      }
+    },
+    {
+      "id": "action_urgency",
+      "en-NG": {
+        "label": "Action urgency",
+        "definition": "A ranking of who needs attention first. It is not a diagnosis or a survival probability."
+      },
+      "pcm": {
+        "label": "Action urgency",
+        "definition": "[UNREVIEWED DRAFT] A ranking of who needs attention first. It is not a diagnosis or a survival probability."
+      },
+      "yo": {
+        "label": "Action urgency",
+        "definition": "[UNREVIEWED DRAFT] A ranking of who needs attention first. It is not a diagnosis or a survival probability."
+      },
+      "ha": {
+        "label": "Action urgency",
+        "definition": "[UNREVIEWED DRAFT] A ranking of who needs attention first. It is not a diagnosis or a survival probability."
+      },
+      "ig": {
+        "label": "Action urgency",
+        "definition": "[UNREVIEWED DRAFT] A ranking of who needs attention first. It is not a diagnosis or a survival probability."
+      }
+    }
+  ]
+}

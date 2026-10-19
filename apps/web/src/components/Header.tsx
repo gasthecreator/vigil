@@ -29,13 +29,17 @@ export const Header: React.FC = () => {
     }
   };
 
-  const locales: { code: SupportedLocale; name: string; isReviewed: boolean }[] = [
-    { code: "en-NG", name: "English (Nigeria)", isReviewed: true },
-    { code: "pcm", name: "Naijá Pidgin [Unreviewed]", isReviewed: false },
-    { code: "yo", name: "Èdè Yorùbá [Unreviewed]", isReviewed: false },
-    { code: "ha", name: "Harshen Hausa [Unreviewed]", isReviewed: false },
-    { code: "ig", name: "Asụsụ Igbo [Unreviewed]", isReviewed: false },
-  ];
+  // Labels and review flags come from the dictionaries + packages/ui/i18n/review_state.json
+  // (ADR-0029). Do not hard-code isReviewed here.
+  const locales: { code: SupportedLocale; name: string; isReviewed: boolean }[] = (
+    Object.keys(translations) as SupportedLocale[]
+  ).map((code) => {
+    const meta = translations[code].metadata;
+    const label = meta.isReviewed
+      ? meta.nativeName
+      : `${meta.nativeName} [Unreviewed]`;
+    return { code, name: label, isReviewed: meta.isReviewed };
+  });
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">

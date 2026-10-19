@@ -1,0 +1,713 @@
+{
+  "schema": "vigil-i18n-review-v1",
+  "path": "packages/ui/i18n/review_state.json",
+  "note": "Source of truth for whether a locale, UI string or glossary term has been reviewed by a native-speaker clinician/community validator. Machine drafts must stay status=unreviewed until H-118. Flipping status without naming the reviewer is a process defect. Status 'absent' means the optional key is not present in that locale file.",
+  "locales": {
+    "en-NG": {
+      "status": "reviewed",
+      "reviewed_by": "source-locale",
+      "reviewed_on": null,
+      "method": "authored-in-English"
+    },
+    "pcm": {
+      "status": "unreviewed",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "method": "machine-draft"
+    },
+    "yo": {
+      "status": "unreviewed",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "method": "machine-draft"
+    },
+    "ha": {
+      "status": "unreviewed",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "method": "machine-draft"
+    },
+    "ig": {
+      "status": "unreviewed",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "method": "machine-draft"
+    }
+  },
+  "string_keys": {
+    "adjudication.adjudicationVerdict": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.analyticalNoise": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.biologicalVariation": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.escalate": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.explained": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.needsRepeat": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.neverDismissedPolicy": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.panelTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.rationaleFacts": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "adjudication.recommendedNextStep": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.acknowledgeButton": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.acknowledgeModalTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.dispositionConfirmed": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.dispositionEscalatedToImaging": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.dispositionPrompt": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.dispositionRepeatScheduled": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.inboxTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.notesPrompt": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.submitAcknowledgement": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "alerts.urgentCount": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.actions": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.appName": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.cancel": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.error": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.loading": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.refresh": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.save": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.syntheticBanner": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.syntheticDescription": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "common.unreviewedTranslationWarning": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.badNewsModeTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.badNewsWarning": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.caregiverSharingTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.disclaimer": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.emergencyNotice": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.explainerTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultConfirmHint": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultNotice": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultPending": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultSubtitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.labVaultUpload": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.listening": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.logSymptom": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.offlineSyncNotice": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.recordVoice": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.requestSecondLook": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.secondLookTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.shareWithFamily": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.subtitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.symptomDiaryTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.title": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.unlockResults": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "companion.voiceInput": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.boardTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.contactPatient": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.markCompleted": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.openTasksCount": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.overdueDays": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.reminderCascade": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.status": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "followUp.taskType": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.analyteCode": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.drawerTitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.fastIntakeTip": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.offlineSavedNotice": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.specimenDate": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.submitObservation": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.unit": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "intake.value": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "metadata.unreviewedNotice": {
+      "en-NG": "absent",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.actionUrgency": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.emptyQueue": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.highUrgency": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.lastObservation": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.lowUrgency": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.mediumUrgency": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.mrn": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.openTasks": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.patientId": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.stageSubtype": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.subtitle": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.title": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "triage.viewTimeline": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    }
+  },
+  "glossary_terms": {
+    "ca_15_3": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "cea": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "recurrence": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "metastasis": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "radiotherapy": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "plausibility": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "synthetic_data": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "second_look": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "bad_news_mode": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "specimen": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "confirm_gate": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    },
+    "action_urgency": {
+      "en-NG": "reviewed",
+      "pcm": "unreviewed",
+      "yo": "unreviewed",
+      "ha": "unreviewed",
+      "ig": "unreviewed"
+    }
+  }
+}
