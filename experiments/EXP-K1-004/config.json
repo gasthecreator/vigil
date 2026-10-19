@@ -1,6 +1,6 @@
 {
   "experiment_id": "EXP-K1-004",
-  "protocol_version": "1.0",
+  "protocol_version": "1.1",
   "status": "registered_before_fitting",
   "code_baseline": "2499752d392f0cf5bc9a40a10a840ed24dfe1477",
   "purpose": "canonical K1 own-world inference validation and synthetic product-simulator transfer",
@@ -23,6 +23,19 @@
       "declared_model_misspecified_noise_and_visit_process"
     ],
     "coverage_levels": [0.5, 0.8, 0.9, 0.95]
+  },
+  "neural_estimators": {
+    "amortized_family": "diagonal_gaussian_recognition_model",
+    "npe_family": "five_component_conditional_gaussian_mixture",
+    "time_bins": 7,
+    "input_channels": ["within_bin_observed_value_mean", "observed_indicator"],
+    "train_validation_seed_pairs": [[41001, 42001], [41002, 42002], [41003, 42003]],
+    "simulations_per_train_seed": 20000,
+    "simulations_per_validation_seed": 5000,
+    "amortized_max_epochs": 200,
+    "npe_max_epochs": 100,
+    "model_selection_metric": "validation_negative_log_likelihood",
+    "tie_break": "lower_training_seed"
   },
   "product_world": {
     "development_generators": ["G1", "G2"],

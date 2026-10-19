@@ -2,7 +2,7 @@
 
 - **Status:** registered before implementation fitting or new K1 evaluation in this repair.
 - **Owner:** Vigil maintainers; independent acceptance verdict remains overseer-owned.
-- **Protocol version:** 1.0
+- **Protocol version:** 1.1
 - **Code baseline:** `2499752d392f0cf5bc9a40a10a840ed24dfe1477` (audit/design baseline only; no results from this protocol have been generated).
 - **Target:** one canonical `vigil_ml.k1` implementation, including all inference routes and any model-facing prediction API.
 - **Purpose:** repair route identity and inference behavior, establish whether the four-parameter model is identifiable and calibrated under its declared generative assumptions, and test transfer to the project's observed-data simulator without promoting K1.
@@ -49,7 +49,8 @@
 
 - Commit this preregistration and its config before any fit or result-producing K1 test. Each run records repository SHA, dirty-tree status, config hash, environment lock hash, simulator version, seeds, split IDs/hashes, command, start/end time, outputs and access event.
 - Frozen product-world test cohorts are generated and read once after the implementation and development decisions are frozen. Record that access in the report. Any accidental access, protocol change, or code change after access invalidates the affected confirmatory result; preserve it and create a new experiment ID/protocol before a new cohort is generated.
-- No deviations are currently registered. Amendments must be timestamped and committed before the affected data or result is accessed; explain the reason and preserve the prior protocol text.
+- **Amendment 1.1 (2026-10-19 20:39 UTC; before any fitting):** specify the learned route estimators and validation split so implementation choices cannot be selected after seeing results. The amortized route is a diagonal Gaussian recognition model; NPE is a five-component conditional Gaussian mixture density estimator; both use the same seven time-bin value summaries plus explicit measurement indicators, generated from the shared simulator and uniform prior. Each training replicate uses 20,000 training simulations and a separate 5,000-simulation validation seed. The three registered train/validation seed pairs are evaluated; no validation or acceptance cohort is reused for training. Model selection uses validation negative log likelihood, with ties resolved by lower training seed. Amortized training is capped at 200 epochs; NPE at 100 epochs. The original protocol text and config remain in Git history.
+- Any further protocol change must be timestamped and committed before the affected data or result is accessed; explain the reason and preserve the prior protocol text.
 
 ## Known limits
 
