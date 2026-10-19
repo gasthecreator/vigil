@@ -29,7 +29,7 @@ Do B3 (regularized logistic horizon classifier) and B4 (XGBoost horizon classifi
 
 - Primary transport metric: calibrated IPCW Brier score on pooled G3 test patients.
 - Secondary metrics on each test generator: IPCW time-dependent AUC, IPCW Brier score, IPCW calibration error, and IPCW-weighted average precision. Report all five replicate cohort results and pooled estimates; do not suppress a poor generator or undefined metric.
-- Compare each learned model with B0, B1, and B2 using paired patient-cluster percentile bootstrap intervals (1,000 resamples, seed 44500), resampling patients and keeping all their landmarks together. A comparison with an undefined estimand is reported as undefined, never replaced by a numeric default.
+- Compare each learned model with B0, B1, and B2 using paired patient-cluster percentile bootstrap intervals (1,000 resamples, seed 44500), resampling patients within each replicate and keeping all their landmarks together. At least 400 valid replicates are required for every reported interval. A comparison with an undefined estimand is reported as undefined, never replaced by a numeric default.
 - This is an exploratory robustness study. No model passes a clinical or deployment gate by winning on any synthetic generator. A result that degrades on G3 is a negative transport result.
 
 ## Integrity checks and frozen-test access
