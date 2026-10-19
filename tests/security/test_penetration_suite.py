@@ -116,6 +116,9 @@ OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
     # Public & self-authenticating share routes
     ("GET", "/"): {"public"},
     ("GET", "/health"): {"public"},
+    ("GET", "/live"): {"public"},
+    ("GET", "/ready"): {"public"},
+    ("GET", "/metrics"): {"public"},  # token-gated in code (see test_observability_probes); not a user role
     ("GET", "/api/v1/companion/share/{share_token}"): {"public"},
     ("GET", "/api/v1/companion/share/{share_token}/observations/{obs_id}/explainer"): {"public"},
     ("POST", "/api/v1/companion/share/{share_token}/disclosure/request-release"): {"public"},
