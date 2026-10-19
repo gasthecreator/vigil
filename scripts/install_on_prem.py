@@ -103,6 +103,7 @@ def run_database_migrations(db_url: Optional[str] = None) -> bool:
     print("📦 Initializing database tables and schemas...")
     try:
         from sqlalchemy import create_engine
+        import vigil_api.models  # noqa: F401 — register all tables on Base.metadata
         from vigil_api.config import settings
         from vigil_api.database import Base
 
