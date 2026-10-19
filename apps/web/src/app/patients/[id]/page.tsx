@@ -12,6 +12,7 @@ import {
 } from "@/lib/types";
 import { PatientTimeline } from "@/components/PatientTimeline";
 import { M3AdjudicationPanel } from "@/components/M3AdjudicationPanel";
+import { OcrDraftsPanel } from "@/components/OcrDraftsPanel";
 import { ObservationIntakeModal } from "@/components/ObservationIntakeModal";
 import { ArrowLeft, Plus, RefreshCw, Calendar, FileText } from "lucide-react";
 
@@ -142,6 +143,7 @@ export default function PatientTimelinePage() {
 
             {/* Right Col: M3 Plausibility Adjudication Panel */}
             <div className="space-y-6">
+              <OcrDraftsPanel patientId={patientId} onConfirmed={loadData} />
               <M3AdjudicationPanel
                 patientId={patientId}
                 observation={selectedObservation}

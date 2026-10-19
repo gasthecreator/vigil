@@ -70,6 +70,26 @@ export class VigilApiClient {
     return this.request(`/api/v1/patients/${patientId}/observations`);
   }
 
+  async createOcrDraft(patientId: string, body: Types.OcrDraftUploadRequest): Promise<Types.OcrDraftResponse> {
+    return this.request(`/api/v1/patients/${patientId}/ocr-drafts`, { method: "POST", body: JSON.stringify(body) });
+  }
+
+  async listOcrDrafts(patientId: string): Promise<Types.OcrDraftResponse[]> {
+    return this.request(`/api/v1/patients/${patientId}/ocr-drafts`);
+  }
+
+  async getOcrDraft(patientId: string, draftId: string): Promise<Types.OcrDraftResponse> {
+    return this.request(`/api/v1/patients/${patientId}/ocr-drafts/${draftId}`);
+  }
+
+  async confirmOcrDraft(patientId: string, draftId: string, body: Types.OcrDraftConfirmRequest): Promise<Types.OcrDraftConfirmResponse> {
+    return this.request(`/api/v1/patients/${patientId}/ocr-drafts/${draftId}/confirm`, { method: "POST", body: JSON.stringify(body) });
+  }
+
+  async rejectOcrDraft(patientId: string, draftId: string): Promise<Types.OcrDraftResponse> {
+    return this.request(`/api/v1/patients/${patientId}/ocr-drafts/${draftId}/reject`, { method: "POST", body: JSON.stringify({}) });
+  }
+
   async listRiskHistory(patientId: string): Promise<Types.RiskAssessmentSummary[]> {
     return this.request(`/api/v1/patients/${patientId}/risk-history`);
   }

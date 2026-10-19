@@ -98,5 +98,11 @@ export const pcm: TranslationDictionary = {
     recordVoice: "Record Voice",
     shareWithFamily: "Share Access with Family",
     offlineSyncNotice: "Internet no dey. Everything save for phone and e go send once internet show.",
+    labVaultTitle: "Lab report vault [Unreviewed]",
+    labVaultSubtitle: "Send picture of your lab paper. E no go enter record until doctor confirm. [Unreviewed]",
+    labVaultNotice: "Number wey computer guess no dey your record yet. Doctor must confirm. Research prototype, synthetic data. [Unreviewed]",
+    labVaultUpload: "Upload report (PNG, JPEG or PDF) [Unreviewed]",
+    labVaultPending: "Dey wait make doctor confirm [Unreviewed]",
+    labVaultConfirmHint: "Check unit, decimal and test name well before you confirm. [Unreviewed]",
   },
 };

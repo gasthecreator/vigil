@@ -7,6 +7,7 @@ const CACHE_NAME = "vigil-companion-v1";
 const STATIC_ASSETS = [
   "/companion",
   "/companion/symptoms",
+  "/companion/vault",
   "/companion/share",
   "/manifest.json",
   "/globals.css",

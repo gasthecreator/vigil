@@ -332,8 +332,41 @@ def verify_k6_study() -> bool:
     return True
 
 
+def verify_ocr_study() -> bool:
+    print("🔬 Verifying EXP-OCR-001 (PDF text-layer arm) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-OCR-001"
+    stored_path = exp / "results.json"
+    report_path = exp / "REPORT.md"
+    if not stored_path.exists() or not report_path.exists():
+        print("❌ EXP-OCR-001: results.json or REPORT.md missing.")
+        return False
+    stored = json.loads(stored_path.read_text())
+    spec = importlib.util.spec_from_file_location(
+        "run_ocr_accuracy_verify", ROOT / "scripts" / "run_ocr_accuracy.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    fresh = mod.evaluate(stored["seed"], images=False)
+    if fresh["rates"]["pdf"] != stored["rates"]["pdf"]:
+        print("❌ EXP-OCR-001: PDF exact-match rate does not reproduce results.json.")
+        return False
+    if fresh["hypotheses"]["H1_pdf_exact_ge_0.95"] != stored["hypotheses"]["H1_pdf_exact_ge_0.95"]:
+        print("❌ EXP-OCR-001: H1 verdict does not reproduce results.json.")
+        return False
+    print("  ✅ PDF text-layer arm reproduces results.json.")
+    if mod.render_report(stored) != report_path.read_text():
+        print("❌ EXP-OCR-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    return True
+
+
 def main() -> int:
     ok = True
+    if not verify_ocr_study():
+        ok = False
     if not verify_k4_study():
         ok = False
     if not verify_k6_study():

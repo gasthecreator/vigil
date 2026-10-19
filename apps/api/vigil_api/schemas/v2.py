@@ -536,3 +536,63 @@ class TestLadderResponse(BaseModel):
     negative_result_excludes_involvement: bool
     negative_result_statement: str
     scope_statement: str
+
+
+class OcrDraftUploadRequest(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=255)
+    content_type: str = Field(..., min_length=3, max_length=100)
+    content_base64: str = Field(..., min_length=8, description="Base64 of the PNG, JPEG or PDF bytes")
+
+
+class OcrConfusionFlag(BaseModel):
+    field: str
+    reason: str
+
+
+class OcrSuggestion(BaseModel):
+    analyte_code: Optional[str] = None
+    analyte_name: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    specimen_collected_at: Optional[str] = None
+    flags: List[OcrConfusionFlag] = Field(default_factory=list)
+
+
+class OcrDraftResponse(BaseModel):
+    id: str
+    patient_id: str
+    filename: str
+    content_type: str
+    source_sha256: str
+    engine: str
+    extracted_text: str
+    suggestion: OcrSuggestion
+    confusion_flags: List[OcrConfusionFlag]
+    status: str
+    created_by: str
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[str] = None
+    observation_id: Optional[str] = None
+    synthetic: bool = True
+    notice: str = (
+        "OCR suggestions are drafts. They are not in the surveillance record until a "
+        "clinician, nurse clerk or admin posts a confirmation with the human-reviewed values."
+    )
+
+
+class OcrDraftConfirmRequest(BaseModel):
+    confirmed: Literal[True] = Field(
+        ..., description="Must be true. The server never copies OCR suggestions into an observation."
+    )
+    analyte_code: str
+    value: float
+    unit: str
+    specimen_collected_at: datetime
+    laboratory_id: Optional[str] = None
+    lab_changed: bool = False
+
+
+class OcrDraftConfirmResponse(ObservationCreateResponse):
+    draft_id: str
+    draft_status: str = "confirmed"

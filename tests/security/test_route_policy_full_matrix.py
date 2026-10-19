@@ -129,6 +129,7 @@ def fill(path: str) -> str:
         "task_id": "no-such-task",
         "share_id": "no-such-share",
         "share_token": "cg_no-such-token",
+        "draft_id": "no-such-draft",
     }
     out = path
     if path.startswith("/api/v1/fhir/Observation/"):
@@ -159,6 +160,20 @@ VALID_BODIES: Dict[Tuple[str, str], dict] = {
         "organ": "liver",
         "prior": {"value": 0.15, "provenance": "matrix"},
         "facility_id": "TEMPLATE-TERTIARY",
+    },
+    ("POST", "/api/v1/patients/{id}/ocr-drafts"): {
+        "filename": "report.png",
+        "content_type": "image/png",
+        "content_base64": (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        ),
+    },
+    ("POST", "/api/v1/patients/{id}/ocr-drafts/{draft_id}/confirm"): {
+        "confirmed": True,
+        "analyte_code": "ca_15_3",
+        "value": 22.0,
+        "unit": "U/mL",
+        "specimen_collected_at": "2026-01-15T00:00:00Z",
     },
 }
 

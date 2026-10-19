@@ -98,5 +98,11 @@ export const yo: TranslationDictionary = {
     recordVoice: "Gba Ohùn Sílẹ̀",
     shareWithFamily: "Pín Pẹ̀lú Ẹbí",
     offlineSyncNotice: "Kò sí intanẹ́ẹ̀tì. Àkọsílẹ̀ rẹ wà lórí ẹ̀rọ rẹ yóò sì ránṣẹ́ bí intanẹ́ẹ̀tì bá dé.",
+    labVaultTitle: "Ibi ìfipamọ́ ìwé àyẹ̀wò [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
+    labVaultSubtitle: "Fi fọ́tò ìwé àyẹ̀wò ránṣẹ́. Kò ní wọlé títí dókítà yóò fi ṣe ìjẹ́rìí. [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
+    labVaultNotice: "Nọ́mbà tí kọ̀mpútà sọ kò sí nínú àkọsílẹ̀. Dókítà gbọ́dọ̀ jẹ́rìí. [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
+    labVaultUpload: "Gbé ìwé àyẹ̀wò sókè (PNG, JPEG tàbí PDF) [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
+    labVaultPending: "Ń dúró fún ìjẹ́rìí dókítà [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
+    labVaultConfirmHint: "Yẹ̀ unit, decimal àti orúkọ àyẹ̀wò wò kí o tó jẹ́rìí. [Àtúnṣe Tí A Kò Tí Ì Yẹ̀ Wò]",
   },
 };

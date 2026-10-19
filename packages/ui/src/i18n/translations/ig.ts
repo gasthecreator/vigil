@@ -98,5 +98,11 @@ export const ig: TranslationDictionary = {
     recordVoice: "Dekọọ Olu",
     shareWithFamily: "Kekọrịta Ezinụlọ",
     offlineSyncNotice: "Ịntanetị adịghị. Echekwara ozi a na ekwentị gị ma ga-ezipụ mgbe ịntanetị pụtara.",
+    labVaultTitle: "Ebe nchekwa akụkọ ụlọ nyocha [Nsụgharị A Nyocharaghị]",
+    labVaultSubtitle: "Zipụ foto akụkọ ụlọ nyocha. Ọ gaghị abanye ndekọ ruo mgbe dọkịta kwadoro. [Nsụgharị A Nyocharaghị]",
+    labVaultNotice: "Ọnụọgụ kọmputa tụrụ anaghị adị na ndekọ. Dọkịta ga-akwado ya. [Nsụgharị A Nyocharaghị]",
+    labVaultUpload: "Bulite akụkọ (PNG, JPEG ma ọ bụ PDF) [Nsụgharị A Nyocharaghị]",
+    labVaultPending: "Na-eche nkwado dọkịta [Nsụgharị A Nyocharaghị]",
+    labVaultConfirmHint: "Lelee unit, decimal na aha ule tupu ị kwado. [Nsụgharị A Nyocharaghị]",
   },
 };

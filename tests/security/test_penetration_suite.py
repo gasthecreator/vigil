@@ -147,6 +147,21 @@ OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
     ("POST", "/api/v1/patients/{id}/disclosure/unlock"): {"clinician", "admin"},
     ("POST", "/api/v1/patients/{id}/labs"): {"clinician", "nurse_clerk", "admin"},
     ("POST", "/api/v1/patients/{id}/observations"): {"clinician", "nurse_clerk", "admin"},
+    ("POST", "/api/v1/patients/{id}/ocr-drafts"): {
+        "patient", "caregiver", "clinician", "nurse_clerk", "admin"
+    },
+    ("GET", "/api/v1/patients/{id}/ocr-drafts"): {
+        "clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"
+    },
+    ("GET", "/api/v1/patients/{id}/ocr-drafts/{draft_id}"): {
+        "clinician", "nurse_clerk", "quality_lead", "admin", "patient", "caregiver"
+    },
+    ("POST", "/api/v1/patients/{id}/ocr-drafts/{draft_id}/confirm"): {
+        "clinician", "nurse_clerk", "admin"
+    },
+    ("POST", "/api/v1/patients/{id}/ocr-drafts/{draft_id}/reject"): {
+        "patient", "caregiver", "clinician", "nurse_clerk", "admin"
+    },
     ("POST", "/api/v1/patients/{id}/simulate"): {"clinician", "admin"},
     ("GET", "/api/v1/alerts/"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
     ("GET", "/api/v1/alerts/stream"): {"clinician", "nurse_clerk", "quality_lead", "admin"},
