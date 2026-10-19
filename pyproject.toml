@@ -10,7 +10,6 @@ dependencies = [
     "ruff>=0.6.0",
     "numpyro>=0.22.0",
     "jax>=0.10.2",
-    "sbi>=0.27.0",
 ]
 
 [tool.uv.workspace]

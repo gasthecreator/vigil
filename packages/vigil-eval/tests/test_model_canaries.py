@@ -87,15 +87,13 @@ def test_b1_to_b4_canaries(synthetic_cohort):
     assert auc_b4 <= 0.60, f"B4 shuffled-label canary failed: AUC = {auc_b4}"
 
 
-def test_k1_kinetic_canaries(synthetic_cohort):
-    """Verifies K1 inputs contain no unobserved values and K1 collapses under shuffled labels."""
+def test_k1_recurrence_prediction_fails_closed(synthetic_cohort):
+    """The synthetic parameter model must not emit an unsupported recurrence score."""
     obs_df = synthetic_cohort.to_observations_dataframe(legacy_leaky=False)
     pts_df = synthetic_cohort.to_patients_dataframe()
 
     # Extract sequences for test patients
     k1_inputs = []
-    labels = []
-
     for _, pt in pts_df.iterrows():
         pid = pt["patient_id"]
         pt_obs = obs_df[(obs_df["patient_id"] == pid) & (obs_df["ca_15_3"].notna())]
@@ -105,25 +103,9 @@ def test_k1_kinetic_canaries(synthetic_cohort):
         assert not np.isnan(ca_vals).any(), "K1 input contains NaN values"
 
         k1_inputs.append(K1Observations(days=days, values={"ca153": ca_vals}))
-        labels.append(1 if pt.get("observed_recurrence_event") else 0)
-
     k1 = HybridKineticModelK1(horizon_days=365.0)
-    preds = k1.predict_risk(k1_inputs)
-
-    # Shuffled label canary across 5 random permutations
-    rng = np.random.default_rng(42)
-    shuffled_aucs = []
-    for _ in range(5):
-        permutation = rng.permutation(len(labels))
-        shuffled_labels = np.asarray(labels)[permutation]
-        auc = float(roc_auc_score(shuffled_labels, preds))
-        shuffled_aucs.append(auc)
-
-    mean_shuffled_auc = float(np.mean(shuffled_aucs))
-    # Discrimination under shuffled labels must be near chance (<= 0.60)
-    assert mean_shuffled_auc <= 0.60, (
-        f"K1 shuffled label canary failed: mean AUC = {mean_shuffled_auc:.4f}"
-    )
+    with pytest.raises(RuntimeError, match="recurrence-risk prediction is disabled"):
+        k1.predict_risk(k1_inputs)
 
 
 def test_k2_sequential_canaries():

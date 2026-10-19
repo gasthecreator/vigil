@@ -68,7 +68,6 @@ from vigil_ml.baselines import (
 from vigil_ml.conformal_k8 import ProductionEnsembleK8
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
-from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_sim.generators import GeneratorType, get_generator
 
 
@@ -127,7 +126,6 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=0.5),
             "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
             "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
-            "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
         }
 
         stratum_res = {}
@@ -138,22 +136,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
                 m.fit(X_train_full, y_train_full, sample_weight=train_weights)
             else:
                 m.fit(X_train_full, y_train_full)
-            if name == "K1_Kinetic":
-                obs_list = []
-                for _, row in X_test.iterrows():
-                    pid = row["patient_id"]
-                    eval_d = row.get("eval_day", 730.0)
-                    p_obs = test_obs_sliced[
-                        (test_obs_sliced["patient_id"] == pid)
-                        & (test_obs_sliced["day"] <= eval_d)
-                        & (test_obs_sliced["ca_15_3"].notna())
-                    ]
-                    days = p_obs["day"].to_numpy(dtype=float)
-                    ca_vals = p_obs["ca_15_3"].to_numpy(dtype=float)
-                    obs_list.append(K1Observations(days=days, values={"ca153": ca_vals}))
-                preds = m.predict_risk(obs_list)
-            else:
-                preds = m.predict_risk(X_test)
+            preds = m.predict_risk(X_test)
 
             auc_val = ipcw_time_dependent_roc_auc(preds, t_test, d_test, horizon_time=365.0)
             brier_val = ipcw_brier_score(preds, t_test, d_test, horizon_time=365.0)
@@ -187,7 +170,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             auc_boot = boot_res["auc"]
 
             # Latency benchmark (p50, p95, p99 over >= 1000 single calls on CPU, Condition P7-C)
-            sample_input = obs_list[0] if name == "K1_Kinetic" else X_test.iloc[[0]]
+            sample_input = X_test.iloc[[0]]
             lat_times = []
             for _ in range(1000):
                 t0 = time.perf_counter()
@@ -545,7 +528,6 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=1.0),
         "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
         "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
-        "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
         "K8_ProductionEnsemble": ProductionEnsembleK8(),
     }
 
@@ -561,43 +543,8 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             m.fit(X_train, y_train)
 
         # In-dist evaluation
-        if name == "K1_Kinetic":
-            obs_list_in = []
-            for _, row in X_test_in.iterrows():
-                pid = row["patient_id"]
-                eval_d = row.get("eval_day", 730.0)
-                p_obs = test_in_obs[
-                    (test_in_obs["patient_id"] == pid)
-                    & (test_in_obs["day"] <= eval_d)
-                    & (test_in_obs["ca_15_3"].notna())
-                ]
-                obs_list_in.append(
-                    K1Observations(
-                        days=p_obs["day"].to_numpy(float),
-                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
-                    )
-                )
-            preds_in = m.predict_risk(obs_list_in)
-
-            obs_list_g3 = []
-            for _, row in X_test_g3.iterrows():
-                pid = row["patient_id"]
-                eval_d = row.get("eval_day", 730.0)
-                p_obs = test_g3_obs[
-                    (test_g3_obs["patient_id"] == pid)
-                    & (test_g3_obs["day"] <= eval_d)
-                    & (test_g3_obs["ca_15_3"].notna())
-                ]
-                obs_list_g3.append(
-                    K1Observations(
-                        days=p_obs["day"].to_numpy(float),
-                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
-                    )
-                )
-            preds_g3 = m.predict_risk(obs_list_g3)
-        else:
-            preds_in = m.predict_risk(X_test_in)
-            preds_g3 = m.predict_risk(X_test_g3)
+        preds_in = m.predict_risk(X_test_in)
+        preds_g3 = m.predict_risk(X_test_g3)
 
         auc_in = ipcw_time_dependent_roc_auc(preds_in, t_test_in, d_test_in, horizon_time=365.0)
         brier_in = ipcw_brier_score(preds_in, t_test_in, d_test_in, horizon_time=365.0)
@@ -715,7 +662,6 @@ def render_master_benchmark_report(
         ("B3_RegularizedHazard", "B3_REGULARIZED_HAZARD", "Discrete Survival"),
         ("B4_GradientBoosting", "B4_GRADIENT_BOOSTING", "Non-linear Tree"),
         ("K3_JointModel", "K3_FAST_LANDMARK", "Bayesian Joint"),
-        ("K1_Kinetic", "K1_KINETIC", "Mechanistic State-Space"),
     ]
 
     leaderboard_dict = {}

@@ -36,3 +36,5 @@
 - [ADR-0032: J8 shadow model governance](../adr/0032-j8-shadow-model-governance.md)
 - [ADR-0033: Patient explainers require native review before release](../adr/0033-patient-explainers-native-review-gate.md)
 - [ADR-0034: SMART-on-FHIR remains deferred as a stretch item](../adr/0034-smart-on-fhir-deferred.md)
+- [ADR-0035: Explicit synthetic population profiles and censor-aware landmark labels](../adr/0035-synthetic-population-profiles-and-censoring.md)
+- [0036. Reopen K1 for validity repair without promotion](../adr/0036-reopen-k1-validity-repair.md)

@@ -164,7 +164,7 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
 class VelocityBaseline(BaseSurveillanceModel):
     """
     Legacy biomarker velocity comparator using its declared fixed rule parameters.
-    These parameters are research assumptions, not clinically validated thresholds.
+    These parameters are research assumptions and lack clinical validation.
     """
 
     def __init__(

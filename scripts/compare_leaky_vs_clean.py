@@ -45,7 +45,6 @@ from vigil_ml.baselines import (
 )
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
-from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_sim.generators import GeneratorType, get_generator
 
 
@@ -101,7 +100,6 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
         ("B3_RegularizedHazard", lambda: RegularizedCoxHazardBaseline(C=0.5)),
         ("B4_GradientBoosting", lambda: GradientBoostingBaseline(max_depth=3, n_estimators=100)),
         ("K3_JointModel", lambda: FastLandmarkJointModel(horizon_days=365.0)),
-        ("K1_Kinetic", lambda: HybridKineticModelK1(horizon_days=365.0)),
     ]
 
     results: Dict[str, Any] = {
@@ -126,22 +124,7 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
             m.fit(X_tr, y_tr, sample_weight=train_weights)
         else:
             m.fit(X_tr, y_tr)
-        if name == "K1_Kinetic":
-            obs_list = []
-            for _, row in X_te.iterrows():
-                pid = row["patient_id"]
-                eval_d = row.get("eval_day", 730.0)
-                p_obs = obs_te[
-                    (obs_te["patient_id"] == pid)
-                    & (obs_te["day"] <= eval_d)
-                    & (obs_te["ca_15_3"].notna())
-                ]
-                days = p_obs["day"].to_numpy(dtype=float)
-                ca_vals = p_obs["ca_15_3"].to_numpy(dtype=float)
-                obs_list.append(K1Observations(days=days, values={"ca153": ca_vals}))
-            return m.predict_risk(obs_list)
-        else:
-            return m.predict_risk(X_te)
+        return m.predict_risk(X_te)
 
     # Pre-cluster by patient for patient-level bootstrap
     unique_patients = X_test_clean["patient_id"].unique()

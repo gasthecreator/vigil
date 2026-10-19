@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-import torch
+from vigil_ml import k1
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
 from vigil_ml.export import (
     SurrogateInferenceNet,
@@ -24,46 +24,22 @@ from vigil_ml.export import (
 )
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
 from vigil_ml.k2 import AlertTier, SequentialDetector
-from vigil_ml.kinetic_k1 import HybridKineticModelK1, KineticODEFactor
 from vigil_ml.runtime import VigilProductionRuntime
 
 # ---------------------------------------------------------------------------
 # K1 Tests
 # ---------------------------------------------------------------------------
 
-def test_k1_ode_dynamics_forward():
-    ode = KineticODEFactor(hidden_dim=16)
-    z = torch.ones(2, 9) * 10.0
-    treatment = torch.zeros(2, 3)
-    t = torch.tensor([[0.0]])
-    dz = ode(t, z, treatment)
-    assert dz.shape == (2, 9)
-    assert torch.isfinite(dz).all()
+def test_k1_legacy_import_resolves_to_canonical_implementation():
+    from vigil_ml.kinetic_k1 import HybridKineticModelK1
+
+    assert HybridKineticModelK1 is k1.HybridKineticModelK1
 
 
-def test_k1_online_ukf_filtering():
-    k1 = HybridKineticModelK1()
-    history = [
-        {"day": 0.0, "ca15_3": 18.2, "alt": 21.0},
-        {"day": 90.0, "ca15_3": 19.5, "alt": 22.5},
-        {"day": 180.0, "ca15_3": 24.0, "alt": 25.0},
-    ]
-    x, P, log_liks, consistency = k1.filter_online(history)
-    assert x.shape == (9,)
-    assert P.shape == (9, 9)
-    assert len(log_liks) == 3
-    assert "average_nis" in consistency
-    assert np.all(x >= 0.0)
-
-
-def test_k1_sbc_and_parameter_recovery():
-    k1 = HybridKineticModelK1()
-    sbc_res = k1.run_sbc(n_simulations=50)
-    assert sbc_res["ks_pvalue"] > 0.01, f"SBC failed: {sbc_res}"
-
-    rec_res = k1.parameter_recovery_test(n_cohorts=30)
-    assert rec_res["correlation"] > 0.80
-    assert rec_res["empirical_90pct_coverage"] >= 0.75
+def test_k1_identity_does_not_expose_legacy_label_training_api():
+    model = k1.HybridKineticModelK1()
+    assert not hasattr(model, "fit")
+    assert not hasattr(model, "filter_online")
 
 
 # ---------------------------------------------------------------------------
