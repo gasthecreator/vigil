@@ -24,13 +24,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _deterministic_meta(components: List[Dict[str, Any]], lock_path: Path) -> Dict[str, str]:
-    """Stable serial + timestamp so regenerate-and-diff is bit-identical across runs."""
-    digest = hashlib.sha256(
-        json.dumps(components, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    ).hexdigest()
+    """Stable serial + timestamp so regenerate-and-diff is bit-identical across clones."""
+    body = json.dumps(components, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    lock_bytes = lock_path.read_bytes()
+    digest = hashlib.sha256(body + b"\0" + lock_bytes).hexdigest()
     serial = f"urn:uuid:{uuid.uuid5(uuid.NAMESPACE_URL, f'vigil-sbom:{digest}')}"
-    # Lockfile mtime (UTC) — changes only when dependencies change.
-    ts = datetime.fromtimestamp(lock_path.stat().st_mtime, tz=timezone.utc).isoformat()
+    # Fixed epoch — wall clock / checkout mtime would break cross-machine diffs.
+    # Dependency identity lives in components (+ serial derived from lock contents).
+    ts = datetime(1970, 1, 1, tzinfo=timezone.utc).isoformat()
     return {"serialNumber": serial, "timestamp": ts}
 
 
