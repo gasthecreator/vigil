@@ -107,5 +107,11 @@ export interface TranslationDictionary {
     recordVoice: string;
     shareWithFamily: string;
     offlineSyncNotice: string;
+    labVaultTitle: string;
+    labVaultSubtitle: string;
+    labVaultNotice: string;
+    labVaultUpload: string;
+    labVaultPending: string;
+    labVaultConfirmHint: string;
   };
 }

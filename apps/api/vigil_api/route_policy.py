@@ -68,6 +68,18 @@ ROUTE_POLICY: Dict[Tuple[str, str], RoutePolicy] = {
     ("POST", f"{P}/{{id}}/disclosure/request-release"): RoutePolicy(_r("patient", "caregiver", "clinician", "admin")),
     ("POST", f"{P}/{{id}}/disclosure/lock"): RoutePolicy(_r("clinician", "admin")),
     ("GET", f"{P}/{{id}}/observations/{{obs_id}}/explainer"): RoutePolicy(ALL, note="H17 gate"),
+    ("POST", f"{P}/{{id}}/ocr-drafts"): RoutePolicy(
+        _r("patient", "caregiver", "clinician", "nurse_clerk", "admin"),
+        note="draft only; not an observation",
+    ),
+    ("GET", f"{P}/{{id}}/ocr-drafts"): RoutePolicy(ALL),
+    ("GET", f"{P}/{{id}}/ocr-drafts/{{draft_id}}"): RoutePolicy(ALL),
+    ("POST", f"{P}/{{id}}/ocr-drafts/{{draft_id}}/confirm"): RoutePolicy(
+        WRITERS, silent="diverts", note="human-posted values only; suggestions ignored"
+    ),
+    ("POST", f"{P}/{{id}}/ocr-drafts/{{draft_id}}/reject"): RoutePolicy(
+        _r("patient", "caregiver", "clinician", "nurse_clerk", "admin")
+    ),
     # Continuity (M7)
     ("GET", "/api/v1/continuity/machines"): RoutePolicy(CLIN4),
     ("POST", "/api/v1/continuity/machines/{id}/status"): RoutePolicy(_r("clinician", "admin")),

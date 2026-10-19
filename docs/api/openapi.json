@@ -1304,6 +1304,397 @@
         "title": "ObservationCreateResponse",
         "type": "object"
       },
+      "OcrConfusionFlag": {
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "reason"
+        ],
+        "title": "OcrConfusionFlag",
+        "type": "object"
+      },
+      "OcrDraftConfirmRequest": {
+        "properties": {
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "confirmed": {
+            "const": true,
+            "description": "Must be true. The server never copies OCR suggestions into an observation.",
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "lab_changed": {
+            "default": false,
+            "title": "Lab Changed",
+            "type": "boolean"
+          },
+          "laboratory_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Laboratory Id"
+          },
+          "specimen_collected_at": {
+            "format": "date-time",
+            "title": "Specimen Collected At",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "confirmed",
+          "analyte_code",
+          "value",
+          "unit",
+          "specimen_collected_at"
+        ],
+        "title": "OcrDraftConfirmRequest",
+        "type": "object"
+      },
+      "OcrDraftConfirmResponse": {
+        "properties": {
+          "adjudicated_action": {
+            "title": "Adjudicated Action",
+            "type": "string"
+          },
+          "alert": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analyte_code": {
+            "title": "Analyte Code",
+            "type": "string"
+          },
+          "canonical_unit": {
+            "title": "Canonical Unit",
+            "type": "string"
+          },
+          "canonical_value": {
+            "title": "Canonical Value",
+            "type": "number"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "draft_status": {
+            "default": "confirmed",
+            "title": "Draft Status",
+            "type": "string"
+          },
+          "follow_up_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowUpTaskSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observation_id": {
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "outputs_withheld": {
+            "default": false,
+            "title": "Outputs Withheld",
+            "type": "boolean"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "plausibility_status": {
+            "title": "Plausibility Status",
+            "type": "string"
+          },
+          "raw_unit": {
+            "title": "Raw Unit",
+            "type": "string"
+          },
+          "raw_value": {
+            "title": "Raw Value",
+            "type": "number"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskAssessmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "specimen_collected_at": {
+            "format": "date-time",
+            "title": "Specimen Collected At",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "observation_id",
+          "patient_id",
+          "analyte_code",
+          "canonical_value",
+          "canonical_unit",
+          "raw_value",
+          "raw_unit",
+          "specimen_collected_at",
+          "plausibility_status",
+          "adjudicated_action",
+          "draft_id"
+        ],
+        "title": "OcrDraftConfirmResponse",
+        "type": "object"
+      },
+      "OcrDraftResponse": {
+        "properties": {
+          "confusion_flags": {
+            "items": {
+              "$ref": "#/components/schemas/OcrConfusionFlag"
+            },
+            "title": "Confusion Flags",
+            "type": "array"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "engine": {
+            "title": "Engine",
+            "type": "string"
+          },
+          "extracted_text": {
+            "title": "Extracted Text",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "notice": {
+            "default": "OCR suggestions are drafts. They are not in the surveillance record until a clinician, nurse clerk or admin posts a confirmation with the human-reviewed values.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "observation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Id"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By"
+          },
+          "source_sha256": {
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/OcrSuggestion"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "filename",
+          "content_type",
+          "source_sha256",
+          "engine",
+          "extracted_text",
+          "suggestion",
+          "confusion_flags",
+          "status",
+          "created_by",
+          "created_at"
+        ],
+        "title": "OcrDraftResponse",
+        "type": "object"
+      },
+      "OcrDraftUploadRequest": {
+        "properties": {
+          "content_base64": {
+            "description": "Base64 of the PNG, JPEG or PDF bytes",
+            "minLength": 8,
+            "title": "Content Base64",
+            "type": "string"
+          },
+          "content_type": {
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "content_type",
+          "content_base64"
+        ],
+        "title": "OcrDraftUploadRequest",
+        "type": "object"
+      },
+      "OcrSuggestion": {
+        "properties": {
+          "analyte_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyte Code"
+          },
+          "analyte_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyte Name"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/OcrConfusionFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "specimen_collected_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specimen Collected At"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "title": "OcrSuggestion",
+        "type": "object"
+      },
       "PatientCreate": {
         "properties": {
           "age": {
@@ -7270,6 +7661,452 @@
         "summary": "Get verified plain-language result explainer for patient/family",
         "tags": [
           "Patients & Surveillance"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/ocr-drafts": {
+      "get": {
+        "operationId": "list_ocr_drafts_api_v1_patients__id__ocr_drafts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OcrDraftResponse"
+                  },
+                  "title": "Response List Ocr Drafts Api V1 Patients  Id  Ocr Drafts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Ocr Drafts",
+        "tags": [
+          "OCR lab drafts"
+        ]
+      },
+      "post": {
+        "description": "Store a local extraction as a *draft*. Does not create an observation.",
+        "operationId": "create_ocr_draft_api_v1_patients__id__ocr_drafts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OcrDraftUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Ocr Draft",
+        "tags": [
+          "OCR lab drafts"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/ocr-drafts/{draft_id}": {
+      "get": {
+        "operationId": "get_ocr_draft_api_v1_patients__id__ocr_drafts__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Ocr Draft",
+        "tags": [
+          "OCR lab drafts"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/ocr-drafts/{draft_id}/confirm": {
+      "post": {
+        "description": "Write an observation from the *human-posted* fields. OCR suggestion values are ignored.",
+        "operationId": "confirm_ocr_draft_api_v1_patients__id__ocr_drafts__draft_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OcrDraftConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrDraftConfirmResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Ocr Draft",
+        "tags": [
+          "OCR lab drafts"
+        ]
+      }
+    },
+    "/api/v1/patients/{id}/ocr-drafts/{draft_id}/reject": {
+      "post": {
+        "operationId": "reject_ocr_draft_api_v1_patients__id__ocr_drafts__draft_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reject Ocr Draft",
+        "tags": [
+          "OCR lab drafts"
         ]
       }
     },

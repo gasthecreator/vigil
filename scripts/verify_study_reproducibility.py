@@ -174,10 +174,12 @@ def verify_m12_study() -> bool:
     stored0 = json.loads(json.dumps(stored["replications"][0]))
     fresh.pop("wall_s", None)
     stored0.pop("wall_s", None)
-    if not _close(fresh, stored0):
+    # Neural training floats differ across BLAS/platform builds (CI saw ECE at ~2e-5 relative);
+    # same pattern as K4 classical baselines (tol 1e-4). Aggregate below is still exact of stored reps.
+    if not _close(fresh, stored0, tol=1e-4):
         print("❌ EXP-M12-001: frozen replication 0 does not reproduce results.json.")
         return False
-    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-6; wall_s excluded).")
+    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-4; wall_s excluded).")
     agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
     if not _close(agg, stored["aggregate"]):
         print("❌ EXP-M12-001: aggregate does not equal a fresh derivation from the stored replications.")
@@ -332,8 +334,41 @@ def verify_k6_study() -> bool:
     return True
 
 
+def verify_ocr_study() -> bool:
+    print("🔬 Verifying EXP-OCR-001 (PDF text-layer arm) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-OCR-001"
+    stored_path = exp / "results.json"
+    report_path = exp / "REPORT.md"
+    if not stored_path.exists() or not report_path.exists():
+        print("❌ EXP-OCR-001: results.json or REPORT.md missing.")
+        return False
+    stored = json.loads(stored_path.read_text())
+    spec = importlib.util.spec_from_file_location(
+        "run_ocr_accuracy_verify", ROOT / "scripts" / "run_ocr_accuracy.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    fresh = mod.evaluate(stored["seed"], images=False)
+    if fresh["rates"]["pdf"] != stored["rates"]["pdf"]:
+        print("❌ EXP-OCR-001: PDF exact-match rate does not reproduce results.json.")
+        return False
+    if fresh["hypotheses"]["H1_pdf_exact_ge_0.95"] != stored["hypotheses"]["H1_pdf_exact_ge_0.95"]:
+        print("❌ EXP-OCR-001: H1 verdict does not reproduce results.json.")
+        return False
+    print("  ✅ PDF text-layer arm reproduces results.json.")
+    if mod.render_report(stored) != report_path.read_text():
+        print("❌ EXP-OCR-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    return True
+
+
 def main() -> int:
     ok = True
+    if not verify_ocr_study():
+        ok = False
     if not verify_k4_study():
         ok = False
     if not verify_k6_study():

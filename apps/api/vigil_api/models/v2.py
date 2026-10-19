@@ -231,6 +231,9 @@ class Patient(Base):
     radiotherapy_courses = relationship(
         "RadiotherapyCourse", back_populates="patient", cascade="all, delete-orphan"
     )
+    ocr_drafts = relationship(
+        "OcrDraft", back_populates="patient", cascade="all, delete-orphan"
+    )
 
     # Legacy prototype relationships for backward compatibility
     baseline_profile = relationship(
@@ -799,3 +802,29 @@ class DelayLedgerEntry(Base):
 
     patient = relationship("Patient")
     course = relationship("RadiotherapyCourse", back_populates="ledger_entries")
+
+
+class OcrDraft(Base):
+    """Photo/PDF lab-report draft. Suggestions never become observations without confirm."""
+
+    __tablename__ = "ocr_drafts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    patient_id = Column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    filename = Column(String(255), nullable=False)
+    content_type = Column(String(100), nullable=False)
+    source_sha256 = Column(String(64), nullable=False)
+    engine = Column(String(50), nullable=False)
+    extracted_text = Column(Text, nullable=False, default="")
+    suggestion = Column(JSON, nullable=False)
+    confusion_flags = Column(JSON, nullable=False)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    created_by = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_by = Column(String(100), nullable=True)
+    observation_id = Column(String(36), nullable=True)
+
+    patient = relationship("Patient", back_populates="ocr_drafts")

@@ -1,0 +1,2850 @@
+{
+  "data": "synthetic_lab_reports",
+  "hypotheses": {
+    "H1_pdf_exact_ge_0.95": {
+      "kill": false,
+      "met": true,
+      "min": 0.95,
+      "observed": 1.0
+    },
+    "H2_clean_image_ge_0.80": {
+      "kill": false,
+      "met": true,
+      "min": 0.8,
+      "note": "H2 does not kill the importer; confirm gate still holds.",
+      "observed": 1.0
+    },
+    "H3_noisy_image_ge_0.50": {
+      "kill": false,
+      "met": true,
+      "min": 0.5,
+      "note": "H3 does not kill the importer; confirm gate still holds.",
+      "observed": {
+        "jpeg": 1.0,
+        "rotate": 0.975,
+        "speckle": 0.825
+      }
+    }
+  },
+  "images_evaluated": true,
+  "kill_fired": false,
+  "n": 40,
+  "rates": {
+    "clean_png": 1.0,
+    "jpeg": 1.0,
+    "pdf": 1.0,
+    "rotate": 0.975,
+    "speckle": 0.825
+  },
+  "records": {
+    "clean": [
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ]
+      }
+    ],
+    "jpeg": [
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ]
+      }
+    ],
+    "pdf": [
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "pdf_text",
+        "exact": true,
+        "predicted": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ]
+      }
+    ],
+    "rotate": [
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          9.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ]
+      }
+    ],
+    "speckle": [
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          26.2,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          64.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          61.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          18.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          46.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          77.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          75.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          64.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          36.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          36.6,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          43.4,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          18.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          33.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          45.6,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          49.2,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": null,
+        "truth": [
+          "ca_15_3",
+          74.9,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          39.3,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          21.7,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          28.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          28.5,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          25.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          40.9,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          48.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          9.4,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          47.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.7,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          52.0,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          56.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          56.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          79.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          37.5,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          14.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          35.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          29.0,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          12.3,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          30.8,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          10.8,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          10.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          10.1,
+          "ng/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": true,
+        "predicted": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ],
+        "truth": [
+          "ca_15_3",
+          13.1,
+          "U/mL"
+        ]
+      },
+      {
+        "engine": "tesseract",
+        "exact": false,
+        "predicted": [
+          "cea",
+          72.0,
+          "ng/mL"
+        ],
+        "truth": [
+          "cea",
+          72.1,
+          "ng/mL"
+        ]
+      }
+    ]
+  },
+  "seed": 20261019,
+  "study": "EXP-OCR-001",
+  "tesseract_available": true
+}

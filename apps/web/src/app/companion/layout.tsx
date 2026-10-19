@@ -12,7 +12,7 @@ import {
   Globe,
   Wifi,
   WifiOff,
-  ShieldAlert,
+  FileUp,
 } from "lucide-react";
 
 export default function CompanionLayout({
@@ -39,6 +39,7 @@ export default function CompanionLayout({
   const navItems = [
     { href: "/companion", label: "Dashboard", icon: Heart },
     { href: "/companion/symptoms", label: "Symptoms", icon: Activity },
+    { href: "/companion/vault", label: "Lab vault", icon: FileUp },
     { href: "/companion/share", label: "Caregivers", icon: Share2 },
   ];
 

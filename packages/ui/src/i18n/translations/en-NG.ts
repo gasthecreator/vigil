@@ -97,5 +97,11 @@ export const enNG: TranslationDictionary = {
     recordVoice: "Record Voice",
     shareWithFamily: "Share Access with Family",
     offlineSyncNotice: "Working offline. Your entries are saved on this device and will automatically sync when reconnected.",
+    labVaultTitle: "Lab report vault",
+    labVaultSubtitle: "Photograph or attach a report. It stays a draft until a clinician confirms the values.",
+    labVaultNotice: "Suggested numbers are not in your record. A clinician must read and confirm them. This is a research prototype using synthetic data.",
+    labVaultUpload: "Upload report (PNG, JPEG or PDF)",
+    labVaultPending: "Waiting for clinician confirmation",
+    labVaultConfirmHint: "Check every highlighted field (units, decimals, analyte) against the paper report before confirming.",
   },
 };

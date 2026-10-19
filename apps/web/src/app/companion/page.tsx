@@ -225,7 +225,7 @@ export default function CompanionDashboard() {
       )}
 
       {/* Quick Action Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Symptom Diary */}
         <Link href="/companion/symptoms" className="group block">
           <Card className="h-full border-slate-200 hover:border-teal-500 hover:shadow-md transition-all">
@@ -266,6 +266,24 @@ export default function CompanionDashboard() {
               </div>
               <div className="mt-3 flex items-center text-xs font-semibold text-cyan-700">
                 <span>Generate Summary</span>
+                <ChevronRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/companion/vault" className="group block">
+          <Card className="h-full border-slate-200 hover:border-teal-500 hover:shadow-md transition-all">
+            <CardContent className="p-4 flex flex-col justify-between h-full">
+              <div>
+                <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <FileSearch className="w-5 h-5" />
+                </div>
+                <h2 className="text-sm font-bold text-slate-900">{t.companion.labVaultTitle}</h2>
+                <p className="text-xs text-slate-500 mt-1">{t.companion.labVaultSubtitle}</p>
+              </div>
+              <div className="mt-3 flex items-center text-xs font-semibold text-amber-800">
+                <span>{t.companion.labVaultUpload}</span>
                 <ChevronRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>

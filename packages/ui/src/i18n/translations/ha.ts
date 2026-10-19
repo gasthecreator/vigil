@@ -98,5 +98,11 @@ export const ha: TranslationDictionary = {
     recordVoice: "Ɗauki Murya",
     shareWithFamily: "Raba Bayanai da Iyali",
     offlineSyncNotice: "Babu intanet. An ajiye bayanan a wayarku kuma za a tura su da zarar an sami intanet.",
+    labVaultTitle: "Ajiyar rahoton gwaji [Fassarar da Ba a Bita Ba]",
+    labVaultSubtitle: "Aika hoton rahoton gwaji. Ba zai shiga rijista ba har likita ya tabbatar. [Fassarar da Ba a Bita Ba]",
+    labVaultNotice: "Lambobin da kwamfuta ta nuna ba su cikin rijista. Likita dole ya tabbatar. [Fassarar da Ba a Bita Ba]",
+    labVaultUpload: "Loda rahoto (PNG, JPEG ko PDF) [Fassarar da Ba a Bita Ba]",
+    labVaultPending: "Ana jiran tabbacin likita [Fassarar da Ba a Bita Ba]",
+    labVaultConfirmHint: "Duba raka'a, ƙima da sunan gwaji kafin ka tabbatar. [Fassarar da Ba a Bita Ba]",
   },
 };

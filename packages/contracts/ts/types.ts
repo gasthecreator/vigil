@@ -279,13 +279,86 @@ export interface ObservationCreateResponse {
   canonical_value: number;
   follow_up_task?: FollowUpTaskSummary | null;
   observation_id: string;
+  outputs_withheld?: boolean;
   patient_id: string;
   plausibility_status: string;
   raw_unit: string;
   raw_value: number;
-  risk_assessment: RiskAssessmentSummary;
+  risk_assessment?: RiskAssessmentSummary | null;
   specimen_collected_at: string /* ISO 8601 */;
   synthetic?: boolean;
+}
+
+export interface OcrConfusionFlag {
+  field: string;
+  reason: string;
+}
+
+export interface OcrDraftConfirmRequest {
+  analyte_code: string;
+  /** Must be true. The server never copies OCR suggestions into an observation. */
+  confirmed: boolean;
+  lab_changed?: boolean;
+  laboratory_id?: string | null;
+  specimen_collected_at: string /* ISO 8601 */;
+  unit: string;
+  value: number;
+}
+
+export interface OcrDraftConfirmResponse {
+  adjudicated_action: string;
+  alert?: AlertSummary | null;
+  analyte_code: string;
+  canonical_unit: string;
+  canonical_value: number;
+  draft_id: string;
+  draft_status?: string;
+  follow_up_task?: FollowUpTaskSummary | null;
+  observation_id: string;
+  outputs_withheld?: boolean;
+  patient_id: string;
+  plausibility_status: string;
+  raw_unit: string;
+  raw_value: number;
+  risk_assessment?: RiskAssessmentSummary | null;
+  specimen_collected_at: string /* ISO 8601 */;
+  synthetic?: boolean;
+}
+
+export interface OcrDraftResponse {
+  confusion_flags: OcrConfusionFlag[];
+  content_type: string;
+  created_at: string /* ISO 8601 */;
+  created_by: string;
+  engine: string;
+  extracted_text: string;
+  filename: string;
+  id: string;
+  notice?: string;
+  observation_id?: string | null;
+  patient_id: string;
+  resolved_at?: string /* ISO 8601 */ | null;
+  resolved_by?: string | null;
+  source_sha256: string;
+  status: string;
+  suggestion: OcrSuggestion;
+  synthetic?: boolean;
+}
+
+export interface OcrDraftUploadRequest {
+  /** Base64 of the PNG, JPEG or PDF bytes */
+  content_base64: string;
+  content_type: string;
+  filename: string;
+}
+
+export interface OcrSuggestion {
+  analyte_code?: string | null;
+  analyte_name?: string | null;
+  flags?: OcrConfusionFlag[];
+  specimen_collected_at?: string | null;
+  unit?: string | null;
+  value?: number | null;
 }
 
 export interface PatientCreate {
@@ -632,6 +705,68 @@ export interface TargetOrganVector {
   brain: number;
   liver: number;
   lung: number;
+}
+
+export interface TestLadderFacility {
+  facility_id: string;
+  modalities: TestLadderModalityRow[];
+  name: string;
+  tier: string;
+}
+
+export interface TestLadderModalityRow {
+  available: boolean;
+  /** 1 nearest to 4 farthest */
+  distance_band: number;
+  modality: string;
+  /** 1 lowest to 4 highest */
+  price_band: number;
+  /** Who reported this row */
+  source: string;
+  turnaround_days?: number | null;
+  /** Date the row was last confirmed */
+  verified_on?: string | null;
+}
+
+/** Probability that the organ is involved, as an interval with a stated provenance. */
+export interface TestLadderPrior {
+  /** Defaults to value */
+  hi?: number | null;
+  /** Defaults to value */
+  lo?: number | null;
+  /** Where the prior came from */
+  provenance: string;
+  value: number;
+}
+
+/** Stateless request. Exactly one of ``facility_id`` (registry template) or ``facility`` (inline rows). */
+export interface TestLadderRequest {
+  /** Date for staleness; defaults to the server date, never later */
+  as_of?: string | null;
+  facility?: TestLadderFacility | null;
+  /** A registry facility id (illustrative templates ship) */
+  facility_id?: string | null;
+  /** Highest price band the patient has agreed to; tests above it are skipped */
+  max_price_band?: number | null;
+  organ: string;
+  prior: TestLadderPrior;
+}
+
+/** Output of the pure M4 engine, unchanged. Probabilities are intervals, never single numbers. */
+export interface TestLadderResponse {
+  as_of: string;
+  facility_id: string;
+  illustrative_facility: boolean;
+  negative_result_excludes_involvement: boolean;
+  negative_result_statement: string;
+  notes: string[];
+  organ: string;
+  outcome: string;
+  prior: Record<string, unknown>;
+  referrals: Record<string, unknown>[];
+  rungs: Record<string, unknown>[];
+  scope_statement: string;
+  skipped: Record<string, string>[];
 }
 
 export interface TrajectoryPoint {

@@ -12,6 +12,7 @@ from vigil_api.api.endpoints import (
     fhir,
     follow_up,
     hl7,
+    ocr_drafts,
     patients,
     quality,
     sync,
@@ -21,6 +22,7 @@ from vigil_api.api.endpoints import (
 api_router = APIRouter()
 
 api_router.include_router(patients.router, prefix="/patients", tags=["Patients & Surveillance"])
+api_router.include_router(ocr_drafts.router, prefix="/patients", tags=["OCR lab drafts"])
 api_router.include_router(
     companion.router, prefix="/companion", tags=["Family & Patient Companion (M8)"]
 )
