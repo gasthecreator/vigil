@@ -1,0 +1,7 @@
+# ADR-0033: Patient explainers require native review before release
+
+- **Status:** Accepted with P16 PR5; Maturity remains L0.
+- **Context:** Pidgin, Yoruba, Hausa and Igbo UI strings are machine-draft placeholders. They are tracked as unreviewed, and the M5 narrative verifier validates English only. A translation can change clinical meaning even when its source is approved.
+- **Decision:** Patient-facing explainers ship only in English until each non-English locale's patient-explainer strings have been reviewed by a native-speaking clinician or qualified community reviewer and recorded as reviewed through the existing i18n review-state process. Machine-translated strings may remain in the repository as visibly flagged drafts; they must not be presented as reviewed patient explainers. The M5 verifier remains English-only and must not be represented as validating translations. Locale status must not be advanced without the reviewer and review date required by ADR-0029 and H-118.
+- **Consequences:** The existing review-state checker remains the source of truth for string review metadata, but passing it alone does not establish translation quality or authorize patient-facing use. Native-speaker review and clinical approval remain human actions. This decision does not change L0 maturity or establish clinical validation.
+- **Evidence:** `packages/ui/i18n/review_state.json`, `packages/ui/i18n/README.md`, `scripts/check_i18n_review_state.py`, `docs/adr/0029-i18n-review-state-and-glossary.md`, and H-118 in `docs/HANDOVER.md`.

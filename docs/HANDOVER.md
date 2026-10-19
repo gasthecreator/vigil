@@ -75,6 +75,8 @@ Complete checklist. Do **not** touch real patient data until every row marked **
 
 ## E. Added by the overseer audit (2026-10-19): repository and release actions only the owner can do
 
+These owner-only actions satisfy the additions in `docs/audits/PLAN-GAP-ANALYSIS.md` §6; they are recorded here once to avoid duplicate handover items.
+
 | ID | Action | Exact step |
 |---|---|---|
 | H-301 | **Protect `main`** (it is currently unprotected) | Create a ruleset: require PR, the CI checks listed in `docs/ops/GITHUB-SETTINGS.md`, linear history, block force-push and deletion; see that file for the `gh api` commands. |

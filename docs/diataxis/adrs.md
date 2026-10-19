@@ -34,3 +34,5 @@
 - [ADR-0030: Typing and import-linter scope (P16 PR2 / G-05)](../adr/0030-typing-and-import-linter-scope.md)
 - [0031. `apps/worker` shim and deferred `packages/vigil-opt`](../adr/0031-worker-and-vigil-opt-layout.md)
 - [ADR-0032: J8 shadow model governance](../adr/0032-j8-shadow-model-governance.md)
+- [ADR-0033: Patient explainers require native review before release](../adr/0033-patient-explainers-native-review-gate.md)
+- [ADR-0034: SMART-on-FHIR remains deferred as a stretch item](../adr/0034-smart-on-fhir-deferred.md)
