@@ -84,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [ml, rest]
+        shard: [ml, clinical, resilience, misc]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -99,16 +99,19 @@ jobs:
       - name: Install Tesseract (local OCR for lab-report images)
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr fonts-dejavu-core
       - name: Run linting
-        if: matrix.shard == 'rest'
+        if: matrix.shard == 'misc'
         run: uv run ruff check .
       - name: Run tests (pytest-randomly shuffles order; seed printed in header)
         # G-07: pytest-randomly is a committed dev dependency and auto-loads.
         run: |
-          if [ "${{ matrix.shard }}" = "ml" ]; then
-            uv run pytest packages/vigil-ml/tests
-          else
-            uv run pytest --ignore=packages/vigil-ml/tests
-          fi
+          # NB: --ignore silently does nothing for dirs in testpaths; --ignore-glob works (verified by count).
+          # The four shards partition the original `uv run pytest` selection exactly (misc = the remainder).
+          case "${{ matrix.shard }}" in
+            ml)         uv run pytest packages/vigil-ml/tests ;;
+            clinical)   uv run pytest tests/clinical ;;
+            resilience) uv run pytest tests/resilience ;;
+            misc)       uv run pytest --ignore-glob='packages/vigil-ml/tests/*' --ignore-glob='tests/clinical/*' --ignore-glob='tests/resilience/*' ;;
+          esac
 
   backend-acceptance:
     runs-on: ubuntu-latest
