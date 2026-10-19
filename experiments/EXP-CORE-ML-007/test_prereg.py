@@ -56,3 +56,14 @@ def test_runner_refuses_existing_output_or_prior_test_access(tmp_path, monkeypat
     )
     with pytest.raises(RuntimeError, match="access is already logged"):
         RUNNER.assert_no_prior_run()
+
+    access_log.write_text(
+        json.dumps({
+            "dataset_name": "SYNTHETIC-CORE-ML-004-G1-TEST",
+            "caller": "experiments/EXP-CORE-ML-007/run.py",
+            "git_sha": "7efc7f7bf716f988a464a2e02a72dd13d44c65a2",
+        }) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="access is already logged"):
+        RUNNER.assert_no_prior_run()

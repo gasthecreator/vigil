@@ -305,8 +305,13 @@ def assert_no_prior_run() -> None:
     if access_log.exists():
         prefix = "SYNTHETIC-CORE-ML-007-"
         for line in access_log.read_text(encoding="utf-8").splitlines():
-            if line and json.loads(line).get("dataset_name", "").startswith(prefix):
-                raise RuntimeError("EXP-CORE-ML-007 frozen test access is already logged")
+            if line:
+                record = json.loads(line)
+                if record.get("dataset_name", "").startswith(prefix) or (
+                    record.get("caller") == "experiments/EXP-CORE-ML-007/run.py"
+                    and record.get("git_sha") == "7efc7f7bf716f988a464a2e02a72dd13d44c65a2"
+                ):
+                    raise RuntimeError("EXP-CORE-ML-007 frozen test access is already logged")
 
 
 def assert_clean_checkout() -> str:
@@ -444,7 +449,7 @@ def main() -> None:
     logger = FrozenTestAccessLogger()
     for generator in ("G1", "G2", "G3"):
         logger.log_access(
-            dataset_name=f"SYNTHETIC-CORE-ML-004-{generator}-TEST",
+            dataset_name=f"SYNTHETIC-CORE-ML-007-{generator}-TEST",
             access_type="benchmark_evaluation",
             caller="experiments/EXP-CORE-ML-007/run.py",
             purpose=f"One-time cross-generator evaluation from clean code SHA {code_sha}",
