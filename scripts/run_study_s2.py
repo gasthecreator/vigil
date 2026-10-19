@@ -15,7 +15,6 @@ Protocol 1.2: Calibrated Noise & Matched False-Alarm Rate Protocol (Condition B-
 
 from __future__ import annotations
 
-import json
 import os
 import time
 from pathlib import Path
@@ -435,27 +434,11 @@ Noise parameter $\\sigma_{{\\log}} = {cal["calibrated_sigma_log"]}$ and operatin
 
 
 def main() -> None:
-    S2_DIR.mkdir(parents=True, exist_ok=True)
-    cal_params = calibrate_operating_points(seed=999, n_patients=500)
-    sim_data = run_vigil_sim_study(cal_params, seed=42, n_patients=500)
-    stress_data = run_acceptance_stress_suite()
-    verdicts = evaluate_programmatic_verdicts(sim_data, stress_data)
-
-    out = {
-        "study_id": "S2_SEQUENTIAL",
-        "protocol_version": "1.2",
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-        "vigil_sim_study": sim_data,
-        "acceptance_stress_suite": stress_data,
-        "verdicts": verdicts,
-    }
-
-    results_path = S2_DIR / "results.json"
-    results_path.write_text(json.dumps(out, indent=2))
-    print(f"✅ Saved results to {results_path}")
-
-    report_path = S2_DIR / "REPORT.md"
-    render_report(out, report_path)
+    raise RuntimeError(
+        "Study S2 is retracted. The calibration outputs were hard-coded and test seed 42 "
+        "has been examined. See docs/audits/QUALITY-RERUN-2026-10.md before designing "
+        "a fresh preregistered replication."
+    )
 
 
 if __name__ == "__main__":

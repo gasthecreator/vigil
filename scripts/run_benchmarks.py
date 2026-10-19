@@ -68,7 +68,6 @@ from vigil_ml.conformal_k8 import ProductionEnsembleK8
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_ml.k1 import HybridKineticModelK1, K1Observations
-from vigil_ml.sequential_k2 import SequentialDetectorBenchmark
 from vigil_sim.generators import GeneratorType, get_generator
 
 
@@ -413,154 +412,21 @@ def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s2(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S2: ANYTIME-VALID SEQUENTIAL DETECTION & STRESS SUITE")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-NULL-STRESS-SUITE-S2",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate K2 e-processes vs CUSUM, Shiryaev-Roberts and static rules across 5 null stress scenarios",
-        num_samples=1000,
+    """Legacy S2 is retired; see the corrected-protocol audit before replication."""
+    raise RuntimeError(
+        "Legacy S2 is retracted: its clipped prototype cannot establish Ville validity. "
+        "See docs/audits/QUALITY-RERUN-2026-10.md before any new preregistered S2 run."
     )
-
-    bench = SequentialDetectorBenchmark(alpha_pt=0.05)
-    stress_results = bench.run_stress_suite(n_patients=200, n_visits=15)
-
-    rng = np.random.default_rng(2026)
-    n_pts = 200
-    delays = {"M_Static": [], "M_CUSUM": [], "M_Shiryaev": [], "K2_EProcess": []}
-    alarms_null = {"M_Static": 0, "M_CUSUM": 0, "M_Shiryaev": 0, "K2_EProcess": 0}
-
-    for _ in range(n_pts):
-        base = rng.normal(20.0, 4.0)
-        v_null = []
-        cur_day = 0.0
-        for _ in range(15):
-            cur_day += rng.uniform(70.0, 110.0)
-            obs = max(5.0, base + rng.normal(0, 2.5))
-            v_null.append({"day": cur_day, "ca15_3": obs})
-
-        if any(v["ca15_3"] >= 30.0 for v in v_null):
-            alarms_null["M_Static"] += 1
-        seq_res = bench.detector.evaluate_trajectory(v_null)
-        if any(r.cusum_stat >= 4.0 for r in seq_res):
-            alarms_null["M_CUSUM"] += 1
-        if any(r.shiryaev_stat >= 50.0 for r in seq_res):
-            alarms_null["M_Shiryaev"] += 1
-        if any(r.e_value >= 20.0 for r in seq_res):
-            alarms_null["K2_EProcess"] += 1
-
-    for _ in range(n_pts):
-        base = rng.normal(20.0, 4.0)
-        recur_day = 180.0
-        cur_day = 0.0
-        v_rec = []
-        d_static, d_cusum, d_shiryaev, d_k2 = None, None, None, None
-        for _ in range(15):
-            cur_day += 90.0
-            growth = 0.0
-            if cur_day > recur_day:
-                growth = base * (np.exp(0.007 * (cur_day - recur_day)) - 1.0)
-            obs = max(5.0, base + growth + rng.normal(0, 2.5))
-            v_rec.append({"day": cur_day, "ca15_3": obs})
-
-            if obs >= 30.0 and d_static is None and cur_day > recur_day:
-                d_static = cur_day - recur_day
-
-        seq_res = bench.detector.evaluate_trajectory(v_rec)
-        for r, v in zip(seq_res, v_rec):
-            day = v["day"]
-            if day > recur_day:
-                if r.cusum_stat >= 4.0 and d_cusum is None:
-                    d_cusum = day - recur_day
-                if r.shiryaev_stat >= 50.0 and d_shiryaev is None:
-                    d_shiryaev = day - recur_day
-                if r.e_value >= 20.0 and d_k2 is None:
-                    d_k2 = day - recur_day
-
-        delays["M_Static"].append(d_static if d_static is not None else 365.0)
-        delays["M_CUSUM"].append(d_cusum if d_cusum is not None else 365.0)
-        delays["M_Shiryaev"].append(d_shiryaev if d_shiryaev is not None else 365.0)
-        delays["K2_EProcess"].append(d_k2 if d_k2 is not None else 365.0)
-
-    s2_results = {
-        "null_stress_suite": stress_results,
-        "comparative_detection": {
-            "M_Static": {
-                "patient_level_null_far": round(alarms_null["M_Static"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_Static"])), 1),
-            },
-            "M_CUSUM": {
-                "patient_level_null_far": round(alarms_null["M_CUSUM"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_CUSUM"])), 1),
-            },
-            "M_Shiryaev": {
-                "patient_level_null_far": round(alarms_null["M_Shiryaev"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_Shiryaev"])), 1),
-            },
-            "K2_EProcess": {
-                "patient_level_null_far": round(alarms_null["K2_EProcess"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["K2_EProcess"])), 1),
-            },
-        },
-    }
-    s2_dir = ROOT / "reports" / "ml" / "S2_SEQUENTIAL"
-    s2_dir.mkdir(parents=True, exist_ok=True)
-    with open(s2_dir / "results.json", "w") as f:
-        json.dump(s2_results, f, indent=2)
-
-    render_s2_markdown(s2_results, s2_dir / "REPORT.md")
-    print("✅ Study S2 Complete. Results saved to reports/ml/S2_SEQUENTIAL/")
-    return s2_results
 
 
 def render_s2_markdown(results: Dict[str, Any], path: Path) -> None:
-    comp = results["comparative_detection"]
-    stress = results["null_stress_suite"]
-    lines = [
-        "# Study S2 Report: Anytime-Valid Sequential Detection Under Repeated Looks",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S2_SEQUENTIAL  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Cumulative Error Inflation):** CONFIRMED. Static threshold rules exhibited an unacceptable patient-level false alarm rate of {comp['M_Static']['patient_level_null_far'] * 100:.1f}% across 15 serial looks, severely violating the 5% error budget.",
-        f"- **H2 (Supermartingale Guarantee):** CONFIRMED. K2 Anytime-Valid e-processes strictly bounded the patient-level false alarm rate to {comp['K2_EProcess']['patient_level_null_far'] * 100:.1f}% under Ville's inequality (nominal alpha = 5.0%), passing all 5 null stress scenarios.",
-        f"- **H3 (Detection Delay Advantage):** CONFIRMED. K2 achieved an Expected Detection Delay of {comp['K2_EProcess']['expected_detection_delay_days']:.1f} days, reducing detection delay by {comp['M_Static']['expected_detection_delay_days'] - comp['K2_EProcess']['expected_detection_delay_days']:.1f} days relative to static cutoffs.",
-        "",
-        "## 2. Comparative Detection Performance across Serial Follow-Up",
-        "",
-        "| Detector | Patient-Level Null FAR (K=15) | Nominal Alpha | Expected Detection Delay (Days) | Error Bound Status |",
-        "|---|---|---|---|---|",
-        f"| `M_Static (Threshold 30 U/mL)` | {comp['M_Static']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_Static']['expected_detection_delay_days']:.1f} days | **VIOLATED (Inflated)** |",
-        f"| `M_CUSUM (k=0.5, h=4.0)` | {comp['M_CUSUM']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_CUSUM']['expected_detection_delay_days']:.1f} days | Asymptotic Only |",
-        f"| `M_Shiryaev (Shiryaev-Roberts)` | {comp['M_Shiryaev']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_Shiryaev']['expected_detection_delay_days']:.1f} days | Asymptotic Only |",
-        f"| `K2_EProcess (Mixture e-Process)` | {comp['K2_EProcess']['patient_level_null_far']:.4f} | 0.0500 | {comp['K2_EProcess']['expected_detection_delay_days']:.1f} days | **GUARANTEED (Ville)** |",
-        "",
-        "## 3. Five-Scenario Null Stress Suite",
-        "",
-        "| Scenario | Description | Empirical FAR | Target Bound | Status |",
-        "|---|---|---|---|---|",
-    ]
-    for sc_name, sc_data in stress["scenarios"].items():
-        st = "PASSED" if sc_data["passed"] else "FAILED"
-        lines.append(
-            f"| `{sc_name}` | {sc_name.replace('null_', '').replace('_', ' ').title()} | {sc_data['empirical_patient_level_far']:.4f} | <= {sc_data['nominal_alpha'] + 0.02:.4f} | **{st}** |"
-        )
-    lines.extend(
-        [
-            "",
-            "## 4. Decision Record",
-            "- **Adopt K2 E-Process for Sequential Alerting:** Static single-visit thresholds are clinically disqualified for serial surveillance due to uncontrolled multi-testing error inflation.",
-            "- **Deploy Calibrated Alert Tiers:** Watch (alpha=0.20), Review (alpha=0.05), and Urgent (alpha=0.01) based on exact Ville thresholding.",
-        ]
+    """Write a retraction notice instead of regenerating the invalid legacy report."""
+    path.write_text(
+        "# Study S2: retracted\n\n"
+        "The legacy benchmark used a clipped prototype and its five empirical "
+        "scenarios do not establish Ville validity. Do not use its results. "
+        "See [`QUALITY-RERUN-2026-10.md`](../../../docs/audits/QUALITY-RERUN-2026-10.md).\n"
     )
-    path.write_text("\n".join(lines))
 
 
 def run_study_s4(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
@@ -878,7 +744,7 @@ def render_master_benchmark_report(
             "",
             "## 4. Pre-Registered Study Summaries",
             "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
-            "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
+            "- **Study S2 (retracted pending a corrected independent replication):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
             "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3. S4, S5, S6 and S10 were re-established as `experiments/EXP-K4-001/`, `experiments/EXP-K5-001/`, `experiments/EXP-K6-001/` and `experiments/EXP-M12-001/` (K4 and K5 failed their pre-registered criteria; K6 H1 and H2 met in simulation, H3 not met; M12 H3 met on this MLP, H2 not met, not wired; suggestion-only / research-only, nothing clinical).",
@@ -911,8 +777,11 @@ def main() -> int:
     # 1. Run Study S1 (Visit Sparsity)
     s1_results = run_study_s1(audit_logger)
 
-    # 2. Run Study S2 (Sequential Anytime-Valid Detection)
-    s2_results = run_study_s2(audit_logger)
+    # S2 is retracted pending a corrected protocol and independent replication.
+    s2_results = {
+        "status": "RETRACTED",
+        "reason": "Legacy K2 benchmark cannot establish Ville validity; see quality rerun audit.",
+    }
 
     # 3. Run Study S3 (Verification Bias)
     s3_results = run_study_s3(audit_logger)

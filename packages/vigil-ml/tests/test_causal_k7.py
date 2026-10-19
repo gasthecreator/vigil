@@ -32,16 +32,24 @@ def test_synthetic_cohort_generation():
 def test_e_value_properties():
     """E-value must strictly obey mathematical bounds of VanderWeele & Ding (2017)."""
     # Null effect (RR = 1.0) -> E-value = 1.0
-    null_res = compute_e_value(1.0, 1.0)
+    null_res = compute_e_value(1.0, (1.0, 1.0))
     assert null_res["e_value_estimate"] == 1.0
     assert null_res["e_value_ci_lower"] == 1.0
+    assert compute_e_value(float("inf"))["e_value_estimate"] == 1.0
 
     # RR = 1.5 -> E-value = 1.5 + sqrt(1.5 * 0.5) = 1.5 + 0.8660 = 2.3660
-    res = compute_e_value(1.5, 1.2)
+    res = compute_e_value(1.5, (1.2, 1.8))
     expected_est = 1.5 + math.sqrt(1.5 * 0.5)
     expected_ci = 1.2 + math.sqrt(1.2 * 0.2)
     assert abs(res["e_value_estimate"] - expected_est) < 0.001
     assert abs(res["e_value_ci_lower"] - expected_ci) < 0.001
+
+    # For a protective estimate, the upper limit is closest to the null.
+    protective_ci = compute_e_value(0.5, (0.4, 0.8))
+    nearest_null_rr = 1 / 0.8
+    expected_protective_ci = nearest_null_rr + math.sqrt(nearest_null_rr * (nearest_null_rr - 1))
+    assert abs(protective_ci["e_value_ci_lower"] - expected_protective_ci) < 0.001
+    assert compute_e_value(0.8, (0.6, 1.1))["e_value_ci_lower"] == 1.0
 
     # Protective effect (RR = 0.5) -> inverted RR* = 2.0 -> E-value = 2 + sqrt(2 * 1) = 3.4142
     prot = compute_e_value(0.5)
@@ -66,6 +74,16 @@ def test_smd_covariate_balance():
     assert max_weighted < 0.10, (
         f"Max weighted SMD ({max_weighted}) exceeded target balance threshold 0.10"
     )
+
+
+def test_smd_rejects_empty_arm_and_zero_weight_arm():
+    import pytest
+    from vigil_ml.causal_k7 import compute_smd
+
+    with pytest.raises(ValueError, match="both treatment groups"):
+        compute_smd(np.array([1.0, 2.0]), np.array([0, 0]))
+    with pytest.raises(ValueError, match="zero total weight"):
+        compute_smd(np.array([1.0, 2.0]), np.array([0, 1]), np.array([1.0, 0.0]))
 
 
 def test_aipw_recovers_known_ground_truth():

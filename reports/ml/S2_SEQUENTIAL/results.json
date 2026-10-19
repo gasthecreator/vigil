@@ -47,5 +47,8 @@
       "patient_level_null_far": 0.035,
       "expected_detection_delay_days": 418.5
     }
-  }
+  },
+  "status": "RETRACTED",
+  "retraction_reason": "The reported study was produced by the deprecated clipped K2 prototype; empirical scenarios do not establish Ville validity. The separate preregistered runner also hard-codes calibration outputs and its reported operating-point match is unverified.",
+  "do_not_interpret_as": "Validated false-alarm guarantee, matched operating-point result, or evidence for deployment."
 }

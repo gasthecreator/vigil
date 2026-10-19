@@ -1,18 +1,10 @@
-"""
-packages/vigil-ml/vigil_ml/sequential_k2.py
+"""Deprecated K2 prototype retained for compatibility.
 
-K2 — Anytime-Valid Sequential Detection Engine.
-Solves Problem H-B: Controls patient-level false alarm rate across continuous serial monitoring
-using Nonnegative Test Supermartingales (e-processes) and Ville's Inequality:
-
-    P_0( exists t >= 1 : E_t >= 1 / alpha_pt ) <= alpha_pt
-
-Includes:
-1. Mixture e-processes integrating over unknown tumor doubling times / growth rates.
-2. Classical sequential comparators: CUSUM and Shiryaev-Roberts charts.
-3. Average Run Length under null (ARL_0) and Expected Detection Delay (EDD) estimators.
-4. Calibrated alert tiers: watch (alpha=0.20), review (alpha=0.05), urgent (alpha=0.01).
-5. Comprehensive Validity Stress Suite testing patient-level error bounds across >= 5 null scenarios.
+This module is not an e-process and does not provide Ville false-alarm control:
+its clipped Student-t likelihood increments and clipped cumulative values do not
+establish the required supermartingale property. Use ``vigil_ml.k2.SequentialDetector``
+for the current implementation. Its validity still depends on null-model and
+scale assumptions; empirical stress results are not a proof.
 """
 
 from __future__ import annotations
@@ -44,8 +36,7 @@ class SequentialAlertResult:
 
 class SequentialEProcessK2:
     """
-    Nonnegative test supermartingale for serial tumor marker surveillance.
-    Constructs mixture e-processes over alternative kinetic growth rates.
+    Deprecated clipped likelihood-ratio prototype; not an e-process.
     """
 
     def __init__(
@@ -95,7 +86,7 @@ class SequentialEProcessK2:
         self, visits: List[Dict[str, Any]]
     ) -> List[SequentialAlertResult]:
         """
-        Processes a full sequential patient visit history, returning anytime-valid results.
+        Processes a history and returns exploratory scores without a validity guarantee.
         """
         results = []
         e_val = 1.0
@@ -152,8 +143,7 @@ class SequentialEProcessK2:
 
 class SequentialDetectorBenchmark:
     """
-    Evaluates anytime-valid e-processes against per-visit static thresholds
-    and runs the mandatory 5-scenario Validity Stress Suite.
+    Deprecated empirical benchmark for the clipped prototype; it cannot test Ville validity.
     """
 
     def __init__(self, alpha_pt: float = 0.05):
@@ -162,8 +152,7 @@ class SequentialDetectorBenchmark:
 
     def run_stress_suite(self, n_patients: int = 200, n_visits: int = 15) -> Dict[str, Any]:
         """
-        Executes the mandatory 5-Scenario Null Stress Suite.
-        Ensures empirical false alarm rate <= alpha_pt + tolerance (0.02) across all nulls.
+        Reports empirical rates on five generated scenarios; this is not a validity proof.
         """
         rng = np.random.default_rng(2026)
         scenarios = {

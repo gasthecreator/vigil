@@ -4,8 +4,11 @@ packages/vigil-ml/vigil_ml/k2.py
 Model K2: Anytime-Valid Sequential Detection Engine.
 Implements the K2 Acceptance Contract specified in docs/ml/K2-K8-CONTRACT.md.
 
-Guarantees patient-level false-alarm rate control under continuous monitoring
-using predictable recursive standardisation and mixture test supermartingales (e-processes).
+Accumulates exponential-mixture scores for sequential marker changes. Ville
+validity has not been established: the recursive residual is not conditionally
+centered given the observed history, and calibration on a finite synthetic
+cohort does not prove a conditional scale bound. Empirical stress results are
+not a proof of validity.
 """
 
 from enum import Enum
@@ -25,8 +28,8 @@ class AlertTier(str, Enum):
 
 class SequentialDetector:
     """
-    Anytime-valid e-process detector providing rigorous patient-level false-alarm
-    control under continuous, indefinite longitudinal monitoring.
+    Exponential-mixture score detector; this implementation is not established
+    as an e-process for the unknown-baseline null.
 
     Uses recursive prediction residuals against the running baseline to eliminate
     bias accumulation across long monitoring horizons (Brown, Durbin, Evans 1975),
@@ -62,12 +65,12 @@ class SequentialDetector:
 
     @property
     def log_e(self) -> float:
-        """Current log e-value (anytime-valid evidence against 'no change')."""
+        """Current log mixture score; it is not a calibrated evidence value."""
         return self._log_e
 
     @property
     def tier(self) -> AlertTier:
-        """Categorize anytime-valid evidence level into discrete alert tiers."""
+        """Categorize the current score into software tiers."""
         if self._log_e >= np.log(100.0):
             return AlertTier.URGENT
         elif self._log_e >= np.log(20.0):
@@ -76,11 +79,15 @@ class SequentialDetector:
             return AlertTier.WATCH
         return AlertTier.NONE
 
-    def integrate_with_risk_score(self, k3_or_b4_score: float) -> dict[str, Any]:
+    def integrate_with_risk_score(
+        self, k3_or_b4_score: float, imaging_threshold: float
+    ) -> dict[str, Any]:
         """
         Documented interface integrating sequential e-process evidence with landmark risk score
         (K3 or B4) for surveillance decision support. Does NOT claim clinical utility.
         """
+        if not 0.0 <= float(imaging_threshold) <= 1.0:
+            raise ValueError("imaging_threshold must be between 0 and 1")
         return {
             "log_e": self.log_e,
             "e_value": float(np.exp(min(self.log_e, 700.0))),
@@ -88,8 +95,8 @@ class SequentialDetector:
             "is_alert": self.alert,
             "landmark_risk_score": float(k3_or_b4_score),
             "combined_action": (
-                "RECOMMEND_IMAGING" if (self.alert and k3_or_b4_score >= 0.15)
-                else "CLINICAL_REVIEW" if (self.alert or k3_or_b4_score >= 0.15)
+                "RECOMMEND_IMAGING" if (self.alert and k3_or_b4_score >= imaging_threshold)
+                else "CLINICAL_REVIEW" if (self.alert or k3_or_b4_score >= imaging_threshold)
                 else "CONTINUE_SURVEILLANCE"
             ),
         }

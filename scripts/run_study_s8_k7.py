@@ -82,7 +82,7 @@ def run_study(n_patients: int = 5000, n_boot: int = 1000) -> Dict[str, Any]:
 
     aipw_rr_b = est_unmeasured["estimates"]["aipw"]["rr"]
     ci_aipw_b = boot_unmeasured["confidence_intervals"]["aipw"]["ci_95"]
-    e_val_b = compute_e_value(aipw_rr_b, ci_aipw_b[0])
+    e_val_b = compute_e_value(aipw_rr_b, tuple(ci_aipw_b))
 
     # Injected confounder strength: OR_treatment = 3.3, RR_outcome = 3.0 -> minimum confounding strength ~2.5
     # Hypothesis H3: Estimator exhibits residual bias, but E-value correctly detects required confounding strength >= 2.0

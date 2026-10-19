@@ -22,9 +22,9 @@ from vigil_ml.export import (
     verify_onnx_parity,
 )
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5
+from vigil_ml.k2 import AlertTier, SequentialDetector
 from vigil_ml.kinetic_k1 import HybridKineticModelK1, KineticODEFactor
 from vigil_ml.runtime import VigilProductionRuntime
-from vigil_ml.sequential_k2 import AlertTier, SequentialDetectorBenchmark, SequentialEProcessK2
 
 # ---------------------------------------------------------------------------
 # K1 Tests
@@ -70,12 +70,14 @@ def test_k1_sbc_and_parameter_recovery():
 # ---------------------------------------------------------------------------
 
 def test_k2_sequential_eprocess_and_tiers():
-    ep = SequentialEProcessK2(alpha_pt=0.05)
+    ep = SequentialDetector(alpha_pt=0.05, sigma_log=0.12)
     # Baseline quiescent sequence -> e-value remains small
-    quiescent_visits = [{"day": d * 90.0, "ca15_3": 18.0 + np.random.normal(0, 1.0)} for d in range(5)]
-    q_results = ep.evaluate_trajectory(quiescent_visits)
-    assert q_results[-1].e_value < 20.0
-    assert q_results[-1].tier in [AlertTier.NONE, AlertTier.WATCH]
+    rng = np.random.default_rng(20261019)
+    quiescent_visits = [18.0 + rng.normal(0.0, 0.3) for _ in range(8)]
+    for day, value in enumerate(quiescent_visits):
+        ep.update(float(day * 90), float(value))
+    assert not ep.alert
+    assert ep.tier in [AlertTier.NONE, AlertTier.WATCH]
 
     # Escalating sequence -> e-value spikes crossing Ville's threshold
     spiking_visits = [
@@ -84,19 +86,10 @@ def test_k2_sequential_eprocess_and_tiers():
         {"day": 180.0, "ca15_3": 45.0},
         {"day": 270.0, "ca15_3": 85.0},
     ]
-    s_results = ep.evaluate_trajectory(spiking_visits)
-    assert s_results[-1].e_value > 20.0
-    assert s_results[-1].tier in [AlertTier.REVIEW, AlertTier.URGENT]
-
-
-def test_k2_validity_stress_suite_5_scenarios():
-    benchmark = SequentialDetectorBenchmark(alpha_pt=0.05)
-    stress_res = benchmark.run_stress_suite(n_patients=60, n_visits=10)
-    assert stress_res["all_passed"], f"Stress suite failed: {stress_res}"
-    for scenario_name, sc_data in stress_res["scenarios"].items():
-        assert sc_data["empirical_patient_level_far"] <= (0.05 + 0.05), (
-            f"Scenario {scenario_name} violated patient-level false alarm bound: {sc_data}"
-        )
+    for visit in spiking_visits:
+        ep.update(visit["day"], visit["ca15_3"])
+    assert ep.alert
+    assert ep.tier in [AlertTier.REVIEW, AlertTier.URGENT]
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +122,7 @@ def test_k5_hierarchical_pooling_and_changepoints():
 
 def test_k8_conformal_risk_control_and_ood():
     k8 = ConformalRiskControllerK8(alpha_conf=0.10)
+    k8.calibrate(np.array([0.1, 0.2, 0.3, 0.4]), np.array([1, 1, 1, 1]))
     # Fit OOD on standard normal features
     X_train = np.random.normal(0, 1.0, (100, 15))
     k8.fit_ood_detector(X_train)
@@ -144,6 +138,17 @@ def test_k8_conformal_risk_control_and_ood():
     res_ood = k8.predict(raw_risk=0.35, epistemic_std=0.05, feature_vector=ood_x)
     assert res_ood.abstention == AbstentionReason.ABSTAIN_OOD
     assert res_ood.alert_tier == "abstain"
+
+
+def test_k8_finite_sample_rank_and_uncalibrated_abstention():
+    k8 = ConformalRiskControllerK8(alpha_conf=0.5)
+    uncalibrated = k8.predict(raw_risk=0.2, epistemic_std=0.01)
+    assert uncalibrated.abstention == AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY
+    assert uncalibrated.risk_interval == (0.0, 1.0)
+
+    k8.calibrate(np.array([0.1, 0.2, 0.3]), np.array([1, 1, 1]))
+    # floor((3 + 1) * .5) = 2; the second ascending positive score is the cutoff.
+    assert k8.calibrated_threshold == 0.2
 
 
 def test_production_export_parity_and_latency(tmp_path):

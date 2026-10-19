@@ -25,6 +25,7 @@ IGNORE_PATHS = {
     ".next",
     "dist",
     "build",
+    "site",  # MkDocs output is generated from source and may contain quoted historical claims.
     # Master plan, changelog, progress reports, audit reports, and historical archives document prior defects or instructions
     "docs/MASTER_PLAN.md",
     "docs/PLAN-CHANGELOG.md",

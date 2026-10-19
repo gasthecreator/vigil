@@ -1,16 +1,16 @@
 """
 packages/vigil-ml/vigil_ml/conformal_k8.py
 
-K8 — Model Selection, Conformal Risk Control, and Production Ensemble.
-Provides distribution-free statistical risk guarantees, adaptive conformal tracking,
+K8 — Conformal Risk Control, OOD abstention, and a deprecated score prototype.
+Provides a finite-sample rank threshold under exchangeability, adaptive tracking,
 calibrated alert tiers, and an out-of-distribution (OOD) abstention policy.
 
 Key Components:
-1. Conformal Risk Control (CRC): Guaranteed bounds on False Negative Rate (FNR <= alpha_conf).
+1. Conformal Risk Control (CRC): Finite-sample FNR control under exchangeability.
 2. Adaptive Conformal Inference (ACI): Online threshold adaptation under non-stationary shifts.
 3. Calibrated Alert Tiers: watch, review, urgent.
 4. OOD Detector & Abstention Policy: Rejection of physiological outliers and high-epistemic-uncertainty cases.
-5. Production Stacking Ensemble: Integrates K1, K3, K4, and B4 with calibrated stacking.
+5. Deprecated hand-written score, not a trained stacking ensemble (stub S-016).
 """
 
 from __future__ import annotations
@@ -42,15 +42,20 @@ class ConformalPredictionResult:
 
 class ConformalRiskControllerK8:
     """
-    Implements distribution-free Conformal Risk Control (CRC) and Adaptive Conformal Inference (ACI).
-    Guarantees that test False Negative Rate <= alpha_conf with user-specified confidence.
+    Implements a finite-sample rank threshold under exchangeability of positive scores.
+    Adaptive updates and the separate OOD heuristic do not inherit this guarantee.
     """
 
     def __init__(self, alpha_conf: float = 0.10, adapt_rate: float = 0.05):
+        if not 0.0 < alpha_conf < 1.0:
+            raise ValueError("alpha_conf must be between 0 and 1")
+        if adapt_rate <= 0.0:
+            raise ValueError("adapt_rate must be positive")
         self.alpha_conf = alpha_conf
         self.adapt_rate = adapt_rate
         self.calibrated_threshold = 0.28
         self.running_threshold = 0.28
+        self.is_calibrated = False
         # OOD baseline statistics on feature space
         self.feature_means: Optional[np.ndarray] = None
         self.feature_cov_inv: Optional[np.ndarray] = None
@@ -60,12 +65,17 @@ class ConformalRiskControllerK8:
         """
         Calibrates the operating threshold on held-out validation data to strictly bound FNR.
         """
-        pos_scores = val_scores[val_labels == 1]
-        if len(pos_scores) > 0:
-            # Empirical (alpha_conf) quantile among positive cases
-            q_val = float(np.quantile(pos_scores, self.alpha_conf))
-            self.calibrated_threshold = max(0.05, q_val)
-            self.running_threshold = self.calibrated_threshold
+        val_scores = np.asarray(val_scores, dtype=float)
+        val_labels = np.asarray(val_labels, dtype=int)
+        if val_scores.ndim != 1 or val_labels.ndim != 1 or len(val_scores) != len(val_labels):
+            raise ValueError("validation scores and labels must be one-dimensional arrays of equal length")
+        if not np.all(np.isfinite(val_scores)) or not np.all(np.isin(val_labels, [0, 1])):
+            raise ValueError("validation scores must be finite and labels must be binary")
+        pos_scores = np.sort(val_scores[val_labels == 1])
+        k = int(np.floor((len(pos_scores) + 1) * self.alpha_conf))
+        self.calibrated_threshold = float(pos_scores[k - 1]) if k > 0 else float("-inf")
+        self.running_threshold = self.calibrated_threshold
+        self.is_calibrated = True
         return self
 
     def fit_ood_detector(self, X_train: np.ndarray) -> "ConformalRiskControllerK8":
@@ -92,8 +102,18 @@ class ConformalRiskControllerK8:
         self, raw_risk: float, epistemic_std: float, feature_vector: Optional[np.ndarray] = None
     ) -> ConformalPredictionResult:
         """
-        Produces fully calibrated conformal prediction with OOD and uncertainty abstention.
+        Produces a prediction only after calibration; otherwise abstains.
         """
+        if not self.is_calibrated:
+            return ConformalPredictionResult(
+                calibrated_risk=raw_risk,
+                risk_interval=(0.0, 1.0),
+                alert_tier="abstain",
+                is_alert=False,
+                conformal_quantile=float("nan"),
+                abstention=AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY,
+                explanation_summary="No calibration cohort is loaded. Defer this score for clinician review.",
+            )
         # Check OOD abstention
         if feature_vector is not None:
             is_ood, dist = self.check_ood(feature_vector)
@@ -161,8 +181,8 @@ class ConformalRiskControllerK8:
 
 class ProductionEnsembleK8:
     """
-    K8 Production Stacking Ensemble.
-    Combines K1 (Mechanistic SDE), K3 (Joint Model), K4 (Deep Zoo), and B4 (Gradient Boosting).
+    Deprecated hand-written weighted score. It does not call or stack trained models.
+    Retained for compatibility only; see stub S-016 and do not treat as an ensemble.
     """
 
     def __init__(self):
