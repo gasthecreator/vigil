@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml reproduce-ml-core typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
+.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml reproduce-ml-core reproduce-ml-core-cross-generator typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= uv
@@ -18,7 +18,8 @@ help:
 	@echo "make verify-phase       Verify phase exit gates (e.g. make verify-phase PHASE=0)"
 	@echo "make reproduce          Regenerate/verify committed cheap study reports (G-11)"
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
-	@echo "make reproduce-ml-core  Run preregistered censor-aware core model tuning study"
+	@echo "make reproduce-ml-core  Run preregistered single-generator core model tuning study"
+	@echo "make reproduce-ml-core-cross-generator  Run preregistered G1/G2 to G3 robustness study"
 	@echo "make docs-build         Build MkDocs Material site into site/"
 	@echo "make docs-check         Build docs + check_docs_links + README version claims"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
@@ -99,6 +100,10 @@ reproduce-ml:
 reproduce-ml-core:
 	@echo "==> Running preregistered synthetic core-model tuning study..."
 	$(UV) run python experiments/EXP-CORE-ML-003/run.py
+
+reproduce-ml-core-cross-generator:
+	@echo "==> Running preregistered cross-generator synthetic core-model evaluation..."
+	$(UV) run python experiments/EXP-CORE-ML-004/run.py
 
 api-dev:
 	$(UV) run uvicorn vigil_api.main:app --host 0.0.0.0 --port 8000 --reload
