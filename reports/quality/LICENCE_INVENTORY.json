@@ -1,5 +1,5 @@
 {
-  "count": 204,
+  "count": 227,
   "needs_review": [],
   "needs_review_count": 0,
   "packages": [
@@ -76,6 +76,13 @@
     {
       "ecosystem": "pip",
       "license": "BSD-3-Clause",
+      "name": "colorama",
+      "needs_review": false,
+      "version": "0.4.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
       "name": "contourpy",
       "needs_review": false,
       "version": "1.4.0"
@@ -93,6 +100,27 @@
       "name": "cryptography",
       "needs_review": false,
       "version": "50.0.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-bindings",
+      "needs_review": false,
+      "version": "13.4.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-pathfinder",
+      "needs_review": false,
+      "version": "1.8.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-toolkit",
+      "needs_review": false,
+      "version": "13.0.3.0"
     },
     {
       "ecosystem": "pip",
@@ -317,6 +345,118 @@
       "name": "numpyro",
       "needs_review": false,
       "version": "0.22.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cublas",
+      "needs_review": false,
+      "version": "13.1.1.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-cupti",
+      "needs_review": false,
+      "version": "13.0.85"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-nvrtc",
+      "needs_review": false,
+      "version": "13.0.88"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-runtime",
+      "needs_review": false,
+      "version": "13.0.96"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cudnn-cu13",
+      "needs_review": false,
+      "version": "9.24.0.43"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cufft",
+      "needs_review": false,
+      "version": "12.0.0.61"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cufile",
+      "needs_review": false,
+      "version": "1.15.1.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-curand",
+      "needs_review": false,
+      "version": "10.4.0.35"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusolver",
+      "needs_review": false,
+      "version": "12.0.4.66"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusparse",
+      "needs_review": false,
+      "version": "12.6.3.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusparselt-cu13",
+      "needs_review": false,
+      "version": "0.8.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nccl-cu12",
+      "needs_review": false,
+      "version": "2.32.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nccl-cu13",
+      "needs_review": false,
+      "version": "2.30.7"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvjitlink",
+      "needs_review": false,
+      "version": "13.4.92"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvshmem-cu13",
+      "needs_review": false,
+      "version": "3.4.5"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvtx",
+      "needs_review": false,
+      "version": "13.0.85"
     },
     {
       "ecosystem": "pip",
@@ -656,6 +796,13 @@
     },
     {
       "ecosystem": "pip",
+      "license": "MIT",
+      "name": "tomli",
+      "needs_review": false,
+      "version": "2.5.0"
+    },
+    {
+      "ecosystem": "pip",
       "license": "Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT",
       "name": "torch",
       "needs_review": false,
@@ -671,6 +818,13 @@
     {
       "ecosystem": "pip",
       "license": "MIT",
+      "name": "triton",
+      "needs_review": false,
+      "version": "3.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
       "name": "typing-inspection",
       "needs_review": false,
       "version": "0.4.4"
@@ -681,6 +835,13 @@
       "name": "typing_extensions",
       "needs_review": false,
       "version": "4.16.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "tzdata",
+      "needs_review": false,
+      "version": "2026.5"
     },
     {
       "ecosystem": "pip",

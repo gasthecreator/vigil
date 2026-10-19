@@ -49,7 +49,14 @@ CLASSIFIER_MAP = {
 OVERRIDES = {
     "colorama": "BSD-3-Clause",
     "cycler": "BSD-3-Clause",
+    "tomli": "MIT",
+    "tzdata": "Apache-2.0",
+    "triton": "MIT",
 }
+# Linux-only CUDA wheels pulled in by torch: proprietary NVIDIA redistributables, not OSI licences. They are listed
+# so NOTICE is honest; confirm the NVIDIA EULA before shipping images that bundle them.
+NVIDIA_PREFIXES = ("nvidia-", "cuda-")
+NVIDIA_LICENCE = "LicenseRef-NVIDIA-Proprietary"
 LONG_TEXT_HINTS = (
     ("apache license", "Apache-2.0"),
     ("permission is hereby granted, free of charge", "MIT"),
@@ -63,6 +70,8 @@ def normalise(
 ) -> str | None:
     if name.lower() in OVERRIDES:
         return OVERRIDES[name.lower()]
+    if name.lower().startswith(NVIDIA_PREFIXES):
+        return NVIDIA_LICENCE
     if license_expr.strip():
         return license_expr.strip()
     lic = license_field.strip()
@@ -82,7 +91,8 @@ def normalise(
     return None
 
 
-def python_runtime_names() -> set[str]:
+def python_runtime_pins() -> dict[str, str]:
+    """name -> locked version for the whole runtime closure, including platform-marker-only packages."""
     out = subprocess.run(
         [
             "uv",
@@ -99,30 +109,41 @@ def python_runtime_names() -> set[str]:
         check=True,
     ).stdout
     return {
-        m.group(1).lower().replace("_", "-")
-        for m in re.finditer(r"^([A-Za-z0-9_.\-]+)==", out, re.M)
+        m.group(1).lower().replace("_", "-"): m.group(2)
+        for m in re.finditer(r"^([A-Za-z0-9_.\-]+)==([^\s;]+)", out, re.M)
     }
 
 
-def python_entries(names: set[str] | None = None) -> list[dict]:
-    names = python_runtime_names() if names is None else names
-    rows = []
+def python_entries(pins: dict[str, str] | None = None) -> list[dict]:
+    """One row per locked runtime package (deterministic across platforms / installed groups).
+
+    Licence text comes from installed metadata when present; a package that is locked but not installed here
+    (platform-marker-only, e.g. colorama on Windows) is resolved from OVERRIDES or flagged `needs_review`."""
+    pins = python_runtime_pins() if pins is None else pins
+    installed = {}
     for dist in metadata.distributions():
-        name = dist.metadata["Name"] or ""
-        if name.lower().replace("_", "-") not in names:
-            continue
-        classifiers = list(dist.metadata.get_all("Classifier") or [])
-        lic = normalise(
-            name,
-            dist.metadata.get("License-Expression") or "",
-            dist.metadata.get("License") or "",
-            classifiers,
-        )
+        nm = (dist.metadata["Name"] or "").lower().replace("_", "-")
+        installed.setdefault(nm, dist)
+    rows = []
+    for nm, version in sorted(pins.items()):
+        dist = installed.get(nm)
+        if dist is not None:
+            name = dist.metadata["Name"]
+            classifiers = list(dist.metadata.get_all("Classifier") or [])
+            lic = normalise(
+                name,
+                dist.metadata.get("License-Expression") or "",
+                dist.metadata.get("License") or "",
+                classifiers,
+            )
+            version = dist.version
+        else:
+            name, classifiers, lic = nm, [], normalise(nm, "", "", [])
         rows.append(
             {
                 "ecosystem": "pip",
                 "name": name,
-                "version": dist.version,
+                "version": version,
                 "license": lic or "needs_review",
                 "needs_review": lic is None,
                 "_classifiers": classifiers,
@@ -190,6 +211,12 @@ def render(entries: list[dict]) -> tuple[str, str]:
     for e in public:
         flag = "  [licence needs review]" if e["needs_review"] else ""
         lines.append(f"  - {e['name']} {e['version']} ({e['ecosystem']}): {e['license']}{flag}")
+    if any(e["license"] == NVIDIA_LICENCE for e in public):
+        lines += [
+            "",
+            "Note: the NVIDIA/CUDA packages above are proprietary redistributables installed on Linux (pulled in by",
+            "torch). They are not open-source licences; review the NVIDIA EULA before distributing images that bundle them.",
+        ]
     lines += ["", "Regenerate: uv run python scripts/generate_licence_inventory.py", ""]
     return json.dumps(payload, indent=2, sort_keys=True) + "\n", "\n".join(lines)
 
