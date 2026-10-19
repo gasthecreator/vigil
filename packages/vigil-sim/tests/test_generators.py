@@ -124,6 +124,38 @@ def test_k3_profile_shares_lab_effects_within_facility_and_records_verification(
     )
 
 
+def test_positive_imaging_below_visibility_threshold_is_not_confirmed_recurrence():
+    profile_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    generator = get_generator(GeneratorType.G1_SMOOTH, seed=48103, population_config=profile)
+    patient = generator.sample_baseline(1)
+    patient.true_recurrence_event = True
+    patient.true_recurrence_day = 100.0
+    patient.true_recurrence_site = "bone"
+    patient.observed_recurrence_event = False
+    patient.observed_recurrence_day = None
+
+    class AlwaysZeroRng:
+        @staticmethod
+        def random() -> float:
+            return 0.0
+
+    generator.rng = AlwaysZeroRng()
+    state = type("State", (), {
+        "b_loc": 0.0,
+        "b_bone": 0.0,
+        "b_liver": 0.0,
+        "b_lung": 0.0,
+        "b_brain": 0.0,
+    })()
+    performed, result, _probability = generator.evaluate_verification_mechanism(
+        patient, 10.0, {}, {}, state
+    )
+    assert performed and result is True
+    assert patient.observed_recurrence_event is False
+    assert patient.observed_recurrence_day is None
+
+
 def test_latent_states_export_for_recovery_studies():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=42)
     cohort = gen.generate_cohort(num_patients=10, duration_days=365.0)

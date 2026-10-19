@@ -801,7 +801,9 @@ class BaseCohortGenerator(ABC):
                 result = bool(self.rng.random() < probability_positive)
             else:
                 result = bool(visible_recurrence)
-            if result and pt.true_recurrence_event and not pt.observed_recurrence_event:
+            # A positive result alone is a screening finding; only a visible
+            # latent recurrence can become the synthetic confirmed-diagnosis label.
+            if result and visible_recurrence and not pt.observed_recurrence_event:
                 pt.observed_recurrence_event = True
                 pt.observed_recurrence_day = day
                 pt.observed_recurrence_site = pt.true_recurrence_site
