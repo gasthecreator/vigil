@@ -1,3 +1,5 @@
+> **RETRACTED (2026-10-18).** Do not cite anything below. The study that followed this file returned literal dictionaries. Replaced by `experiments/EXP-K6-001/PREREG.md` (see `reports/ml/RETRACTED/README.md`).
+
 # Study S6 Pre-Registration: Active Sensing & Adaptive Surveillance Scheduling
 
 **Study ID:** S6_ACTIVE_SENSING  

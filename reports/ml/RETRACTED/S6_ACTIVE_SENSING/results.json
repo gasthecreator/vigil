@@ -1,4 +1,5 @@
 {
+  "_RETRACTED": "2026-10-18: values below were not computed from a simulated policy (literal visits, costs and delays). Do not cite.",
   "fixed_3month": {
     "mean_visits": 20.0,
     "mean_cost_usd": 400.0,

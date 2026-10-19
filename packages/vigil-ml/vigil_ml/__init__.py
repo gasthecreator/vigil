@@ -3,11 +3,6 @@
 Conforms strictly to docs/MASTER_PLAN.md §14 (WP2.2, WP2.3) and docs/ML_PROGRAM.md §5, §9.
 """
 
-from vigil_ml.active_sensing_k6 import (
-    ActiveSensingEngineK6,
-    ActiveSensingRecommendation,
-    TestPanelTier,
-)
 from vigil_ml.baselines import (
     BaseSurveillanceModel,
     GradientBoostingBaseline,
@@ -87,10 +82,6 @@ __all__ = [
     # K5 Harmonisation
     "HierarchicalLabHarmoniserK5",
     "LabHarmonisationProfile",
-    # K6 Active Sensing
-    "ActiveSensingEngineK6",
-    "TestPanelTier",
-    "ActiveSensingRecommendation",
     # K8 Conformal & Ensemble
     "ConformalRiskController",
     "OODGate",
