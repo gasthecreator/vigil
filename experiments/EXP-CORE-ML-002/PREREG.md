@@ -25,7 +25,7 @@ Can validation-only tuning improve fixed-horizon recurrence prediction for B3, B
 
 ## Calibration and evaluation
 
-- Fit one weighted logistic (Platt) calibration model per non-prevalence model on the independent calibration cohort, using only determinable rows and patient-equalized IPCW weights. The prevalence comparator remains the training prevalence estimate.
+- Fit one weighted logistic (Platt) calibration model per non-prevalence model on the independent calibration cohort, using only determinable rows and patient-equalized IPCW weights. Use scikit-learn logistic regression with L2 penalty, `C=1.0`, `max_iter=2000`, and random state 42002. The prevalence comparator remains the training prevalence estimate.
 - Evaluate calibrated predictions once on the fresh test cohort. Primary descriptive metric: IPCW Brier score. Secondary: IPCW time-dependent AUC and IPCW calibration error.
 - Report every candidate's validation score, selected parameters, all three test metrics, and paired test differences against the calibrated B1 rule with patient-cluster percentile 95% bootstrap intervals (500 replicates; seed 42005). Undefined metrics or fewer than 400 valid bootstrap replicates abort the result; they are not replaced by defaults.
 - No clinical threshold, utility, deployment, or clinical performance claim is made. No multiplicity-adjusted confirmatory claim is made; this is exploratory synthetic tuning.
