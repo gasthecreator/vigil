@@ -32,7 +32,7 @@ Can validation-only tuning improve fixed-horizon recurrence prediction for B3, B
 
 ## Integrity checks and stop rules
 
-Before fitting: run latent-column, outcome-derived-feature, unobserved-value, and patient-grouped shuffled-label canaries on the exact training data; verify disjoint IDs, binary-or-missing labels, finite nonnegative weights, zero weight for early-censored labels, and both classes in every fit. Abort on failure. Keep all candidates and all scores. Do not revise the grid, seeds, horizon, or metric after results are accessed. Any later protocol change requires a new experiment ID and new seeds.
+Before fitting: run latent-column, outcome-derived-feature, unobserved-value, and patient-grouped shuffled-label canaries on the exact training data; shuffled-label AUC must be at most 0.60 for B3 and B4. Verify disjoint IDs, binary-or-missing labels, finite nonnegative weights, zero weight for early-censored labels, and both classes in every fit. Use canary seeds 42006 and 42007. Abort on failure. Keep all candidates and all scores. Do not revise the grid, seeds, horizon, or metric after results are accessed. Any later protocol change requires a new experiment ID and new seeds.
 
 ## Limits
 
