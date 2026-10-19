@@ -156,9 +156,10 @@ jobs:
         run: |
           # A gate that cannot fail is theatre. Each scanner is run, with the same invocation as above,
           # on a temp dir containing one deliberate violation, and must exit non-zero.
+          # Do not embed a contiguous fake ghp_/AKIA token in this YAML (trips T0.1 secret scan).
           S="$RUNNER_TEMP/seed"; mkdir -p "$S/py" "$S/dep"
           printf 'import hashlib, subprocess\ndef f(x):\n    subprocess.call(x, shell=True)\n    return hashlib.md5(x).hexdigest()\n' > "$S/py/bad.py"
-          printf 'TOKEN = "ghp_R8x2KqLm9ZtV4nB7cYw3Hd6Jf1Sa5PeU0gQo"\n' > "$S/py/leak.py"
+          printf 'TOKEN = "%s%s"\n' 'ghp_' 'R8x2KqLm9ZtV4nB7cYw3Hd6Jf1Sa5PeU0gQo' > "$S/py/leak.py"
           printf 'django==2.0\n' > "$S/dep/requirements.txt"
           expect_fail() { name="$1"; shift; if "$@" >/dev/null 2>&1; then echo "::error::$name did not fail on a seeded violation"; exit 1; fi; echo "seeded $name failure OK"; }
           expect_fail gitleaks gitleaks detect --source "$S/py" --no-git --no-banner --redact --config .gitleaks.toml
