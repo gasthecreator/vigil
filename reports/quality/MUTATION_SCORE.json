@@ -1,14 +1,19 @@
 {
   "module": "vigil_ml.m5",
-  "tool": "mutmut",
-  "status": "tool_not_installed",
+  "tool": "mutmut 2.x",
+  "status": "ran",
   "target_kill_percent": 80.0,
-  "kill_percent": null,
-  "honest_note": "mutmut was not installed in this environment; install with `uv add --dev mutmut` and re-run scripts/run_mutation_m5.py on the nightly job.",
-  "generated_at": "2026-10-19T05:19:15.261093+00:00",
+  "kill_percent": 43.9,
+  "mutant_counts": {
+    "bad_survived": 213,
+    "ok_killed": 167
+  },
+  "meets_target": false,
+  "honest_note": "Local run 2026-10-19 (test file tests/test_m3_m5.py only). Target NOT met: 213 of 380 mutants survived. Do not cite as meeting the plan target; improving m5 tests is open work.",
+  "generated_at": "2026-10-19T07:24:12.075349+00:00",
   "machine": {
     "platform": "macOS-26.6.2-arm64-arm-64bit",
     "python": "3.12.15"
   },
-  "command": "uv run python scripts/run_mutation_m5.py"
+  "command": "cd packages/vigil-ml && mutmut run --paths-to-mutate=vigil_ml/m5.py --tests-dir=tests --runner 'python -m pytest tests/test_m3_m5.py -q --tb=no -x'"
 }

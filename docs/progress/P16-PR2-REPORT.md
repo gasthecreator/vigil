@@ -46,6 +46,6 @@ Defects found and fixed by the overseer:
 1. `scripts/verify_study_reproducibility.py` (step 1 of `make reproduce`) compared keys (`study`, `facilities`, `hypotheses`, `privacy_controls`) that do not exist in the M10 report, so both sides were `None` and it could never fail. It now compares every key except `timestamp_utc`; a tampered `facility_evaluations` value now exits 1.
 2. `check_coverage_ratchet.py --seed-fail` printed a hardcoded failure without running the comparison. It now runs the real check against a synthetic 0% report.
 Not met, stated plainly:
-- G-06 mutation testing has **no measured score** (`status: tool_not_installed`); the nightly job is untested until it first runs. Do not cite a mutation score.
-- gitleaks allowlists all of `tests/` and `docs/`; no seeded-secret demonstration exists for gitleaks, Bandit, Semgrep or Trivy. Carry into PR3.
+- G-06 mutation testing: **measured by the overseer, target NOT met.** `vigil_ml.m5`, mutmut 2.x: 167 killed / 213 survived of 380 mutants = **43.9%** vs the 80% target (`reports/quality/MUTATION_SCORE.json`). The runner script previously parsed output mutmut 2 never prints and would have recorded `null`; it now reads the mutmut cache DB. Strengthening `tests/test_m3_m5.py` until survivors are killed or justified is open executor work (PR3).
+- RESOLVED by the overseer: `.gitleaks.toml` had no rules (custom config replaced the defaults, so it detected nothing); now `useDefault = true`, blanket `tests/`/`docs/` allowlists removed, 9 reviewed findings suppressed by exact fingerprint in `.gitleaksignore`, and CI plants a violation for gitleaks, Bandit, Semgrep and Trivy and requires each to fail.
 - dependency-review is soft-fail until H-305.
