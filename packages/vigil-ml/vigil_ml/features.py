@@ -45,7 +45,7 @@ class WindowedFeatureExtractor:
 
     def __post_init__(self):
         if self.tracked_analytes is None:
-            self.tracked_analytes = TRACKED_ANALYTES
+            self.tracked_analytes = list(TRACKED_ANALYTES)
 
     def extract_features_at_visit(
         self,
@@ -56,8 +56,18 @@ class WindowedFeatureExtractor:
         """
         Extracts feature vector at a specific evaluation day t using ONLY history where day <= current_day.
         """
-        # Filter strictly historical/current observations (anti-leakage guarantee)
-        history = [obs for obs in historical_observations if obs["day"] <= current_day]
+        # Validate the complete input before applying the anti-leakage time filter.
+        if not np.isfinite(float(current_day)):
+            raise ValueError("current_day must be finite")
+        try:
+            all_days = np.asarray([float(obs["day"]) for obs in historical_observations], dtype=float)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("every observation must have a numeric day") from exc
+        if not np.isfinite(all_days).all():
+            raise ValueError("observation days must be finite")
+        if len(np.unique(all_days)) != len(all_days):
+            raise ValueError("each patient must have at most one observation per day")
+        history = [obs for obs in historical_observations if float(obs["day"]) <= current_day]
         history.sort(key=lambda x: x["day"])
 
         if not history:
@@ -125,7 +135,7 @@ class WindowedFeatureExtractor:
         # Analyte levels, velocities, and variability
         for code in self.tracked_analytes:
             curr_val = current_obs.get("analytes", {}).get(code)
-            if curr_val is None:
+            if curr_val is None or pd.isna(curr_val):
                 features[f"{code}_curr"] = float("nan")
                 features[f"{code}_missing"] = 1.0
                 features[f"{code}_slope_90d"] = float("nan")
@@ -136,18 +146,25 @@ class WindowedFeatureExtractor:
                 features[f"{code}_cv_available"] = 0.0
                 continue
 
-            features[f"{code}_curr"] = float(curr_val)
+            curr_val = float(curr_val)
+            if not np.isfinite(curr_val):
+                raise ValueError(f"{code} measurements must be finite when present")
+            features[f"{code}_curr"] = curr_val
             features[f"{code}_missing"] = 0.0
 
-            # Historical series for this analyte
-            series = [
-                (obs["day"], obs.get("analytes", {}).get(code))
-                for obs in history
-                if obs.get("analytes", {}).get(code) is not None
-            ]
+            # Historical series for this analyte. Missing values never become zero.
+            series = []
+            for obs in history:
+                value = obs.get("analytes", {}).get(code)
+                if value is None or pd.isna(value):
+                    continue
+                value = float(value)
+                if not np.isfinite(value):
+                    raise ValueError(f"{code} measurements must be finite when present")
+                series.append((float(obs["day"]), value))
 
             # 90-day slope (velocity)
-            recent_series = [(d, v) for d, v in series if (current_day - d) <= 120.0]
+            recent_series = [(d, v) for d, v in series if (current_day - d) <= 90.0]
             if len(recent_series) >= 2:
                 days_arr = np.array([d for d, _ in recent_series])
                 vals_arr = np.array([v for _, v in recent_series])
@@ -161,10 +178,12 @@ class WindowedFeatureExtractor:
 
             # Acceleration (second difference if >= 3 points)
             if len(series) >= 3:
-                y1 = series[-3][1]
-                y2 = series[-2][1]
-                y3 = series[-1][1]
-                accel = (y3 - y2) - (y2 - y1)
+                t1, y1 = series[-3]
+                t2, y2 = series[-2]
+                t3, y3 = series[-1]
+                slope_early = (y2 - y1) / (t2 - t1)
+                slope_late = (y3 - y2) / (t3 - t2)
+                accel = 2.0 * (slope_late - slope_early) / (t3 - t1)
                 features[f"{code}_accel"] = float(accel)
                 features[f"{code}_accel_available"] = 1.0
             else:
@@ -176,9 +195,12 @@ class WindowedFeatureExtractor:
                 v_arr = np.array([v for _, v in series])
                 mean_v = np.mean(v_arr)
                 std_v = np.std(v_arr)
-                cv = (std_v / mean_v) if mean_v > 0 else 0.0
-                features[f"{code}_cv"] = float(cv)
-                features[f"{code}_cv_available"] = 1.0
+                if mean_v > 0:
+                    features[f"{code}_cv"] = float(std_v / mean_v)
+                    features[f"{code}_cv_available"] = 1.0
+                else:
+                    features[f"{code}_cv"] = float("nan")
+                    features[f"{code}_cv_available"] = 0.0
             else:
                 features[f"{code}_cv"] = float("nan")
                 features[f"{code}_cv_available"] = 0.0
@@ -195,6 +217,29 @@ class WindowedFeatureExtractor:
         Transforms full cohort into feature matrix X, prospective binary label y,
         follow-up times, and event indicators for survival modeling.
         """
+        if not np.isfinite(horizon_days) or horizon_days <= 0:
+            raise ValueError("horizon_days must be finite and positive")
+        required_observation_columns = {"patient_id", "day"}
+        missing_observation_columns = required_observation_columns - set(observations_df.columns)
+        if missing_observation_columns:
+            raise ValueError(
+                "observations are missing required columns: "
+                f"{sorted(missing_observation_columns)}"
+            )
+        required_outcome_columns = {"patient_id", "observed_recurrence_event"}
+        missing_outcome_columns = required_outcome_columns - set(patients_df.columns)
+        if missing_outcome_columns:
+            raise ValueError(
+                "patient outcome data is missing required columns: "
+                f"{sorted(missing_outcome_columns)}"
+            )
+        if patients_df["patient_id"].isna().any() or observations_df["patient_id"].isna().any():
+            raise ValueError("patient_id must be present in patient and observation rows")
+        if patients_df["patient_id"].duplicated().any():
+            raise ValueError("patients_df must contain exactly one row per patient_id")
+        unknown_patient_ids = set(observations_df["patient_id"]) - set(patients_df["patient_id"])
+        if unknown_patient_ids:
+            raise ValueError(f"observations reference unknown patient_ids: {sorted(unknown_patient_ids)}")
         pt_dict = {row["patient_id"]: row.to_dict() for _, row in patients_df.iterrows()}
 
         # Group observations by patient
@@ -216,6 +261,13 @@ class WindowedFeatureExtractor:
             }
             grouped_obs.setdefault(pt_id, []).append(obs_dict)
 
+        for pt_id, obs_list in grouped_obs.items():
+            days = np.asarray([obs["day"] for obs in obs_list], dtype=float)
+            if not np.isfinite(days).all():
+                raise ValueError(f"observation days must be finite for patient {pt_id}")
+            if len(np.unique(days)) != len(days):
+                raise ValueError(f"duplicate observation day for patient {pt_id}")
+
         features_list = []
         labels_list = []
         follow_up_times = []
@@ -226,9 +278,67 @@ class WindowedFeatureExtractor:
             if not pt_row:
                 continue
 
-            rec_event = bool(pt_row.get("observed_recurrence_event", False))
+            rec_event_value = pt_row.get("observed_recurrence_event")
+            valid_bool = isinstance(rec_event_value, (bool, np.bool_))
+            valid_binary = (
+                isinstance(rec_event_value, (int, np.integer, float, np.floating))
+                and not isinstance(rec_event_value, (bool, np.bool_))
+                and np.isfinite(rec_event_value)
+                and rec_event_value in (0, 1)
+            )
+            if pd.isna(rec_event_value) or not (valid_bool or valid_binary):
+                raise ValueError(
+                    f"observed_recurrence_event must be a non-null boolean or 0/1 for patient {pt_id}"
+                )
+            rec_event = bool(rec_event_value)
             rec_day = pt_row.get("observed_recurrence_day")
+            if not rec_event and rec_day is not None and not pd.isna(rec_day):
+                raise ValueError(f"recurrence day supplied without an observed event for patient {pt_id}")
             comp_day = pt_row.get("competing_event_day")
+            comp_type = pt_row.get("competing_event")
+            has_comp_type = comp_type is not None and not pd.isna(comp_type) and str(comp_type) != ""
+            has_comp_day = comp_day is not None and not pd.isna(comp_day)
+            if rec_event and (rec_day is None or pd.isna(rec_day)):
+                raise ValueError(f"observed recurrence day is required for patient {pt_id}")
+            if has_comp_type != has_comp_day:
+                raise ValueError(
+                    f"competing event type and day must be supplied together for patient {pt_id}"
+                )
+            terminal_days = [
+                float(day)
+                for day in (rec_day if rec_event else None, comp_day if has_comp_day else None)
+                if day is not None and not pd.isna(day)
+            ]
+            if any(not np.isfinite(day) or day < 0 for day in terminal_days):
+                raise ValueError(f"event days must be finite and non-negative for patient {pt_id}")
+            if len(terminal_days) == 2 and terminal_days[0] == terminal_days[1]:
+                raise ValueError(f"recurrence and competing event cannot share a day for patient {pt_id}")
+            if (
+                rec_event
+                and has_comp_day
+                and comp_type != "lost_to_follow_up"
+                and float(comp_day) < float(rec_day)
+            ):
+                raise ValueError(f"observed recurrence follows a terminal competing event for patient {pt_id}")
+            last_day = max(o["day"] for o in obs_list)
+            admin_end = pt_row.get("administrative_censor_day")
+            if admin_end is None or pd.isna(admin_end):
+                admin_end = last_day
+            admin_end = float(admin_end)
+            if not np.isfinite(admin_end) or admin_end < last_day:
+                raise ValueError(
+                    f"observations extend beyond administrative follow-up for patient {pt_id}"
+                )
+            if (
+                has_comp_type
+                and comp_type != "lost_to_follow_up"
+                and float(comp_day) < last_day
+            ):
+                raise ValueError(f"observations extend beyond a competing event for patient {pt_id}")
+            # A configured event time beyond administrative follow-up is not an
+            # observed event in this cohort; administrative censoring wins.
+            if rec_event and float(rec_day) > admin_end:
+                raise ValueError(f"observed recurrence occurs after administrative follow-up for patient {pt_id}")
 
             for obs in obs_list:
                 d = obs["day"]
@@ -253,6 +363,10 @@ class WindowedFeatureExtractor:
                 admin_end = pt_row.get("administrative_censor_day")
                 if admin_end is None or pd.isna(admin_end):
                     admin_end = last_day
+                if not np.isfinite(float(admin_end)) or float(admin_end) < last_day:
+                    raise ValueError(
+                        f"observations extend beyond administrative follow-up for patient {pt_id}"
+                    )
                 terminal_competing = (
                     comp_day is not None
                     and not pd.isna(comp_day)
@@ -281,13 +395,13 @@ class WindowedFeatureExtractor:
                     event_day, event_flag = float(comp_day), 2
 
                 if event_day is not None:
-                    time_to_event_or_censor = max(1.0, event_day - d)
+                    time_to_event_or_censor = max(0.0, event_day - d)
                 else:
                     censor_day = min(
                         float(admin_end),
                         float(comp_day) if lost_to_follow_up else float(admin_end),
                     )
-                    time_to_event_or_censor = max(1.0, censor_day - d)
+                    time_to_event_or_censor = max(0.0, censor_day - d)
 
                 # The binary horizon label is known for observed recurrence or a
                 # competing event within H, or when follow-up covers all of H.
@@ -322,9 +436,9 @@ def build_landmark_features(
     """Module-level entrypoint for building landmark feature matrix."""
     extractor = WindowedFeatureExtractor()
     if patients_df is None:
-        # Default empty patient baseline dataframe if not provided
-        pt_ids = observations_df["patient_id"].unique()
-        patients_df = pd.DataFrame({"patient_id": pt_ids})
+        raise ValueError(
+            "patients_df with observed outcome metadata is required to construct horizon labels"
+        )
     return extractor.transform_cohort(
         patients_df=patients_df,
         observations_df=observations_df,

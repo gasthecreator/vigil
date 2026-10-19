@@ -4,7 +4,8 @@ Tests for vigil_ml.features: Windowed feature extraction and longitudinal pipeli
 
 import numpy as np
 import pandas as pd
-from vigil_ml.features import WindowedFeatureExtractor
+import pytest
+from vigil_ml.features import WindowedFeatureExtractor, build_landmark_features
 
 
 def test_feature_extractor_no_future_leakage():
@@ -113,3 +114,145 @@ def test_loss_to_follow_up_before_later_recurrence_censors_it():
     assert y.isna().all()
     assert np.array_equal(events, [0, 0])
     assert np.array_equal(times, [150.0, 50.0])
+
+
+def test_velocity_window_matches_its_90_day_feature_name():
+    history = [
+        {"day": 0.0, "analytes": {"ca_15_3": 10.0}, "symptoms": {}},
+        {"day": 100.0, "analytes": {"ca_15_3": 30.0}, "symptoms": {}},
+        {"day": 110.0, "analytes": {"ca_15_3": 40.0}, "symptoms": {}},
+        {"day": 200.0, "analytes": {"ca_15_3": 50.0}, "symptoms": {}},
+    ]
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {"patient_id": "WINDOW"}, history, current_day=200.0
+    )
+    assert np.isclose(features["ca_15_3_slope_90d"], 10.0 / 90.0)
+
+
+def test_acceleration_is_time_normalized_for_irregular_visits():
+    history = [
+        {"day": 0.0, "analytes": {"ca_15_3": 10.0}, "symptoms": {}},
+        {"day": 20.0, "analytes": {"ca_15_3": 30.0}, "symptoms": {}},
+        {"day": 100.0, "analytes": {"ca_15_3": 110.0}, "symptoms": {}},
+    ]
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {"patient_id": "IRREGULAR"}, history, current_day=100.0
+    )
+    assert np.isclose(features["ca_15_3_accel"], 0.0)
+
+
+def test_same_day_observations_are_rejected_as_temporally_ambiguous():
+    history = [
+        {"day": 10.0, "analytes": {"ca_15_3": 20.0}, "symptoms": {}},
+        {"day": 10.0, "analytes": {"ca_15_3": 80.0}, "symptoms": {}},
+    ]
+    with pytest.raises(ValueError, match="at most one observation per day"):
+        WindowedFeatureExtractor().extract_features_at_visit(
+            {"patient_id": "TIED"}, history, current_day=10.0
+        )
+
+
+def test_feature_labels_require_observed_outcome_metadata():
+    observations = pd.DataFrame({"patient_id": ["NO-LABEL"], "day": [0.0], "ca_15_3": [18.0]})
+    with pytest.raises(ValueError, match="required columns"):
+        WindowedFeatureExtractor().transform_cohort(pd.DataFrame({"patient_id": ["NO-LABEL"]}), observations)
+    with pytest.raises(ValueError, match="patients_df with observed outcome metadata"):
+        build_landmark_features(observations)
+
+
+def test_invalid_observation_outcome_boundaries_fail_closed():
+    patients = pd.DataFrame([{
+        "patient_id": "BAD-BOUNDARY",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "competing_event": None,
+        "competing_event_day": np.nan,
+        "administrative_censor_day": 5.0,
+    }])
+    observations = pd.DataFrame({"patient_id": ["BAD-BOUNDARY"], "day": [10.0], "ca_15_3": [20.0]})
+    with pytest.raises(ValueError, match="extend beyond administrative follow-up"):
+        WindowedFeatureExtractor().transform_cohort(patients, observations)
+
+
+def test_observation_rows_must_map_to_one_patient_record():
+    patients = pd.DataFrame([{
+        "patient_id": "KNOWN",
+        "observed_recurrence_event": False,
+    }])
+    observations = pd.DataFrame({"patient_id": ["UNKNOWN"], "day": [0.0], "ca_15_3": [18.0]})
+    with pytest.raises(ValueError, match="unknown patient_ids"):
+        WindowedFeatureExtractor().transform_cohort(patients, observations)
+
+
+def test_zero_mean_biomarker_cv_is_unavailable_not_zero():
+    history = [
+        {"day": 0.0, "analytes": {"ca_15_3": 0.0}, "symptoms": {}},
+        {"day": 10.0, "analytes": {"ca_15_3": 0.0}, "symptoms": {}},
+    ]
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {"patient_id": "ZERO"}, history, current_day=10.0
+    )
+    assert np.isnan(features["ca_15_3_cv"])
+    assert features["ca_15_3_cv_available"] == 0.0
+
+
+def test_zero_followup_at_landmark_is_not_invented_as_one_day():
+    patients = pd.DataFrame([{
+        "patient_id": "ZERO-FOLLOWUP",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "competing_event": None,
+        "competing_event_day": np.nan,
+        "administrative_censor_day": 0.0,
+    }])
+    observations = pd.DataFrame({"patient_id": ["ZERO-FOLLOWUP"], "day": [0.0], "ca_15_3": [18.0]})
+    _features, labels, times, events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+    assert labels.isna().all()
+    assert np.array_equal(times, [0.0])
+    assert np.array_equal(events, [0])
+
+
+def test_non_finite_future_observation_day_is_not_silently_filtered():
+    history = [
+        {"day": 0.0, "analytes": {"ca_15_3": 18.0}, "symptoms": {}},
+        {"day": np.inf, "analytes": {"ca_15_3": 20.0}, "symptoms": {}},
+    ]
+    with pytest.raises(ValueError, match="observation days must be finite"):
+        WindowedFeatureExtractor().extract_features_at_visit(
+            {"patient_id": "NON-FINITE"}, history, current_day=0.0
+        )
+
+
+def test_missing_current_measurement_is_not_reported_as_observed_zero():
+    history = [
+        {"day": 0.0, "analytes": {"ca_15_3": 18.0}, "symptoms": {}},
+        {"day": 10.0, "analytes": {"ca_15_3": np.nan}, "symptoms": {}},
+    ]
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {"patient_id": "MISSING"}, history, current_day=10.0
+    )
+    assert np.isnan(features["ca_15_3_curr"])
+    assert features["ca_15_3_missing"] == 1.0
+
+
+def test_recurrence_metadata_must_match_event_flag_and_followup():
+    observations = pd.DataFrame({"patient_id": ["CONFLICT"], "day": [0.0], "ca_15_3": [18.0]})
+    no_event_with_day = pd.DataFrame([{
+        "patient_id": "CONFLICT",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": 10.0,
+        "administrative_censor_day": 20.0,
+    }])
+    with pytest.raises(ValueError, match="without an observed event"):
+        WindowedFeatureExtractor().transform_cohort(no_event_with_day, observations)
+
+    event_after_followup = pd.DataFrame([{
+        "patient_id": "CONFLICT",
+        "observed_recurrence_event": True,
+        "observed_recurrence_day": 30.0,
+        "administrative_censor_day": 20.0,
+    }])
+    with pytest.raises(ValueError, match="after administrative follow-up"):
+        WindowedFeatureExtractor().transform_cohort(event_after_followup, observations)

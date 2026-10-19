@@ -6,19 +6,21 @@ This audit follows `AGENTS.md`, the complete `docs/MASTER_PLAN.md`, `docs/ML_PRO
 
 The audit scope is the product engine: simulator exports and labels, landmark features, K1/K3 inference, baselines, benchmark design, and the model/experiment record. Synthetic evidence remains synthetic. This is a code and artifact audit; it does not validate clinical utility.
 
+> **Source-state note (2026-10-19):** The first findings below were confirmed against repository states before Q-7 repairs. Resolved source defects are labeled as historical; their old outputs remain stale or retracted. Current source status is maintained in [`CORE-ML-ENTRYPOINT-CROSSWALK-2026-10.md`](CORE-ML-ENTRYPOINT-CROSSWALK-2026-10.md) and [`CORE-ML-PROMPT-TRACE-2026-10.md`](CORE-ML-PROMPT-TRACE-2026-10.md).
+
 ## Executive finding
 
-**The recorded ML performance and K1 validation claims are not reliable enough to guide model selection.** The central issues are not insufficient model complexity. The current benchmark can mislabel censored follow-up, the K1 experiment inputs are boolean measurement masks rather than biomarker values, the K1 risk calculation is not a recurrence-horizon probability, and the K1 card reports results and capabilities that conflict with source and committed JSON. K3 is also not the Bayesian joint longitudinal-survival model its name and phase reports claim. Fixing these defects comes before architecture search or hyperparameter optimization.
+**The recorded ML performance and K1 validation claims are not reliable enough to guide model selection.** Historical benchmark outputs used an invalid censored-label contract and K1 experiments used boolean measurement masks rather than biomarker values. Q-7 corrected the label/export paths, but these source changes make prior comparisons stale and require a fresh registered evaluation. K1 recurrence-risk output now fails closed because its event definition does not match the product estimand. K3 is not the Bayesian joint longitudinal-survival model its name and earlier reports claim. No model-selection or clinical-performance claim follows from these source repairs.
 
 No clinical model should be selected, promoted, or described as validated using the affected results. Project maturity remains L0 as recorded in the ledger.
 
 ## Confirmed findings
 
-### Critical: horizon labels treat incomplete follow-up as a negative
+### Historical critical finding (Q-7 source fix): horizon labels treated incomplete follow-up as a negative
 
 `WindowedFeatureExtractor.transform_cohort` sets `y=0` whenever no recurrence is observed within the requested horizon. For non-event patients it separately computes follow-up/censoring time, but does not mark the binary label as unknown when that time is shorter than `horizon_days`. Thus a patient observed for less than 365 days can enter the 365-day classifier target as a non-event. The returned time/event arrays do not undo this when `y` is passed to ordinary classifiers, calibration curves or Brier calculations.
 
-**Evidence:** `packages/vigil-ml/vigil_ml/features.py`, `transform_cohort`, label construction. `scripts/run_benchmarks.py::run_study_s1` fits B3/B4 from `y_train_full`; it also calculates calibration from `y_test`.
+**Historical evidence:** the pre-Q-7 `packages/vigil-ml/vigil_ml/features.py::transform_cohort` and old S1 runner. **Current disposition:** Q-7 marks early-censored labels unknown, requires explicit observed outcome metadata, preserves zero follow-up, validates event/day boundaries, and adds regression cases in `packages/vigil-ml/tests/test_features.py`. Historical S1 and prior EXP-CORE-ML results remain stale; corrected labels and features require a new preregistered evaluation.
 
 **Consequence:** estimates can be biased and model ranking can change. Correct survival estimators may account for censoring, but binary classifier training and ordinary calibration do not automatically do so. The current S1 results need to be treated as invalid until the target construction and evaluation population are repaired and the study is rerun under a new preregistration.
 
@@ -32,19 +34,25 @@ The interventions do not implement their preregistered model changes either: EXP
 
 **Evidence:** `packages/vigil-sim/vigil_sim/generators.py::CohortDataset.to_observations_dataframe`; each `experiments/EXP-K1-001/run.py`, `...002/run.py`, `...003/run.py`; corresponding `results.json` and `REPORT.md`.
 
-### Critical: K1 risk is not the advertised recurrence probability
+### Historical critical finding (risk route now fails closed): K1 did not estimate the advertised recurrence probability
 
 `vigil_ml.k1.risk_from_posterior` derives an exponential burden from doubling time and onset, then applies a logistic transform around `detection_threshold` (default `1.0`). It does not use recurrence event likelihood, a competing-risk process, or a horizon-specific event-time distribution. `HybridKineticModelK1.fit` selects this threshold with Youden's J on the same supplied labels and biomarker values; this is outcome-supervised threshold fitting, not posterior calibration. The `return_ci` result bootstraps only 10 subsets of 50 posterior draws and returns the 5th/95th percentile of those Monte Carlo means; these are neither patient-level uncertainty intervals nor a well-estimated posterior credible interval.
 
-The source therefore contradicts the model card's stated risk formula, “zero label head” implication that risk is exclusively mechanistic, calibration claim, and claimed credible intervals. This route is research code and must not be called a recurrence probability until its event model and uncertainty semantics are implemented and independently tested.
+That earlier source contradicted the card's risk formula and credible-interval claims. The current `HybridKineticModelK1.predict_risk` raises; `risk_from_posterior` is explicitly a synthetic one-doubling event, not clinical recurrence. This closes the unsafe output path, not the event-model work. K1 remains research-only and does not provide a recurrence probability.
 
 **Evidence:** `packages/vigil-ml/vigil_ml/k1.py::risk_from_posterior`, `HybridKineticModelK1.fit`, `predict_risk`; `docs/models/MODEL-CARD-K1.md` §§3–4.
 
-### Critical: two incompatible K1 classes are publicly exposed
+### Historical critical finding (public K1 identity consolidated)
 
-`vigil_ml.__init__` exports `HybridKineticModelK1` from `vigil_ml.kinetic_k1`, while the current route and S1 script import the distinct class from `vigil_ml.k1`. The exported legacy implementation contains a direct supervised risk head and fixed blend/threshold formulas (see `packages/vigil-ml/vigil_ml/kinetic_k1.py` and `VERDICT-P3A.md`). This violates the P3A3 requirement to remove the direct label head and leaves the invalid implementation reachable through the package's normal public API.
+The earlier package API exposed a legacy implementation distinct from `vigil_ml.k1`, including a direct supervised risk head. Current `vigil_ml.__init__` imports `HybridKineticModelK1` from `vigil_ml.k1`, and `vigil_ml.kinetic_k1` is now a deprecated import shim re-exporting that same class. The duplicate implementation is no longer exposed. The compatibility module remains intentionally importable, so its deprecation and identity need to remain tested; recurrence risk remains disabled.
 
-**Consequence:** code using the documented package-level import can run a different model than the benchmark and current K1 contract. Package identity, model registry and served inference path must be made unambiguous before promotion.
+**Current disposition:** package identity is consolidated in source; this does not close K1 scientific validity, route fidelity, or artifact lineage.
+
+### Critical: K1 route and training claims exceed implementation
+
+Current K1 uses four explicit routes, but `ukf` is only a compatibility key for a sequential particle filter, not an unscented Kalman filter. The amortized and NPE routes bin observations against a fixed configured reference schedule; they do not use the former irregular-grid endpoint interpolation asserted in the historical version of this audit. Their training routines generate a private one-marker synthetic simulator, not the product `vigil-sim`; deployed inference loads safetensors artifacts, while training returns in-memory models and a separate script writes artifacts. Reproducible artifact lineage and exact training config still require end-to-end verification. Posterior spread comes from learned conditional outputs, but no calibration/coverage evidence supports patient-level credible-interval claims. The four parameters remain synthetic research assumptions, and the fixed schedule/binning makes visit timing and out-of-range behavior a route-parity concern. Acceptance tests establish only their specified toy-world behavior, not the broader scientific claims in the card.
+
+**Evidence:** `packages/vigil-ml/vigil_ml/k1.py` (`SCHEDULE`, `_summarize_observations`, `train_amortized`, `train_npe`, `_route_ukf`, route registry and `predict_risk`); `kinetic_k1.py` compatibility shim; `docs/prompts/PROMPT-P3A3.md`; `docs/ml/K1-CONTRACT.md`.
 
 ### Critical: K1 route and training claims exceed implementation
 
