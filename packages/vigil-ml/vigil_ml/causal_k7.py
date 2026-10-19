@@ -45,7 +45,7 @@ def compute_e_value(
     the upper limit. A confidence interval that includes 1 has a CI E-value of 1.
     """
     if not math.isfinite(rr) or rr <= 0.0:
-        return {"e_value_estimate": 1.0, "e_value_ci_lower": 1.0}
+        raise ValueError("rr must be a finite positive risk ratio")
 
     # If RR < 1.0, invert to RR* = 1 / RR
     eff_rr = rr if rr >= 1.0 else (1.0 / rr)

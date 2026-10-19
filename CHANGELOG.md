@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Production reality (P16 PR1 / G-01…G-03): `infra/` Dockerfiles + compose (api/web/worker/postgres), `psycopg` driver, Alembic on Postgres in CI, scale probe `scripts/run_scale_test_postgres.py` → `reports/perf/SCALE_TEST_RESULTS.json`.
 
+### Changed
+- Quality rerun Q-6: K8 results identify uncalibrated model scores rather than calibrated probabilities; all abstentions omit numeric scores, and S2's retracted calibration/report entrypoint fails closed.
+
+### Fixed
+- K8 calibration now validates score/label inputs and uses the finite-sample positive-score rank rule; uncalibrated, OOD, and high-uncertainty cases do not expose numeric scores.
+- K7 E-value diagnostics now reject non-finite or non-positive risk ratios instead of reporting them as a null effect.
+
 ## [1.0.0-rc.2] - 2026-10-19
 
 ### Added

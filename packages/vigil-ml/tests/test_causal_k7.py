@@ -11,6 +11,7 @@ Verifies Master Plan §3, §6.7, §11, and ML_PROGRAM §3.7:
 import math
 
 import numpy as np
+import pytest
 from vigil_ml.causal_k7 import (
     TargetTrialEmulation,
     compute_e_value,
@@ -35,7 +36,8 @@ def test_e_value_properties():
     null_res = compute_e_value(1.0, (1.0, 1.0))
     assert null_res["e_value_estimate"] == 1.0
     assert null_res["e_value_ci_lower"] == 1.0
-    assert compute_e_value(float("inf"))["e_value_estimate"] == 1.0
+    with pytest.raises(ValueError, match="finite positive"):
+        compute_e_value(float("inf"))
 
     # RR = 1.5 -> E-value = 1.5 + sqrt(1.5 * 0.5) = 1.5 + 0.8660 = 2.3660
     res = compute_e_value(1.5, (1.2, 1.8))

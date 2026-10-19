@@ -3,7 +3,7 @@ packages/vigil-ml/tests/test_phase3_models.py
 
 Comprehensive test suite for Phase 3 ML deliverables:
 1. K1 Kinetic Hybrid Model: Continuous ODE dynamics, online UKF filtering, SBC, and parameter recovery.
-2. K2 Anytime-Valid Sequential Detection: Test supermartingales (e-processes), Ville's inequality, and 5-scenario Null Stress Suite.
+2. K2 sequential scoring: Exercise implementation behavior. These empirical tests do not establish a supermartingale or Ville-valid guarantee (see S-018).
 3. K4 Deep Irregular-Time Zoo: moved to `packages/vigil-ml/tests/test_k4.py` (the earlier stub `deep_zoo_k4.py` is retired, ADR-0025).
 4. K5 Hierarchical Pooling & Lab Harmonisation: Site offsets, empirical Bayes shrinkage, and analytical changepoint detector.
 5. K6 Active Sensing: moved to `packages/vigil-ml/tests/test_k6.py` (the earlier stub `active_sensing_k6.py` is retired, ADR-0026).
@@ -146,7 +146,7 @@ def test_k8_conformal_risk_control_and_ood():
 def test_k8_finite_sample_rank_and_uncalibrated_abstention():
     k8 = ConformalRiskControllerK8(alpha_conf=0.5)
     uncalibrated = k8.predict(raw_risk=0.2, epistemic_std=0.01)
-    assert uncalibrated.abstention == AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY
+    assert uncalibrated.abstention == AbstentionReason.ABSTAIN_UNCALIBRATED
     assert uncalibrated.risk_score is None
     assert uncalibrated.score_range is None
     assert uncalibrated.conformal_quantile is None

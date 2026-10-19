@@ -24,6 +24,7 @@ import numpy as np
 
 class AbstentionReason(str, Enum):
     NONE = "none"
+    ABSTAIN_UNCALIBRATED = "abstain_uncalibrated"
     ABSTAIN_OOD = "abstain_out_of_distribution"
     ABSTAIN_HIGH_UNCERTAINTY = "abstain_high_epistemic_uncertainty"
     ABSTAIN_MISSING_KEY_MARKERS = "abstain_missing_key_markers"
@@ -128,7 +129,7 @@ class ConformalRiskControllerK8:
                 alert_tier="abstain",
                 is_alert=False,
                 conformal_quantile=None,
-                abstention=AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY,
+                abstention=AbstentionReason.ABSTAIN_UNCALIBRATED,
                 explanation_summary="No calibration cohort is loaded. Defer this score for clinician review.",
             )
         # Check OOD abstention
