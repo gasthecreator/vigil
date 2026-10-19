@@ -31,11 +31,11 @@ class AbstentionReason(str, Enum):
 
 @dataclass
 class ConformalPredictionResult:
-    calibrated_risk: Optional[float]
-    risk_interval: Tuple[float, float]
+    risk_score: Optional[float]
+    score_range: Optional[Tuple[float, float]]
     alert_tier: str
     is_alert: bool
-    conformal_quantile: float
+    conformal_quantile: Optional[float]
     abstention: AbstentionReason
     explanation_summary: str
 
@@ -47,9 +47,9 @@ class ConformalRiskControllerK8:
     """
 
     def __init__(self, alpha_conf: float = 0.10, adapt_rate: float = 0.05):
-        if not 0.0 < alpha_conf < 1.0:
+        if not np.isfinite(alpha_conf) or not 0.0 < alpha_conf < 1.0:
             raise ValueError("alpha_conf must be between 0 and 1")
-        if adapt_rate <= 0.0:
+        if not np.isfinite(adapt_rate) or adapt_rate <= 0.0:
             raise ValueError("adapt_rate must be positive")
         self.alpha_conf = alpha_conf
         self.adapt_rate = adapt_rate
@@ -66,11 +66,16 @@ class ConformalRiskControllerK8:
         Calibrates the operating threshold on held-out validation data to strictly bound FNR.
         """
         val_scores = np.asarray(val_scores, dtype=float)
-        val_labels = np.asarray(val_labels, dtype=int)
+        val_labels = np.asarray(val_labels)
         if val_scores.ndim != 1 or val_labels.ndim != 1 or len(val_scores) != len(val_labels):
             raise ValueError("validation scores and labels must be one-dimensional arrays of equal length")
-        if not np.all(np.isfinite(val_scores)) or not np.all(np.isin(val_labels, [0, 1])):
-            raise ValueError("validation scores must be finite and labels must be binary")
+        if (
+            not np.all(np.isfinite(val_scores))
+            or np.any((val_scores < 0.0) | (val_scores > 1.0))
+            or not np.all(np.isin(val_labels, [0, 1]))
+        ):
+            raise ValueError("validation scores must be finite in [0, 1] and labels must be binary")
+        val_labels = val_labels.astype(int)
         pos_scores = np.sort(val_scores[val_labels == 1])
         k = int(np.floor((len(pos_scores) + 1) * self.alpha_conf))
         self.calibrated_threshold = float(pos_scores[k - 1]) if k > 0 else float("-inf")
@@ -82,6 +87,11 @@ class ConformalRiskControllerK8:
         """
         Fits multivariate Gaussian baseline for Mahalanobis OOD distance checking.
         """
+        X_train = np.asarray(X_train, dtype=float)
+        if X_train.ndim != 2 or X_train.shape[0] < 2 or X_train.shape[1] == 0:
+            raise ValueError("X_train must be a 2D array with at least two rows and one feature")
+        if not np.all(np.isfinite(X_train)):
+            raise ValueError("X_train must contain only finite values")
         self.feature_means = np.mean(X_train, axis=0)
         cov = np.cov(X_train, rowvar=False) + 1e-4 * np.eye(X_train.shape[1])
         self.feature_cov_inv = np.linalg.pinv(cov)
@@ -93,6 +103,9 @@ class ConformalRiskControllerK8:
         """
         if self.feature_means is None or self.feature_cov_inv is None:
             return False, 0.0
+        x = np.asarray(x, dtype=float)
+        if x.shape != self.feature_means.shape or not np.all(np.isfinite(x)):
+            raise ValueError("x must be a finite feature vector matching the fitted OOD dimensions")
         diff = x - self.feature_means
         dist_sq = float(diff @ self.feature_cov_inv @ diff)
         is_ood = dist_sq > self.ood_threshold
@@ -104,13 +117,17 @@ class ConformalRiskControllerK8:
         """
         Produces a prediction only after calibration; otherwise abstains.
         """
+        if not np.isfinite(raw_risk) or not 0.0 <= raw_risk <= 1.0:
+            raise ValueError("raw_risk must be a finite score between 0 and 1")
+        if not np.isfinite(epistemic_std) or epistemic_std < 0.0:
+            raise ValueError("epistemic_std must be finite and non-negative")
         if not self.is_calibrated:
             return ConformalPredictionResult(
-                calibrated_risk=None,
-                risk_interval=(0.0, 1.0),
+                risk_score=None,
+                score_range=None,
                 alert_tier="abstain",
                 is_alert=False,
-                conformal_quantile=float("nan"),
+                conformal_quantile=None,
                 abstention=AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY,
                 explanation_summary="No calibration cohort is loaded. Defer this score for clinician review.",
             )
@@ -119,8 +136,8 @@ class ConformalRiskControllerK8:
             is_ood, dist = self.check_ood(feature_vector)
             if is_ood:
                 return ConformalPredictionResult(
-                    calibrated_risk=raw_risk,
-                    risk_interval=(0.0, 1.0),
+                    risk_score=None,
+                    score_range=None,
                     alert_tier="abstain",
                     is_alert=False,
                     conformal_quantile=self.running_threshold,
@@ -131,8 +148,8 @@ class ConformalRiskControllerK8:
         # Check epistemic uncertainty abstention
         if epistemic_std > 0.35:
             return ConformalPredictionResult(
-                calibrated_risk=raw_risk,
-                risk_interval=(max(0.0, raw_risk - 1.96 * epistemic_std), min(1.0, raw_risk + 1.96 * epistemic_std)),
+                risk_score=None,
+                score_range=None,
                 alert_tier="abstain",
                 is_alert=False,
                 conformal_quantile=self.running_threshold,
@@ -157,13 +174,13 @@ class ConformalRiskControllerK8:
             tier = "none"
 
         return ConformalPredictionResult(
-            calibrated_risk=raw_risk,
-            risk_interval=(ci_low, ci_high),
+                risk_score=raw_risk,
+                score_range=(ci_low, ci_high),
             alert_tier=tier,
             is_alert=is_alert,
             conformal_quantile=self.running_threshold,
             abstention=AbstentionReason.NONE,
-            explanation_summary=f"Calibrated 1-year metastatic recurrence risk {raw_risk:.1%} (90% conformal interval [{ci_low:.1%}, {ci_high:.1%}]). Alert tier: {tier.upper()}.",
+            explanation_summary=f"Model score {raw_risk:.1%} (heuristic score range [{ci_low:.1%}, {ci_high:.1%}]). Alert tier: {tier.upper()}.",
         )
 
     def adapt_online(self, pred_alert: bool, true_event: bool) -> None:

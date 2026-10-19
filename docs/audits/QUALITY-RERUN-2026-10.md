@@ -22,9 +22,9 @@ There is a second provenance problem: [`run_study_s2.py`](../../scripts/run_stud
 
 ### High: K8 runtime previously emitted uncalibrated outputs
 
-[`ConformalRiskControllerK8.calibrate()`](../../packages/vigil-ml/vigil_ml/conformal_k8.py) used NumPy's interpolated quantile and clamped its threshold to `0.05`; neither operation implements the registered finite-sample rank rule. More seriously, [`VigilProductionRuntime`](../../packages/vigil-ml/vigil_ml/runtime.py) created a randomly initialized model by default and never calibrated the controller. It could therefore emit a risk estimate labeled as calibrated without trained weights or a calibration cohort.
+[`ConformalRiskControllerK8.calibrate()`](../../packages/vigil-ml/vigil_ml/conformal_k8.py) used NumPy's interpolated quantile and clamped its threshold to `0.05`; neither operation implements the registered finite-sample rank rule. More seriously, [`VigilProductionRuntime`](../../packages/vigil-ml/vigil_ml/runtime.py) created a randomly initialized model by default and never calibrated the controller. It could therefore emit a risk estimate labeled as calibrated without trained weights or a calibration cohort. The controller's positive-score rank calibration also selects an alert threshold; it does not calibrate predicted probabilities or validate the score's clinical meaning. In addition, OOD and high-uncertainty abstentions previously retained the numeric input score.
 
-**Action:** K8 now uses the finite-sample positive-score rank, including the conservative all-alert cutoff when the rank is zero, and abstains without returning a numeric calibrated risk until calibration is loaded. This does not validate the runtime model; S-019 registers it as research-only pending a trained artifact, calibration, and independent evaluation.
+**Action:** K8 now uses the finite-sample positive-score rank, including the conservative all-alert cutoff when the rank is zero. Every abstention returns no numeric score or score range, and successful predictions are labeled as model scores with a heuristic range, not calibrated probabilities or a conformal interval. This does not validate the runtime model; S-019 registers it as research-only pending a trained artifact, justified calibration, and independent evaluation.
 
 ### High: K7 balance and protective-effect sensitivity diagnostics were wrong at edge cases
 
@@ -41,7 +41,7 @@ The code in [`conformal_k8.py`](../../packages/vigil-ml/vigil_ml/conformal_k8.py
 - Retracted S2 report/results and disabled the legacy S2 benchmark writer; the Phase 2 benchmark no longer runs or republishes it.
 - Removed the obsolete clipped detector from the ML canary and Phase 3 test suite; tests now exercise canonical K2 without claiming that an empirical canary proves validity.
 - Replaced K7's misleading empty-arm balance result and corrected protective-effect E-value interval handling.
-- Replaced K8's interpolated/clamped calibration threshold with its finite-sample rank rule and made uncalibrated predictions abstain.
+- Replaced K8's interpolated/clamped calibration threshold with its finite-sample rank rule; abstentions omit numeric scores, and outputs no longer claim probability calibration or conformal intervals.
 - Updated the stub registry to distinguish built code from guarantees and deployment claims that remain unearned.
 
 ## Checks and limits

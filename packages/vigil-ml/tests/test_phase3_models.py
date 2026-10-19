@@ -13,6 +13,7 @@ Comprehensive test suite for Phase 3 ML deliverables:
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import torch
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
 from vigil_ml.export import (
@@ -138,18 +139,36 @@ def test_k8_conformal_risk_control_and_ood():
     res_ood = k8.predict(raw_risk=0.35, epistemic_std=0.05, feature_vector=ood_x)
     assert res_ood.abstention == AbstentionReason.ABSTAIN_OOD
     assert res_ood.alert_tier == "abstain"
+    assert res_ood.risk_score is None
+    assert res_ood.score_range is None
 
 
 def test_k8_finite_sample_rank_and_uncalibrated_abstention():
     k8 = ConformalRiskControllerK8(alpha_conf=0.5)
     uncalibrated = k8.predict(raw_risk=0.2, epistemic_std=0.01)
     assert uncalibrated.abstention == AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY
-    assert uncalibrated.calibrated_risk is None
-    assert uncalibrated.risk_interval == (0.0, 1.0)
+    assert uncalibrated.risk_score is None
+    assert uncalibrated.score_range is None
+    assert uncalibrated.conformal_quantile is None
 
     k8.calibrate(np.array([0.1, 0.2, 0.3]), np.array([1, 1, 1]))
+    high_uncertainty = k8.predict(raw_risk=0.2, epistemic_std=0.4)
+    assert high_uncertainty.abstention == AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY
+    assert high_uncertainty.risk_score is None
+    assert high_uncertainty.score_range is None
+
     # floor((3 + 1) * .5) = 2; the second ascending positive score is the cutoff.
     assert k8.calibrated_threshold == 0.2
+
+
+def test_k8_rejects_invalid_calibration_and_prediction_inputs():
+    k8 = ConformalRiskControllerK8()
+    with pytest.raises(ValueError, match="scores must be finite"):
+        k8.calibrate(np.array([0.2, 0.4]), np.array([0, 1.5]))
+    with pytest.raises(ValueError, match="scores must be finite"):
+        k8.calibrate(np.array([0.2, 1.1]), np.array([0, 1]))
+    with pytest.raises(ValueError, match="raw_risk"):
+        k8.predict(raw_risk=float("nan"), epistemic_std=0.1)
 
 
 def test_production_export_parity_and_latency(tmp_path):
