@@ -20,7 +20,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
-    compute_calibration_curve,
+    compute_ipcw_calibration_curve,
     compute_ipcw_weights,
     ipcw_time_dependent_roc_auc,
     survival_decision_curve_analysis,
@@ -260,7 +260,7 @@ def rate_per_100_months(
 COMPARATORS = {
     "B1_SINGLE_THRESHOLD": lambda: SingleThresholdBaseline(),
     "B2_VELOCITY_RULE": lambda: VelocityBaseline(),
-    "B3_REGULARIZED_COX_HAZARD": lambda: RegularizedCoxHazardBaseline(),
+    "B3_REGULARIZED_LOGISTIC_HORIZON": lambda: RegularizedCoxHazardBaseline(),
 }
 
 
@@ -306,8 +306,13 @@ def _out_of_fold(dev: Landmarks, horizon: float, folds: int = 5) -> Tuple[np.nda
             )
         Xtr = _model_view(dev.X.iloc[trd])
         Xte = _model_view(dev.X.iloc[te])
-        cand[te] = GradientBoostingBaseline().fit(Xtr, ytr).predict_risk(Xte)
-        cox[te] = RegularizedCoxHazardBaseline().fit(Xtr, ytr).predict_risk(Xte)
+        train_weights = w[trd]
+        cand[te] = GradientBoostingBaseline().fit(
+            Xtr, ytr, sample_weight=train_weights
+        ).predict_risk(Xte)
+        cox[te] = RegularizedCoxHazardBaseline().fit(
+            Xtr, ytr, sample_weight=train_weights
+        ).predict_risk(Xte)
     return cand, cox
 
 
@@ -327,21 +332,28 @@ def fit_on_development(
     oof_cand, oof_cox = _out_of_fold(dev, horizon)
     first = dev.first
     Xf, Tf, Ef = dev.X[first], dev.T[first], dev.E[first]
+    det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
+    Xtr, ytr = _model_view(dev.X[det]), pd.Series(dev.y[det])
+    train_weights = compute_ipcw_weights(dev.T, dev.E, horizon)[det]
+    b1 = SingleThresholdBaseline().fit(Xtr, ytr, sample_weight=train_weights)
+    b2 = VelocityBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     rule_scores = {
-        "B1_SINGLE_THRESHOLD": SingleThresholdBaseline().predict_risk(_model_view(Xf)),
-        "B2_VELOCITY_RULE": VelocityBaseline().predict_risk(_model_view(Xf)),
-        "B3_REGULARIZED_COX_HAZARD": oof_cox[first],
+        "B1_SINGLE_THRESHOLD": b1.predict_risk(_model_view(Xf)),
+        "B2_VELOCITY_RULE": b2.predict_risk(_model_view(Xf)),
+        "B3_REGULARIZED_LOGISTIC_HORIZON": oof_cox[first],
     }
     auc = {k: ipcw_auc(v, Tf, Ef, horizon) for k, v in rule_scores.items()}
     best = max(auc, key=lambda k: (auc[k], -list(auc).index(k)))
     a, b = weighted_calibration_fit(oof_cand[first], Tf, Ef, horizon)
-    det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
-    Xtr, ytr = _model_view(dev.X[det]), pd.Series(dev.y[det])
-    candidate = GradientBoostingBaseline().fit(Xtr, ytr)
+    candidate = GradientBoostingBaseline().fit(
+        Xtr, ytr, sample_weight=train_weights
+    )
     comparator = {
-        "B1_SINGLE_THRESHOLD": SingleThresholdBaseline(),
-        "B2_VELOCITY_RULE": VelocityBaseline(),
-    }.get(best) or RegularizedCoxHazardBaseline().fit(Xtr, ytr)
+        "B1_SINGLE_THRESHOLD": b1,
+        "B2_VELOCITY_RULE": b2,
+    }.get(best) or RegularizedCoxHazardBaseline().fit(
+        Xtr, ytr, sample_weight=train_weights
+    )
     plan = FittedPlan(best, comparator, candidate, a, b, 1.0, auc, float("nan"))
     p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_cand))))
     grid = np.unique(np.quantile(p_all, np.linspace(0.0, 1.0, 201)))
@@ -521,16 +533,17 @@ def secondary(
     w = compute_ipcw_weights(Tf, Ef, horizon)
     ok = w > 0
     if ok.sum() and len(np.unique(yf[ok])) > 1:
-        cal = compute_calibration_curve(
-            plan.candidate.predict_risk(_model_view(Xf))[ok], yf[ok], n_bins=5
+        cal = compute_ipcw_calibration_curve(
+            plan.candidate.predict_risk(_model_view(Xf)), Tf, Ef, horizon_time=horizon, n_bins=5,
+            weights=w,
         )
         out["calibration_before_recalibration"] = {
             "ece": float(cal.expected_calibration_error),
             "mean_predicted": float(
                 np.average(plan.candidate.predict_risk(_model_view(Xf)), weights=np.where(ok, w, 0))
             ),
-            "observed_ipcw": float(np.average(yf, weights=np.where(ok, w, 0))),
-            "note": "ECE is unweighted and on determinable outcomes only; the IPCW means are the calibration-in-the-large inputs",
+            "observed_ipcw": float(np.average((Tf <= horizon) & (Ef == 1), weights=w)),
+            "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes",
         }
     dca = survival_decision_curve_analysis(p, Tf, Ef, horizon)
     out["decision_curve"] = {

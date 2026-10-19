@@ -35,7 +35,12 @@ for _pkg in ("vigil-sim", "vigil-ml", "vigil-core", "vigil-eval"):
 import torch  # noqa: E402
 import xgboost  # noqa: E402,F401  (must be imported before torch: the two OpenMP runtimes clash on macOS)
 from vigil_core.analytes import ANALYTE_REGISTRY  # noqa: E402
-from vigil_eval import compute_calibration_curve, ipcw_brier_score, ipcw_time_dependent_roc_auc  # noqa: E402
+from vigil_eval import (  # noqa: E402
+    compute_ipcw_calibration_curve,
+    compute_ipcw_weights,
+    ipcw_brier_score,
+    ipcw_time_dependent_roc_auc,
+)
 from vigil_ml import k4  # noqa: E402
 from vigil_ml.baselines import (  # noqa: E402
     GradientBoostingBaseline,
@@ -322,10 +327,13 @@ def replication(kind: str, r: int, scope: str, with_corpus: bool) -> Replication
 # ---------------------------------------------------------------------------------------------------------
 def score_rows(preds: np.ndarray, lc: LabelledCohort, horizon: float) -> Dict[str, float]:
     preds = np.asarray(preds, dtype=float)
+    calibration = compute_ipcw_calibration_curve(
+        preds, lc.t, lc.d, horizon_time=horizon, n_bins=10
+    )
     return {
         "auc": float(ipcw_time_dependent_roc_auc(preds, lc.t, lc.d, horizon_time=horizon)),
         "brier": float(ipcw_brier_score(preds, lc.t, lc.d, horizon_time=horizon)),
-        "ece": float(compute_calibration_curve(preds, lc.y.values, n_bins=10).expected_calibration_error),
+        "ece": float(calibration.expected_calibration_error),
     }
 
 
@@ -509,20 +517,31 @@ def unit_baselines(kind: str, r: int, scope: str) -> Dict[str, Any]:
     for n in rep.cfg["n_grid"]:
         keep = rep.pool.rows_of_first(n)
         X, y = rep.pool.X[keep], rep.pool.y[keep]
+        weights = compute_ipcw_weights(rep.pool.t, rep.pool.d, rep.cfg["horizon_days"])[keep]
         for name in rep.cfg["baselines"]:
-            failed = False
             t0 = time.time()
             model = make_baseline(name)
-            try:
-                model.fit(X, y)
-            except Exception:  # a one-class or degenerate set: recorded, constant prediction used
-                failed = True  # recorded in the record as fit_failed
+            observed = np.isfinite(y.to_numpy(dtype=float)) & (weights > 0)
+            fit_error = None
+            if np.unique(y.to_numpy(dtype=float)[observed]).size < 2:
+                fit_error = "fewer than two determinable weighted outcome classes"
+            else:
+                try:
+                    model.fit(X, y, sample_weight=weights)
+                except ValueError as exc:
+                    fit_error = str(exc)
             rec = {"kind": kind, "rep": r, "family": name, "arm": "classical", "size": "-", "N": n, "lr": None,
-                   "n_rows": int(len(y)), "n_events": int(y.sum()), "fit_failed": failed,
+                   "n_rows": int(len(y)), "n_events": int(y.sum()), "fit_failed": fit_error is not None,
+                   "fit_error": fit_error,
                    "train_seconds": round(time.time() - t0, 2)}
             for g, lc in rep.tests.items():
-                preds = np.full(len(lc.X), float(y.mean() if len(y) else 0.0)) if failed else np.asarray(model.predict_risk(lc.X), dtype=float)
-                for k, v in score_rows(preds, lc, rep.cfg["horizon_days"]).items():
+                scores = (
+                    {"auc": float("nan"), "brier": float("nan"), "ece": float("nan")}
+                    if fit_error is not None
+                    else score_rows(np.asarray(model.predict_risk(lc.X), dtype=float), lc,
+                                    rep.cfg["horizon_days"])
+                )
+                for k, v in scores.items():
                     rec[f"{k}_{g}"] = v
             recs.append(rec)
     return {"records": recs, "pretrain": [], "exports": [], "cost": []}

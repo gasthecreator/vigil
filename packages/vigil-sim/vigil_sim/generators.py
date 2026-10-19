@@ -26,11 +26,13 @@ Features:
 
 from __future__ import annotations
 
+import json
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -45,16 +47,16 @@ class GeneratorType(str, Enum):
 
 
 class BreastCancerSubtype(str, Enum):
-    TNBC = "TNBC"  # Triple-Negative Breast Cancer (~40% in Nigeria, E7)
-    HR_POS_HER2_NEG = "HR+HER2-"  # Luminal A/B (~42% in Nigeria, E7)
-    HER2_POS = "HER2+"  # HER2-enriched (~18% in Nigeria, E7)
+    TNBC = "TNBC"
+    HR_POS_HER2_NEG = "HR+HER2-"
+    HER2_POS = "HER2+"
 
 
 class PresentationStage(str, Enum):
-    STAGE_I = "Stage I"  # ~5% in Nigeria
-    STAGE_II = "Stage II"  # ~20% in Nigeria
-    STAGE_III = "Stage III"  # ~50% in Nigeria (locally advanced)
-    STAGE_IV = "Stage IV"  # ~25% in Nigeria (de novo metastatic)
+    STAGE_I = "Stage I"
+    STAGE_II = "Stage II"
+    STAGE_III = "Stage III"
+    STAGE_IV = "Stage IV"
 
 
 @dataclass
@@ -109,6 +111,7 @@ class PatientBaseline:
     lab_offsets: Dict[str, float] = field(default_factory=dict)
     lab_scales: Dict[str, float] = field(default_factory=dict)
     base_marker_levels: Dict[str, float] = field(default_factory=dict)
+    administrative_censor_day: Optional[float] = None
 
 
 @dataclass
@@ -187,6 +190,7 @@ class CohortDataset:
                     "observed_recurrence_site": p.observed_recurrence_site,
                     "competing_event": p.competing_event,
                     "competing_event_day": p.competing_event_day,
+                    "administrative_censor_day": p.administrative_censor_day,
                     "generator_id": p.generator_id,
                     "facility_id": p.facility_id,
                     "out_of_pocket_delay_factor": p.out_of_pocket_delay_factor,
@@ -300,133 +304,151 @@ class CohortDataset:
 class BaseCohortGenerator(ABC):
     """Abstract base class for all mechanistic cohort generators."""
 
-    def __init__(self, seed: int = 42):
+    def __init__(self, seed: int = 42, population_config: Optional[Dict[str, Any]] = None):
         self.seed = seed
         self.rng = np.random.default_rng(seed)
+        if population_config is None:
+            config_path = Path(__file__).parent / "config" / "legacy_synthetic_population_v0.json"
+            with config_path.open(encoding="utf-8") as config_file:
+                population_config = json.load(config_file)
+        self.population_config = population_config
+        self._validate_population_config(population_config)
 
-    def sample_nigerian_baseline(self, patient_idx: int) -> PatientBaseline:
+    @staticmethod
+    def _validate_population_config(config: Dict[str, Any]) -> None:
+        """Reject malformed synthetic assumptions instead of silently normalizing them."""
+        if not config.get("profile_id") or not config.get("interpretation"):
+            raise ValueError("Population config requires profile_id and interpretation")
+        age = config["age_years"]
+        if not (0 < age["minimum"] < age["maximum"]):
+            raise ValueError("age_years must define a positive, increasing range")
+        if age.get("distribution") not in {"uniform", "normal"}:
+            raise ValueError("age_years distribution must be uniform or normal")
+        if age["distribution"] == "normal" and not (
+            np.isfinite(age.get("mean", np.nan))
+            and np.isfinite(age.get("sd", np.nan))
+            and age["sd"] > 0
+        ):
+            raise ValueError("normal age_years requires finite mean and positive sd")
+        for key, expected in (("stage_probabilities", 4), ("subtype_probabilities", 3)):
+            probabilities = np.asarray(config[key], dtype=float)
+            if (len(probabilities) != expected or not np.isfinite(probabilities).all()
+                    or np.any(probabilities < 0) or not np.isclose(probabilities.sum(), 1.0)):
+                raise ValueError(f"{key} must contain {expected} probabilities summing to one")
+        site_probs = np.asarray(config["site_probabilities_by_subtype"], dtype=float)
+        if (site_probs.shape != (3, 4) or not np.isfinite(site_probs).all()
+                or np.any(site_probs < 0) or not np.allclose(site_probs.sum(axis=1), 1.0)):
+            raise ValueError("site_probabilities_by_subtype must be three distributions over four sites")
+        for key in ("indolent_probability", *config["competing_event_probabilities"]):
+            probability = (config[key] if key == "indolent_probability"
+                           else config["competing_event_probabilities"][key])
+            if not 0 <= float(probability) <= 1:
+                raise ValueError(f"{key} must be a probability")
+        if sum(config["competing_event_probabilities"].values()) > 1:
+            raise ValueError("Competing event probabilities may not sum above one")
+        for event_name, bounds in config["competing_event_time_days"].items():
+            if (len(bounds) != 2 or not np.isfinite(bounds).all()
+                    or not 0 <= bounds[0] < bounds[1]):
+                raise ValueError(f"Invalid competing event time range for {event_name}")
+        if set(config["competing_event_probabilities"]) != set(config["competing_event_time_days"]):
+            raise ValueError("Every competing event probability needs a matching time range")
+        if len(config["recurrence_time_gamma_by_subtype"]) != 3:
+            raise ValueError("recurrence_time_gamma_by_subtype must match the three subtypes")
+        if len(config["recurrence_multiplier_by_subtype"]) != 3:
+            raise ValueError("recurrence_multiplier_by_subtype must match the three subtypes")
+        for key in (
+            "recurrence_probability_by_stage",
+            "recurrence_multiplier_by_subtype",
+            "recurrence_cap_by_subtype",
+        ):
+            values = np.asarray(config[key], dtype=float)
+            expected = 4 if key == "recurrence_probability_by_stage" else 3
+            if len(values) != expected or not np.isfinite(values).all() or np.any(values < 0):
+                raise ValueError(f"{key} must contain {expected} finite non-negative values")
+        if np.any(np.asarray(config["recurrence_probability_by_stage"], dtype=float) > 1):
+            raise ValueError("Stage recurrence probabilities must be in [0, 1]")
+        if np.any(np.asarray(config["recurrence_cap_by_subtype"], dtype=float) > 1):
+            raise ValueError("Recurrence caps must be in [0, 1]")
+        for item in config["recurrence_time_gamma_by_subtype"]:
+            if not all(np.isfinite(item.get(key, np.nan)) for key in ("shape", "scale_days", "offset_days")):
+                raise ValueError("Recurrence gamma parameters must be finite")
+            if item["shape"] <= 0 or item["scale_days"] <= 0 or item["offset_days"] < 0:
+                raise ValueError("Recurrence gamma shape/scale must be positive and offset non-negative")
+        if not np.isfinite(config["recurrence_day_cap"]) or config["recurrence_day_cap"] <= 0:
+            raise ValueError("recurrence_day_cap must be positive and finite")
+
+    def sample_baseline(self, patient_idx: int) -> PatientBaseline:
         """
-        Samples baseline clinical characteristics using evidence-backed Nigerian priors (E7, E12, E13).
-        - Mean age 47.8 ± 9.5
-        - Stage: Stage I 5%, Stage II 20%, Stage III 50%, Stage IV 25%
-        - Subtype: TNBC 40%, HR+/HER2- 42%, HER2+ 18%
-        - Incorporates competing risks and indolent cases per ML_PROGRAM §9
+        Samples an explicitly synthetic stress-test profile; not population-calibrated.
         """
+        cfg = self.population_config
         pt_id = f"VIG-PT-{patient_idx:05d}"
-        age = float(np.clip(self.rng.normal(48.5, 9.5), 24.0, 82.0))
-
-        # Presentation Stage distribution (E7: >70% present at Stage III/IV)
-        stage_draw = self.rng.random()
-        if stage_draw < 0.05:
-            stage = PresentationStage.STAGE_I
-        elif stage_draw < 0.25:
-            stage = PresentationStage.STAGE_II
-        elif stage_draw < 0.75:
-            stage = PresentationStage.STAGE_III
+        age_cfg = cfg["age_years"]
+        if age_cfg["distribution"] == "uniform":
+            age = float(self.rng.uniform(age_cfg["minimum"], age_cfg["maximum"]))
+        elif age_cfg["distribution"] == "normal":
+            age = float(np.clip(self.rng.normal(age_cfg["mean"], age_cfg["sd"]),
+                                age_cfg["minimum"], age_cfg["maximum"]))
         else:
-            stage = PresentationStage.STAGE_IV
-
-        # Molecular subtype distribution (E7: ~40% TNBC in Nigerian cohorts)
-        sub_draw = self.rng.random()
-        if sub_draw < 0.40:
-            subtype = BreastCancerSubtype.TNBC
+            raise ValueError(f"Unsupported age distribution: {age_cfg['distribution']}")
+        stage_index = int(self.rng.choice(4, p=cfg["stage_probabilities"]))
+        stage = list(PresentationStage)[stage_index]
+        subtype_index = int(self.rng.choice(3, p=cfg["subtype_probabilities"]))
+        subtype = list(BreastCancerSubtype)[subtype_index]
+        receptor_cfg = cfg["receptor_probabilities"]
+        if subtype == BreastCancerSubtype.TNBC:
             er = False
             pr = False
             her2 = False
-        elif sub_draw < 0.82:
-            subtype = BreastCancerSubtype.HR_POS_HER2_NEG
+        elif subtype == BreastCancerSubtype.HR_POS_HER2_NEG:
             er = True
-            pr = bool(self.rng.random() > 0.15)
+            pr = bool(self.rng.random() < receptor_cfg["hr_positive_her2_negative_pr_positive"])
             her2 = False
         else:
-            subtype = BreastCancerSubtype.HER2_POS
-            er = bool(self.rng.random() > 0.50)
-            pr = bool(self.rng.random() > 0.60)
+            er = bool(self.rng.random() < receptor_cfg["her2_positive_er_positive"])
+            pr = bool(self.rng.random() < receptor_cfg["her2_positive_pr_positive"])
             her2 = True
 
-        # Baseline Recurrence Risk based on Stage & Subtype
-        if stage == PresentationStage.STAGE_I:
-            base_p_rec = 0.15
-        elif stage == PresentationStage.STAGE_II:
-            base_p_rec = 0.30
-        elif stage == PresentationStage.STAGE_III:
-            base_p_rec = 0.55
-        else:
-            base_p_rec = 0.85
-
-        if subtype == BreastCancerSubtype.TNBC:
-            p_rec = min(0.95, base_p_rec * 1.30)
-        elif subtype == BreastCancerSubtype.HER2_POS:
-            p_rec = min(0.90, base_p_rec * 1.15)
-        else:
-            p_rec = base_p_rec
-
+        p_rec = min(
+            float(cfg["recurrence_cap_by_subtype"][subtype_index]),
+            float(cfg["recurrence_probability_by_stage"][stage_index]
+                  * cfg["recurrence_multiplier_by_subtype"][subtype_index]),
+        )
+        if not 0 <= p_rec <= 1:
+            raise ValueError("Configured stage/subtype recurrence probability must be in [0, 1]")
         has_recurrence = bool(self.rng.random() < p_rec)
 
         # Indolent micro-metastatic course (overdetection modeling, ML_PROGRAM §4.5)
         # ~8% of recurrences grow extremely slowly and do not cause acute death in surveillance window
         is_indolent = False
-        if has_recurrence and self.rng.random() < 0.08:
+        if has_recurrence and self.rng.random() < cfg["indolent_probability"]:
             is_indolent = True
 
         true_recurrence_day: Optional[float] = None
         true_recurrence_site: Optional[str] = None
 
         if has_recurrence:
-            if subtype == BreastCancerSubtype.TNBC:
-                # TNBC recurs earlier (gamma peak at 1-2 years)
-                rec_days = float(self.rng.gamma(shape=2.5, scale=150.0) + 60.0)
-            else:
-                # Luminal recurs steadily over 1-5 years
-                rec_days = float(self.rng.gamma(shape=3.5, scale=180.0) + 90.0)
-
-            true_recurrence_day = min(1825.0, rec_days)
-
-            # Metastatic site selection using SEER priors by subtype (E12)
-            site_draw = self.rng.random()
-            if subtype == BreastCancerSubtype.HR_POS_HER2_NEG:
-                # 72% bone, 15% lung, 10% liver, 3% brain
-                if site_draw < 0.72:
-                    true_recurrence_site = TargetOrgan.BONE.value
-                elif site_draw < 0.87:
-                    true_recurrence_site = TargetOrgan.LUNG.value
-                elif site_draw < 0.97:
-                    true_recurrence_site = TargetOrgan.LIVER.value
-                else:
-                    true_recurrence_site = TargetOrgan.BRAIN.value
-            elif subtype == BreastCancerSubtype.HER2_POS:
-                # 45% bone, 32% liver, 15% lung, 8% brain
-                if site_draw < 0.45:
-                    true_recurrence_site = TargetOrgan.BONE.value
-                elif site_draw < 0.77:
-                    true_recurrence_site = TargetOrgan.LIVER.value
-                elif site_draw < 0.92:
-                    true_recurrence_site = TargetOrgan.LUNG.value
-                else:
-                    true_recurrence_site = TargetOrgan.BRAIN.value
-            else:  # TNBC
-                # 35% bone, 25% liver, 25% lung, 15% brain
-                if site_draw < 0.35:
-                    true_recurrence_site = TargetOrgan.BONE.value
-                elif site_draw < 0.60:
-                    true_recurrence_site = TargetOrgan.LIVER.value
-                elif site_draw < 0.85:
-                    true_recurrence_site = TargetOrgan.LUNG.value
-                else:
-                    true_recurrence_site = TargetOrgan.BRAIN.value
+            gamma_cfg = cfg["recurrence_time_gamma_by_subtype"][subtype_index]
+            rec_days = float(self.rng.gamma(gamma_cfg["shape"], gamma_cfg["scale_days"])
+                             + gamma_cfg["offset_days"])
+            true_recurrence_day = min(float(cfg["recurrence_day_cap"]), rec_days)
+            site_index = int(self.rng.choice(4, p=cfg["site_probabilities_by_subtype"][subtype_index]))
+            true_recurrence_site = [TargetOrgan.BONE, TargetOrgan.LUNG,
+                                    TargetOrgan.LIVER, TargetOrgan.BRAIN][site_index].value
 
         # Competing risks (intercurrent cardiovascular/septic death or loss-to-follow-up)
         competing_event: Optional[str] = None
         competing_event_day: Optional[float] = None
+        comp_cfg = cfg["competing_event_probabilities"]
         comp_draw = self.rng.random()
-        if comp_draw < 0.05:
-            # Cardiovascular/stroke event
-            competing_event = "cardiovascular_event"
-            competing_event_day = float(self.rng.uniform(120.0, 1800.0))
-        elif comp_draw < 0.09:
-            # Lost to follow-up due to relocation / financial distress
-            competing_event = "lost_to_follow_up"
-            competing_event_day = float(self.rng.uniform(180.0, 1400.0))
+        comp_cumulative = 0.0
+        for event_name, probability in comp_cfg.items():
+            comp_cumulative += float(probability)
+            if comp_draw < comp_cumulative:
+                competing_event = event_name
+                time_range = cfg["competing_event_time_days"][event_name]
+                competing_event_day = float(self.rng.uniform(*time_range))
+                break
 
         # Facility parameters (inter-lab systematic analyzer bias and scale, Task T8)
         facility_idx = int(self.rng.integers(1, 7))
@@ -620,7 +642,8 @@ class BaseCohortGenerator(ABC):
         start_date = datetime(2024, 1, 1, 8, 0, 0, tzinfo=timezone.utc)
 
         for i in range(1, num_patients + 1):
-            pt = self.sample_nigerian_baseline(i)
+            pt = self.sample_baseline(i)
+            pt.administrative_censor_day = float(duration_days)
             patients.append(pt)
 
             # Generate irregular visit process with informative missingness and out-of-pocket delays
@@ -1083,13 +1106,14 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
 def get_generator(
     generator_type: GeneratorType | str,
     seed: int = 42,
+    population_config: Optional[Dict[str, Any]] = None,
 ) -> BaseCohortGenerator:
     """Factory function for retrieving a cohort generator by type."""
     t = GeneratorType(generator_type)
     if t == GeneratorType.G1_SMOOTH:
-        return ContinuousSecretionGenerator(seed=seed)
+        return ContinuousSecretionGenerator(seed=seed, population_config=population_config)
     elif t == GeneratorType.G2_BURST:
-        return BurstSheddingGenerator(seed=seed)
+        return BurstSheddingGenerator(seed=seed, population_config=population_config)
     elif t == GeneratorType.G3_NOISE:
-        return HeavyTailedNoiseGenerator(seed=seed)
+        return HeavyTailedNoiseGenerator(seed=seed, population_config=population_config)
     raise ValueError(f"Unknown generator type: {generator_type}")

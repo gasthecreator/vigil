@@ -78,7 +78,7 @@ def test_fast_landmark_execution_latency():
 
     model = FastLandmarkJointModel(horizon_days=365.0)
     batch = pd.DataFrame({
-        "ca_15_3_curr": np.full(50, 28.0),
+        "ca_15_3_curr": np.linspace(20.0, 40.0, 50),
         "ca_15_3_slope_90d": np.full(50, 0.05),
         "cea_curr": np.full(50, 3.2),
         "age": np.full(50, 52.0),
@@ -86,6 +86,9 @@ def test_fast_landmark_execution_latency():
         "sub_tnbc": np.zeros(50),
         "max_symptom_grade": np.zeros(50),
     })
+    with np.testing.assert_raises(RuntimeError):
+        model.predict_risk(batch)
+    model.fit(batch, pd.Series((batch["ca_15_3_curr"] > 30.0).astype(int)))
 
     t0 = time.perf_counter()
     preds = model.predict_risk(batch)

@@ -21,7 +21,7 @@ from vigil_eval.leakage import (
     run_shuffled_label_canary,
     run_unobserved_value_canary,
 )
-from vigil_eval.metrics import ipcw_time_dependent_roc_auc
+from vigil_eval.metrics import ipcw_time_dependent_roc_auc, patient_landmark_ipcw_weights
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
@@ -95,7 +95,6 @@ def test_k1_kinetic_canaries(synthetic_cohort):
     # Extract sequences for test patients
     k1_inputs = []
     labels = []
-    times = []
 
     for _, pt in pts_df.iterrows():
         pid = pt["patient_id"]
@@ -107,7 +106,6 @@ def test_k1_kinetic_canaries(synthetic_cohort):
 
         k1_inputs.append(K1Observations(days=days, values={"ca153": ca_vals}))
         labels.append(1 if pt.get("observed_recurrence_event") else 0)
-        times.append(float(pt.get("observed_recurrence_day", 730.0) or 730.0))
 
     k1 = HybridKineticModelK1(horizon_days=365.0)
     preds = k1.predict_risk(k1_inputs)
@@ -115,12 +113,10 @@ def test_k1_kinetic_canaries(synthetic_cohort):
     # Shuffled label canary across 5 random permutations
     rng = np.random.default_rng(42)
     shuffled_aucs = []
-    times_arr = np.array(times)
     for _ in range(5):
-        shuffled_labels = rng.permutation(labels)
-        auc = float(
-            ipcw_time_dependent_roc_auc(preds, times_arr, shuffled_labels, horizon_time=365.0)
-        )
+        permutation = rng.permutation(len(labels))
+        shuffled_labels = np.asarray(labels)[permutation]
+        auc = float(roc_auc_score(shuffled_labels, preds))
         shuffled_aucs.append(auc)
 
     mean_shuffled_auc = float(np.mean(shuffled_aucs))
@@ -164,7 +160,8 @@ def test_k3_joint_model_canaries(synthetic_cohort):
     d_shuffled = rng.permutation(d)
 
     k3 = FastLandmarkJointModel(horizon_days=365.0)
-    k3.fit(X, y)
+    weights = patient_landmark_ipcw_weights(t, d, 365.0, X["patient_id"].to_numpy())
+    k3.fit(X, y, sample_weight=weights)
     preds = k3.predict_risk(X)
 
     auc_shuffled = float(ipcw_time_dependent_roc_auc(preds, t, d_shuffled, horizon_time=365.0))

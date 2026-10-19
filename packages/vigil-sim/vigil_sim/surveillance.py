@@ -84,7 +84,7 @@ def build_world(generator: GeneratorType | str, seed: int, n_generated: int) -> 
     has_rec, t_rec, comp_day, ids = [], [], [], []
     n_comp, n_early = 0, 0
     for i in range(1, n_generated + 1):
-        pt = gen.sample_nigerian_baseline(i)
+        pt = gen.sample_baseline(i)
         cd = float(pt.competing_event_day) if pt.competing_event_day is not None else float("inf")
         if cd < GRID_START:
             n_comp += 1

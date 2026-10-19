@@ -65,49 +65,75 @@ class WindowedFeatureExtractor:
 
         current_obs = history[-1]
 
+        def numeric_value(value: Any) -> float:
+            return float(value) if value is not None and not pd.isna(value) else float("nan")
+
+        def binary_value(value: Any) -> float:
+            return float(value) if value is not None and not pd.isna(value) else float("nan")
+
+        age = numeric_value(patient_row.get("age"))
+        stage_value = patient_row.get("stage")
+        stage_missing = stage_value is None or pd.isna(stage_value)
+        subtype_value = patient_row.get("subtype")
+        subtype_missing = subtype_value is None or pd.isna(subtype_value)
+
         features: Dict[str, float] = {
             "eval_day": float(current_day),
-            "age": float(patient_row.get("age", 50.0)),
-            "is_er_pos": 1.0 if patient_row.get("er_status", False) else 0.0,
-            "is_pr_pos": 1.0 if patient_row.get("pr_status", False) else 0.0,
-            "is_her2_pos": 1.0 if patient_row.get("her2_status", False) else 0.0,
+            "age": age,
+            "age_missing": float(not np.isfinite(age)),
+            "is_er_pos": binary_value(patient_row.get("er_status")),
+            "is_pr_pos": binary_value(patient_row.get("pr_status")),
+            "is_her2_pos": binary_value(patient_row.get("her2_status")),
             "is_stage_3_or_4": 1.0
-            if str(patient_row.get("stage", "")).upper() in ["STAGE III", "STAGE IV"]
-            else 0.0,
+            if not stage_missing and str(stage_value).upper() in ["STAGE III", "STAGE IV"]
+            else (float("nan") if stage_missing else 0.0),
+            "stage_missing": float(stage_missing),
             "history_length": float(len(history)),
         }
 
         # Subtype one-hot
-        sub = str(patient_row.get("subtype", "")).upper()
-        features["sub_tnbc"] = 1.0 if "TNBC" in sub else 0.0
-        features["sub_her2"] = 1.0 if "HER2+" in sub else 0.0
-        features["sub_luminal"] = 1.0 if "HR+" in sub else 0.0
+        sub = str(subtype_value).upper() if not subtype_missing else ""
+        features["sub_tnbc"] = float("nan") if subtype_missing else float("TNBC" in sub)
+        features["sub_her2"] = float("nan") if subtype_missing else float("HER2+" in sub)
+        features["sub_luminal"] = float("nan") if subtype_missing else float("HR+" in sub)
+        features["subtype_missing"] = float(subtype_missing)
 
         # Visit schedule friction / missingness features
         if len(history) > 1:
             prev_obs = history[-2]
             features["days_since_last_visit"] = float(current_day - prev_obs["day"])
+            features["has_prior_visit"] = 1.0
         else:
-            features["days_since_last_visit"] = 90.0
+            features["days_since_last_visit"] = float("nan")
+            features["has_prior_visit"] = 0.0
 
         # Current symptoms
-        syms = current_obs.get("symptoms", {})
-        features["max_symptom_grade"] = float(max(syms.values())) if syms else 0.0
-        features["symptom_bone_pain"] = float(syms.get("bone_pain", 0))
-        features["symptom_ruq_pain"] = float(syms.get("ruq_pain", 0))
-        features["symptom_jaundice"] = float(syms.get("jaundice", 0))
-        features["symptom_dyspnea"] = float(syms.get("cough_dyspnea", 0))
-        features["symptom_neuro"] = float(syms.get("headache_neuro", 0))
+        syms = current_obs.get("symptoms")
+        symptoms_missing = syms is None or pd.isna(syms)
+        if symptoms_missing:
+            syms = {}
+        features["symptoms_missing"] = float(symptoms_missing)
+        features["max_symptom_grade"] = (
+            float("nan") if symptoms_missing else float(max(syms.values(), default=0))
+        )
+        features["symptom_bone_pain"] = float("nan") if symptoms_missing else float(syms.get("bone_pain", 0))
+        features["symptom_ruq_pain"] = float("nan") if symptoms_missing else float(syms.get("ruq_pain", 0))
+        features["symptom_jaundice"] = float("nan") if symptoms_missing else float(syms.get("jaundice", 0))
+        features["symptom_dyspnea"] = float("nan") if symptoms_missing else float(syms.get("cough_dyspnea", 0))
+        features["symptom_neuro"] = float("nan") if symptoms_missing else float(syms.get("headache_neuro", 0))
 
         # Analyte levels, velocities, and variability
         for code in self.tracked_analytes:
             curr_val = current_obs.get("analytes", {}).get(code)
             if curr_val is None:
-                features[f"{code}_curr"] = 0.0
+                features[f"{code}_curr"] = float("nan")
                 features[f"{code}_missing"] = 1.0
-                features[f"{code}_slope_90d"] = 0.0
-                features[f"{code}_accel"] = 0.0
-                features[f"{code}_cv"] = 0.0
+                features[f"{code}_slope_90d"] = float("nan")
+                features[f"{code}_slope_90d_available"] = 0.0
+                features[f"{code}_accel"] = float("nan")
+                features[f"{code}_accel_available"] = 0.0
+                features[f"{code}_cv"] = float("nan")
+                features[f"{code}_cv_available"] = 0.0
                 continue
 
             features[f"{code}_curr"] = float(curr_val)
@@ -128,8 +154,10 @@ class WindowedFeatureExtractor:
                 dt = days_arr[-1] - days_arr[0]
                 slope = (vals_arr[-1] - vals_arr[0]) / dt if dt > 0 else 0.0
                 features[f"{code}_slope_90d"] = float(slope)
+                features[f"{code}_slope_90d_available"] = 1.0
             else:
-                features[f"{code}_slope_90d"] = 0.0
+                features[f"{code}_slope_90d"] = float("nan")
+                features[f"{code}_slope_90d_available"] = 0.0
 
             # Acceleration (second difference if >= 3 points)
             if len(series) >= 3:
@@ -138,8 +166,10 @@ class WindowedFeatureExtractor:
                 y3 = series[-1][1]
                 accel = (y3 - y2) - (y2 - y1)
                 features[f"{code}_accel"] = float(accel)
+                features[f"{code}_accel_available"] = 1.0
             else:
-                features[f"{code}_accel"] = 0.0
+                features[f"{code}_accel"] = float("nan")
+                features[f"{code}_accel_available"] = 0.0
 
             # Biological variability (CV over historical values)
             if len(series) >= 2:
@@ -148,8 +178,10 @@ class WindowedFeatureExtractor:
                 std_v = np.std(v_arr)
                 cv = (std_v / mean_v) if mean_v > 0 else 0.0
                 features[f"{code}_cv"] = float(cv)
+                features[f"{code}_cv_available"] = 1.0
             else:
-                features[f"{code}_cv"] = 0.0
+                features[f"{code}_cv"] = float("nan")
+                features[f"{code}_cv_available"] = 0.0
 
         return features
 
@@ -204,8 +236,8 @@ class WindowedFeatureExtractor:
                 # Exclude visits occurring after competing event
                 if comp_day is not None and not np.isnan(comp_day) and d >= comp_day:
                     continue
-                # Exclude visits occurring after clinical recurrence already confirmed
-                if rec_event and rec_day is not None and not np.isnan(rec_day) and d > rec_day:
+                # Exclude visits on or after clinical recurrence was confirmed.
+                if rec_event and rec_day is not None and not np.isnan(rec_day) and d >= rec_day:
                     continue
 
                 feat = self.extract_features_at_visit(pt_row, obs_list, d)
@@ -214,26 +246,62 @@ class WindowedFeatureExtractor:
 
                 feat["patient_id"] = pt_id
 
-                # Label construction: prospective event within horizon_days
-                y = 0
-                time_to_event_or_censor = 0.0
-                event_flag = 0
+                # Follow-up end is administrative end unless a terminal event or
+                # loss to follow-up occurs first. Older/external cohorts without an
+                # explicit end date use the last observed visit conservatively.
+                last_day = max(o["day"] for o in obs_list)
+                admin_end = pt_row.get("administrative_censor_day")
+                if admin_end is None or pd.isna(admin_end):
+                    admin_end = last_day
+                terminal_competing = (
+                    comp_day is not None
+                    and not pd.isna(comp_day)
+                    and pt_row.get("competing_event") not in {None, "lost_to_follow_up"}
+                    and comp_day <= admin_end
+                )
+                lost_to_follow_up = (
+                    comp_day is not None
+                    and not pd.isna(comp_day)
+                    and pt_row.get("competing_event") == "lost_to_follow_up"
+                    and comp_day <= admin_end
+                )
+                recurrence_observed = (
+                    rec_event
+                    and rec_day is not None
+                    and not pd.isna(rec_day)
+                    and rec_day <= admin_end
+                    and (comp_day is None or pd.isna(comp_day) or rec_day < comp_day)
+                )
 
-                if rec_event and rec_day is not None and not np.isnan(rec_day):
-                    remaining_to_rec = max(0.0, rec_day - d)
-                    if remaining_to_rec <= horizon_days:
-                        y = 1
-                    time_to_event_or_censor = max(1.0, remaining_to_rec)
-                    event_flag = 1
+                event_day: float | None = None
+                event_flag = 0  # 0=censored, 1=recurrence, 2=competing event
+                if recurrence_observed:
+                    event_day, event_flag = float(rec_day), 1
+                if terminal_competing and (event_day is None or comp_day < event_day):
+                    event_day, event_flag = float(comp_day), 2
+
+                if event_day is not None:
+                    time_to_event_or_censor = max(1.0, event_day - d)
                 else:
-                    # Censoring time (max follow-up from this visit or competing death)
-                    last_day = max(o["day"] for o in obs_list)
-                    if comp_day is not None and not np.isnan(comp_day):
-                        censor_day = min(comp_day, last_day)
-                    else:
-                        censor_day = last_day
+                    censor_day = min(
+                        float(admin_end),
+                        float(comp_day) if lost_to_follow_up else float(admin_end),
+                    )
                     time_to_event_or_censor = max(1.0, censor_day - d)
-                    event_flag = 0
+
+                # The binary horizon label is known for observed recurrence or a
+                # competing event within H, or when follow-up covers all of H.
+                # A loss/admin censor before H is unknown, never a negative label.
+                if event_flag == 1 and time_to_event_or_censor <= horizon_days:
+                    y = 1.0
+                elif event_flag == 2 and time_to_event_or_censor <= horizon_days:
+                    y = 0.0
+                elif time_to_event_or_censor >= horizon_days or (
+                    event_flag != 0 and time_to_event_or_censor > horizon_days
+                ):
+                    y = 0.0
+                else:
+                    y = np.nan
 
                 features_list.append(feat)
                 labels_list.append(y)
@@ -241,7 +309,7 @@ class WindowedFeatureExtractor:
                 event_indicators.append(event_flag)
 
         X = pd.DataFrame(features_list)
-        y = pd.Series(labels_list, name=f"recurrence_within_{int(horizon_days)}d")
+        y = pd.Series(labels_list, dtype=float, name=f"recurrence_within_{int(horizon_days)}d")
 
         return X, y, np.array(follow_up_times), np.array(event_indicators)
 

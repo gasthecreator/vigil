@@ -46,7 +46,8 @@ from vigil_eval.audit import FrozenTestAccessLogger
 from vigil_eval.bootstrap import patient_cluster_bootstrap
 from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
-    compute_calibration_curve,
+    compute_ipcw_calibration_curve,
+    compute_ipcw_weights,
     ipcw_brier_score,
     ipcw_time_dependent_roc_auc,
     survival_decision_curve_analysis,
@@ -100,6 +101,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     X_train_full, y_train_full, t_train_full, d_train_full = extractor.transform_cohort(
         patients_df=train_pts_df, observations_df=train_obs_df, horizon_days=365.0
     )
+    train_weights = compute_ipcw_weights(t_train_full, d_train_full, 365.0)
 
     visit_strata = [3, 4, 6, 10, 20]
     results_by_stratum = {}
@@ -130,7 +132,12 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
         stratum_res = {}
         for name, m in models.items():
-            m.fit(X_train_full, y_train_full)
+            if isinstance(m, (PrevalenceBaseline, SingleThresholdBaseline, VelocityBaseline,
+                              RegularizedCoxHazardBaseline, GradientBoostingBaseline,
+                              FastLandmarkJointModel)):
+                m.fit(X_train_full, y_train_full, sample_weight=train_weights)
+            else:
+                m.fit(X_train_full, y_train_full)
             if name == "K1_Kinetic":
                 obs_list = []
                 for _, row in X_test.iterrows():
@@ -150,7 +157,9 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
             auc_val = ipcw_time_dependent_roc_auc(preds, t_test, d_test, horizon_time=365.0)
             brier_val = ipcw_brier_score(preds, t_test, d_test, horizon_time=365.0)
-            cal_report = compute_calibration_curve(preds, y_test.values, n_bins=10)
+            cal_report = compute_ipcw_calibration_curve(
+                preds, t_test, d_test, horizon_time=365.0, n_bins=10
+            )
             dca_report = survival_decision_curve_analysis(
                 preds, t_test, d_test, horizon_time=365.0, thresholds=np.array([0.15])
             )
@@ -544,7 +553,12 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
     for name, m in models.items():
         print(f"  Training and stress-testing {name}...")
-        m.fit(X_train, y_train)
+        train_weights = compute_ipcw_weights(t_train, d_train, 365.0)
+        if isinstance(m, (SingleThresholdBaseline, VelocityBaseline, RegularizedCoxHazardBaseline,
+                          GradientBoostingBaseline, FastLandmarkJointModel)):
+            m.fit(X_train, y_train, sample_weight=train_weights)
+        else:
+            m.fit(X_train, y_train)
 
         # In-dist evaluation
         if name == "K1_Kinetic":
@@ -587,14 +601,14 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
         auc_in = ipcw_time_dependent_roc_auc(preds_in, t_test_in, d_test_in, horizon_time=365.0)
         brier_in = ipcw_brier_score(preds_in, t_test_in, d_test_in, horizon_time=365.0)
-        ece_in = compute_calibration_curve(
-            preds_in, y_test_in.values, n_bins=10
+        ece_in = compute_ipcw_calibration_curve(
+            preds_in, t_test_in, d_test_in, horizon_time=365.0, n_bins=10
         ).expected_calibration_error
 
         auc_g3 = ipcw_time_dependent_roc_auc(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
         brier_g3 = ipcw_brier_score(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
-        ece_g3 = compute_calibration_curve(
-            preds_g3, y_test_g3.values, n_bins=10
+        ece_g3 = compute_ipcw_calibration_curve(
+            preds_g3, t_test_g3, d_test_g3, horizon_time=365.0, n_bins=10
         ).expected_calibration_error
 
         delta_auc = auc_in - auc_g3

@@ -29,18 +29,14 @@ The laboratory comprises three structurally distinct mechanistic generators:
 
 ---
 
-## 3. Evidence-Backed Baseline Priors (Nigerian Setting)
-All generators sample patient demographic and tumor characteristics using evidence-backed priors documented in `docs/EVIDENCE.md`:
-- **Molecular Subtype Mix (`docs/evidence/E7.md`):**
-  - TNBC: $40.0\%$
-  - HR+/HER2-: $42.0\%$
-  - HER2+: $18.0\%$
-- **Presentation Stage Mix (`docs/evidence/E7.md`):**
-  - Stage I: $5.0\%$
-  - Stage II: $20.0\%$
-  - Stage III (locally advanced): $50.0\%$
-  - Stage IV (de novo metastatic): $25.0\%$
-- **Financial Friction Multiplier:** Out-of-pocket payment delay factor $\in [1.0, 2.4]$, modeling visit postponement due to economic barriers.
+## 3. Synthetic Baseline Profiles (Not Population Estimates)
+Population assumptions are stored in versioned JSON under `packages/vigil-sim/vigil_sim/config/` and are generated as synthetic stress-test inputs. They are not calibrated estimates for Nigeria or another population. The former Nigerian subtype and stage claims were removed because their evidence mapping did not support those derived distributions (`docs/EVIDENCE.md` E7/E12 downgrade notes).
+
+- Default compatibility profile: `legacy_synthetic_v0`; retains the old assumed age, stage, subtype, recurrence, site, and competing-event distributions for reproducibility. It is explicitly marked as unsourced and not clinically calibrated.
+- `balanced_synthetic_v1`: equal stage, subtype, and recurrence-site probabilities and a bounded uniform age distribution. This neutral profile is used by `EXP-CORE-ML-001` and is not intended to mimic case mix.
+- Financial-friction and visit-process values remain simulator assumptions. They are not population-calibrated and must not be read as evidence about care access.
+
+The simulator's current historical results are not automatically reproducible from these profile files because the implementation and censor-aware label contract have changed. See ADR-0035 and the per-study status in the progress ledger.
 
 ---
 

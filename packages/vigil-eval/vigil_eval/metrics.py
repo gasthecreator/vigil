@@ -53,7 +53,7 @@ def compute_kaplan_meier(
 
     Parameters:
         times: Observed follow-up times (T_i).
-        events: Event indicators (1 if event occurred, 0 if censored).
+        events: Event indicators (1 for the event in this KM curve, 0 otherwise).
     """
     if len(times) == 0:
         return KaplanMeierEstimate(times=np.array([0.0]), survival_prob=np.array([1.0]))
@@ -87,15 +87,23 @@ def compute_ipcw_weights(
 
     Censoring distribution G(t) = P(C > t) is estimated by reversing event indicator (1 - Delta).
     Weight formulation:
-    - If T_i <= horizon and Delta_i == 1 (recurrence prior to horizon): w_i = 1 / G(T_i)
-    - If T_i > horizon (survived disease-free past horizon): w_i = 1 / G(horizon)
+    - If an event occurs by horizon: w_i = 1 / G(T_i)
+    - If T_i > horizon (outcome-free past horizon): w_i = 1 / G(horizon)
     - If T_i <= horizon and Delta_i == 0 (censored prior to horizon): w_i = 0 (uninformative)
     """
     n = len(follow_up_times)
+    if len(event_indicators) != n:
+        raise ValueError("follow_up_times and event_indicators must have equal length")
+    if not np.isfinite(follow_up_times).all() or np.any(np.asarray(follow_up_times) < 0):
+        raise ValueError("follow_up_times must be finite and non-negative")
+    if not np.isin(event_indicators, [0, 1, 2]).all():
+        raise ValueError("event_indicators must use codes 0=censor, 1=recurrence, 2=competing event")
     weights = np.zeros(n, dtype=float)
 
     # Estimate censoring distribution G(t) by reversing event indicator
-    censoring_indicators = 1 - event_indicators
+    # Event code: 0=censored, 1=event of interest, 2=competing event.
+    # Competing events are known outcomes, not censoring observations.
+    censoring_indicators = (event_indicators == 0).astype(int)
     g_km = compute_kaplan_meier(follow_up_times, censoring_indicators)
 
     # Evaluate G(horizon)
@@ -106,8 +114,8 @@ def compute_ipcw_weights(
         d_i = event_indicators[i]
 
         if t_i <= horizon_time:
-            if d_i == 1:
-                # Recurrence occurred before horizon
+            if d_i in (1, 2):
+                # An event of either type resolves recurrence status by horizon.
                 g_ti = float(g_km.predict_survival(t_i)[0])
                 weights[i] = 1.0 / g_ti
             else:
@@ -125,20 +133,35 @@ def ipcw_time_dependent_roc_auc(
     follow_up_times: np.ndarray,
     event_indicators: np.ndarray,
     horizon_time: float,
+    weights: np.ndarray | None = None,
 ) -> float:
     """
     Computes Uno et al. (2007) Inverse Probability of Censoring Weighted time-dependent ROC-AUC.
 
-    Evaluates cumulative cases (T_i <= t, Delta_i = 1) versus dynamic controls (T_j > t).
+    Evaluates recurrence cases versus patients without recurrence by t; competing events are controls.
     """
-    weights = compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
+    if not (len(risk_scores) == len(follow_up_times) == len(event_indicators)):
+        raise ValueError("risk scores, follow-up times, and event indicators must have equal length")
+    weights = (
+        compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
+        if weights is None
+        else np.asarray(weights, dtype=float)
+    )
+    if len(weights) != len(follow_up_times):
+        raise ValueError("weights must have the same length as follow_up_times")
+    if not np.isfinite(weights).all() or np.any(weights < 0):
+        raise ValueError("weights must be finite and non-negative")
+    if not np.isfinite(risk_scores).all():
+        raise ValueError("risk_scores must be finite")
 
     # Identify case and control indices
     cases_mask = (follow_up_times <= horizon_time) & (event_indicators == 1) & (weights > 0)
-    controls_mask = (follow_up_times > horizon_time) & (weights > 0)
+    controls_mask = (
+        ((follow_up_times > horizon_time) | (event_indicators == 2)) & (weights > 0)
+    )
 
     if not np.any(cases_mask) or not np.any(controls_mask):
-        return 0.5  # Undefined/degenerate without both cases and controls
+        return float("nan")
 
     case_scores = risk_scores[cases_mask]
     case_weights = weights[cases_mask]
@@ -146,20 +169,19 @@ def ipcw_time_dependent_roc_auc(
     control_scores = risk_scores[controls_mask]
     control_weights = weights[controls_mask]
 
-    # Weighted Mann-Whitney concordant pair evaluation
-    concordant = 0.0
-    total_weight = 0.0
-
-    for c_score, c_wt in zip(case_scores, case_weights):
-        # Pairs where case score exceeds control score
-        gt = control_scores < c_score
-        eq = control_scores == c_score
-
-        pair_weights = c_wt * control_weights
-        concordant += np.sum(pair_weights[gt]) + 0.5 * np.sum(pair_weights[eq])
-        total_weight += np.sum(pair_weights)
-
-    return float(concordant / total_weight) if total_weight > 0 else 0.5
+    # Weighted Mann-Whitney concordance in O(n log n), using cumulative control
+    # weights and binary searches. The previous nested loop was quadratic and
+    # made patient-cluster bootstrap studies needlessly slow.
+    order = np.argsort(control_scores, kind="mergesort")
+    sorted_scores = control_scores[order]
+    cumulative_weights = np.concatenate(([0.0], np.cumsum(control_weights[order])))
+    left = np.searchsorted(sorted_scores, case_scores, side="left")
+    right = np.searchsorted(sorted_scores, case_scores, side="right")
+    less_weight = cumulative_weights[left]
+    equal_weight = cumulative_weights[right] - less_weight
+    concordant = float(np.sum(case_weights * (less_weight + 0.5 * equal_weight)))
+    total_weight = float(np.sum(case_weights) * cumulative_weights[-1])
+    return concordant / total_weight if total_weight > 0 else float("nan")
 
 
 def ipcw_brier_score(
@@ -167,6 +189,7 @@ def ipcw_brier_score(
     follow_up_times: np.ndarray,
     event_indicators: np.ndarray,
     horizon_time: float,
+    weights: np.ndarray | None = None,
 ) -> float:
     """
     Computes IPCW-weighted Brier score for survival horizon t (Graf et al. 1999).
@@ -175,32 +198,31 @@ def ipcw_brier_score(
                         + (1 - S_i(t))^2 * I(T_i > t) / G(t) ]
     """
     n = len(follow_up_times)
+    if len(event_indicators) != n:
+        raise ValueError("follow_up_times and event_indicators must have equal length")
     if n == 0:
-        return 0.0
+        return float("nan")
 
     # Risk of event occurring by horizon: p_i = 1 - S_i(horizon)
     p_hat = np.clip(predicted_probabilities, 0.0, 1.0)
-    weights = compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
+    weights = (
+        compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
+        if weights is None
+        else np.asarray(weights, dtype=float)
+    )
+    if len(weights) != len(follow_up_times):
+        raise ValueError("weights must have the same length as follow_up_times")
+    if not np.isfinite(weights).all() or np.any(weights < 0):
+        raise ValueError("weights must be finite and non-negative")
+    if not np.any(weights > 0):
+        return float("nan")
+    if len(predicted_probabilities) != n or not np.isfinite(predicted_probabilities).all():
+        raise ValueError("predicted_probabilities must be finite and match follow_up_times")
 
-    # For patients experiencing event before horizon, true status Y_i = 1
-    # For patients surviving past horizon, true status Y_i = 0
-    loss = 0.0
-    valid_count = 0
-
-    for i in range(n):
-        w = weights[i]
-        if w <= 0.0:
-            continue
-
-        if follow_up_times[i] <= horizon_time and event_indicators[i] == 1:
-            y = 1.0
-        else:
-            y = 0.0
-
-        loss += w * ((p_hat[i] - y) ** 2)
-        valid_count += 1
-
-    return float(loss / n) if n > 0 else 0.0
+    # For patients experiencing recurrence by horizon, Y_i = 1; competing events
+    # and event-free follow-up beyond horizon resolve Y_i = 0.
+    outcome = ((follow_up_times <= horizon_time) & (event_indicators == 1)).astype(float)
+    return float(np.sum(weights * (p_hat - outcome) ** 2) / n)
 
 
 @dataclass
@@ -231,7 +253,7 @@ def survival_decision_curve_analysis(
     weights = compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
 
     is_case = (follow_up_times <= horizon_time) & (event_indicators == 1)
-    is_control = follow_up_times > horizon_time
+    is_control = (follow_up_times > horizon_time) | (event_indicators == 2)
 
     nb_model = []
     nb_all = []
@@ -348,3 +370,95 @@ def compute_calibration_curve(
         expected_calibration_error=ece,
         max_calibration_error=mce,
     )
+
+
+def compute_ipcw_calibration_curve(
+    predicted_probs: np.ndarray,
+    follow_up_times: np.ndarray,
+    event_indicators: np.ndarray,
+    horizon_time: float,
+    n_bins: int = 10,
+    weights: np.ndarray | None = None,
+) -> CalibrationReport:
+    """Compute horizon calibration using censoring weights and competing-event controls."""
+    p = np.clip(np.asarray(predicted_probs, dtype=float), 0.0, 1.0)
+    times = np.asarray(follow_up_times, dtype=float)
+    events = np.asarray(event_indicators, dtype=int)
+    if not (len(p) == len(times) == len(events)):
+        raise ValueError("Predictions and event-time arrays must have equal length")
+    if n_bins < 1:
+        raise ValueError("n_bins must be at least one")
+
+    weights = (
+        compute_ipcw_weights(times, events, horizon_time)
+        if weights is None
+        else np.asarray(weights, dtype=float)
+    )
+    if len(weights) != len(times):
+        raise ValueError("weights must have the same length as follow_up_times")
+    known = weights > 0
+    if not np.any(known):
+        return CalibrationReport(
+            bin_centers=np.array([]), predicted_probs=np.array([]), observed_probs=np.array([]),
+            bin_counts=np.array([], dtype=int), expected_calibration_error=float("nan"),
+            max_calibration_error=float("nan"),
+        )
+    outcome = ((times <= horizon_time) & (events == 1)).astype(float)
+    edges = np.unique(np.quantile(p[known], np.linspace(0.0, 1.0, n_bins + 1)))
+    if len(edges) < 2:
+        edges = np.array([0.0, 1.0])
+
+    centers, predicted, observed, counts, bin_weights = [], [], [], [], []
+    for i, (low, high) in enumerate(zip(edges[:-1], edges[1:])):
+        mask = known & (p >= low) & ((p <= high) if i == len(edges) - 2 else (p < high))
+        if not np.any(mask):
+            continue
+        w = weights[mask]
+        total_w = float(np.sum(w))
+        pred_mean = float(np.average(p[mask], weights=w))
+        obs_mean = float(np.average(outcome[mask], weights=w))
+        centers.append(float((low + high) / 2.0))
+        predicted.append(pred_mean)
+        observed.append(obs_mean)
+        counts.append(int(np.sum(mask)))
+        bin_weights.append(total_w)
+
+    total_w = float(np.sum(bin_weights))
+    errors = np.abs(np.asarray(predicted) - np.asarray(observed))
+    ece = float(np.dot(errors, bin_weights) / total_w) if total_w else float("nan")
+    mce = float(np.max(errors)) if len(errors) else float("nan")
+    return CalibrationReport(
+        bin_centers=np.asarray(centers),
+        predicted_probs=np.asarray(predicted),
+        observed_probs=np.asarray(observed),
+        bin_counts=np.asarray(counts, dtype=int),
+        expected_calibration_error=ece,
+        max_calibration_error=mce,
+    )
+
+
+def patient_landmark_ipcw_weights(
+    follow_up_times: np.ndarray,
+    event_indicators: np.ndarray,
+    horizon_time: float,
+    patient_ids: np.ndarray,
+) -> np.ndarray:
+    """IPCW weights normalized so each determinable patient contributes equal total weight."""
+    times = np.asarray(follow_up_times, dtype=float)
+    events = np.asarray(event_indicators, dtype=int)
+    ids = np.asarray(patient_ids)
+    if not (len(times) == len(events) == len(ids)):
+        raise ValueError("Follow-up, event, and patient arrays must have equal length")
+    weights = compute_ipcw_weights(times, events, horizon_time)
+    # Preserve within-patient IPCW ratios while normalizing each patient's total
+    # training contribution to one. Dividing only by visit count is insufficient:
+    # patients with different censoring weights would still dominate by follow-up.
+    for patient_id in np.unique(ids):
+        patient_rows = ids == patient_id
+        patient_total = float(np.sum(weights[patient_rows]))
+        if patient_total > 0:
+            weights[patient_rows] /= patient_total
+    positive = weights > 0
+    if np.any(positive):
+        weights[positive] /= float(np.mean(weights[positive]))
+    return weights

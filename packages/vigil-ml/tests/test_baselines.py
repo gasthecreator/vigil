@@ -52,6 +52,7 @@ def test_prevalence_baseline(mock_dataset):
 def test_single_threshold_baseline(mock_dataset):
     X, y = mock_dataset
     model = SingleThresholdBaseline(cutoff=30.0)
+    model.fit(X, y)
     preds = model.predict_risk(X)
     # Higher marker level must strictly increase predicted risk
     high_marker_idx = X["ca_15_3_curr"] >= 45.0
@@ -62,6 +63,7 @@ def test_single_threshold_baseline(mock_dataset):
 def test_velocity_baseline(mock_dataset):
     X, y = mock_dataset
     model = VelocityBaseline(velocity_cutoff=0.05)
+    model.fit(X, y)
     preds = model.predict_risk(X)
     assert np.all((preds >= 0.0) & (preds <= 1.0))
 

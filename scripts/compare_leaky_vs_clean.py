@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT / "packages" / "vigil-eval"))
 sys.path.insert(0, str(ROOT / "packages" / "vigil-ml"))
 sys.path.insert(0, str(ROOT / "packages" / "vigil-core"))
 
-from vigil_eval.metrics import ipcw_time_dependent_roc_auc
+from vigil_eval.metrics import compute_ipcw_weights, ipcw_time_dependent_roc_auc
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
@@ -118,8 +118,14 @@ def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
     }
 
     # Function to get predictions for a model on a cohort
+    train_weights = compute_ipcw_weights(t_train_clean, d_train_clean, 365.0)
+
     def get_preds(m, name, X_tr, y_tr, X_te, obs_te):
-        m.fit(X_tr, y_tr)
+        if isinstance(m, (SingleThresholdBaseline, VelocityBaseline, RegularizedCoxHazardBaseline,
+                          GradientBoostingBaseline, FastLandmarkJointModel)):
+            m.fit(X_tr, y_tr, sample_weight=train_weights)
+        else:
+            m.fit(X_tr, y_tr)
         if name == "K1_Kinetic":
             obs_list = []
             for _, row in X_te.iterrows():

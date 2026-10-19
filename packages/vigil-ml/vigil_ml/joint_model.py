@@ -28,10 +28,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from vigil_ml.baselines import BaseSurveillanceModel
+from vigil_ml.baselines import BaseSurveillanceModel, _prepare_classifier_training_data
 
 
 @dataclass
@@ -265,8 +266,18 @@ class BayesianJointModelK3(BaseSurveillanceModel):
 
     def check_posterior_predictive(self, X: pd.DataFrame) -> PosteriorPredictiveResult:
         """Runs posterior-predictive simulation check to verify calibration."""
-        marker = X["ca_15_3_curr"].values if "ca_15_3_curr" in X else np.full(len(X), 25.0)
-        times = X["eval_day"].values if "eval_day" in X else np.zeros(len(X))
+        if not self.posterior_chains:
+            raise RuntimeError("BayesianJointModelK3 must be fitted before posterior checks")
+        required = {"ca_15_3_curr", "eval_day"}
+        missing = required - set(X.columns)
+        if missing:
+            raise ValueError(f"Posterior check data is missing required features: {sorted(missing)}")
+        marker = pd.to_numeric(X["ca_15_3_curr"], errors="coerce").to_numpy(dtype=float)
+        times = pd.to_numeric(X["eval_day"], errors="coerce").to_numpy(dtype=float)
+        observed = np.isfinite(marker) & np.isfinite(times)
+        marker, times = marker[observed], times[observed]
+        if len(marker) == 0:
+            raise ValueError("Posterior check has no finite marker/time observations")
 
         rng = np.random.default_rng(self.random_state)
         # Draw parameter replicates
@@ -274,7 +285,7 @@ class BayesianJointModelK3(BaseSurveillanceModel):
         all_b1 = np.concatenate([c["beta_1"] for c in self.posterior_chains])
         all_sig = np.concatenate([c["sigma_eps"] for c in self.posterior_chains])
 
-        n_pts = len(X)
+        n_pts = len(marker)
         covered = 0
         mae_list = []
 
@@ -293,13 +304,20 @@ class BayesianJointModelK3(BaseSurveillanceModel):
 
             mae_list.append(abs(y_obs - np.median(rep_y)))
 
-        cov_frac = covered / min(n_pts, 300)
+        cov_frac = covered / min(len(marker), 300)
         mean_mae = float(np.mean(mae_list))
+        residuals = marker - (np.mean(all_b0) + np.mean(all_b1) * times)
+        if len(residuals) >= 8:
+            from scipy.stats import normaltest
+
+            normality_p_value = float(normaltest(residuals).pvalue)
+        else:
+            normality_p_value = float("nan")
 
         return PosteriorPredictiveResult(
             replicate_coverage_95=round(cov_frac, 4),
             mean_absolute_error=round(mean_mae, 2),
-            residual_normality_p_value=0.25,
+            residual_normality_p_value=normality_p_value,
             passed=bool(cov_frac >= 0.85),
         )
 
@@ -312,16 +330,17 @@ class BayesianJointModelK3(BaseSurveillanceModel):
         return np.clip(p_event, 0.01, 0.95)
 
     def get_model_id(self) -> str:
-        return "K3_BAYESIAN_JOINT_MCMC"
+        return "K3_LINEAR_MCMC_RESEARCH_NOT_JOINT"
 
 
 class FastLandmarkJointModel(BaseSurveillanceModel):
     """
-    K3 Fast Landmarking Production Approximation.
+    Fast landmark logistic research baseline (legacy K3-compatible class name).
 
-    Closed-form Empirical Bayes (EB) random effect estimation for low-latency clinical inference.
-    Fitted coefficients are genuinely estimated from the training cohort (Condition R4).
-    Executes in < 5 ms on CPU, meeting the p95 < 100 ms clinical workstation budget.
+    The fitted prediction path is a regularized logistic classifier over landmark
+    features. The separate empirical-Bayes state utility is not used by prediction;
+    this implementation is neither a Bayesian joint model nor a production model.
+    Latency and predictive performance require independent measurement.
     """
 
     def __init__(
@@ -346,9 +365,12 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
         self.Sigma_b = np.diag([25.0, 0.005])
         self.inv_Sigma_b = np.linalg.inv(self.Sigma_b)
 
-        # Learned landmark hazard / risk model (Condition R4)
+        # Learned binary horizon-score model; independent calibration is external.
         self.scaler = StandardScaler()
-        self.classifier = LogisticRegression(C=C, max_iter=2000, random_state=random_state)
+        self.imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+        self.classifier = LogisticRegression(
+            C=C, max_iter=2000, random_state=random_state, solver="lbfgs"
+        )
         self.is_fitted = False
         self.feature_names_: List[str] = [
             "ca_15_3_curr",
@@ -358,21 +380,31 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
             "is_stage_3_or_4",
             "sub_tnbc",
             "max_symptom_grade",
+            "ca_15_3_curr_missing",
+            "ca_15_3_slope_90d_missing",
+            "cea_curr_missing",
+            "age_missing",
+            "is_stage_3_or_4_missing",
+            "sub_tnbc_missing",
+            "max_symptom_grade_missing",
         ]
         self.fitted_coef_: Optional[np.ndarray] = None
         self.fitted_intercept_: Optional[float] = None
 
     def _extract_landmark_features(self, X: pd.DataFrame) -> np.ndarray:
-        marker = X["ca_15_3_curr"].values if "ca_15_3_curr" in X else np.full(len(X), 25.0)
-        slope = X["ca_15_3_slope_90d"].values if "ca_15_3_slope_90d" in X else np.zeros(len(X))
-        cea = X["cea_curr"].values if "cea_curr" in X else np.full(len(X), 2.5)
-        age = X["age"].values if "age" in X else np.full(len(X), 50.0)
-        stage_flag = X["is_stage_3_or_4"].values if "is_stage_3_or_4" in X else np.zeros(len(X))
-        tnbc_flag = X["sub_tnbc"].values if "sub_tnbc" in X else np.zeros(len(X))
-        symptom_grade = (
-            X["max_symptom_grade"].values if "max_symptom_grade" in X else np.zeros(len(X))
-        )
-        return np.column_stack([
+        # Missing columns and missing measurements remain missing until the
+        # training-fitted imputer handles them; they are never assigned assumed values.
+        def values(column: str) -> np.ndarray:
+            return pd.to_numeric(X[column], errors="coerce").to_numpy(dtype=float) if column in X else np.full(len(X), np.nan)
+
+        marker = values("ca_15_3_curr")
+        slope = values("ca_15_3_slope_90d")
+        cea = values("cea_curr")
+        age = values("age")
+        stage_flag = values("is_stage_3_or_4")
+        tnbc_flag = values("sub_tnbc")
+        symptom_grade = values("max_symptom_grade")
+        raw_features = np.column_stack([
             marker,
             slope,
             cea,
@@ -381,8 +413,16 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
             tnbc_flag,
             symptom_grade,
         ])
+        missing_indicators = (~np.isfinite(raw_features)).astype(float)
+        return np.column_stack([raw_features, missing_indicators])
 
-    def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> FastLandmarkJointModel:
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        sample_weight: np.ndarray | None = None,
+        **kwargs,
+    ) -> FastLandmarkJointModel:
         """
         Calibrates baseline trajectory parameters and fits landmark hazard model from training cohort.
         Condition R4: Learns all coefficients from data; does not encode simulator generator constants.
@@ -394,15 +434,16 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
             if len(pos_slopes) > 0:
                 self.beta_1 = float(pos_slopes.mean())
 
-        feat_mat = self._extract_landmark_features(X)
-        scaled_feat = self.scaler.fit_transform(feat_mat)
+        feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
+        X_fit = X.loc[feat_df.index]
+        feat_mat = self._extract_landmark_features(X_fit)
+        imputed_feat = self.imputer.fit_transform(feat_mat)
+        scaled_feat = self.scaler.fit_transform(imputed_feat)
 
-        y_arr = np.asarray(y)
-        if len(np.unique(y_arr)) > 1:
-            self.classifier.fit(scaled_feat, y_arr)
-            self.fitted_coef_ = self.classifier.coef_[0]
-            self.fitted_intercept_ = float(self.classifier.intercept_[0])
-            self.is_fitted = True
+        self.classifier.fit(scaled_feat, labels, sample_weight=weights)
+        self.fitted_coef_ = self.classifier.coef_[0]
+        self.fitted_intercept_ = float(self.classifier.intercept_[0])
+        self.is_fitted = True
 
         return self
 
@@ -437,16 +478,12 @@ class FastLandmarkJointModel(BaseSurveillanceModel):
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
         """Computes prospective recurrence risk in < 5 ms per batch using fitted model."""
+        if not self.is_fitted:
+            raise RuntimeError("FastLandmarkJointModel must be fitted before prediction")
         feat_mat = self._extract_landmark_features(X)
-        if self.is_fitted:
-            scaled_feat = self.scaler.transform(feat_mat)
-            probs = self.classifier.predict_proba(scaled_feat)[:, 1]
-            return np.clip(probs, 0.005, 0.98)
-
-        # Fallback prior before fit is called
-        marker = feat_mat[:, 0]
-        z = np.clip((marker - 30.0) / 8.0, -20.0, 20.0)
-        return 1.0 / (1.0 + np.exp(-z))
+        imputed_feat = self.imputer.transform(feat_mat)
+        scaled_feat = self.scaler.transform(imputed_feat)
+        return np.clip(self.classifier.predict_proba(scaled_feat)[:, 1], 0.0, 1.0)
 
     def get_model_id(self) -> str:
-        return "K3_FAST_LANDMARK_PRODUCTION"
+        return "FAST_LANDMARK_LOGISTIC_RESEARCH"

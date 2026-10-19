@@ -1,0 +1,32 @@
+{
+  "profile_id": "legacy_synthetic_v0",
+  "interpretation": "Legacy synthetic benchmark assumptions retained for compatibility. These are not sourced Nigerian population estimates and are not calibrated for clinical prediction.",
+  "age_years": {"minimum": 24.0, "maximum": 82.0, "distribution": "normal", "mean": 48.5, "sd": 9.5},
+  "stage_probabilities": [0.05, 0.20, 0.50, 0.25],
+  "subtype_probabilities": [0.40, 0.42, 0.18],
+  "receptor_probabilities": {
+    "hr_positive_her2_negative_pr_positive": 0.85,
+    "her2_positive_er_positive": 0.50,
+    "her2_positive_pr_positive": 0.40
+  },
+  "recurrence_probability_by_stage": [0.15, 0.30, 0.55, 0.85],
+  "recurrence_multiplier_by_subtype": [1.30, 1.0, 1.15],
+  "recurrence_cap_by_subtype": [0.95, 1.0, 0.90],
+  "recurrence_time_gamma_by_subtype": [
+    {"shape": 2.5, "scale_days": 150.0, "offset_days": 60.0},
+    {"shape": 3.5, "scale_days": 180.0, "offset_days": 90.0},
+    {"shape": 3.5, "scale_days": 180.0, "offset_days": 90.0}
+  ],
+  "recurrence_day_cap": 1825.0,
+  "indolent_probability": 0.08,
+  "site_probabilities_by_subtype": [
+    [0.35, 0.25, 0.25, 0.15],
+    [0.72, 0.15, 0.10, 0.03],
+    [0.45, 0.15, 0.32, 0.08]
+  ],
+  "competing_event_probabilities": {"cardiovascular_event": 0.05, "lost_to_follow_up": 0.04},
+  "competing_event_time_days": {
+    "cardiovascular_event": [120.0, 1800.0],
+    "lost_to_follow_up": [180.0, 1400.0]
+  }
+}

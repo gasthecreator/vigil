@@ -68,13 +68,13 @@
   "development": {
     "comparator": "B2_VELOCITY_RULE",
     "comparator_dev_auc_out_of_fold": {
-      "B1_SINGLE_THRESHOLD": 0.5815061253161742,
-      "B2_VELOCITY_RULE": 0.6371996526134059,
-      "B3_REGULARIZED_COX_HAZARD": 0.6245209872185279
+      "B1_SINGLE_THRESHOLD": 0.5994318238060079,
+      "B2_VELOCITY_RULE": 0.6596548950274194,
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.6439185147993834
     },
-    "recalibration_intercept": -0.8933091275218001,
-    "recalibration_slope": 0.49684483119497463,
-    "operating_threshold": 0.16493955030843085,
+    "recalibration_intercept": -0.8200160905677489,
+    "recalibration_slope": 0.510583338159818,
+    "operating_threshold": 0.1597550317752838,
     "dev_alert_rate_per_100_patient_months": 4.879723396065194,
     "notes": [
       "candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3"
@@ -85,43 +85,43 @@
     "n_boot": 2000,
     "seed": 20261018,
     "comparator": "B2_VELOCITY_RULE",
-    "operating_threshold": 0.16493955030843085,
+    "operating_threshold": 0.1597550317752838,
     "C1": {
-      "estimate": 1.1300098013146513,
+      "estimate": 1.159012496767956,
       "ci95": [
-        0.7125870383559757,
-        1.5901599636397574
+        0.7314540869663604,
+        1.759483398496345
       ],
       "criterion": "CI within [0.8, 1.2]",
       "ci_criterion_met": false,
-      "p": 0.3905,
-      "p_holm": 0.781,
+      "p": 0.468,
+      "p_holm": 0.468,
       "reject": false,
       "met": false
     },
     "C2": {
-      "estimate": -0.05713468587385562,
+      "estimate": 0.07458972055728696,
       "ci95": [
-        -0.19130289420195995,
-        0.06432545014481726
+        -0.028559587283824035,
+        0.1808881404050436
       ],
       "criterion": "lower CI bound > 0.0",
       "ci_criterion_met": false,
-      "p": 0.8135,
-      "p_holm": 0.8135,
+      "p": 0.079,
+      "p_holm": 0.237,
       "reject": false,
       "met": false
     },
     "C3": {
-      "estimate": 4.50648869944404,
+      "estimate": 4.6103846925147955,
       "ci95": [
-        3.698585952239382,
-        5.357527913403111
+        3.788698341449517,
+        5.480825297913548
       ],
       "criterion": "upper CI bound <= 5.0",
       "ci_criterion_met": false,
-      "p": 0.132,
-      "p_holm": 0.396,
+      "p": 0.1945,
+      "p_holm": 0.389,
       "reject": false,
       "met": false
     },
@@ -129,10 +129,10 @@
   },
   "secondary": {
     "calibration_before_recalibration": {
-      "ece": 0.04591479576446793,
-      "mean_predicted": 0.11427875015058993,
+      "ece": 0.03995886820879746,
+      "mean_predicted": 0.10808186901564004,
       "observed_ipcw": 0.09734945648924323,
-      "note": "ECE is unweighted and on determinable outcomes only; the IPCW means are the calibration-in-the-large inputs"
+      "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
     },
     "decision_curve": {
       "thresholds": [
@@ -147,13 +147,13 @@
       ],
       "net_benefit_model": [
         0.08823177423155883,
-        0.025106480201931194,
-        0.01408343382443029,
-        0.01673627339191395,
+        0.022468548612037814,
+        0.021170267934707616,
+        0.02036137597629449,
         0.014995490802004133,
-        0.01226722396476724,
+        0.01637848656172919,
         0.017732879113164998,
-        0.020489749158691138
+        0.016835293516947184
       ],
       "net_benefit_all": [
         0.08823177423155883,
@@ -213,12 +213,12 @@
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "266.4 \u00b1 229.3",
-      "conditional_median_days": 194.0,
-      "unconditional_mean_days": 194.6,
-      "recurrence_detection_rate": 0.7308,
-      "overdetection_rate": 0.525,
-      "alert_burden_per_100_pt_years": 19.85,
+      "conditional_lead_time_days": "294.0 \u00b1 253.3",
+      "conditional_median_days": 202.0,
+      "unconditional_mean_days": 226.2,
+      "recurrence_detection_rate": 0.7692,
+      "overdetection_rate": 0.5122,
+      "alert_burden_per_100_pt_years": 20.35,
       "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
     },
     "m10_aggregate": {
@@ -227,33 +227,33 @@
     },
     "verification_bias": {
       "complete_case": {
-        "sensitivity": 0.32142857142857145,
-        "specificity": 0.9438202247191011
+        "sensitivity": 0.35714285714285715,
+        "specificity": 0.9213483146067416
       },
       "ipw": {
-        "sensitivity": 0.28953889150736306,
-        "specificity": 0.9428302767008229
+        "sensitivity": 0.3166034355095252,
+        "specificity": 0.9190164247603129
       },
       "sensitivity_analysis": [
         {
           "assumed_unverified_event_rate": 0.0,
-          "sensitivity": 0.32142857142857145,
-          "specificity": 0.939622641509434
+          "sensitivity": 0.35714285714285715,
+          "specificity": 0.9207547169811321
         },
         {
           "assumed_unverified_event_rate": 0.05,
-          "sensitivity": 0.2595108695652174,
-          "specificity": 0.939695550351288
+          "sensitivity": 0.2907608695652174,
+          "specificity": 0.9207650273224044
         },
         {
           "assumed_unverified_event_rate": 0.1,
-          "sensitivity": 0.22149122807017543,
-          "specificity": 0.9397736459175424
+          "sensitivity": 0.25,
+          "specificity": 0.9207760711398545
         },
         {
           "assumed_unverified_event_rate": 0.2,
-          "sensitivity": 0.1772151898734177,
-          "specificity": 0.9399477806788511
+          "sensitivity": 0.20253164556962025,
+          "specificity": 0.9208006962576153
         }
       ],
       "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"

@@ -24,6 +24,7 @@ class BootstrapMetricSummary:
     ci_lower: float
     ci_upper: float
     standard_error: float
+    valid_replicates: int
     confidence_level: float = 0.95
 
     def to_dict(self) -> Dict[str, Any]:
@@ -33,6 +34,7 @@ class BootstrapMetricSummary:
             "ci_lower": self.ci_lower,
             "ci_upper": self.ci_upper,
             "standard_error": self.standard_error,
+            "valid_replicates": self.valid_replicates,
             "confidence_interval": f"[{self.ci_lower:.4f}, {self.ci_upper:.4f}]",
         }
 
@@ -98,9 +100,9 @@ def patient_cluster_bootstrap(
             ci_u = float(np.percentile(vals, upper_pct))
             se = float(np.std(vals, ddof=1))
         else:
-            ci_l = pt_est
-            ci_u = pt_est
-            se = 0.0
+            ci_l = float("nan")
+            ci_u = float("nan")
+            se = float("nan")
 
         summaries[m] = BootstrapMetricSummary(
             metric_name=m,
@@ -108,6 +110,7 @@ def patient_cluster_bootstrap(
             ci_lower=ci_l,
             ci_upper=ci_u,
             standard_error=se,
+            valid_replicates=len(vals),
             confidence_level=ci_level,
         )
 

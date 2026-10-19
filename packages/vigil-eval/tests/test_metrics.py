@@ -10,6 +10,7 @@ from vigil_eval.metrics import (
     compute_kaplan_meier,
     ipcw_brier_score,
     ipcw_time_dependent_roc_auc,
+    patient_landmark_ipcw_weights,
     survival_decision_curve_analysis,
 )
 
@@ -58,6 +59,29 @@ def test_ipcw_weights_properties():
     assert weights[0] >= 1.0
     # Patient 4 survived to t=200 (> 180), weight >= 1.0
     assert weights[3] >= 1.0
+
+
+def test_competing_events_resolve_recurrence_status_without_being_censoring():
+    times = np.array([50.0, 100.0, 200.0])
+    event_codes = np.array([2, 1, 0])  # competing, recurrence, administrative censor
+    weights = compute_ipcw_weights(times, event_codes, horizon_time=150.0)
+    assert weights[0] > 0.0
+    assert weights[1] > 0.0
+    assert weights[2] > 0.0
+
+    scores = np.array([0.1, 0.9, 0.2])
+    assert ipcw_time_dependent_roc_auc(scores, times, event_codes, 150.0) == 1.0
+    assert ipcw_brier_score(np.array([0.05, 0.95, 0.05]), times, event_codes, 150.0) < 0.01
+
+
+def test_patient_landmark_weights_equalize_total_patient_contribution():
+    times = np.array([50.0, 200.0, 100.0, 300.0, 80.0])
+    events = np.array([1, 0, 2, 0, 2])
+    patient_ids = np.array(["A", "A", "B", "B", "C"])
+    weights = patient_landmark_ipcw_weights(times, events, 150.0, patient_ids)
+    totals = [weights[patient_ids == patient].sum() for patient in ("A", "B", "C")]
+    assert totals[0] > 0.0
+    assert np.allclose(totals, totals[0])
 
 
 def test_ipcw_time_dependent_roc_auc():
@@ -147,3 +171,11 @@ def test_calibration_curve_and_ece():
     overconfident_probs = np.full(n, 0.90)
     calib_bad = compute_calibration_curve(overconfident_probs, labels, n_bins=5)
     assert calib_bad.expected_calibration_error > 0.20
+
+
+def test_undefined_ipcw_metrics_are_nan_not_plausible_scores():
+    times = np.array([10.0, 20.0])
+    events = np.array([0, 0])
+    scores = np.array([0.2, 0.8])
+    assert np.isnan(ipcw_time_dependent_roc_auc(scores, times, events, horizon_time=30.0))
+    assert np.isnan(ipcw_brier_score(scores, times, events, horizon_time=30.0))

@@ -3,6 +3,7 @@ Tests for vigil_ml.features: Windowed feature extraction and longitudinal pipeli
 """
 
 import numpy as np
+import pandas as pd
 from vigil_ml.features import WindowedFeatureExtractor
 
 
@@ -48,3 +49,67 @@ def test_velocity_and_acceleration_computation():
     assert np.isclose(feat["ca_15_3_slope_90d"], 10.0 / 90.0, atol=1e-3)
     # Constant velocity -> acceleration = (40 - 30) - (30 - 20) = 0.0
     assert np.isclose(feat["ca_15_3_accel"], 0.0, atol=1e-4)
+
+
+def test_horizon_label_is_unknown_when_followup_is_censored_early():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "CENSORED",
+            "observed_recurrence_event": False,
+            "observed_recurrence_day": np.nan,
+            "competing_event": "lost_to_follow_up",
+            "competing_event_day": 200.0,
+            "administrative_censor_day": 365.0,
+        }]
+    )
+    observations = pd.DataFrame(
+        {"patient_id": ["CENSORED", "CENSORED"], "day": [0.0, 100.0], "ca_15_3": [18.0, 20.0]}
+    )
+    _X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+    assert y.isna().all()
+    assert np.array_equal(events, [0, 0])
+    assert np.array_equal(times, [200.0, 100.0])
+
+
+def test_competing_event_is_a_known_non_recurrence_outcome():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "COMPETING",
+            "observed_recurrence_event": False,
+            "observed_recurrence_day": np.nan,
+            "competing_event": "cardiovascular_event",
+            "competing_event_day": 150.0,
+            "administrative_censor_day": 365.0,
+        }]
+    )
+    observations = pd.DataFrame(
+        {"patient_id": ["COMPETING", "COMPETING"], "day": [0.0, 100.0], "ca_15_3": [18.0, 20.0]}
+    )
+    _X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+    assert np.array_equal(y.to_numpy(), [0.0, 0.0])
+    assert np.array_equal(events, [2, 2])
+    assert np.array_equal(times, [150.0, 50.0])
+
+
+def test_loss_to_follow_up_before_later_recurrence_censors_it():
+    patients = pd.DataFrame([{
+        "patient_id": "LOST",
+        "observed_recurrence_event": True,
+        "observed_recurrence_day": 300.0,
+        "competing_event": "lost_to_follow_up",
+        "competing_event_day": 150.0,
+        "administrative_censor_day": 365.0,
+    }])
+    observations = pd.DataFrame({
+        "patient_id": ["LOST", "LOST"], "day": [0.0, 100.0], "ca_15_3": [18.0, 20.0]
+    })
+    _X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+    assert y.isna().all()
+    assert np.array_equal(events, [0, 0])
+    assert np.array_equal(times, [150.0, 50.0])

@@ -2,6 +2,10 @@
 Tests for vigil_sim.generators: Mechanistic cohort generators G1, G2, G3 and anti-leakage invariants.
 """
 
+import json
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import pytest
 from vigil_sim.generators import (
@@ -36,22 +40,40 @@ def test_deterministic_seed_reproducibility():
     pd.testing.assert_frame_equal(df1, df2)
 
 
-def test_nigerian_presentation_priors():
+def test_legacy_synthetic_profile_is_explicit_and_matches_its_assumptions():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=999)
     cohort = gen.generate_cohort(num_patients=300, duration_days=365.0)
     pts_df = cohort.to_patients_dataframe()
 
-    # 1. Age distribution: mean should be between 44 and 53
-    mean_age = pts_df["age"].mean()
-    assert 44.0 <= mean_age <= 53.0, f"Expected mean age ~48.5, got {mean_age}"
+    cfg = gen.population_config
+    assert cfg["profile_id"] == "legacy_synthetic_v0"
+    assert "not sourced Nigerian population estimates" in cfg["interpretation"]
+    assert pts_df["age"].between(cfg["age_years"]["minimum"], cfg["age_years"]["maximum"]).all()
+    expected_stage = cfg["stage_probabilities"]
+    observed_stage = pts_df["stage"].value_counts(normalize=True)
+    for stage, probability in zip(("Stage I", "Stage II", "Stage III", "Stage IV"), expected_stage):
+        tolerance = 4 * np.sqrt(probability * (1 - probability) / len(pts_df))
+        assert abs(observed_stage.get(stage, 0.0) - probability) <= tolerance
 
-    # 2. Stage distribution: Stage III and IV should constitute > 65% of cohort (E7)
-    stage_3_4_pct = (pts_df["stage"].isin(["Stage III", "Stage IV"])).mean()
-    assert stage_3_4_pct >= 0.65, f"Expected >= 65% stage III/IV, got {stage_3_4_pct:.1%}"
+    expected_subtypes = cfg["subtype_probabilities"]
+    observed_subtype = pts_df["subtype"].value_counts(normalize=True)
+    for subtype, probability in zip(("TNBC", "HR+HER2-", "HER2+"), expected_subtypes):
+        tolerance = 4 * np.sqrt(probability * (1 - probability) / len(pts_df))
+        assert abs(observed_subtype.get(subtype, 0.0) - probability) <= tolerance
 
-    # 3. Subtype: TNBC should be substantial (30% - 50%)
-    tnbc_pct = (pts_df["subtype"] == "TNBC").mean()
-    assert 0.30 <= tnbc_pct <= 0.50, f"Expected 30-50% TNBC, got {tnbc_pct:.1%}"
+
+def test_profile_override_is_seeded_and_rejects_invalid_probabilities():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_v1.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    first = get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+    second = get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+    assert [first.sample_baseline(i).stage for i in range(1, 20)] == [
+        second.sample_baseline(i).stage for i in range(1, 20)
+    ]
+
+    invalid = {**profile, "stage_probabilities": [0.5, 0.5, 0.5, 0.5]}
+    with pytest.raises(ValueError, match="stage_probabilities"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=invalid)
 
 
 def test_latent_states_export_for_recovery_studies():
