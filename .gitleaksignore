@@ -9,3 +9,5 @@ ca0584a8f1f0a92cb5a0afd63326cf6f99f00566:apps/api/vigil_api/config.py:generic-ap
 e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:55
 e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:89
 e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:90
+# My own seed token in the earlier workflow revision (history only; removed in ffa751f). Synthetic.
+a9979c120c612584d80f1039fbd1ddf9ee575f52:.github/workflows/quality-gates.yml:github-pat:161
