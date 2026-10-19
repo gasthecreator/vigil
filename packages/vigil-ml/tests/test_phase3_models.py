@@ -144,6 +144,7 @@ def test_k8_finite_sample_rank_and_uncalibrated_abstention():
     k8 = ConformalRiskControllerK8(alpha_conf=0.5)
     uncalibrated = k8.predict(raw_risk=0.2, epistemic_std=0.01)
     assert uncalibrated.abstention == AbstentionReason.ABSTAIN_HIGH_UNCERTAINTY
+    assert uncalibrated.calibrated_risk is None
     assert uncalibrated.risk_interval == (0.0, 1.0)
 
     k8.calibrate(np.array([0.1, 0.2, 0.3]), np.array([1, 1, 1]))

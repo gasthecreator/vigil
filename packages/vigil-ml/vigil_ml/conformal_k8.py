@@ -31,7 +31,7 @@ class AbstentionReason(str, Enum):
 
 @dataclass
 class ConformalPredictionResult:
-    calibrated_risk: float
+    calibrated_risk: Optional[float]
     risk_interval: Tuple[float, float]
     alert_tier: str
     is_alert: bool
@@ -106,7 +106,7 @@ class ConformalRiskControllerK8:
         """
         if not self.is_calibrated:
             return ConformalPredictionResult(
-                calibrated_risk=raw_risk,
+                calibrated_risk=None,
                 risk_interval=(0.0, 1.0),
                 alert_tier="abstain",
                 is_alert=False,

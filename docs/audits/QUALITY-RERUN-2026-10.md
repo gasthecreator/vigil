@@ -24,7 +24,7 @@ There is a second provenance problem: [`run_study_s2.py`](../../scripts/run_stud
 
 [`ConformalRiskControllerK8.calibrate()`](../../packages/vigil-ml/vigil_ml/conformal_k8.py) used NumPy's interpolated quantile and clamped its threshold to `0.05`; neither operation implements the registered finite-sample rank rule. More seriously, [`VigilProductionRuntime`](../../packages/vigil-ml/vigil_ml/runtime.py) created a randomly initialized model by default and never calibrated the controller. It could therefore emit a risk estimate labeled as calibrated without trained weights or a calibration cohort.
 
-**Action:** K8 now uses the finite-sample positive-score rank, including the conservative all-alert cutoff when the rank is zero, and abstains until calibration is loaded. This does not validate the runtime model; S-019 registers it as research-only pending a trained artifact, calibration, and independent evaluation.
+**Action:** K8 now uses the finite-sample positive-score rank, including the conservative all-alert cutoff when the rank is zero, and abstains without returning a numeric calibrated risk until calibration is loaded. This does not validate the runtime model; S-019 registers it as research-only pending a trained artifact, calibration, and independent evaluation.
 
 ### High: K7 balance and protective-effect sensitivity diagnostics were wrong at edge cases
 
