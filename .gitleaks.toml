@@ -2,12 +2,14 @@
 # real production secrets must never appear in the tree.
 title = "vigil"
 
+# Without this, a custom config REPLACES the default ruleset and the gate detects nothing
+# (found by overseer review: a planted GitHub token was not flagged).
+[extend]
+useDefault = true
+
 [allowlist]
 description = "Documented synthetic fixtures and example env templates (not production credentials)"
 paths = [
-  '''(^|/)tests/''',
-  '''(^|/)tests/acceptance_''',
   '''scripts/attack_api\.py$''',
   '''infra/\.env\.compose(\.dev)?\.example$''',
-  '''docs/''',
 ]

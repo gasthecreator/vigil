@@ -1,0 +1,11 @@
+# Exact-fingerprint suppressions (G-07). Every entry reviewed by the overseer 2026-10-19.
+# All are synthetic test-fixture strings or a since-removed insecure dev default in config.py
+# (now "" and rejected by startup validation). No real credential. Add entries only with a reason.
+030fcdec6aa029114570705d31812d79b8dbb654:tests/acceptance_p5/test_api_security.py:generic-api-key:25
+370dc545793aaa38e23b0046b394a328339ad5a4:tests/deployment/test_on_prem_install.py:generic-api-key:51
+370dc545793aaa38e23b0046b394a328339ad5a4:tests/deployment/test_on_prem_install.py:generic-api-key:85
+370dc545793aaa38e23b0046b394a328339ad5a4:tests/deployment/test_on_prem_install.py:generic-api-key:86
+ca0584a8f1f0a92cb5a0afd63326cf6f99f00566:apps/api/vigil_api/config.py:generic-api-key:40
+e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:55
+e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:89
+e66535e1f8a378511b744ccd07a104273664ef74:tests/deployment/test_on_prem_install.py:generic-api-key:90
