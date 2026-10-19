@@ -134,7 +134,8 @@ jobs:
           uv run bandit -r apps/api/vigil_api packages/vigil-core/vigil_core packages/vigil-eval/vigil_eval -ll
       - name: Semgrep (p/python)
         run: |
-          uvx --from semgrep==1.110.0 semgrep scan --config p/python --error \
+          # setuptools provides pkg_resources (still required by some otel instrumentation deps)
+          uvx --with setuptools --from semgrep==1.110.0 semgrep scan --config p/python --error \
             --exclude='quarantine/**' --exclude='reports/**' --exclude='**/.venv/**' \
             apps/api packages/vigil-core packages/vigil-eval packages/vigil-ml
       - name: Trivy filesystem
