@@ -117,6 +117,7 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 
 ## Decisions log (pointers to ADRs)
 - ADR-0030: Typing and import-linter scope (P16 PR2 / G-05) — strict mypy on vigil-core, vigil-eval, m5.py only
+- ADR-0036: Reopen K1 validity repair without promotion; supersedes ADR-0007 only on further research work being permitted
 - ADR-0001: Monorepo layout (`apps/api`, `apps/web`, `packages/*`)
 - ADR-0002: Quarantine prototype models (`quarantine/legacy_models/`)
 - ADR-0003: Claims policy and truth reset (`scripts/check_claims.py`)

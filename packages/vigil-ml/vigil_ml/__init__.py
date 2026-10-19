@@ -26,9 +26,10 @@ from vigil_ml.joint_model import (
     FastLandmarkJointModel,
     PosteriorPredictiveResult,
 )
+from vigil_ml.k1 import HybridKineticModelK1
 from vigil_ml.k2 import SequentialDetector
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
-from vigil_ml.kinetic_k1 import HybridKineticModelK1, UnscentedKalmanFilterK1
+from vigil_ml.kinetic_k1 import UnscentedKalmanFilterK1
 from vigil_ml.m3 import adjudicate, rcv
 from vigil_ml.m5 import (
     compute_flesch_kincaid_grade_level,
