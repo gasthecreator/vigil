@@ -76,6 +76,36 @@ def test_profile_override_is_seeded_and_rejects_invalid_probabilities():
         get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=invalid)
 
 
+def test_k3_profile_shares_lab_effects_within_facility_and_records_verification():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=48101, population_config=profile).generate_cohort(
+        num_patients=500, duration_days=730.0
+    )
+
+    facilities = {}
+    for patient in cohort.patients:
+        effect = (patient.lab_offsets["ca_15_3"], patient.lab_scales["ca_15_3"])
+        previous = facilities.setdefault(patient.facility_id, effect)
+        assert effect == previous
+    assert len(set(facilities.values())) > 1
+
+    observed = cohort.to_observations_dataframe()
+    assert observed["facility_id"].notna().all()
+    assert observed["treatment_active"].dropna().eq("chemotherapy").all()
+    assert observed["treatment_active"].notna().any()
+    assert observed.loc[~observed["imaging_performed"], "imaging_result"].isna().all()
+    imaged = observed[observed["imaging_performed"]]
+    assert imaged["imaging_result"].notna().all()
+    assert imaged["imaging_result"].isin([True, False]).all()
+
+    patients = cohort.to_patients_dataframe().set_index("patient_id")
+    positives = imaged[imaged["imaging_result"]]
+    assert all(bool(patients.loc[row.patient_id, "observed_recurrence_event"])
+               and bool(patients.loc[row.patient_id, "true_recurrence_event"])
+               for row in positives.itertuples())
+
+
 def test_latent_states_export_for_recovery_studies():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=42)
     cohort = gen.generate_cohort(num_patients=10, duration_days=365.0)

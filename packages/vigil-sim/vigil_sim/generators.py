@@ -126,6 +126,9 @@ class LongitudinalObservation:
     imaging_performed: bool  # Verification mechanism flag
     preanalytical_error: Optional[str] = None
     is_synthetic: bool = True
+    imaging_result: Optional[bool] = None
+    facility_id: Optional[str] = None
+    treatment_active: Optional[str] = None
 
 
 @dataclass
@@ -150,6 +153,9 @@ class CohortDataset:
                 "day": obs.day,
                 "date_drawn": obs.date_drawn,
                 "imaging_performed": obs.imaging_performed,
+                "imaging_result": obs.imaging_result,
+                "facility_id": obs.facility_id,
+                "treatment_active": obs.treatment_active,
                 "preanalytical_error": obs.preanalytical_error,
                 "is_synthetic": obs.is_synthetic,
             }
@@ -321,6 +327,8 @@ class CohortDataset:
             feat: Dict[str, Any] = {
                 "patient_id": obs.patient_id,
                 "day": obs.day,
+                "facility_id": obs.facility_id,
+                "treatment_active": obs.treatment_active or "none",
                 "age": pt.age,
                 "is_er_pos": 1.0 if pt.er_status else 0.0,
                 "is_pr_pos": 1.0 if pt.pr_status else 0.0,
@@ -365,6 +373,20 @@ class BaseCohortGenerator(ABC):
                 population_config = json.load(config_file)
         self.population_config = population_config
         self._validate_population_config(population_config)
+        self.facility_lab_effects: dict[str, dict[str, tuple[float, float]]] = {}
+        facility_effects = population_config.get("facility_lab_effects")
+        if facility_effects is not None:
+            count = int(facility_effects["facility_count"])
+            self.facility_lab_effects = {
+                f"FACILITY-NG-{facility_idx:02d}": {
+                    code: (
+                        float(self.rng.normal(0.0, facility_effects["offset_sd"])),
+                        float(self.rng.uniform(facility_effects["scale_min"], facility_effects["scale_max"])),
+                    )
+                    for code in ANALYTE_REGISTRY
+                }
+                for facility_idx in range(1, count + 1)
+            }
 
     @staticmethod
     def _validate_population_config(config: Dict[str, Any]) -> None:
@@ -404,6 +426,22 @@ class BaseCohortGenerator(ABC):
                 raise ValueError(f"Invalid competing event time range for {event_name}")
         if set(config["competing_event_probabilities"]) != set(config["competing_event_time_days"]):
             raise ValueError("Every competing event probability needs a matching time range")
+        facility_effects = config.get("facility_lab_effects")
+        if facility_effects is not None:
+            if (int(facility_effects.get("facility_count", 0)) < 2
+                    or not np.isfinite(facility_effects.get("offset_sd", np.nan))
+                    or facility_effects["offset_sd"] < 0
+                    or not 0 < facility_effects.get("scale_min", 0)
+                    or facility_effects["scale_min"] >= facility_effects.get("scale_max", 0)):
+                raise ValueError("facility_lab_effects must define count, offset_sd, and increasing positive scale bounds")
+        verification = config.get("verification")
+        if verification is not None:
+            for key in ("sensitivity", "specificity"):
+                if not np.isfinite(verification.get(key, np.nan)) or not 0 <= verification[key] <= 1:
+                    raise ValueError(f"verification.{key} must be in [0, 1]")
+            if (not np.isfinite(verification.get("visible_burden_threshold", np.nan))
+                    or verification["visible_burden_threshold"] < 0):
+                raise ValueError("verification.visible_burden_threshold must be finite and non-negative")
         if len(config["recurrence_time_gamma_by_subtype"]) != 3:
             raise ValueError("recurrence_time_gamma_by_subtype must match the three subtypes")
         if len(config["recurrence_multiplier_by_subtype"]) != 3:
@@ -503,15 +541,20 @@ class BaseCohortGenerator(ABC):
                 break
 
         # Facility parameters (inter-lab systematic analyzer bias and scale, Task T8)
-        facility_idx = int(self.rng.integers(1, 7))
+        facility_count = int(cfg.get("facility_lab_effects", {}).get("facility_count", 6))
+        facility_idx = int(self.rng.integers(1, facility_count + 1))
         facility_id = f"FACILITY-NG-{facility_idx:02d}"
 
         lab_offsets: Dict[str, float] = {}
         lab_scales: Dict[str, float] = {}
-        for code in ANALYTE_REGISTRY:
-            # Typical inter-lab bias ±5% to ±12%
-            lab_offsets[code] = float(self.rng.normal(0.0, 0.06))
-            lab_scales[code] = float(self.rng.uniform(0.94, 1.06))
+        if facility_id in self.facility_lab_effects:
+            for code, (offset, scale) in self.facility_lab_effects[facility_id].items():
+                lab_offsets[code], lab_scales[code] = offset, scale
+        else:
+            # Legacy profile behavior, retained for historical experiment compatibility.
+            for code in ANALYTE_REGISTRY:
+                lab_offsets[code] = float(self.rng.normal(0.0, 0.06))
+                lab_scales[code] = float(self.rng.uniform(0.94, 1.06))
 
         # Baseline analyte levels (inter-individual variation CVg centered at reference midpoint)
         # In adjuvant surveillance, patients entering monitoring have completed primary treatment
@@ -636,7 +679,7 @@ class BaseCohortGenerator(ABC):
         symptoms: Dict[str, int],
         analytes: Dict[str, float],
         latent_state: LatentCompartmentState,
-    ) -> bool:
+    ) -> Tuple[bool, Optional[bool]]:
         """
         Partial verification mechanism (ML_PROGRAM §4.2, H-D):
         Imaging (CT/US/bone scan) is triggered primarily by:
@@ -672,13 +715,28 @@ class BaseCohortGenerator(ABC):
             + latent_state.b_brain
             + latent_state.b_loc
         )
-        if performed and pt.true_recurrence_event and total_burden >= 12.0:
-            if not pt.observed_recurrence_event:
+        verification = self.population_config.get("verification")
+        burden_threshold = (
+            float(verification["visible_burden_threshold"]) if verification else 12.0
+        )
+        visible_recurrence = pt.true_recurrence_event and total_burden >= burden_threshold
+        result: Optional[bool] = None
+        if performed:
+            if verification:
+                probability_positive = (
+                    float(verification["sensitivity"])
+                    if visible_recurrence
+                    else 1.0 - float(verification["specificity"])
+                )
+                result = bool(self.rng.random() < probability_positive)
+            else:
+                result = bool(visible_recurrence)
+            if result and pt.true_recurrence_event and not pt.observed_recurrence_event:
                 pt.observed_recurrence_event = True
                 pt.observed_recurrence_day = day
                 pt.observed_recurrence_site = pt.true_recurrence_site
 
-        return performed
+        return performed, result
 
     def generate_cohort(
         self,
@@ -735,7 +793,7 @@ class BaseCohortGenerator(ABC):
                 error_type = analyte_vals.pop("_preanalytical_error", None)
 
                 # Verification mechanism
-                imaging_done = self.evaluate_verification_mechanism(
+                imaging_done, imaging_result = self.evaluate_verification_mechanism(
                     pt, d, symptoms, analyte_vals, latent_st
                 )
 
@@ -750,6 +808,9 @@ class BaseCohortGenerator(ABC):
                     imaging_performed=imaging_done,
                     preanalytical_error=error_type,
                     is_synthetic=True,
+                    imaging_result=imaging_result,
+                    facility_id=pt.facility_id,
+                    treatment_active=latent_st.treatment_active,
                 )
                 observations.append(obs)
 
