@@ -9,9 +9,7 @@ from sqlalchemy.orm import Session
 from vigil_api.models.v2 import Observation, OcrDraft
 from vigil_api.ocr import render_synthetic_report
 
-TINY_PNG = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-)
+TINY_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
 
 def _pdf_body() -> dict:
@@ -204,3 +202,26 @@ def test_reject_does_not_create_an_observation(api_env):
     assert rejected.status_code == 200, rejected.text
     assert rejected.json()["status"] == "rejected"
     assert _obs_count(api_env, pid) == 0
+
+
+def test_unreadable_documents_become_empty_drafts_never_a_server_error(api_env):
+    """A corrupt/truncated PDF or an image mislabelled as a PDF must not crash the route (found by overseer review)."""
+    pid = api_env.create_patient("MRN-OCR-BAD")
+    before = _obs_count(api_env, pid)
+    bad_pdf = base64.b64encode(
+        b"%PDF-1.1\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF"
+    ).decode()
+    for name, ctype, payload in (
+        ("truncated.pdf", "application/pdf", bad_pdf),
+        ("png-as-pdf.pdf", "application/pdf", TINY_PNG),
+        ("junk.png", "image/png", base64.b64encode(b"not an image at all").decode()),
+    ):
+        res = api_env.client.post(
+            f"/api/v1/patients/{pid}/ocr-drafts",
+            json={"filename": name, "content_type": ctype, "content_base64": payload},
+            headers=api_env.headers("clinician"),
+        )
+        assert res.status_code in (201,), f"{name}: {res.status_code} {res.text[:200]}"
+        body = res.json()
+        assert body["status"] == "pending" and body["observation_id"] is None, name
+    assert _obs_count(api_env, pid) == before

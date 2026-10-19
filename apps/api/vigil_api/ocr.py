@@ -142,9 +142,7 @@ def parse_lab_text(text: str) -> ParsedSuggestion:
             definition.name.lower(),
             suggestion.analyte_code.replace("_", " "),
         ):
-            suggestion.flags.append(
-                ConfusionFlag("analyte_code", f"matched_alias:{matched_alias}")
-            )
+            suggestion.flags.append(ConfusionFlag("analyte_code", f"matched_alias:{matched_alias}"))
     else:
         suggestion.flags.append(ConfusionFlag("analyte_code", "unrecognised_analyte"))
 
@@ -183,8 +181,10 @@ def _first_unit_token(text: str, analyte_code: Optional[str]) -> Optional[str]:
         if key in UNIT_ALIASES:
             aliased = UNIT_ALIASES[key]
             if not supported or aliased.lower() in supported_folded or aliased in supported:
-                return aliased if aliased in supported else supported_folded.get(
-                    aliased.lower(), aliased
+                return (
+                    aliased
+                    if aliased in supported
+                    else supported_folded.get(aliased.lower(), aliased)
                 )
         if key in supported_folded:
             return supported_folded[key]
@@ -196,7 +196,12 @@ def extract_from_bytes(content: bytes, content_type: str) -> ExtractResult:
     digest = source_sha256(content)
     ctype = (content_type or "").split(";")[0].strip().lower()
     if ctype == "application/pdf":
-        text = _pdf_text(content)
+        try:
+            text = _pdf_text(content)
+        except (
+            Exception
+        ):  # corrupt, truncated or mislabelled file: still a draft, the human types the values
+            return _unreadable(digest, "pdf_unreadable")
         engine = "pdf_text"
         if not text.strip():
             engine = "pdf_no_text_layer"
@@ -213,11 +218,21 @@ def extract_from_bytes(content: bytes, content_type: str) -> ExtractResult:
                 suggestion=empty,
                 source_sha256=digest,
             )
-        text = _ocr_image(content)
+        try:
+            text = _ocr_image(content)
+        except Exception:  # corrupt or mislabelled image
+            return _unreadable(digest, "image_unreadable")
         return ExtractResult(
             engine="tesseract", text=text, suggestion=parse_lab_text(text), source_sha256=digest
         )
     raise ValueError(f"unsupported content type: {content_type}")
+
+
+def _unreadable(digest: str, engine: str) -> ExtractResult:
+    """A document the local extractors could not read: an empty draft flagged for the human, never a server error."""
+    empty = parse_lab_text("")
+    empty.flags.append(ConfusionFlag("document", "unreadable"))
+    return ExtractResult(engine=engine, text="", suggestion=empty, source_sha256=digest)
 
 
 def _pdf_text(content: bytes) -> str:
@@ -307,7 +322,11 @@ def render_pdf(plaintext: str) -> bytes:
             b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
             b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>"
         ),
-        b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream",
+        b"<< /Length "
+        + str(len(stream)).encode("ascii")
+        + b" >>\nstream\n"
+        + stream
+        + b"\nendstream",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>",
     ]
     out = bytearray(b"%PDF-1.4\n")
@@ -324,8 +343,7 @@ def render_pdf(plaintext: str) -> bytes:
         out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
     out.extend(
         (
-            f"trailer << /Size {len(objects) + 1} /Root 1 0 R >>\n"
-            f"startxref\n{xref_at}\n%%EOF\n"
+            f"trailer << /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_at}\n%%EOF\n"
         ).encode("ascii")
     )
     return bytes(out)
@@ -345,9 +363,7 @@ def render_synthetic_report(
         label = "CEA"
     else:
         label = definition.name
-    text = report_plaintext(
-        analyte_label=label, value=value, unit=unit, collected_on=collected_on
-    )
+    text = report_plaintext(analyte_label=label, value=value, unit=unit, collected_on=collected_on)
     return SyntheticReport(
         analyte_code=analyte_code,
         value=round(float(value), 1),
@@ -394,9 +410,7 @@ def speckle_noise(png_bytes: bytes, fraction: float = 0.005, seed: int = 0) -> b
     return buf.getvalue()
 
 
-def canonical_triple(
-    analyte_code: str, value: float, unit: str
-) -> Tuple[str, float, str]:
+def canonical_triple(analyte_code: str, value: float, unit: str) -> Tuple[str, float, str]:
     definition = ANALYTE_REGISTRY[analyte_code]
     unit_folded = unit
     if unit.lower() in UNIT_ALIASES:

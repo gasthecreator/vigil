@@ -88,6 +88,7 @@ def test_legacy_lab_endpoint_cannot_bypass_the_no_dismissal_pipeline(tmp_path):
     body = """
     H = {"X-Vigil-Role": "clinician"}
     pid = c.post("/api/v1/patients/", json={"age": 55, "status": "active"}, headers=H).json()["id"]
+    c.post(f"/api/v1/patients/{pid}/consent", json={"scope": "full", "granted": True}, headers=H)
     r = c.post(f"/api/v1/patients/{pid}/labs", json={"date_drawn": "2026-01-01T00:00:00", "alt_level": 30, "ast_level": 30,
                "creatinine": 1.0, "ca_15_3": 500.0, "wbc_count": 6}, headers={"X-Vigil-Role": "nurse_clerk"})
     print(json.dumps({"status": r.status_code, "obs": count("observations"), "alerts": count("alerts"), "tasks": count("follow_up_tasks"), "audit": count("audit_events")}))
