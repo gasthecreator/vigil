@@ -134,9 +134,12 @@ jobs:
           uv run bandit -r apps/api/vigil_api packages/vigil-core/vigil_core packages/vigil-eval/vigil_eval -ll
       - name: Semgrep (p/python)
         run: |
-          # setuptools≥82 dropped pkg_resources; otel instrumentation still imports it.
-          uv pip install 'setuptools>=70,<81' 'semgrep==1.110.0'
-          uv run semgrep scan --config p/python --error \
+          # Avoid `uv run` (it re-syncs the lockfile and restores setuptools≥82, which
+          # dropped pkg_resources needed by semgrep's otel instrumentation).
+          # Official image is hermetic and SHA-pinned via digest when practical; tag is OK here.
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep:1.110.0 \
+            semgrep scan --config p/python --error \
             --exclude='quarantine/**' --exclude='reports/**' --exclude='**/.venv/**' \
             apps/api packages/vigil-core packages/vigil-eval packages/vigil-ml
       - name: Trivy filesystem
