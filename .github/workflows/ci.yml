@@ -285,7 +285,7 @@ jobs:
       - name: Run Playwright E2E integration tests (Workstation & Companion)
         run: npm --workspace=@vigil/web run test:e2e
       - name: Enforce Lighthouse performance and accessibility budgets
-        run: node scripts/run_lighthouse.mjs
+        run: CHROME_PATH="$(node -p 'require("@playwright/test").chromium.executablePath()')" node scripts/run_lighthouse.mjs
 
   commit-messages:
     if: github.event_name == 'pull_request'
