@@ -3,7 +3,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Status: Research Prototype](https://img.shields.io/badge/Status-Research_Prototype-orange.svg)](docs/PROGRESS.md)
 [![Claims Policy: Enforced](https://img.shields.io/badge/Claims_Policy-Enforced-success.svg)](scripts/check_claims.py)
-[![Master Plan: v1.0](https://img.shields.io/badge/Master_Plan-v1.0_Canonical-purple.svg)](docs/MASTER_PLAN.md)
+[![Master Plan: v1.3](https://img.shields.io/badge/Master_Plan-v1.3_Canonical-purple.svg)](docs/MASTER_PLAN.md)
 
 > **MANDATORY CLINICAL DISCLAIMER:** Vigil is a research prototype and decision-support aid. It is **not** a medical device, does **not** diagnose or treat any condition, and must **not** replace the clinical judgement of a qualified healthcare professional. All risk estimates and metrics in current builds are derived from synthetic benchmark data and must be treated as research demonstrations. See [`docs/DISCLAIMER.md`](docs/DISCLAIMER.md) for full safety notices.
 

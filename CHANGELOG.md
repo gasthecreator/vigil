@@ -7,11 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Security
+## [1.0.0-rc.2] - 2026-10-19
+
+### Added
+- `scripts/generate_status.py` → `docs/STATUS.md` (ledger, OPEN hazards, open stubs, CI job names; no maturity claims); CI freshness `--check`.
+- `make demo` / `scripts/run_demo.py` with `docs/demo/OWNER-SCRIPT.md` (synthetic seeded walkthrough).
+- `docs/clinical/PARTNERSHIP/PARTNER-PACKET.md` (two-page claim-bounded partner summary).
+- `docs/HANDOVER.md` section D (H-201…H-213): partner outreach, ethics/DUA, sign-off before patients.
+- CI job `clean-clone-reproducibility` (hermetic re-run of `verify_study_reproducibility.py`).
+- Unsigned release hash manifest `docs/release/RELEASE_MANIFEST_v1.0.0-rc.2.json` (signing remains H-SIGN-1).
+
+### Changed
+- Honesty sweep: README Master Plan badge v1.3; cognitive walkthrough 2.2 no longer claims native-speaker validation; VALUE-PROPOSITION scoped to research / NO-GO pilot.
+- Default release id in `generate_release_manifest.py` is `v1.0.0-rc.2`.
+- Regenerated CycloneDX SBOMs under `reports/sbom/`.
+
+### Security (landed on main between rc.1 and rc.2)
 - Triage queue (`GET /patients/triage`) listed every patient regardless of consent; it now lists only patients with active consent (one batched query). Found by the overseer review of Tier 0; `tests/acceptance_p15`.
 - Web tier upgraded from `next@14.2.35` to `next@15.5.28` (production `npm audit` 1 critical/1 high -> 0); stale `apps/web/package-lock.json` removed; `postcss` pinned to a patched release by override; production `npm audit` is now a CI gate. e2e (26 tests) and Lighthouse budgets re-run green on the new version.
 
-### Added
+### Added (landed on main between rc.1 and rc.2)
 - M7 ships the explainable urgency ranking (`RadiotherapyScheduler.rank_urgency`); CP-SAT is opt-in research behind the `unvalidated in simulation` badge and an admin/operator gate (ADR-0019).
 - Research CP-SAT formulation and pre-registered study `experiments/EXP-M7-001/` (`scheduler_research.py`, `scripts/run_study_m7_cpsat_v2.py`).
 - Versioned audit-hash scheme with golden compatibility fixture generated from the pre-8b function (ADR-0020).

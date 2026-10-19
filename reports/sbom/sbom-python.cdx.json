@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:928c6684-fd8a-4c9f-ba27-4bb4c7de02e0",
+  "serialNumber": "urn:uuid:50876db5-d872-4ec3-afce-90b76f349884",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-18T04:37:08.643575+00:00",
+    "timestamp": "2026-10-19T02:35:34.381961+00:00",
     "tools": [
       {
         "vendor": "Vigil Security",
@@ -1043,6 +1043,32 @@
         {
           "alg": "SHA256",
           "content": "928ae7e20211f3b6f3915a72f06a0cfd29ab9d24279dd6346b6b1a7146397d36"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pypdf",
+      "version": "6.21.1",
+      "purl": "pkg:pypi/pypdf@6.21.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "2d62c383acd6e0dff0a96322ba8b1135229343b084d73c6f6cfd947fd291afcb"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytesseract",
+      "version": "0.3.13",
+      "purl": "pkg:pypi/pytesseract@0.3.13",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "4bf5f880c99406f52a3cfc2633e42d9dc67615e69d8a509d74867d3baddb5db9"
         }
       ]
     },

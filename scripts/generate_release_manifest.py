@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_RELEASE = "v1.0.0-rc.1"
+DEFAULT_RELEASE = "v1.0.0-rc.2"
 
 ARTIFACTS_TO_MANIFEST = [
     # Safety and Security
