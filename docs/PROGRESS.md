@@ -40,6 +40,7 @@
 | P16-4 | Gap close PR4: product (G-20 J8 governance, G-21 J6 ladder, G-22 companion/UI, G-23 content, G-24 usability) | SUBMITTED FOR REVIEW | `feat/p16-pr4-product-gaps` | [`docs/progress/P16-PR4-REPORT.md`](progress/P16-PR4-REPORT.md) | — |
 | P16-5 | Gap close PR5: decisions (G-27 translation review gate, G-28 SMART-on-FHIR deferral) | SUBMITTED FOR REVIEW | `feat/p16-pr5-decisions` | [`docs/progress/P16-PR5-REPORT.md`](progress/P16-PR5-REPORT.md) | — |
 | Q-6 | Core quality rerun: K2/S2 validity, K7 edge cases, K8 calibration/runtime | SUBMITTED FOR REVIEW | `codex/quality-rerun-core` | [`docs/audits/QUALITY-RERUN-2026-10.md`](audits/QUALITY-RERUN-2026-10.md) | — |
+| Q-7 | Core ML audit and corrected censor-aware tuning rerun; EXP-CORE-ML-003 (single G1) and EXP-CORE-ML-004 (five-seed G1/G2/G3 synthetic holdout) | IN PROGRESS | `codex/quality-rerun-core` | [`docs/audits/CORE-ML-RERUN-2026-10.md`](audits/CORE-ML-RERUN-2026-10.md), [`experiments/EXP-CORE-ML-004/REPORT.md`](../experiments/EXP-CORE-ML-004/REPORT.md) | Legacy AUC test gates remain unresolved; K1/K3 validity work and historical-study regeneration are open |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |
