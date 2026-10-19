@@ -1,0 +1,58 @@
+# Core ML data, fitting, and runtime entrypoint crosswalk — 2026-10
+
+> Q-7 working artifact for packages A, B, and F. This is a source-level crosswalk, not phase closure. Synthetic means synthetic. “Observed” and “oracle” identify different outcomes and must never share a claim. The executor owns source/data/output corrections; acceptance contracts and verdicts remain overseer-owned.
+
+## Canonical current censor-aware baseline path
+
+| Entry point | Data / label / fit path | Status |
+|---|---|---|
+| `experiments/EXP-CORE-ML-003/run.py::generate_cohort` | Simulated cohort → `WindowedFeatureExtractor.transform_cohort` → observed-diagnosis horizon labels and times/event codes → `patient_landmark_ipcw_weights` → train-only imputation/selection → one G1 synthetic evaluation. | Preregistered and source-logged; one generator only. Does not estimate latent recurrence under partial verification. |
+| `experiments/EXP-CORE-ML-004/run.py::generate_cohort` | G1/G2/G3 synthetic cohorts → same extractor → patient-grouped IPCW → validation-selected B3/B4 → patient-cluster bootstrap on registered held-out cohorts. | Current strongest baseline evidence within registered synthetic design; no real-site/clinical claim. |
+| `packages/vigil-ml/vigil_ml/features.py::WindowedFeatureExtractor.transform_cohort` | Consumes patient and observation tables; excludes post-landmark visits; creates one landmark row per eligible observation and censor-aware horizon label. | Current shared extractor; repeated landmarks still require patient-grouped splitting and inference of dependence. Older callers and external data schemas still need audit. |
+| `packages/vigil-eval/vigil_eval/metrics.py` | Censor-aware metrics with 0=censor, 1=recurrence, 2=competing event. | Metric unit tests pass; independent semantic/live checks and caller parity remain open. |
+
+## Simulator and training/evaluation sources
+
+| Source | Data / target actually used | Discrepancy and disposition |
+|---|---|---|
+| `packages/vigil-sim/vigil_sim/generators.py::CohortDataset.get_unleaked_training_examples` | Current-observation features and observed-label option; oracle is separately named. | Fixed unmeasured-value leakage, early-censor-as-negative, and latent recurrence after loss-to-follow-up defects. Regression tests cover these contracts. |
+| `packages/vigil-sim/vigil_sim/generators.py::generate_cohort` | Synthetic visits, assays, treatment, facilities, imaging propensity/result, and dynamic confirmed-diagnosis state. | K3 v2 profile and follow-up stop behavior are versioned and tested; EXP-CORE-ML-005/006 audit only declared simulator mechanics. Population realism and true clinical verification remain unvalidated. |
+| `experiments/EXP-K1-001..004/` and `vigil_ml/k1.py` | K1's private four-parameter marker toy simulator, separate from `vigil-sim`; posterior parameters are not a recurrence outcome. | EXP-K1-001..003 retracted; EXP-K1-004 frozen and transfer failed. Recurrence risk fails closed. K1 routes, training artifact lineage, simulator parity, and route claims remain open under D. |
+| `vigil_ml/k2.py`, `sequential_k2.py`, `reports/ml/S2_SEQUENTIAL/` | Sequential score / e-process implementation and historical S2 result. | S2 retracted; current patient-level Ville guarantee is not established. Audit all routes and score clipping/scale bounds before any claim. |
+| `packages/vigil-ml/vigil_ml/joint_model.py` / `experiments/EXP-K4-001/run.py` | K3 Bayesian class uses landmark rows and a hand-written likelihood; fast class is a logistic path. K4 sequences use `to_observations_dataframe` and the shared extractor for classical comparisons. | K3 model identity is invalid; card/aggregate report retracted. K4's registered synthetic study failed its kill criteria. No production claim. |
+| `experiments/EXP-K5-001/run.py` | Separate synthetic lab-generator/cohort; labels use lifetime `true_recurrence_event`; calibration detector is for laboratory residual streams. | Useful only for registered simulator-specific harmonisation estimand. Does not use the shared censor-aware cohort contract; reuse after simulator changes requires F/G review. |
+| `experiments/EXP-K6-001/run.py`, `vigil_ml/k6.py`, `k6_engine.py` | Custom synthetic decision world with cause-specific event-time machinery and policy evaluation. | Synthetic planner only; H3 failed. Verify its truth exclusion, censoring and serving boundaries before reuse. |
+| `experiments/EXP-M12-001/run.py` | Shared extractor for a site-level horizon task; feature arrays call `.fillna(0.0)` and align schemas with zeros. | AUC/task result is synthetic and comparator-dependent. Zero substitution may conflate unavailable and measured-zero inputs; preprocessing and privacy claims need F audit. |
+| `scripts/run_study_s7.py` / `vigil_ml/m3.py` | Diagnostic/rule checks use `true_recurrence_event` and `true_recurrence_day` as oracle labels. | Must remain explicitly oracle/synthetic diagnostic; not prospective prediction evidence. Confirm no user-facing route treats it as observed diagnosis. |
+| `vigil_ml/causal_k7.py` / S8 | Synthetic causal-estimator diagnostics. | Unmeasured-confounding cell remains biased; no target-trial emulation or causal effect claim. Reconcile current S8 result, report and card in F/G. |
+| `vigil_ml/k8.py`, `conformal_k8.py`, `ProductionEnsembleK8` | Conformal/OOD primitives plus a legacy handwritten ensemble-like score. | Conformal claims require calibration/exchangeability assumptions; handwritten score is not an ensemble and has fixed weights/formulas. Trace all default imports and prevent accidental promotion (F/H). |
+| `vigil_ml/organ_susceptibility.py`, M1 card | Literature-informed baseline prior / organ distribution. | Population-level citation does not establish individual patient probabilities, precision, or latency. Verify evidence mapping and route semantics; retain only supportable claims (F/G). |
+| `vigil_ml/m5.py`, generated fact table and `apps/api` explanation routes | Structured facts and template-based explanations. | Prior P4a verifier verdict rejected semantic grounding; current facts, semantic acceptance, unsupported clinician claims and routes need source-to-output review. |
+| `vigil_ml/m4_ladder.py` and `apps/api/vigil_api/api/endpoints/test_escalation.py` | Rule-based test ordering and escalation route. | It is a decision rule rather than trained ML, but its sensitivity/cost assumptions and route outputs affect model decisions; audit under product-engine scope and human-review safeguards. |
+| `scripts/run_benchmarks.py::run_study_s1/s3/s9` | S1 uses shared extractor but test-derived alert quantiles and stale outputs; S3 uses lifetime truth, unverified-as-negative, a hand-set sigmoid score, ignores imaging result, and only one cohort despite ten registered replicates; S9 old K3/rows are stale. | Aggregate runner now fails closed; S3, aggregate benchmark, and K3 card have visible retraction notices. Historical values remain untouched. S1/S9 result reconciliation is still open. |
+| `scripts/compare_leaky_vs_clean.py` | Explicit historical comparison with `legacy_leaky=True` and clean export. | Diagnostic only; ensure no downstream trainer/report consumes legacy-leaky features. |
+
+## Product and model runtime callsites
+
+| Entry point | Current behavior | Critical discrepancy / required action |
+|---|---|---|
+| `apps/api/vigil_api/ml/inference.py::VigilEngine.predict_risk` | Sums fixed marker/velocity/chemistry thresholds, fills absent values with constants, clips to `[0.05, 0.95]`, compares against an environment threshold, and emits “actionable alert” / “stable surveillance” prose. `is_quarantined=True` is metadata only; the method does not fail closed. | Hard-coded unvalidated risk is callable from API routes and can imply low score means continue routine follow-up. Trace all consumers and disable the score/text path before product use (F/H); retain safe non-diagnostic workflow. |
+| `apps/api/vigil_api/api/endpoints/patients.py` and `analytics.py` | Ingestion, hypothetical simulation, demo seeding, and cohort analytics call or consume `VigilEngine` risk outputs. | Exact routes include patients lab creation, hypothetical risk simulation, and analytics; API contract, persistence, demo/user safety and tests need coordinated repair, not just an inference-module guard. |
+| `packages/vigil-ml/vigil_ml/runtime.py::VigilProductionRuntime` | Missing path creates a fresh random `SurrogateInferenceNet` at `/tmp/vigil_model.onnx`; prediction attaches literal epistemic SD `0.04` and conformal tiers. | No trained artifact/provenance/calibration is required. A random model can emit risk output under “ProductionRuntime”; require explicit validated artifact metadata and uncertainty input, or quarantine/fail closed (F/H). |
+| `packages/vigil-ml/vigil_ml/conformal_k8.py::ProductionEnsembleK8` | Handwritten four-formula weighted score with literal weights; does not call the member models. | Already documented as deprecated/non-ensemble, but callable and publicly exported. No ensemble claim; route consumers and safe failure/rename remain to audit (F). |
+| `apps/api/vigil_api/ml/train_baseline.py`, `train_lstm.py` | Deprecated prototype scripts remain directly executable; baseline writes pickle, LSTM uses circular `is_anomaly` targets and a bidirectional network. | A deprecation comment does not prevent training or pickle artifacts. Quarantine execution and prove no runtime loader uses outputs; do not rehabilitate prototype data. |
+| `scripts/build_model_registry.py` / `vigil_ml/registry/model_registry.json` | Registry lists K4/K5/K6/M12 exportable research models and their result hashes. | It is not the complete model inventory and omits API heuristic, random ONNX fallback, K1/K2/K3/B0–B4, M1/M3/M5/K8 ensemble. Header says limited exportable artifacts; caller-facing maturity and runtime registrations need source audit. |
+
+## Claims and reports requiring result-to-producer tracing
+
+| Artifact | Producer / relevant source | Current treatment |
+|---|---|---|
+| `reports/ml/BENCHMARK_REPORT.md`, `reports/ml/results.json` | `scripts/run_benchmarks.py`; K3 and old S1/S3/S9 | Visible retraction banner; original numbers retained. Historical aggregate runner fails closed. |
+| `reports/ml/S1_SPARSITY/` | `scripts/run_benchmarks.py::run_study_s1` | Censoring, operating-threshold leakage, repeated-landmark split/weighting and narrative verdicts remain unresolved; never quote as current. |
+| `reports/ml/S3_VERIFICATION_BIAS/` | `scripts/run_benchmarks.py::run_study_s3` | Sidecar retraction documents source/protocol violations; original output preserved. |
+| `reports/ml/S9_CROSS_GENERATOR/` | `scripts/run_benchmarks.py::run_study_s9` | Reconcile each row to current generator and source; K4 stub row already removed, other content remains historical pending package G. |
+| `docs/models/`, `docs/model_cards/`, `docs/STUBS.md`, `docs/PROGRESS.md` | model/study producers and overseer verdicts | K3 and aggregate claims visibly retracted; other card/result pairs must be audited without editing overseer-owned verdicts or maturity. |
+
+## Closure state
+
+This crosswalk is not complete for every prompt/model/test. Immediate open work includes B's audit of every historical training/evaluation and serving path; C's fixed gates and overseer proposal disposition; D/E's K1/K3 validity and registrations; F/G's full model/card/result mapping; H's clean reproduction and safe artifact/runtime contracts; and I's human-dependent data access and readiness boundary. Do not advance the phase based on this document alone.
