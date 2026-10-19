@@ -41,6 +41,26 @@ ENTRIES = [
         },
         "model_card": "docs/model_cards/MODEL-CARD-K5.md",
     },
+    {
+        "id": "K4",
+        "name": "Deep irregular-time risk models (GRU-D, GRU-ODE-Bayes, Neural CDE, continuous-time transformer, GRUwE, state-space) with masked-analyte pre-training code",
+        "module": "packages/vigil-ml/vigil_ml/k4.py",
+        "maturity": "L0",
+        "status": "research; claim not earned (pre-registered kill rules H1, H2 fired and scale does not help, ADR-0025); no pre-trained checkpoint exported or registered; not wired to any pipeline or ensemble",
+        "data": "synthetic only",
+        "formats": {"safetensors": "format vigil-k4-v1, JSON metadata, no pickle", "onnx": "opset 17, dynamic batch, probabilities"},
+        "parity_tests": [
+            "packages/vigil-ml/tests/test_k4.py::test_safetensors_round_trip_and_onnx_parity",
+            "packages/vigil-ml/tests/test_k4.py::test_causality_later_visits_never_change_earlier_outputs",
+            "packages/vigil-ml/tests/test_k4.py::test_each_family_learns_a_planted_signal_and_not_shuffled_labels",
+        ],
+        "study": {
+            "prereg": "experiments/EXP-K4-001/PREREG.md",
+            "result_file": "experiments/EXP-K4-001/results.json",
+            "conclusion": "experiments/EXP-K4-001/CONCLUSION.md",
+        },
+        "model_card": "docs/model_cards/MODEL-CARD-K4.md",
+    },
 ]
 
 

@@ -27,7 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - K5 laboratory harmonisation rebuilt as a tested estimator (`vigil_ml.k5`, REML partial pooling, safetensors and ONNX export with parity tests), multi-laboratory simulator layer (`vigil_sim.multilab`) and pre-registered study `experiments/EXP-K5-001/`: the pre-registered criterion failed and K5 is not claimed to help (ADR-0024).
 
+- K4 deep irregular-time risk models rebuilt as six tested families (`vigil_ml.k4`: GRU-D, GRU-ODE-Bayes encoder, Neural CDE, continuous-time transformer, GRUwE, state-space; masked-analyte pre-training code; safetensors and ONNX export with parity tests) and pre-registered study `experiments/EXP-K4-001/`: all three kill rules fired (pre-training lowered AUC; no deep family beat the strongest classical baseline; scale does not help), so K4 is not claimed to help (ADR-0025). Stub S-016 records the hand-written `ProductionEnsembleK8`.
+
 ### Changed
+- Old study S4 and the `DeepZooK4` stub retracted (literal dictionaries; hand-written formula scored as `K4_DeepZoo` in S9); the S9 row is removed and disclosed; K4 model card rewritten without retracted numbers (ADR-0025).
 - Old study S5 retracted (hand-subtracted offset, literal 34.2) and moved to `reports/ml/RETRACTED/S5_HARMONISATION_V1/`; K5 model card rewritten.
 - `ObservationCreateResponse.risk_assessment` is optional and `outputs_withheld` was added (silent mode); `docs/api/openapi.json` regenerated.
 - Patient, caregiver and quality-lead tokens can no longer register patients or submit baselines and labs; caregivers can no longer mint shares (behaviour change, see ADR-0023).

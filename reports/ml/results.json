@@ -605,22 +605,6 @@
         "delta_ece": -0.0013
       }
     },
-    "K4_DeepZoo": {
-      "in_distribution": {
-        "auc": 0.6038,
-        "brier": 0.2,
-        "ece": 0.1484
-      },
-      "g3_stress": {
-        "auc": 0.6637,
-        "brier": 0.2225,
-        "ece": 0.1171
-      },
-      "degradation": {
-        "delta_auc": -0.0599,
-        "delta_ece": -0.0313
-      }
-    },
     "K8_ProductionEnsemble": {
       "in_distribution": {
         "auc": 0.6145,

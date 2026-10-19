@@ -65,7 +65,6 @@ from vigil_ml.baselines import (
     VelocityBaseline,
 )
 from vigil_ml.conformal_k8 import ProductionEnsembleK8
-from vigil_ml.deep_zoo_k4 import DeepZooK4
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_ml.k1 import HybridKineticModelK1, K1Observations
@@ -565,54 +564,10 @@ def render_s2_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s4(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    """Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."""
+    """Old S4 retracted (reports/ml/RETRACTED/README.md). Replaced by experiments/EXP-K4-001/run.py."""
     raise NotImplementedError(
-        "Study S4 retracted per Overseer Verdict P3. Deferred to Phase 3C (see docs/STUBS.md S-004)."
+        "Old S4 retracted: see reports/ml/RETRACTED/README.md. Run experiments/EXP-K4-001/run.py instead."
     )
-
-
-def render_s4_markdown(results: Dict[str, Any], path: Path) -> None:
-    sizes = results["sample_sizes"]
-    wo = results["without_pretraining_auc"]
-    w = results["with_pretraining_auc"]
-    scale = results["scaling_study"]
-    lines = [
-        "# Study S4 Report: Deep Zoo Pre-Training and Scaling Analysis",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S4_PRETRAINING_SCALING  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Label Efficiency):** CONFIRMED. Self-supervised pre-training improved IPCW ROC-AUC at N=50 from {wo[0]:.3f} to {w[0]:.3f} (+{w[0] - wo[0]:.3f} gain).",
-        f"- **H2 (Convergence at Scale):** CONFIRMED. At N=1,000 labeled patients, the gap contracted to {w[-1] - wo[-1]:.3f} AUC, confirming diminishing returns of pre-training in data-rich regimes.",
-        "- **H3 (Diminishing Returns of Model Scale):** CONFIRMED. Medium architecture (64 hidden dim, ~85k params) dominates the compute-accuracy frontier. Large scale (128 hidden) yields negligible gain (+0.002 AUC at N=1000) while nearly tripling inference latency.",
-        "",
-        "## 2. Label-Efficiency Learning Curves",
-        "",
-        "| Sample Size (N) | Supervised From Scratch AUC | Pre-Trained AUC | Delta AUC Gain |",
-        "|---|---|---|---|",
-    ]
-    for n, auc_wo, auc_w in zip(sizes, wo, w):
-        lines.append(f"| N={n} | {auc_wo:.4f} | {auc_w:.4f} | **{auc_w - auc_wo:+.4f}** |")
-    lines.extend(
-        [
-            "",
-            "## 3. Parameter Scaling & Latency Trade-Off",
-            "",
-            "| Architecture Scale | Parameters | Latency (CPU ms) | AUC (N=100) | AUC (N=1,000) | Selected |",
-            "|---|---|---|---|---|---|",
-            f"| `Small (32 hidden)` | {scale['small_32']['params']:,} | {scale['small_32']['latency_ms']:.1f} ms | {scale['small_32']['auc_n100']:.4f} | {scale['small_32']['auc_n1000']:.4f} | No |",
-            f"| `Medium (64 hidden)` | {scale['medium_64']['params']:,} | {scale['medium_64']['latency_ms']:.1f} ms | {scale['medium_64']['auc_n100']:.4f} | {scale['medium_64']['auc_n1000']:.4f} | **YES (Pareto Optimal)** |",
-            f"| `Large (128 hidden)` | {scale['large_128']['params']:,} | {scale['large_128']['latency_ms']:.1f} ms | {scale['large_128']['auc_n100']:.4f} | {scale['large_128']['auc_n1000']:.4f} | No (Compute Inefficient) |",
-            "",
-            "## 4. Decision Record",
-            "- **Deploy Medium GRU-D / CT-Transformer with Pre-Training:** Pre-training is retained for low-resource deployments where clinical labeled cohorts are small.",
-        ]
-    )
-    path.write_text("\n".join(lines))
 
 
 def run_study_s5(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
@@ -784,7 +739,6 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
         "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
         "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
-        "K4_DeepZoo": DeepZooK4(architecture="grud", hidden_dim=64),
         "K8_ProductionEnsemble": ProductionEnsembleK8(),
     }
 
@@ -995,7 +949,7 @@ def render_master_benchmark_report(
             "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
-            "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3 and deferred to sub-phases 3C and 3D.",
+            "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3. S4 and S5 were re-established as `experiments/EXP-K4-001/` and `experiments/EXP-K5-001/` (both failed their pre-registered criteria; see their `CONCLUSION.md`); S6 and S10 remain deferred.",
         ]
     )
 
@@ -1031,7 +985,7 @@ def main() -> int:
     # 3. Run Study S3 (Verification Bias)
     s3_results = run_study_s3(audit_logger)
 
-    # 4. Study S5 (Lab Harmonisation) is run by experiments/EXP-K5-001/run.py, not here (old S5 retracted)
+    # 4. Studies S4 and S5 are run by experiments/EXP-K4-001/run.py and experiments/EXP-K5-001/run.py, not here (old S4 and S5 retracted)
 
     # 5. Run Study S9 (Cross-Generator Robustness)
     s9_results = run_study_s9(audit_logger)

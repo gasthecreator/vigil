@@ -20,9 +20,13 @@
 | `B4_GradientBoosting` | 0.6888 | 0.7366 | **-0.0478** | 0.0578 | 0.0634 |
 | `K3_JointModel` | 0.6665 | 0.7823 | **-0.1157** | 0.0630 | 0.0503 |
 | `K1_Kinetic` | 0.5354 | 0.5642 | **-0.0288** | 0.0595 | 0.0581 |
-| `K4_DeepZoo` | 0.6038 | 0.6637 | **-0.0599** | 0.1484 | 0.1171 |
 | `K8_ProductionEnsemble` | 0.6145 | 0.6556 | **-0.0411** | 0.1315 | 0.1215 |
 
 ## 3. Decision Record & Sim-to-Real Implications
 - Raw uncalibrated decision trees are sensitive to inter-lab assay offsets (+-12%).
 - In Phase 3 and Phase 4, Model M3 (Plausibility Adjudicator) and K5 (inter-lab harmonisation) are required to filter pre-analytical noise before scoring.
+
+## 4. Corrections (Tier 2, ADR-0025)
+- The row `K4_DeepZoo` that earlier versions of this report carried was **removed**: that model's `fit` learned nothing and its `predict_risk` was a hand-written formula, so the row measured no trained model. The real K4 families are evaluated in `experiments/EXP-K4-001/`. The removal was made by deleting the key and the row (the benchmark runner was not re-run); every other row is unchanged.
+- `K8_ProductionEnsemble` is likewise a hand-written weighted formula of four logistic expressions, not a trained ensemble (stub S-016 in `docs/STUBS.md`). Its row is kept only so that nothing disappears silently; it is not evidence about any ensemble.
+

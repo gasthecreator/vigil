@@ -50,3 +50,4 @@ playwright-report/
 *.db-shm
 *.db-wal
 data/external/
+experiments/EXP-K4-001/_work/

@@ -13,7 +13,7 @@ Per Overseer Condition R1, these studies have been moved here and withdrawn from
 
 | Study ID | Title | Reason for Retraction | Rescheduling | Stub ID in `docs/STUBS.md` |
 |---|---|---|---|---|
-| **S4** | Deep Zoo Pre-Training & Scaling | Pre-training and scaling curves returned hard-coded literal dictionaries; K4 fit learned nothing. | Sub-phase 3C | S-004 |
+| **S4** | Deep Zoo Pre-Training & Scaling | Pre-training and scaling curves returned hard-coded literal dictionaries; K4 fit learned nothing. The stub model `DeepZooK4`, scored as `K4_DeepZoo` in S9, was a hand-written formula; its S9 row was removed too (ADR-0025). | Re-established as `experiments/EXP-K4-001/` (Tier 2); all three pre-registered kill rules fired | S-004 |
 | **S5 (v1)** | Multi-Site Lab Harmonisation (old K5) | The "harmonised" arm subtracted the injected offset by hand (`harm_obs = raw_obs - 5.5`) and the new-site Brier reduction was the literal `34.2`. Found by the executor while preparing K5. Directory: `S5_HARMONISATION_V1/`. | Re-established as `experiments/EXP-K5-001/` (Tier 2) | S-009 |
 | **S6** | Active Sensing & Adaptive Scheduling | Latency, visit counts, and dollar costs were hard-coded literals. | Sub-phase 3D | S-005 |
 | **S10** | Multi-Site Synthetic Trial & Federated Learning (M12) | Per-site AUCs and federated utility numbers were hard-coded literals. | Sub-phase 3D | S-006 |
