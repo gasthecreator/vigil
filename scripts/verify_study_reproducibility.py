@@ -160,6 +160,37 @@ def _close(a, b, tol: float = 1e-6) -> bool:
     return d is None
 
 
+def verify_m12_study() -> bool:
+    print("🔬 Verifying EXP-M12-001 (M12 FedAvg/DP-SGD) against committed results...")
+    import importlib.util
+
+    exp = ROOT / "experiments" / "EXP-M12-001"
+    stored = json.loads((exp / "results.json").read_text())
+    spec = importlib.util.spec_from_file_location("exp_m12_run_verify", exp / "run.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp_m12_run_verify"] = mod
+    spec.loader.exec_module(mod)
+    fresh = json.loads(json.dumps(mod.replication(("frozen", 0, False))))
+    stored0 = json.loads(json.dumps(stored["replications"][0]))
+    fresh.pop("wall_s", None)
+    stored0.pop("wall_s", None)
+    if not _close(fresh, stored0):
+        print("❌ EXP-M12-001: frozen replication 0 does not reproduce results.json.")
+        return False
+    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-6; wall_s excluded).")
+    agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
+    if not _close(agg, stored["aggregate"]):
+        print("❌ EXP-M12-001: aggregate does not equal a fresh derivation from the stored replications.")
+        return False
+    print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored replications.")
+    report = mod.render_report(stored, float(stored.get("elapsed_s") or 0.0))
+    if report != (exp / "REPORT.md").read_text():
+        print("❌ EXP-M12-001: REPORT.md is not the render of results.json.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of results.json.")
+    return True
+
+
 def verify_k5_study() -> bool:
     print("🔬 Verifying EXP-K5-001 (K5 lab harmonisation) against committed results...")
     import importlib.util
@@ -306,6 +337,8 @@ def main() -> int:
     if not verify_k4_study():
         ok = False
     if not verify_k6_study():
+        ok = False
+    if not verify_m12_study():
         ok = False
     if not verify_k5_study():
         ok = False

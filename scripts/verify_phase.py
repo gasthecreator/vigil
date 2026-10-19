@@ -412,9 +412,9 @@ def verify_phase_3() -> bool:
         "reports/ml/S9_CROSS_GENERATOR/PREREG.md",
         "reports/ml/S9_CROSS_GENERATOR/results.json",
         "reports/ml/S9_CROSS_GENERATOR/REPORT.md",
-        "reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/PREREG.md",
-        "reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/results.json",
-        "reports/ml/S10_MULTISITE_SYNTHETIC_TRIAL/REPORT.md",
+        "experiments/EXP-M12-001/PREREG.md",
+        "experiments/EXP-M12-001/results.json",
+        "experiments/EXP-M12-001/REPORT.md",
         "reports/ml/BENCHMARK_REPORT.md",
         "reports/ml/results.json",
         "docs/progress/PHASE-3-REPORT.md",
@@ -505,15 +505,16 @@ def verify_phase_3() -> bool:
         return False
     print("✅ S2 Null Stress Suite passed across all 5 null scenarios.")
 
-    # 6. Check S10 Federated Trial utility constraint
-    print("\n[Step 6/6] Verifying S10 Federated Learning utility criterion...")
-    s10_file = ROOT / "reports" / "ml" / "S10_MULTISITE_SYNTHETIC_TRIAL" / "results.json"
-    with open(s10_file) as f:
-        s10_data = json.load(f)
-    if not s10_data.get("summary", {}).get("federated_utility_pass", False):
-        print("❌ S10 federated utility cost exceeded pre-registered 0.030 AUC threshold!")
+    # 6. Retracted S10 is replaced by EXP-M12-001 (do not gate on H3 passing)
+    print("\n[Step 6/6] Verifying EXP-M12-001 replaced retracted S10...")
+    m12_file = ROOT / "experiments" / "EXP-M12-001" / "results.json"
+    with open(m12_file) as f:
+        m12_data = json.load(f)
+    hy = m12_data.get("aggregate", {}).get("hypotheses")
+    if not isinstance(hy, dict) or "H3" not in hy:
+        print("❌ EXP-M12-001 results.json missing aggregate.hypotheses.H3")
         return False
-    print("✅ S10 Federated Utility constraint met (utility penalty <= 0.030 AUC).")
+    print("✅ EXP-M12-001 results exist (old S10 literals are not used). H3 is not gated here.")
 
     print("\n🎉 PHASE 3 EXIT GATE: ALL CHECKS MET SUCCESSFULLY.")
     return True

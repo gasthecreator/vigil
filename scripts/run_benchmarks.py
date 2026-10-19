@@ -585,53 +585,17 @@ def run_study_s6(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def run_study_s10(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    """Study S10 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-006)."""
+    """Old S10 retracted (reports/ml/RETRACTED/README.md). Replaced by experiments/EXP-M12-001/run.py."""
     raise NotImplementedError(
-        "Study S10 retracted per Overseer Verdict P3. Deferred to Phase 3D (see docs/STUBS.md S-006)."
+        "Old S10 retracted: see reports/ml/RETRACTED/README.md. Run experiments/EXP-M12-001/run.py instead."
     )
 
 
 def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
-    sites = results["sites"]
-    summ = results["summary"]
-    lines = [
-        "# Study S10 Report: Multi-Site Synthetic Trial & Federated Learning Feasibility (M12)",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC MULTI-SITE DATA**. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S10_MULTISITE_SYNTHETIC_TRIAL  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Local Silo Failure):** CONFIRMED. Low-volume under-resourced centers suffered severe discrimination drops when trained strictly on local data (Site C Rural Mission: {sites['Site_C_Rural_Mission']['local_auc']:.3f} AUC; Site E Community: {sites['Site_E_Community_Outreach']['local_auc']:.3f} AUC).",
-        f"- **H2 (Federated Parity):** CONFIRMED. M12 Federated Partial Pooling matched Centralized Pooling within a tiny utility delta of {summ['utility_drop_delta_auc']:.4f} AUC (well below the pre-registered <= 0.030 threshold).",
-        f"- **H3 (Equity Boost):** CONFIRMED. Participating in the federated consortium delivered an equity boost of +{summ['rural_site_c_equity_gain']:.3f} AUC to Site C and +{summ['community_site_e_equity_gain']:.3f} AUC to Site E.",
-        "",
-        "## 2. Multi-Site Consortium Benchmark",
-        "",
-        "| Clinic Archetype | Patients (N) | Local-Only AUC | Centralized Pooling AUC | M12 Federated AUC | Federated vs Local Gain |",
-        "|---|---|---|---|---|---|",
-    ]
-    for s_name, s_dat in sites.items():
-        clean_name = s_name.replace("_", " ")
-        gain = s_dat["federated_auc"] - s_dat["local_auc"]
-        lines.append(
-            f"| `{clean_name}` | {s_dat['n_patients']:,} | {s_dat['local_auc']:.4f} | {s_dat['centralized_auc']:.4f} | {s_dat['federated_auc']:.4f} | **+{gain:+.4f}** |"
-        )
-    lines.extend(
-        [
-            "",
-            "## 3. Consortium Summary Metrics",
-            f"- **Mean Centralized AUC:** {summ['mean_centralized_auc']:.4f}",
-            f"- **Mean Federated AUC:** {summ['mean_federated_auc']:.4f}",
-            rf"- **Utility Penalty ($\Delta$ AUC):** {summ['utility_drop_delta_auc']:.4f} (Threshold: $\le 0.030$ -> **PASSED**)",
-            "",
-            "## 4. Decision Record",
-            "- **Approve M12 Federated Training Architecture:** Federated empirical Bayes training preserves privacy while lifting under-resourced hospital performance to near-tertiary accuracy.",
-        ]
+    """Old S10 retracted. Does not write CONFIRMED. See experiments/EXP-M12-001/."""
+    raise NotImplementedError(
+        "Old S10 retracted: see reports/ml/RETRACTED/README.md. Run experiments/EXP-M12-001/run.py instead."
     )
-    path.write_text("\n".join(lines))
 
 
 def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
@@ -917,7 +881,7 @@ def render_master_benchmark_report(
             "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
-            "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3. S4, S5 and S6 were re-established as `experiments/EXP-K4-001/`, `experiments/EXP-K5-001/` and `experiments/EXP-K6-001/` (K4 and K5 failed their pre-registered criteria; K6 H1 and H2 met in simulation, H3 not met; suggestion-only, nothing clinical); S10 remains deferred.",
+            "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3. S4, S5, S6 and S10 were re-established as `experiments/EXP-K4-001/`, `experiments/EXP-K5-001/`, `experiments/EXP-K6-001/` and `experiments/EXP-M12-001/` (K4 and K5 failed their pre-registered criteria; K6 H1 and H2 met in simulation, H3 not met; M12 H3 met on this MLP, H2 not met, not wired; suggestion-only / research-only, nothing clinical).",
         ]
     )
 
