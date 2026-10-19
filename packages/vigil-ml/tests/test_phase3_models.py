@@ -13,7 +13,6 @@ Comprehensive test suite for Phase 3 ML deliverables:
 from __future__ import annotations
 
 import numpy as np
-import pytest
 import torch
 from vigil_ml.conformal_k8 import AbstentionReason, ConformalRiskControllerK8
 from vigil_ml.export import (
