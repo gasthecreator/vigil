@@ -8,7 +8,7 @@ Organised by who is reading and why. `docs/MASTER_PLAN.md` is the single canonic
 - [`EVIDENCE.md`](EVIDENCE.md) and [`evidence/`](evidence/) (what is known vs. only claimed), [`REALITY_RULES.md`](REALITY_RULES.md), [`STUBS.md`](STUBS.md)
 
 ## I want the current state and open work
-- [`PROGRESS.md`](PROGRESS.md) (phase ledger; verdict and maturity columns are overseer-owned), [`progress/`](progress/) (phase reports and verdicts), `docs/STATUS.md` once generated (not yet present on this branch)
+- [`PROGRESS.md`](PROGRESS.md) (phase ledger; verdict and maturity columns are overseer-owned), [`progress/`](progress/) (phase reports and verdicts), [`STATUS.md`](STATUS.md) (script-generated from ledger/hazards/stubs/CI; no maturity claims)
 - [`HANDOVER.md`](HANDOVER.md) (what only a human can do)
 - [`audits/`](audits/) (repo-standards audits; `REPO-AUDIT-P15.md` is script-written)
 

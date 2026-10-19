@@ -11,18 +11,20 @@
 
 Teaching hospitals and tertiary cancer centers in Nigeria face immense clinical headwinds: severe oncology staff shortages, overcrowded clinics, diagnostic imaging backlogs, and patients bearing 100% of diagnostic costs out-of-pocket. 
 
-The **Vigil Precision Oncology Initiative** partners with academic hospitals to transform routine, affordable outpatient laboratory blood tests into an intelligent early warning radar for metastatic breast cancer recurrence. 
+The **Vigil Precision Oncology Initiative** partners with academic hospitals to study whether routine outpatient laboratory blood tests can support earlier recognition of metastatic breast cancer recurrence — as a **research and quality-audit** collaboration, not as a cleared medical device.
 
-In exchange for collaborating on an ethically approved, de-identified retrospective chart review, Vigil delivers **four tangible institutional benefits at zero financial cost**:
+In exchange for collaborating on an ethically approved, de-identified retrospective chart review, Vigil offers **four institutional workstreams at no software licence fee** (subject to ethics, DUA, and the claim boundaries in [`PARTNER-PACKET.md`](PARTNER-PACKET.md)):
 
 ```
 +---------------------------------------------------------------------------------+
-|                        WHAT VIGIL DELIVERS TO YOUR HOSPITAL                     |
+|              WHAT VIGIL CAN OFFER YOUR HOSPITAL (RESEARCH SCOPE)                |
 +---------------------------------------------------------------------------------+
-|  1. The Missed-Signal Audit (M10)      | Confidential clinical quality report   |
-|  2. Laboratory QC & RCV Calibration    | Reference Change Value analysis for LIS|
-|  3. Global Academic Co-Authorship      | High-impact oncology publications      |
-|  4. Free Clinical Decision Support     | Open-access deployment for local clinics|
+|  1. The Missed-Signal Audit (M10)      | Confidential quality report on *your*  |
+|                                        | extract (method verified on synthetic) |
+|  2. Laboratory QC & RCV discussion     | RCV / delta-check support for pathology|
+|  3. Academic Co-Authorship             | Shared manuscripts if a study completes|
+|  4. Decision-support software (later)  | Only after real-data validation +      |
+|                                        | pilot go/no-go (today: NO-GO / L0)      |
 +---------------------------------------------------------------------------------+
 ```
 
@@ -57,17 +59,17 @@ As part of the study, Vigil’s chemical pathology engineering team:
 ## 4. Academic Publication & Global Scientific Eminence
 
 * **Equitable Authorship:** Collaborating clinical oncologists, chemical pathologists, surgical oncologists, and health records specialists from your institution will serve as primary co-investigators and co-authors on all peer-reviewed manuscripts.
-* **Target High-Impact Venues:** Manuscripts will be submitted to leading clinical oncology and health informatics journals (*Lancet Oncology*, *JCO Global Oncology*, *BMC Cancer*, *Journal of Health Informatics in Africa*).
-* **Groundbreaking Data Leadership:** This study establishes the first comprehensive, multi-year longitudinal oncology biomarker cohort in West Africa, positioning your institution at the forefront of global cancer surveillance research.
+* **Target venues (aspirational):** If results warrant, manuscripts may be submitted to clinical oncology and health informatics journals (examples only: *JCO Global Oncology*, *BMC Cancer*, *Journal of Health Informatics in Africa*). Venue acceptance is not promised.
+* **Regional data contribution:** A consented, de-identified longitudinal biomarker cohort from your institution would be a valuable West African research resource; “first” or “groundbreaking” status is not claimed here.
 
 ---
 
-## 5. Decision-Support Platform Deployment & Training
+## 5. Decision-Support Platform Deployment & Training (conditional)
 
-Following retrospective validation:
-* Your oncology clinics will receive priority access to deploy the **Vigil Clinical Decision-Support System** in a prospective silent-mode or decision-aid setting.
-* Fully compliant with local privacy laws and operable on local offline hospital hardware (zero mandatory cloud dependency).
-* Clinical training and capacity-building workshops conducted for oncology resident doctors and clinical nurse specialists on longitudinal surveillance interpretation.
+Only **after** retrospective real-data analysis under a frozen pre-registration, ethics approval, and an explicit pilot go/no-go (today the kit answers **NO-GO**; maturity L0):
+* Clinics may be offered a **silent-mode** or decision-aid deployment of the research software (`docs/clinical/SILENT-MODE.md`), not an unsupervised care system.
+* The stack is designed for on-premises hospital hardware (no mandatory cloud); NDPR/DPIA compliance still requires site legal review.
+* Training materials exist as drafts in `docs/clinical/PILOT/`; competency recording is a human action (H-107).
 
 ---
 

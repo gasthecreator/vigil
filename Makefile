@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce-ml api-dev web-dev clean
+.PHONY: help setup fmt lint test verify-phase reproduce-ml api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= /Users/gsanni/.local/bin/uv
@@ -17,6 +17,8 @@ help:
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
 	@echo "make web-dev            Run Next.js clinician workstation"
+	@echo "make demo               Seed synthetic DB + API + web (owner script in docs/demo/)"
+	@echo "make status             Regenerate docs/STATUS.md from ledger/hazards/stubs/CI"
 	@echo "make clean              Remove build artifacts, caches, and test state"
 
 setup:
@@ -63,6 +65,13 @@ api-dev:
 
 web-dev:
 	npm --prefix apps/web run dev
+
+demo:
+	@echo "==> Synthetic demo (research prototype; synthetic=true on all seed rows)"
+	$(UV) run python scripts/run_demo.py
+
+status:
+	$(UV) run python scripts/generate_status.py
 
 clean:
 	rm -rf .pytest_cache .ruff_cache dist build *.egg-info
