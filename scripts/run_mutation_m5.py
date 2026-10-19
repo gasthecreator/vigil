@@ -67,9 +67,7 @@ def main() -> int:
     # Parse crude stats from results output when available
     kill_percent = None
     text = results.stdout + "\n" + res.stdout
-    # mutmut 2.x prints "Killed X out of Y"
-    import re
-
+    # mutmut 2.x prints no kill summary; read its cache DB instead.
     counts = _cache_counts(ROOT / "packages" / "vigil-ml" / ".mutmut-cache")
     killed = counts.get("ok_killed", 0) + counts.get("ok_timeout", 0)
     total = sum(counts.values())
