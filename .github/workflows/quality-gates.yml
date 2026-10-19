@@ -143,13 +143,15 @@ jobs:
             --exclude='quarantine/**' --exclude='reports/**' --exclude='**/.venv/**' \
             apps/api packages/vigil-core packages/vigil-eval packages/vigil-ml
       - name: Trivy filesystem
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          ignore-unfixed: true
+        run: |
+          # Docker image avoids aquasecurity/trivy-action's flaky GitHub install script.
+          docker run --rm -v "$PWD:/src" -w /src \
+            aquasec/trivy:0.65.0 \
+            fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed \
+            --skip-dirs .venv --skip-dirs node_modules --skip-dirs .git \
+            --skip-dirs trivy \
+            .
+
       - name: Licence allowlist
         run: uv run python scripts/check_licences.py
       - name: Seeded failure — licence gate

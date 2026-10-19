@@ -45,10 +45,8 @@ jobs:
       - name: Build API image
         run: docker build -f infra/Dockerfile.api -t vigil-api:ci .
       - name: Trivy image (API)
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-        with:
-          scan-type: image
-          image-ref: vigil-api:ci
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          ignore-unfixed: true
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 \
+            image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed \
+            vigil-api:ci
