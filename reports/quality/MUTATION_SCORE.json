@@ -3,17 +3,18 @@
   "tool": "mutmut 2.x",
   "status": "ran",
   "target_kill_percent": 80.0,
-  "kill_percent": 43.9,
+  "kill_percent": 87.2,
   "mutant_counts": {
-    "bad_survived": 213,
-    "ok_killed": 167
+    "bad_survived": 44,
+    "ok_killed": 326,
+    "ok_suspicious": 4
   },
-  "meets_target": false,
-  "honest_note": "Local run 2026-10-19 (test file tests/test_m3_m5.py only). Target NOT met: 213 of 380 mutants survived. Do not cite as meeting the plan target; improving m5 tests is open work.",
-  "generated_at": "2026-10-19T07:24:12.075349+00:00",
+  "meets_target": true,
+  "honest_note": "Local run 2026-10-19 with tests/test_m3_m5.py + tests/test_m5_golden.py. Earlier run (m3_m5 only) was 43.9%. Survivors are mostly equivalent mutants (e.g. `val <= 1.0` vs `< 1.0` both render 1.0 as 100%; unreachable 'No valid sentences' branch; journey inputs whose change leaves outputs identical) plus 4 'suspicious'; none were hidden.",
+  "generated_at": "2026-10-19T14:43:05.181536+00:00",
   "machine": {
     "platform": "macOS-26.6.2-arm64-arm-64bit",
     "python": "3.12.15"
   },
-  "command": "cd packages/vigil-ml && mutmut run --paths-to-mutate=vigil_ml/m5.py --tests-dir=tests --runner 'python -m pytest tests/test_m3_m5.py -q --tb=no -x'"
+  "command": "cd packages/vigil-ml && mutmut run --paths-to-mutate=vigil_ml/m5.py --tests-dir=tests --runner 'python -m pytest tests/test_m3_m5.py tests/test_m5_golden.py -q --tb=no -x -p no:randomly'"
 }

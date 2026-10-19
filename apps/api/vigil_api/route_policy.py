@@ -39,6 +39,9 @@ ROUTE_POLICY: Dict[Tuple[str, str], RoutePolicy] = {
     # Public: liveness, root, share-token routes
     ("GET", "/"): RoutePolicy(PUBLIC),
     ("GET", "/health"): RoutePolicy(PUBLIC),
+    ("GET", "/live"): RoutePolicy(PUBLIC, note="liveness probe"),
+    ("GET", "/ready"): RoutePolicy(PUBLIC, note="readiness probe; no dependency detail"),
+    ("GET", "/metrics"): RoutePolicy(PUBLIC, note="not a user route: bearer VIGIL_METRICS_TOKEN, 403 when unset"),
     ("GET", "/api/v1/companion/share/{share_token}"): RoutePolicy(PUBLIC, note="share token"),
     ("GET", "/api/v1/companion/share/{share_token}/observations/{obs_id}/explainer"): RoutePolicy(PUBLIC, note="share token"),
     ("POST", "/api/v1/companion/share/{share_token}/disclosure/request-release"): RoutePolicy(PUBLIC, note="share token"),

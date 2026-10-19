@@ -2,6 +2,10 @@
   "name": "vigil-monorepo",
   "version": "0.1.0-alpha",
   "private": true,
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
   "workspaces": [
     "apps/web",
     "packages/ui",

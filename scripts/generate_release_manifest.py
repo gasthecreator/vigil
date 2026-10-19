@@ -95,25 +95,40 @@ def _git(root: Path, *args: str) -> str:
     return r.stdout
 
 
-def generate_manifest(release: str, artifacts: list[str] | None = None, root: Path = REPO_ROOT, allow_dirty: bool = False) -> dict:
+def generate_manifest(
+    release: str,
+    artifacts: list[str] | None = None,
+    root: Path = REPO_ROOT,
+    allow_dirty: bool = False,
+    from_workdir: bool = False,
+) -> dict:
     artifacts = artifacts if artifacts is not None else ARTIFACTS_TO_MANIFEST
     head = _git(root, "rev-parse", "HEAD").strip()
     dirty = set(_git(root, "status", "--porcelain", "--", *artifacts).split("\n")) - {""}
-    if dirty and not allow_dirty:
+    if dirty and not allow_dirty and not from_workdir:
         raise SystemExit("refusing: listed artifacts have uncommitted changes:\n  " + "\n  ".join(sorted(dirty)))
     entries, missing = [], []
     for rel in artifacts:
-        r = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=root, capture_output=True)
-        if r.returncode != 0:
-            missing.append(rel)
-            continue
-        entries.append({"path": rel, "sha256": sha256_bytes(r.stdout), "size_bytes": len(r.stdout)})
+        if from_workdir:
+            path = root / rel
+            if not path.is_file():
+                missing.append(rel)
+                continue
+            data = path.read_bytes()
+            entries.append({"path": rel, "sha256": sha256_bytes(data), "size_bytes": len(data)})
+        else:
+            r = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=root, capture_output=True)
+            if r.returncode != 0:
+                missing.append(rel)
+                continue
+            entries.append({"path": rel, "sha256": sha256_bytes(r.stdout), "size_bytes": len(r.stdout)})
     if missing:
         raise SystemExit(f"refusing: listed artifacts not committed at HEAD: {missing}")
+    source = "working tree at generate time" if from_workdir else "as committed at git_commit"
     return {
         "release": release,
         "kind": "sha256-hash-manifest",
-        "description": f"Vigil release candidate {release}: SHA-256 digests of the listed artifacts as committed at git_commit",
+        "description": f"Vigil release candidate {release}: SHA-256 digests of the listed artifacts ({source})",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "git_commit": head,
         "artifact_count": len(entries),
@@ -184,10 +199,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--release", default=DEFAULT_RELEASE)
     ap.add_argument("--key", type=Path)
     ap.add_argument("--pubkey", type=Path)
+    ap.add_argument(
+        "--from-workdir",
+        action="store_true",
+        help="Hash working-tree files (tag release CI after regenerating SBOMs). Default hashes git HEAD blobs.",
+    )
     a = ap.parse_args(argv)
     mp = manifest_path(a.release)
     if a.command == "generate":
-        m = generate_manifest(a.release)
+        m = generate_manifest(a.release, from_workdir=a.from_workdir, allow_dirty=a.from_workdir)
         mp.parent.mkdir(parents=True, exist_ok=True)
         mp.write_text(json.dumps(m, indent=2) + "\n", encoding="utf-8")
         print(f"wrote hash manifest ({m['artifact_count']} artifacts, UNSIGNED) -> {mp.relative_to(REPO_ROOT)}")

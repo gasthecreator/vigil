@@ -32,13 +32,13 @@ vigil/
 ├── apps/
 │   ├── api/                     # FastAPI clinical decision-support REST services (vigil_api)
 │   ├── web/                     # Next.js clinician workstation & patient companion PWA
-│   └── worker/                  # Background worker (reminders, drift monitoring)
+│   └── worker/                  # Thin entrypoint → vigil_api.worker (ADR-0031)
 ├── packages/
 │   ├── vigil-core/              # Domain entities, LOINC/UCUM analyte registry, FHIR mappers
 │   ├── vigil-ml/                # Causal inference runtime, conformal calibration, feature transforms
 │   ├── vigil-sim/               # Mechanistic cohort simulators (G1, G2, G3)
 │   ├── vigil-eval/              # Evaluation harness, metric suites, leakage test canaries
-│   ├── vigil-opt/               # Radiotherapy queue optimization & fairness constraints
+│   ├── vigil-opt/               # Planned — deferred; scheduler lives in vigil-ml (ADR-0031)
 │   └── contracts/               # OpenAPI specifications and TypeScript contracts
 ├── docs/                        # Canonical Diataxis documentation, ADRs, clinical evidence
 ├── data/                        # Dataset cards, schema definitions, and ingestion contracts

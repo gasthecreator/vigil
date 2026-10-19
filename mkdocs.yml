@@ -1,0 +1,62 @@
+# G-08: MkDocs Material site. docs_dir keeps paths stable; ADRs are not relocated.
+site_name: Vigil Documentation
+site_description: Research prototype — not a medical device
+site_url: ""
+repo_url: https://github.com/gasthecreator/vigil
+edit_uri: ""
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: teal
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - tables
+  - toc:
+      permalink: true
+
+# Link validation is enforced by scripts/check_docs_links.py in CI (covers all docs/).
+# MkDocs build remains non-strict so historical ADR/plan pages with intentional relative
+# targets outside the nav subset still build; CI fails on broken links separately.
+strict: false
+
+exclude_docs: |
+  archive/
+  prompts/
+
+nav:
+  - Home: README.md
+  - Diataxis: diataxis/index.md
+  - Tutorials:
+      - Install (on-prem): deployment/ON_PREM_INSTALL.md
+      - Disclaimer: DISCLAIMER.md
+  - How-to:
+      - Runbooks: diataxis/runbooks.md
+      - SLOs and alerts: operations/SLOS.md
+      - Backup & restore: runbooks/BACKUP_AND_RESTORE.md
+  - Reference:
+      - API reference: api/reference.md
+      - ADRs: diataxis/adrs.md
+      - Model cards: diataxis/model-cards.md
+      - Dataset cards: diataxis/dataset-cards.md
+      - Progress ledger: PROGRESS.md
+      - STATUS: STATUS.md
+  - Explanation:
+      - Reality rules: REALITY_RULES.md
+      - Evidence: EVIDENCE.md

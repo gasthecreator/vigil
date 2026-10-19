@@ -1,0 +1,31 @@
+# Prometheus alert rules for metric-backed SLOs (docs/operations/SLOS.md, G-09).
+# Every alert links its runbook; tests/governance/test_alert_rules.py keeps links and metric names real.
+# Scrape /metrics with:  authorization: { type: Bearer, credentials: <VIGIL_METRICS_TOKEN> }
+# Readiness uses a blackbox_exporter probe of GET /ready (probe_success).
+groups:
+  - name: vigil-api
+    rules:
+      - alert: VigilApiNotReady
+        expr: avg_over_time(probe_success{job="vigil-ready"}[5m]) < 0.99
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Vigil API /ready failing"
+          runbook_url: docs/runbooks/RESTORE.md
+      - alert: VigilApiHighErrorRate
+        expr: |
+          sum(rate(vigil_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(vigil_http_requests_total[5m])), 1) > 0.02
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: "More than 2% of API requests return 5xx"
+          runbook_url: docs/runbooks/MIGRATION_ROLLBACK.md
+      - alert: VigilApiSlowRequests
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(vigil_http_request_duration_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "API p95 latency above 1 s"
+          runbook_url: docs/operations/SLOS.md

@@ -1,0 +1,239 @@
+Vigil
+Copyright (c) Vigil contributors
+
+Vigil is licensed under the Apache License 2.0 (see LICENSE).
+
+Third-party runtime components (full inventory: reports/quality/LICENCE_INVENTORY.json):
+
+  - absl-py 2.5.1 (pip): Apache-2.0
+  - alembic 1.20.0 (pip): MIT
+  - annotated-doc 0.0.5 (pip): MIT
+  - annotated-types 0.8.0 (pip): MIT
+  - anyio 4.15.1 (pip): MIT
+  - certifi 2026.7.22 (pip): MPL-2.0
+  - cffi 2.1.1 (pip): MIT-0
+  - charset-normalizer 3.5.2 (pip): MIT
+  - click 8.5.0 (pip): BSD-3-Clause
+  - cloudpickle 3.1.2 (pip): BSD-3-Clause
+  - colorama 0.4.6 (pip): BSD-3-Clause
+  - contourpy 1.4.0 (pip): BSD-3-Clause
+  - coverage 7.16.2 (pip): Apache-2.0
+  - cryptography 50.0.2 (pip): Apache-2.0 OR BSD-3-Clause
+  - cuda-bindings 13.4.4 (pip): LicenseRef-NVIDIA-Proprietary
+  - cuda-pathfinder 1.8.3 (pip): LicenseRef-NVIDIA-Proprietary
+  - cuda-toolkit 13.0.3.0 (pip): LicenseRef-NVIDIA-Proprietary
+  - cycler 0.12.1 (pip): BSD-3-Clause
+  - et_xmlfile 2.0.0 (pip): MIT
+  - fastapi 0.143.1 (pip): MIT
+  - filelock 4.2.0 (pip): MIT
+  - flatbuffers 25.12.19 (pip): Apache 2.0
+  - fonttools 4.67.0 (pip): MIT
+  - fsspec 2026.9.0 (pip): BSD-3-Clause
+  - grpcio 1.84.0 (pip): Apache-2.0
+  - h11 0.16.0 (pip): MIT
+  - httpcore 1.0.9 (pip): BSD-3-Clause
+  - httpx 0.28.1 (pip): BSD-3-Clause
+  - hypothesis 6.169.3 (pip): MPL-2.0
+  - idna 3.20 (pip): BSD-3-Clause
+  - immutabledict 4.3.1 (pip): MIT
+  - iniconfig 2.3.1 (pip): MIT
+  - jax 0.11.2 (pip): Apache-2.0
+  - jaxlib 0.11.2 (pip): Apache-2.0
+  - Jinja2 3.1.6 (pip): BSD
+  - joblib 1.6.0 (pip): BSD-3-Clause
+  - kiwisolver 1.5.1 (pip): BSD
+  - Mako 1.4.3 (pip): MIT
+  - Markdown 3.11.1 (pip): BSD-3-Clause
+  - MarkupSafe 3.0.4 (pip): BSD-3-Clause
+  - matplotlib 3.11.2 (pip): PSF-2.0
+  - ml_dtypes 0.6.0 (pip): Apache-2.0
+  - mpmath 1.3.0 (pip): BSD
+  - multipledispatch 1.0.0 (pip): BSD
+  - narwhals 2.27.1 (pip): MIT
+  - networkx 3.7 (pip): BSD-3-Clause
+  - nflows 0.14 (pip): MIT
+  - numpy 2.5.4 (pip): BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0
+  - numpyro 0.22.0 (pip): Apache-2.0
+  - nvidia-cublas 13.1.1.3 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cuda-cupti 13.0.85 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cuda-nvrtc 13.0.88 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cuda-runtime 13.0.96 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cudnn-cu13 9.24.0.43 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cufft 12.0.0.61 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cufile 1.15.1.6 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-curand 10.4.0.35 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cusolver 12.0.4.66 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cusparse 12.6.3.3 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-cusparselt-cu13 0.8.1 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-nccl-cu12 2.32.3 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-nccl-cu13 2.30.7 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-nvjitlink 13.4.92 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-nvshmem-cu13 3.4.5 (pip): LicenseRef-NVIDIA-Proprietary
+  - nvidia-nvtx 13.0.85 (pip): LicenseRef-NVIDIA-Proprietary
+  - onnx 1.23.2 (pip): Apache-2.0
+  - onnx-ir 1.0.0 (pip): Apache-2.0
+  - onnxruntime 1.31.0 (pip): MIT License
+  - onnxscript 0.7.2 (pip): MIT
+  - openpyxl 3.1.5 (pip): MIT
+  - opentelemetry-api 1.45.1 (pip): Apache-2.0
+  - opentelemetry-sdk 1.45.1 (pip): Apache-2.0
+  - opentelemetry-semantic-conventions 0.66b1 (pip): Apache-2.0
+  - opt_einsum 3.4.0 (pip): MIT
+  - ortools 9.15.6755 (pip): Apache 2.0
+  - packaging 26.3 (pip): Apache-2.0 OR BSD-2-Clause
+  - pandas 3.0.6 (pip): BSD
+  - pillow 12.3.0 (pip): MIT-CMU
+  - pluggy 1.6.0 (pip): MIT
+  - prometheus_client 0.26.0 (pip): Apache-2.0 AND BSD-2-Clause
+  - protobuf 6.33.6 (pip): 3-Clause BSD License
+  - psycopg 3.3.6 (pip): LGPL-3.0-only
+  - psycopg-binary 3.3.6 (pip): LGPL-3.0-only
+  - pycparser 3.11 (pip): BSD-3-Clause
+  - pydantic 2.14.1 (pip): MIT
+  - pydantic-settings 2.16.0 (pip): MIT
+  - pydantic_core 2.50.1 (pip): MIT
+  - Pygments 2.21.0 (pip): BSD-2-Clause
+  - PyJWT 2.15.1 (pip): MIT
+  - pyparsing 3.3.3 (pip): MIT
+  - pypdf 6.21.1 (pip): BSD-3-Clause
+  - pytesseract 0.3.13 (pip): Apache License 2.0
+  - pytest 9.1.1 (pip): MIT
+  - pytest-cov 7.1.0 (pip): MIT
+  - python-dateutil 2.9.0.post0 (pip): Dual License
+  - python-dotenv 1.2.4 (pip): BSD-3-Clause
+  - requests 2.34.2 (pip): Apache-2.0
+  - ruff 0.17.0 (pip): MIT
+  - safetensors 0.8.0 (pip): Apache-2.0
+  - sbi 0.27.0 (pip): Apache-2.0
+  - scikit-learn 1.9.1 (pip): BSD-3-Clause
+  - scipy 1.18.1 (pip): BSD
+  - setuptools 84.0.0 (pip): MIT
+  - six 1.17.0 (pip): MIT
+  - skorch 1.4.0 (pip): BSD-3-Clause
+  - sortedcontainers 2.4.0 (pip): Apache 2.0
+  - SQLAlchemy 2.1.4 (pip): MIT
+  - starlette 1.8.0 (pip): BSD-3-Clause
+  - sympy 1.14.0 (pip): BSD
+  - tabulate 0.10.0 (pip): MIT
+  - tensorboard 2.21.0 (pip): Apache 2.0
+  - tensorboard-data-server 0.7.2 (pip): Apache 2.0
+  - threadpoolctl 3.7.0 (pip): BSD-3-Clause
+  - tomli 2.5.0 (pip): MIT
+  - torch 2.14.1 (pip): Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT
+  - tqdm 4.70.1 (pip): MPL-2.0 AND MIT
+  - triton 3.8.0 (pip): MIT
+  - typing-inspection 0.4.4 (pip): MIT
+  - typing_extensions 4.16.0 (pip): PSF-2.0
+  - tzdata 2026.5 (pip): Apache-2.0
+  - urllib3 2.8.0 (pip): MIT
+  - uvicorn 0.54.0 (pip): BSD-3-Clause
+  - Werkzeug 3.1.9 (pip): BSD-3-Clause
+  - xgboost 3.4.1 (pip): Apache-2.0
+  - zuko 1.6.0 (pip): MIT
+  - @babel/runtime 7.29.10 (npm): MIT
+  - @emnapi/runtime 1.11.3 (npm): MIT
+  - @img/colour 1.1.0 (npm): MIT
+  - @img/sharp-darwin-arm64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-darwin-x64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-freebsd-wasm32 0.35.5 (npm): Apache-2.0
+  - @img/sharp-libvips-darwin-arm64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-darwin-x64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-arm 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-arm64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-ppc64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-riscv64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-s390x 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linux-x64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linuxmusl-arm64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-libvips-linuxmusl-x64 1.3.4 (npm): LGPL-3.0-or-later
+  - @img/sharp-linux-arm 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linux-arm64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linux-ppc64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linux-riscv64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linux-s390x 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linux-x64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linuxmusl-arm64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-linuxmusl-x64 0.35.5 (npm): Apache-2.0
+  - @img/sharp-wasm32 0.35.5 (npm): Apache-2.0 AND LGPL-3.0-or-later AND MIT
+  - @img/sharp-webcontainers-wasm32 0.35.5 (npm): Apache-2.0
+  - @img/sharp-win32-arm64 0.35.5 (npm): Apache-2.0 AND LGPL-3.0-or-later
+  - @img/sharp-win32-ia32 0.35.5 (npm): Apache-2.0 AND LGPL-3.0-or-later
+  - @img/sharp-win32-x64 0.35.5 (npm): Apache-2.0 AND LGPL-3.0-or-later
+  - @next/env 15.5.28 (npm): MIT
+  - @next/swc-darwin-arm64 15.5.28 (npm): MIT
+  - @next/swc-darwin-x64 15.5.28 (npm): MIT
+  - @next/swc-linux-arm64-gnu 15.5.28 (npm): MIT
+  - @next/swc-linux-arm64-musl 15.5.28 (npm): MIT
+  - @next/swc-linux-x64-gnu 15.5.28 (npm): MIT
+  - @next/swc-linux-x64-musl 15.5.28 (npm): MIT
+  - @next/swc-win32-arm64-msvc 15.5.28 (npm): MIT
+  - @next/swc-win32-x64-msvc 15.5.28 (npm): MIT
+  - @opentelemetry/api 1.9.1 (npm): Apache-2.0
+  - @playwright/test 1.64.1 (npm): Apache-2.0
+  - @swc/helpers 0.5.15 (npm): Apache-2.0
+  - @types/d3-array 3.2.2 (npm): MIT
+  - @types/d3-color 3.1.3 (npm): MIT
+  - @types/d3-ease 3.0.2 (npm): MIT
+  - @types/d3-interpolate 3.0.4 (npm): MIT
+  - @types/d3-path 3.1.1 (npm): MIT
+  - @types/d3-scale 4.0.9 (npm): MIT
+  - @types/d3-shape 3.2.0 (npm): MIT
+  - @types/d3-time 3.0.4 (npm): MIT
+  - @types/d3-timer 3.0.2 (npm): MIT
+  - @types/prop-types 15.7.15 (npm): MIT
+  - @types/react 18.3.31 (npm): MIT
+  - caniuse-lite 1.0.30001816 (npm): CC-BY-4.0
+  - client-only 0.0.1 (npm): MIT
+  - clsx 2.1.1 (npm): MIT
+  - csstype 3.2.3 (npm): MIT
+  - d3-array 3.2.4 (npm): ISC
+  - d3-color 3.1.0 (npm): ISC
+  - d3-ease 3.0.1 (npm): BSD-3-Clause
+  - d3-format 3.1.2 (npm): ISC
+  - d3-interpolate 3.0.1 (npm): ISC
+  - d3-path 3.1.0 (npm): ISC
+  - d3-scale 4.0.2 (npm): ISC
+  - d3-shape 3.2.0 (npm): ISC
+  - d3-time 3.1.0 (npm): ISC
+  - d3-time-format 4.1.0 (npm): ISC
+  - d3-timer 3.0.1 (npm): ISC
+  - decimal.js-light 2.5.1 (npm): MIT
+  - detect-libc 2.1.2 (npm): Apache-2.0
+  - dom-helpers 5.2.1 (npm): MIT
+  - eventemitter3 4.0.7 (npm): MIT
+  - fast-equals 5.4.5 (npm): MIT
+  - internmap 2.0.3 (npm): ISC
+  - js-tokens 4.0.0 (npm): MIT
+  - lodash 4.18.1 (npm): MIT
+  - loose-envify 1.4.0 (npm): MIT
+  - lucide-react 1.59.0 (npm): ISC
+  - nanoid 3.3.20 (npm): MIT
+  - next 15.5.28 (npm): MIT
+  - object-assign 4.1.1 (npm): MIT
+  - picocolors 1.1.1 (npm): ISC
+  - playwright 1.64.1 (npm): Apache-2.0
+  - playwright-core 1.64.1 (npm): Apache-2.0
+  - postcss 8.5.30 (npm): MIT
+  - prop-types 15.8.1 (npm): MIT
+  - react 18.3.1 (npm): MIT
+  - react-dom 18.3.1 (npm): MIT
+  - react-is 16.13.1 (npm): MIT
+  - react-is 18.3.1 (npm): MIT
+  - react-smooth 4.0.4 (npm): MIT
+  - react-transition-group 4.4.5 (npm): BSD-3-Clause
+  - recharts 2.15.4 (npm): MIT
+  - recharts-scale 0.4.5 (npm): MIT
+  - scheduler 0.23.2 (npm): MIT
+  - semver 7.8.5 (npm): ISC
+  - sharp 0.35.5 (npm): Apache-2.0
+  - source-map-js 1.2.2 (npm): BSD-3-Clause
+  - styled-jsx 5.1.6 (npm): MIT
+  - tailwind-merge 3.7.0 (npm): MIT
+  - tiny-invariant 1.3.3 (npm): MIT
+  - tslib 2.8.1 (npm): 0BSD
+  - victory-vendor 36.9.2 (npm): MIT AND ISC
+
+Note: the NVIDIA/CUDA packages above are proprietary redistributables installed on Linux (pulled in by
+torch). They are not open-source licences; review the NVIDIA EULA before distributing images that bundle them.
+
+Regenerate: uv run python scripts/generate_licence_inventory.py

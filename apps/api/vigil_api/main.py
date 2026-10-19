@@ -1,5 +1,6 @@
 """Vigil FastAPI Application Entrypoint."""
 
+import hmac
 import json
 import logging
 import os
@@ -16,16 +17,27 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
+from fastapi.responses import Response
+
 from vigil_api.api.router import api_router
 from vigil_api.config import settings
 from vigil_api.database import Base, engine
 from vigil_api.ml.inference import VigilEngine
+from vigil_api.observability import (
+    liveness_body,
+    maybe_start_otel,
+    metrics_payload,
+    readiness_body,
+    record_request,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan: initialize database schemas and warm up Vigil engine."""
     Base.metadata.create_all(bind=engine)
+    if settings.OTEL_ENABLED:
+        maybe_start_otel()
 
     engine_instance = VigilEngine.get_instance()
     print(
@@ -81,6 +93,7 @@ async def request_id_and_logging_middleware(request: Request, call_next):
         "client_ip": request.client.host if request.client else "unknown",
     }
     logger.info(json.dumps(log_entry))
+    record_request(request.method, request.url.path, response.status_code, duration_ms / 1000.0)
     return response
 
 
@@ -111,6 +124,35 @@ def health_check():
         "database": "connected",
         "is_synthetic": settings.IS_SYNTHETIC_DATA,
     }
+
+
+# G-09 probes/metrics. /live and /ready are public and minimal (no dependency detail beyond ok/unavailable).
+# /metrics is bearer-token gated (VIGIL_METRICS_TOKEN) in every profile; with no token it is disabled (403).
+@app.get("/live")
+def live():
+    return liveness_body()
+
+
+@app.get("/ready")
+def ready():
+    body, status_code = readiness_body()
+    return Response(
+        content=json.dumps(body),
+        status_code=status_code,
+        media_type="application/json",
+    )
+
+
+@app.get("/metrics")
+def metrics(request: Request):
+    token = settings.METRICS_TOKEN
+    if not token:
+        return Response(status_code=403)  # disabled until the operator sets VIGIL_METRICS_TOKEN
+    supplied = request.headers.get("authorization", "")
+    if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
+        return Response(status_code=401, headers={"WWW-Authenticate": "Bearer"})
+    body, content_type = metrics_payload()
+    return Response(content=body, media_type=content_type)
 
 
 if __name__ == "__main__":

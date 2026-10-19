@@ -53,7 +53,7 @@ def main() -> int:
         "--paths-to-mutate=vigil_ml/m5.py",
         "--tests-dir=tests",
         "--runner",
-        "python -m pytest tests/test_m3_m5.py -q --tb=no",
+        "python -m pytest tests/test_m3_m5.py tests/test_m5_golden.py -q --tb=no -x -p no:randomly",
         "--no-progress",
     ]
     res = subprocess.run(

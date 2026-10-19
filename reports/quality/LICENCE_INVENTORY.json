@@ -1,0 +1,1597 @@
+{
+  "count": 227,
+  "needs_review": [],
+  "needs_review_count": 0,
+  "packages": [
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "absl-py",
+      "needs_review": false,
+      "version": "2.5.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "alembic",
+      "needs_review": false,
+      "version": "1.20.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "annotated-doc",
+      "needs_review": false,
+      "version": "0.0.5"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "annotated-types",
+      "needs_review": false,
+      "version": "0.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "anyio",
+      "needs_review": false,
+      "version": "4.15.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MPL-2.0",
+      "name": "certifi",
+      "needs_review": false,
+      "version": "2026.7.22"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT-0",
+      "name": "cffi",
+      "needs_review": false,
+      "version": "2.1.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "charset-normalizer",
+      "needs_review": false,
+      "version": "3.5.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "click",
+      "needs_review": false,
+      "version": "8.5.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "cloudpickle",
+      "needs_review": false,
+      "version": "3.1.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "colorama",
+      "needs_review": false,
+      "version": "0.4.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "contourpy",
+      "needs_review": false,
+      "version": "1.4.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "coverage",
+      "needs_review": false,
+      "version": "7.16.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "name": "cryptography",
+      "needs_review": false,
+      "version": "50.0.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-bindings",
+      "needs_review": false,
+      "version": "13.4.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-pathfinder",
+      "needs_review": false,
+      "version": "1.8.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "cuda-toolkit",
+      "needs_review": false,
+      "version": "13.0.3.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "cycler",
+      "needs_review": false,
+      "version": "0.12.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "et_xmlfile",
+      "needs_review": false,
+      "version": "2.0.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "fastapi",
+      "needs_review": false,
+      "version": "0.143.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "filelock",
+      "needs_review": false,
+      "version": "4.2.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache 2.0",
+      "name": "flatbuffers",
+      "needs_review": false,
+      "version": "25.12.19"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "fonttools",
+      "needs_review": false,
+      "version": "4.67.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "fsspec",
+      "needs_review": false,
+      "version": "2026.9.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "grpcio",
+      "needs_review": false,
+      "version": "1.84.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "h11",
+      "needs_review": false,
+      "version": "0.16.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "httpcore",
+      "needs_review": false,
+      "version": "1.0.9"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "httpx",
+      "needs_review": false,
+      "version": "0.28.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MPL-2.0",
+      "name": "hypothesis",
+      "needs_review": false,
+      "version": "6.169.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "idna",
+      "needs_review": false,
+      "version": "3.20"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "immutabledict",
+      "needs_review": false,
+      "version": "4.3.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "iniconfig",
+      "needs_review": false,
+      "version": "2.3.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "jax",
+      "needs_review": false,
+      "version": "0.11.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "jaxlib",
+      "needs_review": false,
+      "version": "0.11.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "Jinja2",
+      "needs_review": false,
+      "version": "3.1.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "joblib",
+      "needs_review": false,
+      "version": "1.6.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "kiwisolver",
+      "needs_review": false,
+      "version": "1.5.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "Mako",
+      "needs_review": false,
+      "version": "1.4.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "Markdown",
+      "needs_review": false,
+      "version": "3.11.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "MarkupSafe",
+      "needs_review": false,
+      "version": "3.0.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "PSF-2.0",
+      "name": "matplotlib",
+      "needs_review": false,
+      "version": "3.11.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "ml_dtypes",
+      "needs_review": false,
+      "version": "0.6.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "mpmath",
+      "needs_review": false,
+      "version": "1.3.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "multipledispatch",
+      "needs_review": false,
+      "version": "1.0.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "narwhals",
+      "needs_review": false,
+      "version": "2.27.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "networkx",
+      "needs_review": false,
+      "version": "3.7"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "nflows",
+      "needs_review": false,
+      "version": "0.14"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "name": "numpy",
+      "needs_review": false,
+      "version": "2.5.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "numpyro",
+      "needs_review": false,
+      "version": "0.22.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cublas",
+      "needs_review": false,
+      "version": "13.1.1.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-cupti",
+      "needs_review": false,
+      "version": "13.0.85"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-nvrtc",
+      "needs_review": false,
+      "version": "13.0.88"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cuda-runtime",
+      "needs_review": false,
+      "version": "13.0.96"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cudnn-cu13",
+      "needs_review": false,
+      "version": "9.24.0.43"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cufft",
+      "needs_review": false,
+      "version": "12.0.0.61"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cufile",
+      "needs_review": false,
+      "version": "1.15.1.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-curand",
+      "needs_review": false,
+      "version": "10.4.0.35"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusolver",
+      "needs_review": false,
+      "version": "12.0.4.66"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusparse",
+      "needs_review": false,
+      "version": "12.6.3.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-cusparselt-cu13",
+      "needs_review": false,
+      "version": "0.8.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nccl-cu12",
+      "needs_review": false,
+      "version": "2.32.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nccl-cu13",
+      "needs_review": false,
+      "version": "2.30.7"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvjitlink",
+      "needs_review": false,
+      "version": "13.4.92"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvshmem-cu13",
+      "needs_review": false,
+      "version": "3.4.5"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LicenseRef-NVIDIA-Proprietary",
+      "name": "nvidia-nvtx",
+      "needs_review": false,
+      "version": "13.0.85"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "onnx",
+      "needs_review": false,
+      "version": "1.23.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "onnx-ir",
+      "needs_review": false,
+      "version": "1.0.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT License",
+      "name": "onnxruntime",
+      "needs_review": false,
+      "version": "1.31.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "onnxscript",
+      "needs_review": false,
+      "version": "0.7.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "openpyxl",
+      "needs_review": false,
+      "version": "3.1.5"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "opentelemetry-api",
+      "needs_review": false,
+      "version": "1.45.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "opentelemetry-sdk",
+      "needs_review": false,
+      "version": "1.45.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "opentelemetry-semantic-conventions",
+      "needs_review": false,
+      "version": "0.66b1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "opt_einsum",
+      "needs_review": false,
+      "version": "3.4.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache 2.0",
+      "name": "ortools",
+      "needs_review": false,
+      "version": "9.15.6755"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "name": "packaging",
+      "needs_review": false,
+      "version": "26.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "pandas",
+      "needs_review": false,
+      "version": "3.0.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT-CMU",
+      "name": "pillow",
+      "needs_review": false,
+      "version": "12.3.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pluggy",
+      "needs_review": false,
+      "version": "1.6.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0 AND BSD-2-Clause",
+      "name": "prometheus_client",
+      "needs_review": false,
+      "version": "0.26.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "3-Clause BSD License",
+      "name": "protobuf",
+      "needs_review": false,
+      "version": "6.33.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LGPL-3.0-only",
+      "name": "psycopg",
+      "needs_review": false,
+      "version": "3.3.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "LGPL-3.0-only",
+      "name": "psycopg-binary",
+      "needs_review": false,
+      "version": "3.3.6"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "pycparser",
+      "needs_review": false,
+      "version": "3.11"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pydantic",
+      "needs_review": false,
+      "version": "2.14.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pydantic-settings",
+      "needs_review": false,
+      "version": "2.16.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pydantic_core",
+      "needs_review": false,
+      "version": "2.50.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-2-Clause",
+      "name": "Pygments",
+      "needs_review": false,
+      "version": "2.21.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "PyJWT",
+      "needs_review": false,
+      "version": "2.15.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pyparsing",
+      "needs_review": false,
+      "version": "3.3.3"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "pypdf",
+      "needs_review": false,
+      "version": "6.21.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache License 2.0",
+      "name": "pytesseract",
+      "needs_review": false,
+      "version": "0.3.13"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pytest",
+      "needs_review": false,
+      "version": "9.1.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "pytest-cov",
+      "needs_review": false,
+      "version": "7.1.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Dual License",
+      "name": "python-dateutil",
+      "needs_review": false,
+      "version": "2.9.0.post0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "python-dotenv",
+      "needs_review": false,
+      "version": "1.2.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "requests",
+      "needs_review": false,
+      "version": "2.34.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "ruff",
+      "needs_review": false,
+      "version": "0.17.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "safetensors",
+      "needs_review": false,
+      "version": "0.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "sbi",
+      "needs_review": false,
+      "version": "0.27.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "scikit-learn",
+      "needs_review": false,
+      "version": "1.9.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "scipy",
+      "needs_review": false,
+      "version": "1.18.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "setuptools",
+      "needs_review": false,
+      "version": "84.0.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "six",
+      "needs_review": false,
+      "version": "1.17.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "skorch",
+      "needs_review": false,
+      "version": "1.4.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache 2.0",
+      "name": "sortedcontainers",
+      "needs_review": false,
+      "version": "2.4.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "SQLAlchemy",
+      "needs_review": false,
+      "version": "2.1.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "starlette",
+      "needs_review": false,
+      "version": "1.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD",
+      "name": "sympy",
+      "needs_review": false,
+      "version": "1.14.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "tabulate",
+      "needs_review": false,
+      "version": "0.10.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache 2.0",
+      "name": "tensorboard",
+      "needs_review": false,
+      "version": "2.21.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache 2.0",
+      "name": "tensorboard-data-server",
+      "needs_review": false,
+      "version": "0.7.2"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "threadpoolctl",
+      "needs_review": false,
+      "version": "3.7.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "tomli",
+      "needs_review": false,
+      "version": "2.5.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT",
+      "name": "torch",
+      "needs_review": false,
+      "version": "2.14.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MPL-2.0 AND MIT",
+      "name": "tqdm",
+      "needs_review": false,
+      "version": "4.70.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "triton",
+      "needs_review": false,
+      "version": "3.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "typing-inspection",
+      "needs_review": false,
+      "version": "0.4.4"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "PSF-2.0",
+      "name": "typing_extensions",
+      "needs_review": false,
+      "version": "4.16.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "tzdata",
+      "needs_review": false,
+      "version": "2026.5"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "urllib3",
+      "needs_review": false,
+      "version": "2.8.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "uvicorn",
+      "needs_review": false,
+      "version": "0.54.0"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "BSD-3-Clause",
+      "name": "Werkzeug",
+      "needs_review": false,
+      "version": "3.1.9"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "Apache-2.0",
+      "name": "xgboost",
+      "needs_review": false,
+      "version": "3.4.1"
+    },
+    {
+      "ecosystem": "pip",
+      "license": "MIT",
+      "name": "zuko",
+      "needs_review": false,
+      "version": "1.6.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@babel/runtime",
+      "needs_review": false,
+      "version": "7.29.10"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@emnapi/runtime",
+      "needs_review": false,
+      "version": "1.11.3"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@img/colour",
+      "needs_review": false,
+      "version": "1.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-darwin-arm64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-darwin-x64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-freebsd-wasm32",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-darwin-arm64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-darwin-x64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-arm",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-arm64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-ppc64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-riscv64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-s390x",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linux-x64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linuxmusl-arm64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "LGPL-3.0-or-later",
+      "name": "@img/sharp-libvips-linuxmusl-x64",
+      "needs_review": false,
+      "version": "1.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-arm",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-arm64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-ppc64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-riscv64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-s390x",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linux-x64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linuxmusl-arm64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-linuxmusl-x64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
+      "name": "@img/sharp-wasm32",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@img/sharp-webcontainers-wasm32",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "name": "@img/sharp-win32-arm64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "name": "@img/sharp-win32-ia32",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "name": "@img/sharp-win32-x64",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/env",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-darwin-arm64",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-darwin-x64",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-linux-arm64-gnu",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-linux-arm64-musl",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-linux-x64-gnu",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-linux-x64-musl",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-win32-arm64-msvc",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@next/swc-win32-x64-msvc",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@opentelemetry/api",
+      "needs_review": false,
+      "version": "1.9.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@playwright/test",
+      "needs_review": false,
+      "version": "1.64.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "@swc/helpers",
+      "needs_review": false,
+      "version": "0.5.15"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-array",
+      "needs_review": false,
+      "version": "3.2.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-color",
+      "needs_review": false,
+      "version": "3.1.3"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-ease",
+      "needs_review": false,
+      "version": "3.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-interpolate",
+      "needs_review": false,
+      "version": "3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-path",
+      "needs_review": false,
+      "version": "3.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-scale",
+      "needs_review": false,
+      "version": "4.0.9"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-shape",
+      "needs_review": false,
+      "version": "3.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-time",
+      "needs_review": false,
+      "version": "3.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/d3-timer",
+      "needs_review": false,
+      "version": "3.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/prop-types",
+      "needs_review": false,
+      "version": "15.7.15"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "@types/react",
+      "needs_review": false,
+      "version": "18.3.31"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "CC-BY-4.0",
+      "name": "caniuse-lite",
+      "needs_review": false,
+      "version": "1.0.30001816"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "client-only",
+      "needs_review": false,
+      "version": "0.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "clsx",
+      "needs_review": false,
+      "version": "2.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "csstype",
+      "needs_review": false,
+      "version": "3.2.3"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-array",
+      "needs_review": false,
+      "version": "3.2.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-color",
+      "needs_review": false,
+      "version": "3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "BSD-3-Clause",
+      "name": "d3-ease",
+      "needs_review": false,
+      "version": "3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-format",
+      "needs_review": false,
+      "version": "3.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-interpolate",
+      "needs_review": false,
+      "version": "3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-path",
+      "needs_review": false,
+      "version": "3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-scale",
+      "needs_review": false,
+      "version": "4.0.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-shape",
+      "needs_review": false,
+      "version": "3.2.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-time",
+      "needs_review": false,
+      "version": "3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-time-format",
+      "needs_review": false,
+      "version": "4.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "d3-timer",
+      "needs_review": false,
+      "version": "3.0.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "decimal.js-light",
+      "needs_review": false,
+      "version": "2.5.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "detect-libc",
+      "needs_review": false,
+      "version": "2.1.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "dom-helpers",
+      "needs_review": false,
+      "version": "5.2.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "eventemitter3",
+      "needs_review": false,
+      "version": "4.0.7"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "fast-equals",
+      "needs_review": false,
+      "version": "5.4.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "internmap",
+      "needs_review": false,
+      "version": "2.0.3"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "js-tokens",
+      "needs_review": false,
+      "version": "4.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "lodash",
+      "needs_review": false,
+      "version": "4.18.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "loose-envify",
+      "needs_review": false,
+      "version": "1.4.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "lucide-react",
+      "needs_review": false,
+      "version": "1.59.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "nanoid",
+      "needs_review": false,
+      "version": "3.3.20"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "next",
+      "needs_review": false,
+      "version": "15.5.28"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "object-assign",
+      "needs_review": false,
+      "version": "4.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "picocolors",
+      "needs_review": false,
+      "version": "1.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "playwright",
+      "needs_review": false,
+      "version": "1.64.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "playwright-core",
+      "needs_review": false,
+      "version": "1.64.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "postcss",
+      "needs_review": false,
+      "version": "8.5.30"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "prop-types",
+      "needs_review": false,
+      "version": "15.8.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "react",
+      "needs_review": false,
+      "version": "18.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "react-dom",
+      "needs_review": false,
+      "version": "18.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "react-is",
+      "needs_review": false,
+      "version": "16.13.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "react-is",
+      "needs_review": false,
+      "version": "18.3.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "react-smooth",
+      "needs_review": false,
+      "version": "4.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "BSD-3-Clause",
+      "name": "react-transition-group",
+      "needs_review": false,
+      "version": "4.4.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "recharts",
+      "needs_review": false,
+      "version": "2.15.4"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "recharts-scale",
+      "needs_review": false,
+      "version": "0.4.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "scheduler",
+      "needs_review": false,
+      "version": "0.23.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "ISC",
+      "name": "semver",
+      "needs_review": false,
+      "version": "7.8.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "Apache-2.0",
+      "name": "sharp",
+      "needs_review": false,
+      "version": "0.35.5"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "BSD-3-Clause",
+      "name": "source-map-js",
+      "needs_review": false,
+      "version": "1.2.2"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "styled-jsx",
+      "needs_review": false,
+      "version": "5.1.6"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "tailwind-merge",
+      "needs_review": false,
+      "version": "3.7.0"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT",
+      "name": "tiny-invariant",
+      "needs_review": false,
+      "version": "1.3.3"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "0BSD",
+      "name": "tslib",
+      "needs_review": false,
+      "version": "2.8.1"
+    },
+    {
+      "ecosystem": "npm",
+      "license": "MIT AND ISC",
+      "name": "victory-vendor",
+      "needs_review": false,
+      "version": "36.9.2"
+    }
+  ],
+  "scope": "runtime dependencies only (uv export --no-dev; package-lock production entries)"
+}

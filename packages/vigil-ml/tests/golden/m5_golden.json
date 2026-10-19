@@ -1,0 +1,198 @@
+{
+  "explainer": {
+    "escalate": {
+      "flesch_kincaid_grade_level": 4.59,
+      "headline": "This test shows a noticeable change.",
+      "questions_to_ask_your_doctor": [
+        "What follow-up test or scan do you recommend to check this result?",
+        "Could another health issue or medicine cause this change?",
+        "What symptoms or changes should I look out for right now?"
+      ],
+      "recommended_action": "Contact your clinic to schedule a review and follow-up scan.",
+      "synthetic": true,
+      "verbal_band": "Elevated signal (clinical team review recommended)",
+      "verdict": "escalate",
+      "verified": true,
+      "what_this_means": "This blood test is higher than your usual personal range. A rise can happen for different health reasons. Your cancer care team will check your results and talk with you about next steps.",
+      "word_count": 50
+    },
+    "explained": {
+      "flesch_kincaid_grade_level": 7.07,
+      "headline": "This test result looks stable.",
+      "questions_to_ask_your_doctor": [
+        "Does my routine monitoring schedule stay the same?",
+        "Are there any new symptoms I should report before my next visit?",
+        "When is my next scheduled blood test or clinic appointment?"
+      ],
+      "recommended_action": "Continue routine surveillance as scheduled.",
+      "synthetic": true,
+      "verbal_band": "Normal biological fluctuation (routine monitoring)",
+      "verdict": "explained",
+      "verified": true,
+      "what_this_means": "Small day-to-day changes in your body are normal and expected. This result stays within the expected range for your routine surveillance. Your oncology team will continue your regular monitoring plan.",
+      "word_count": 42
+    },
+    "needs_repeat": {
+      "flesch_kincaid_grade_level": 6.84,
+      "headline": "This result needs a quick repeat test.",
+      "questions_to_ask_your_doctor": [
+        "When and where should I repeat this blood test?",
+        "Are there any special instructions before my next blood draw?",
+        "What specific symptoms should I watch for while waiting for the repeat test?"
+      ],
+      "recommended_action": "Repeat blood test within 7 to 14 days at your local laboratory.",
+      "synthetic": true,
+      "verbal_band": "Analytical uncertainty (suspected lab or specimen variation)",
+      "verdict": "needs_repeat",
+      "verified": true,
+      "what_this_means": "A sudden shift in a lab number often comes from lab equipment variation rather than a true change in your body. A single high result is not a diagnosis. Repeating the blood test gives your doctor an accurate and reliable picture.",
+      "word_count": 58
+    }
+  },
+  "journeys": {
+    "false_alarm_explained": {
+      "adjudication": {
+        "action": "explained",
+        "p_error": 0.004583516078429785,
+        "p_real": 0.01139512178732019,
+        "p_stable": 0.9840213621342501,
+        "rationale_facts": [
+          {
+            "fact_id": "f_rcv",
+            "type": "rcv",
+            "value": 0.3099032106965012
+          },
+          {
+            "fact_id": "f_observed_change",
+            "type": "observed_change",
+            "value": 1.150208514014582
+          },
+          {
+            "fact_id": "f_p_real",
+            "type": "p_real",
+            "value": 0.01139512178732019
+          },
+          {
+            "fact_id": "f_p_error",
+            "type": "p_error",
+            "value": 0.004583516078429785
+          },
+          {
+            "fact_id": "f_p_stable",
+            "type": "p_stable",
+            "value": 0.9840213621342501
+          },
+          {
+            "fact_id": "f_action",
+            "type": "action",
+            "value": "explained"
+          }
+        ]
+      },
+      "clinical_context": "Patient on surveillance. CA 15-3 increases from 20 to 23 U/mL (1.15x), below RCV threshold.",
+      "journey_id": "false_alarm_explained",
+      "narrative": "The calculated probability of true progression is 1%. The calculated probability of analytical or pre-analytical error is 0%. The calculated probability of baseline biological stability is 98%. The biological reference change value threshold is 31%. The observed marker ratio is 1.15 relative to baseline. The recommended clinical action is explained.",
+      "title": "Benign Fluctuation: Biological Noise Within RCV Adjudicated as Explained",
+      "verification": {
+        "ok": true,
+        "violations": []
+      }
+    },
+    "j2_surprising_repeat": {
+      "adjudication": {
+        "action": "needs_repeat",
+        "p_error": 1.0,
+        "p_real": 6.265753367738938e-300,
+        "p_stable": 1.5466232386442863e-72,
+        "rationale_facts": [
+          {
+            "fact_id": "f_rcv",
+            "type": "rcv",
+            "value": 0.3099032106965012
+          },
+          {
+            "fact_id": "f_observed_change",
+            "type": "observed_change",
+            "value": 10.00223866851975
+          },
+          {
+            "fact_id": "f_p_real",
+            "type": "p_real",
+            "value": 6.265753367738938e-300
+          },
+          {
+            "fact_id": "f_p_error",
+            "type": "p_error",
+            "value": 1.0
+          },
+          {
+            "fact_id": "f_p_stable",
+            "type": "p_stable",
+            "value": 1.5466232386442863e-72
+          },
+          {
+            "fact_id": "f_action",
+            "type": "action",
+            "value": "needs_repeat"
+          }
+        ]
+      },
+      "clinical_context": "Patient on surveillance with stable CA 15-3 (~18 U/mL). Day 360 shows sudden jump to 180 U/mL.",
+      "journey_id": "j2_surprising_repeat",
+      "narrative": "The calculated probability of true progression is 0%. The calculated probability of analytical or pre-analytical error is 100%. The calculated probability of baseline biological stability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 10.00 relative to baseline. The recommended clinical action is needs_repeat.",
+      "title": "Journey J2: Surprising Marker Spike (Analytical Error) Adjudicated to Repeat",
+      "verification": {
+        "ok": true,
+        "violations": []
+      }
+    },
+    "real_progression_escalate": {
+      "adjudication": {
+        "action": "escalate",
+        "p_error": 0.012577331436612979,
+        "p_real": 0.9874226685436761,
+        "p_stable": 1.9710867613250114e-11,
+        "rationale_facts": [
+          {
+            "fact_id": "f_rcv",
+            "type": "rcv",
+            "value": 0.3099032106965012
+          },
+          {
+            "fact_id": "f_observed_change",
+            "type": "observed_change",
+            "value": 2.503585796544438
+          },
+          {
+            "fact_id": "f_p_real",
+            "type": "p_real",
+            "value": 0.9874226685436761
+          },
+          {
+            "fact_id": "f_p_error",
+            "type": "p_error",
+            "value": 0.012577331436612979
+          },
+          {
+            "fact_id": "f_p_stable",
+            "type": "p_stable",
+            "value": 1.9710867613250114e-11
+          },
+          {
+            "fact_id": "f_action",
+            "type": "action",
+            "value": "escalate"
+          }
+        ]
+      },
+      "clinical_context": "Patient on surveillance. CA 15-3 surges from 15 to 37.8 U/mL (2.5x), exceeding RCV.",
+      "journey_id": "real_progression_escalate",
+      "narrative": "The calculated probability of true progression is 99%. The calculated probability of analytical or pre-analytical error is 1%. The calculated probability of baseline biological stability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 2.50 relative to baseline. The recommended clinical action is escalate.",
+      "title": "True Recurrence: Biomarker Elevation Exceeding RCV Adjudicated to Escalate",
+      "verification": {
+        "ok": true,
+        "violations": []
+      }
+    }
+  }
+}

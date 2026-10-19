@@ -83,8 +83,9 @@ def render_clinician_note(facts: List[Dict[str, Any]]) -> str:
 
     # 4. Reference change value threshold
     if "rcv" in f_map:
-        val = float(f_map["rcv"])
-        pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
+        # RCV is always a fraction from M3 and can exceed 1.0 (e.g. 1.49 = 149%) for variable markers; scaling by
+        # value magnitude would render 1.49 as "1%". Found by overseer review (PR #75).
+        pct = int(round(float(f_map["rcv"]) * 100))
         sentences.append(f"The biological reference change value threshold is {pct}%.")
 
     # 5. Observed marker ratio
@@ -136,8 +137,7 @@ def get_derivable_sentences(facts: List[Dict[str, Any]]) -> Set[str]:
         derivable.add(f"The calculated probability of baseline biological stability is {pct}%.")
 
     if "rcv" in f_map:
-        val = float(f_map["rcv"])
-        pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
+        pct = int(round(float(f_map["rcv"]) * 100))
         derivable.add(f"The biological reference change value threshold is {pct}%.")
 
     if "observed_change" in f_map:

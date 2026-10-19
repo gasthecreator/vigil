@@ -157,10 +157,11 @@ def t0_root_clean(r: Repo) -> Item:
     allowed = {
         ".editorconfig", ".gitignore", ".gitleaks.toml", ".gitleaksignore",
         "AGENTS.md", "CHANGELOG.md", "CITATION.cff", "CODE_OF_CONDUCT.md",
-        "CONTRIBUTING.md", "LICENSE", "Makefile", "README.md", "SECURITY.md", "conftest.py",
+        "CONTRIBUTING.md", "LICENSE", "NOTICE", "Makefile", "README.md", "SECURITY.md", "conftest.py",
         "package-lock.json", "package.json", "pyproject.toml", "uv.lock", ".python-version", ".nvmrc",
         ".pre-commit-config.yaml", ".gitattributes", "docker-compose.yml", "Dockerfile", ".dockerignore",
         ".env.example", "commitlint.config.cjs", "commitlint.config.js", "release-please-config.json",
+        "mkdocs.yml",
     }
     root_files = sorted(t for t in r.tracked if "/" not in t)
     extra = [t for t in root_files if t not in allowed]
