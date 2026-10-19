@@ -1,0 +1,465 @@
+{
+  "bootstrap": {
+    "method": "patient-cluster percentile",
+    "replicates": 500,
+    "seed": 43005
+  },
+  "calibration": "weighted logistic Platt scaling fitted on the independent calibration cohort",
+  "canaries": {
+    "B0_prevalence_shuffled_label_auc": 0.5,
+    "B1_single_threshold_shuffled_label_auc": 0.4926978668646001,
+    "B2_velocity_shuffled_label_auc": 0.49646836273453143,
+    "B3_regularized_logistic_horizon_shuffled_label_auc": 0.4737463425663253,
+    "B4_xgboost_horizon_shuffled_label_auc": 0.4847449283414215,
+    "fast_landmark_logistic_research_shuffled_label_auc": 0.5151014865458835,
+    "unobserved_ca_15_3_count": 1082
+  },
+  "code_sha": "5cf2faf8a16ac2f008b50257fbb1d5f060b88505",
+  "cohort_size_per_split": 1000,
+  "counts": {
+    "landmarks": {
+      "calibration": 4658,
+      "test": 4853,
+      "train": 4805,
+      "validation": 4772
+    },
+    "patients": {
+      "calibration": 995,
+      "test": 991,
+      "train": 995,
+      "validation": 995
+    },
+    "test_competing_events": 47,
+    "test_determinable_landmarks": 3102,
+    "test_recurrence_cases_by_horizon": 517
+  },
+  "experiment_id": "EXP-CORE-ML-003",
+  "generator": "G1 smooth kinetics",
+  "horizon_days": 365.0,
+  "paired_differences_vs_B1": {
+    "B0_prevalence": {
+      "auc": {
+        "ci_95": [
+          -0.10447454524557356,
+          -0.06181156780046418
+        ],
+        "estimate": -0.08341938599456666,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.004492465736112607,
+          0.012429076334833781
+        ],
+        "estimate": 0.00841515993908555,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.04602931435456184,
+          -0.03906098328960225
+        ],
+        "estimate": -0.042455941990487314,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B2_velocity": {
+      "auc": {
+        "ci_95": [
+          -0.07719160951619156,
+          -0.021273826608382645
+        ],
+        "estimate": -0.05034160915876007,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.0036055411148626514,
+          0.008351036124273238
+        ],
+        "estimate": 0.00599635624756803,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.0043894488481588355,
+          0.0104805588089855
+        ],
+        "estimate": -0.0020782978560737186,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B3_regularized_logistic_horizon": {
+      "auc": {
+        "ci_95": [
+          0.167059339259961,
+          0.22908264876423484
+        ],
+        "estimate": 0.19945726710340228,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.021615043492029137,
+          -0.01175891029883341
+        ],
+        "estimate": -0.016711320851132194,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.006570306042454611,
+          0.008018743345035625
+        ],
+        "estimate": 0.00044077443760009993,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B4_xgboost_horizon": {
+      "auc": {
+        "ci_95": [
+          0.1844434649717383,
+          0.2479354564758054
+        ],
+        "estimate": 0.21603190769851954,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.029858693219492145,
+          -0.02004834143590721
+        ],
+        "estimate": -0.025096390640868618,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.008509833882847746,
+          0.008444598242666154
+        ],
+        "estimate": -0.00010626435808218371,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "fast_landmark_logistic_research": {
+      "auc": {
+        "ci_95": [
+          0.1330102057770957,
+          0.2017090308164577
+        ],
+        "estimate": 0.16534892634772425,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.013282104790855466,
+          -0.005522536672280279
+        ],
+        "estimate": -0.009367830561977,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.014965311087333436,
+          0.00022337588540715948
+        ],
+        "estimate": -0.007529400932665575,
+        "valid_bootstrap_replicates": 500
+      }
+    }
+  },
+  "preregistration": "experiments/EXP-CORE-ML-003/PREREG.md",
+  "profile": {
+    "age_years": {
+      "distribution": "uniform",
+      "maximum": 82.0,
+      "minimum": 24.0
+    },
+    "competing_event_probabilities": {
+      "cardiovascular_event": 0.05,
+      "lost_to_follow_up": 0.04
+    },
+    "competing_event_time_days": {
+      "cardiovascular_event": [
+        120.0,
+        1800.0
+      ],
+      "lost_to_follow_up": [
+        180.0,
+        1400.0
+      ]
+    },
+    "indolent_probability": 0.08,
+    "interpretation": "Synthetic stress-test assumptions only. Not a Nigerian population estimate and not calibrated for clinical prediction.",
+    "profile_id": "balanced_synthetic_v1",
+    "receptor_probabilities": {
+      "her2_positive_er_positive": 0.5,
+      "her2_positive_pr_positive": 0.4,
+      "hr_positive_her2_negative_pr_positive": 0.85
+    },
+    "recurrence_cap_by_subtype": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "recurrence_day_cap": 1825.0,
+    "recurrence_multiplier_by_subtype": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "recurrence_probability_by_stage": [
+      0.15,
+      0.3,
+      0.55,
+      0.85
+    ],
+    "recurrence_time_gamma_by_subtype": [
+      {
+        "offset_days": 60.0,
+        "scale_days": 150.0,
+        "shape": 2.5
+      },
+      {
+        "offset_days": 90.0,
+        "scale_days": 180.0,
+        "shape": 3.5
+      },
+      {
+        "offset_days": 90.0,
+        "scale_days": 180.0,
+        "shape": 3.5
+      }
+    ],
+    "site_probabilities_by_subtype": [
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ]
+    ],
+    "stage_probabilities": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "subtype_probabilities": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333334
+    ]
+  },
+  "seeds": {
+    "calibration": 43002,
+    "test": 43004,
+    "train": 43001,
+    "validation": 43003
+  },
+  "selected_models": {
+    "B3_regularized_logistic_horizon": {
+      "candidate_validation_ipcw_brier": {
+        "C=0.05": 0.10334564397283766,
+        "C=0.5": 0.10548099333109587,
+        "C=5.0": 0.10631870057180379
+      },
+      "parameter_id": "C=0.05",
+      "validation_ipcw_brier": 0.10334564397283766
+    },
+    "B4_xgboost_horizon": {
+      "candidate_validation_ipcw_brier": {
+        "depth=2,estimators=150,learning_rate=0.03": 0.09578139604107838,
+        "depth=2,estimators=150,learning_rate=0.05": 0.09648070709281685,
+        "depth=2,estimators=50,learning_rate=0.03": 0.10002786178824863,
+        "depth=2,estimators=50,learning_rate=0.05": 0.0966616051669846,
+        "depth=3,estimators=150,learning_rate=0.03": 0.09685456642682574,
+        "depth=3,estimators=150,learning_rate=0.05": 0.09818695431150144,
+        "depth=3,estimators=50,learning_rate=0.03": 0.09828761267858299,
+        "depth=3,estimators=50,learning_rate=0.05": 0.09647268352938428
+      },
+      "parameter_id": "depth=2,estimators=150,learning_rate=0.03",
+      "validation_ipcw_brier": 0.09578139604107838
+    },
+    "fast_landmark_logistic_research": {
+      "candidate_validation_ipcw_brier": {
+        "C=0.1": 0.10827412716168848,
+        "C=1.0": 0.10878873002958302,
+        "C=10.0": 0.108957810383255
+      },
+      "parameter_id": "C=0.1",
+      "validation_ipcw_brier": 0.10827412716168848
+    }
+  },
+  "status": "synthetic research evaluation; not clinical validation",
+  "test_metrics": {
+    "B0_prevalence": {
+      "auc": {
+        "ci_95": [
+          0.4999999999999999,
+          0.5000000000000001
+        ],
+        "estimate": 0.5,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.10870176207624108,
+          0.13077049588561643
+        ],
+        "estimate": 0.11954200468630159,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.014997769062121035,
+          0.04837213226339817
+        ],
+        "estimate": 0.031978523224332256,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B1_single_threshold": {
+      "auc": {
+        "ci_95": [
+          0.561811567800464,
+          0.6044745452455735
+        ],
+        "estimate": 0.5834193859945667,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.10257302352359898,
+          0.11991136008000176
+        ],
+        "estimate": 0.11112684474721604,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.05890121406848936,
+          0.08963413680454603
+        ],
+        "estimate": 0.07443446521481957,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B2_velocity": {
+      "auc": {
+        "ci_95": [
+          0.5049667477459492,
+          0.5650518476130871
+        ],
+        "estimate": 0.5330777768358066,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.10747761374198986,
+          0.1266164927379236
+        ],
+        "estimate": 0.11712320099478407,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.061036777690168395,
+          0.0880182039353646
+        ],
+        "estimate": 0.07235616735874585,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B3_regularized_logistic_horizon": {
+      "auc": {
+        "ci_95": [
+          0.75042419272023,
+          0.8093670917466178
+        ],
+        "estimate": 0.7828766530979689,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.08708632014569008,
+          0.10243631749777932
+        ],
+        "estimate": 0.09441552389608385,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.060725641751009564,
+          0.08942621817777932
+        ],
+        "estimate": 0.07487523965241967,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B4_xgboost_horizon": {
+      "auc": {
+        "ci_95": [
+          0.7686147446006046,
+          0.8253813271462679
+        ],
+        "estimate": 0.7994512936930862,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.07910329770099125,
+          0.09368989974379151
+        ],
+        "estimate": 0.08603045410634742,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.06162341834016446,
+          0.08768684209192912
+        ],
+        "estimate": 0.07432820085673739,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "fast_landmark_logistic_research": {
+      "auc": {
+        "ci_95": [
+          0.7182786442999574,
+          0.7810533267042459
+        ],
+        "estimate": 0.7487683123422909,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.09296392068917539,
+          0.11061185847532021
+        ],
+        "estimate": 0.10175901418523904,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.0530074328213931,
+          0.08150779626541546
+        ],
+        "estimate": 0.066905064282154,
+        "valid_bootstrap_replicates": 500
+      }
+    }
+  }
+}
