@@ -43,12 +43,14 @@ The code in [`conformal_k8.py`](../../packages/vigil-ml/vigil_ml/conformal_k8.py
 - Replaced K7's misleading empty-arm balance result and corrected protective-effect E-value interval handling.
 - Replaced K8's interpolated/clamped calibration threshold with its finite-sample rank rule; abstentions omit numeric scores, and outputs no longer claim probability calibration or conformal intervals.
 - Updated the stub registry to distinguish built code from guarantees and deployment claims that remain unearned.
+- Regenerated `docs/diataxis/model-cards.md` after the docs-site freshness gate caught the changed K2 model-card title.
+- The first Lighthouse CI attempt failed before collecting metrics because Chrome did not publish a debugging port. The CI step now supplies the Chromium executable installed by Playwright; the rerun completed the Lighthouse budgets.
 
 ## Checks and limits
 
 Passed locally: Ruff on changed Python files; Python byte-compilation; focused K7/K8 behavior smoke checks; `check_claims.py`; `reality_audit.py --require-stub-registry`; `check_docs_links.py`; `check_i18n_review_state.py`; generated docs-index freshness; `generate_status.py --check`; and `git diff --check`.
 
-Blocked locally: focused pytest collection fails because `pandas` is unavailable; hazard verification cannot load `fastapi`; API-reference freshness cannot import the API app; `uv sync --all-packages` cannot download `mako` because package-index DNS/network access is unavailable. Evidence DOI validation is similarly blocked by network resolution. These are not reported as passing. CI must run on the branch before merge. The S2 seed-42 study was intentionally not rerun.
+Blocked locally: focused pytest collection fails because `pandas` is unavailable; hazard verification cannot load `fastapi`; API-reference freshness cannot import the API app; `uv sync --all-packages` cannot download `mako` because package-index DNS/network access is unavailable. Evidence DOI validation is similarly blocked by network resolution. These local limitations are distinct from the latest remote checks, which all passed on commit `ffe79a6`: CI run [#213](https://github.com/gasthecreator/vigil/actions/runs/39298594098), quality gates [#46](https://github.com/gasthecreator/vigil/actions/runs/39298594072), CodeQL [#101](https://github.com/gasthecreator/vigil/actions/runs/39298594029), and Postgres/images [#53](https://github.com/gasthecreator/vigil/actions/runs/39298594016). The S2 seed-42 study was intentionally not rerun.
 
 The first claims-policy run also scanned a pre-existing generated `site/` directory and reported historical quoted claims. The checker now excludes that generated output; rerunning against repository sources passes.
 
