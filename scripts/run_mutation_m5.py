@@ -56,7 +56,9 @@ def main() -> int:
         "python -m pytest tests/test_m3_m5.py -q --tb=no",
         "--no-progress",
     ]
-    res = subprocess.run(cmd, cwd=ROOT / "packages" / "vigil-ml", env=env, capture_output=True, text=True)
+    res = subprocess.run(
+        cmd, cwd=ROOT / "packages" / "vigil-ml", env=env, capture_output=True, text=True
+    )
     results = subprocess.run(
         [sys.executable, "-m", "mutmut", "results"],
         cwd=ROOT / "packages" / "vigil-ml",
