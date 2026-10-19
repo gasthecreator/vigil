@@ -118,6 +118,8 @@ jobs:
           VIGIL_ACCEPT_P14=1 uv run pytest tests/acceptance_p14 -q --tb=line
           VIGIL_ACCEPT_P15=1 uv run pytest tests/acceptance_p15 -q --tb=line
       - name: Scale probe at several sizes + scaling analysis (honest size; nightly larger)
+        env:
+          DATABASE_URL: ${{ env.VIGIL_POSTGRES_TEST_URL }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then SIZES="2000 10000 30000"; else SIZES="2000 6000"; fi
           for n in $SIZES; do
