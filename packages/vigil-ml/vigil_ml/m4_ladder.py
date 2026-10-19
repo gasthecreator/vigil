@@ -45,7 +45,7 @@ ASSUMED_HALFWIDTH = 0.10
 STALE_AFTER_DAYS = 365
 
 NEGATIVE_RESULT_STATEMENT = (
-    "A negative result lowers the probability of involvement but leaves the remaining "
+    "A negative result does not exclude involvement. It lowers the probability of involvement but leaves the remaining "
     "probability shown. It does not establish that the organ is free of metastasis."
 )
 SCOPE_STATEMENT = (

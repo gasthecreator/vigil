@@ -8,7 +8,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
 from vigil_api.models.v2 import (
     Alert,
@@ -278,3 +278,32 @@ def test_migration_lifecycle_and_constraints(temp_db_alembic):
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='patients'")
         ).scalar()
         assert result == "patients"
+
+
+def test_p16_governance_and_feedback_tables_are_db_enforced_append_only(temp_db_alembic):
+    alembic_cfg, db_url = temp_db_alembic
+    engine = create_engine(db_url)
+    command.upgrade(alembic_cfg, "head")
+    timestamp = datetime.now(timezone.utc).isoformat()
+    with engine.begin() as connection:
+        connection.execute(
+            text("""INSERT INTO model_governance_records
+                (id, sequence, event_type, actor_id, occurred_at, payload, previous_hash, record_hash)
+                VALUES ('gov-1', 1, 'shadow_evaluated', 'admin-1', :at, '{}', :prev, :hash)"""),
+            {"at": timestamp, "prev": "0" * 64, "hash": "1" * 64},
+        )
+        connection.execute(
+            text("""INSERT INTO test_ladder_feedback
+                (id, facility_id, modality, available, turnaround_days, price_band, source, verified_on, submitted_by, submitted_at)
+                VALUES ('fb-1', 'SITE-1', 'ct', 1, 3, 2, 'phone', :at, 'admin-1', :at)"""),
+            {"at": timestamp},
+        )
+
+    for table in ("model_governance_records", "test_ladder_feedback"):
+        with pytest.raises(DBAPIError, match="append-only table"):
+            with engine.begin() as connection:
+                connection.execute(text(f"UPDATE {table} SET id = id"))
+        with pytest.raises(DBAPIError, match="append-only table"):
+            with engine.begin() as connection:
+                connection.execute(text(f"DELETE FROM {table}"))
+    engine.dispose()

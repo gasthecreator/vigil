@@ -63,6 +63,16 @@ Every route requires authentication unless marked **public**. `GET /metrics` nee
 |---|---|---|---|---|
 | POST | `/api/v1/hl7/oru-r01` | auth | Ingest HL7 v2 ORU^R01 unsolicited laboratory result message | 200, 422 |
 
+## Model Governance (M11)
+
+| Method | Path | Access | Summary | Responses |
+|---|---|---|---|---|
+| POST | `/api/v1/models/governance/approvals` | auth | Approve Evaluation | 201, 422 |
+| POST | `/api/v1/models/governance/candidate-evaluations` | auth | Start Shadow Evaluation | 201, 422 |
+| POST | `/api/v1/models/governance/promote` | auth | Promote Evaluation | 200, 422 |
+| POST | `/api/v1/models/governance/rollback` | auth | Rollback Model | 200, 422 |
+| GET | `/api/v1/models/governance/status` | auth | Governance Status | 200, 422 |
+
 ## OCR lab drafts
 
 | Method | Path | Access | Summary | Responses |
@@ -120,6 +130,8 @@ Every route requires authentication unless marked **public**. `GET /metrics` nee
 | Method | Path | Access | Summary | Responses |
 |---|---|---|---|---|
 | GET | `/api/v1/test-ladder/facilities` | auth | List Registry Facilities | 200, 422 |
+| POST | `/api/v1/test-ladder/feedback` | auth | Submit Availability Feedback | 201, 422 |
+| GET | `/api/v1/test-ladder/feedback/{facility_id}` | auth | List Availability Feedback | 200, 422 |
 | POST | `/api/v1/test-ladder/recommend` | auth | Recommend Test Ladder | 200, 422 |
 
 ## Treatment Continuity & Radiotherapy (M7)
@@ -145,4 +157,4 @@ Every route requires authentication unless marked **public**. `GET /metrics` nee
 | GET | `/metrics` | token | Metrics | 200 |
 | GET | `/ready` | public | Ready | 200 |
 
-*66 operations.*
+*73 operations.*

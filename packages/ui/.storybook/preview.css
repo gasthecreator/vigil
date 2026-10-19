@@ -1,0 +1,11 @@
+@config "../../../apps/web/tailwind.config.ts";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+  background: #f8fafc;
+}

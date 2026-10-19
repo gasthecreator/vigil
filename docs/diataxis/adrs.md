@@ -33,3 +33,4 @@
 - [ADR 0029: i18n review-state ledger and medical glossary](../adr/0029-i18n-review-state-and-glossary.md)
 - [ADR-0030: Typing and import-linter scope (P16 PR2 / G-05)](../adr/0030-typing-and-import-linter-scope.md)
 - [0031. `apps/worker` shim and deferred `packages/vigil-opt`](../adr/0031-worker-and-vigil-opt-layout.md)
+- [ADR-0032: J8 shadow model governance](../adr/0032-j8-shadow-model-governance.md)

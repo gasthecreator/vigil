@@ -99,6 +99,17 @@ test.describe("M8 Family & Patient Companion E2E Suite (Real Backend & Seeded SQ
     await page.screenshot({ path: path.join(SCREENS_DIR, "m8_companion_result_explainer.png"), fullPage: true });
   });
 
+  test("Read-aloud gracefully falls back when browser speech is unavailable", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "speechSynthesis", { configurable: true, value: undefined });
+    });
+    await page.goto("/companion/results/OBS-001");
+    await expect(page.getByRole("button", { name: "Read verified explanation aloud" })).toBeVisible();
+    await page.getByRole("button", { name: "Read verified explanation aloud" }).click();
+    await expect(page.getByRole("status")).toContainText("Read-aloud is not supported by this browser");
+    await expect(page.locator('[data-testid="explainer-content"]')).toBeVisible();
+  });
+
   test("Second-Look Request & Printable Clinic Summary Card", async ({ page }) => {
     await page.goto("/companion/second-look/OBS-001");
     await page.waitForSelector("header");

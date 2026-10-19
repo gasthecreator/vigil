@@ -36,6 +36,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.orm import relationship
 
@@ -826,5 +827,48 @@ class OcrDraft(Base):
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(String(100), nullable=True)
     observation_id = Column(String(36), nullable=True)
-
     patient = relationship("Patient", back_populates="ocr_drafts")
+
+
+class ModelGovernanceRecord(Base):
+    """Append-only, hash-chained model change-control record (M11/J8)."""
+
+    __tablename__ = "model_governance_records"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    sequence = Column(Integer, nullable=False, unique=True, index=True)
+    event_type = Column(String(40), nullable=False, index=True)
+    actor_id = Column(String(100), nullable=False)
+    occurred_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    payload = Column(JSON, nullable=False)
+    previous_hash = Column(String(64), nullable=False)
+    record_hash = Column(String(64), nullable=False, unique=True)
+
+
+class TestLadderFeedback(Base):
+    """Append-only facility-reported M4 availability and cost feedback."""
+
+    __tablename__ = "test_ladder_feedback"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    facility_id = Column(String(64), nullable=False, index=True)
+    modality = Column(String(64), nullable=False)
+    available = Column(Boolean, nullable=False)
+    turnaround_days = Column(Integer, nullable=True)
+    price_band = Column(Integer, nullable=False)
+    source = Column(String(200), nullable=False)
+    verified_on = Column(DateTime(timezone=True), nullable=False)
+    submitted_by = Column(String(100), nullable=False)
+    submitted_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+@event.listens_for(TestLadderFeedback, "before_update")
+@event.listens_for(TestLadderFeedback, "before_delete")
+def _reject_test_ladder_feedback_mutation(_mapper, _connection, _target):
+    raise ValueError("Test ladder feedback is append-only")
+
+
+@event.listens_for(ModelGovernanceRecord, "before_update")
+@event.listens_for(ModelGovernanceRecord, "before_delete")
+def _reject_model_governance_mutation(_mapper, _connection, _target):
+    raise ValueError("Model governance records are append-only")

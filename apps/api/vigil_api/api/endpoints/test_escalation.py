@@ -7,14 +7,23 @@ model output (``vigil_api.silent_mode``). The engine is pure; the only clock rea
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from vigil_api import silent_mode
+from vigil_api.audit import record_audit_event
 from vigil_api.auth import require_roles
-from vigil_api.models.v2 import User, UserRole
-from vigil_api.schemas.v2 import TestLadderFacility, TestLadderRequest, TestLadderResponse
+from vigil_api.database import get_db
+from vigil_api.models.v2 import TestLadderFeedback, User, UserRole
+from vigil_api.schemas.v2 import (
+    TestLadderAvailabilityFeedback,
+    TestLadderFacility,
+    TestLadderRequest,
+    TestLadderResponse,
+)
 from vigil_ml import m4_ladder
 
 router = APIRouter()
@@ -106,3 +115,61 @@ def recommend_test_ladder(
         max_price_band=payload.max_price_band,
     )
     return result.to_dict()
+
+
+@router.post("/feedback", status_code=status.HTTP_201_CREATED)
+def submit_availability_feedback(
+    payload: TestLadderAvailabilityFeedback,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
+    """Record a facility capability report as an append-only, audited observation."""
+    if payload.verified_on > date.today():
+        raise HTTPException(status_code=422, detail="verified_on cannot be in the future")
+    allowed_facilities = set(_TEMPLATES)
+    if payload.facility_id not in allowed_facilities and not payload.facility_id.startswith("SITE-"):
+        raise HTTPException(status_code=404, detail="Unknown or unregistered facility identifier")
+    row = TestLadderFeedback(
+        facility_id=payload.facility_id,
+        modality=payload.modality.lower(),
+        available=payload.available,
+        turnaround_days=payload.turnaround_days,
+        price_band=payload.price_band,
+        source=payload.source,
+        verified_on=datetime.combine(payload.verified_on, datetime.min.time(), tzinfo=timezone.utc),
+        submitted_by=current_user.id,
+    )
+    db.add(row)
+    db.flush()
+    record_audit_event(
+        db, current_user.id, current_user.role, "test_ladder.availability_feedback", "facility_capability", row.id,
+        {"facility_id": row.facility_id, "modality": row.modality, "available": row.available,
+         "turnaround_days": row.turnaround_days, "price_band": row.price_band,
+         "source": row.source, "verified_on": payload.verified_on.isoformat()},
+    )
+    db.commit()
+    return {"feedback_id": row.id, "recorded": True, "audit_recorded": True}
+
+
+@router.get("/feedback/{facility_id}")
+def list_availability_feedback(
+    facility_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
+):
+    rows = db.execute(
+        select(TestLadderFeedback).where(TestLadderFeedback.facility_id == facility_id)
+        .order_by(TestLadderFeedback.submitted_at.desc())
+    ).scalars().all()
+    record_audit_event(
+        db, current_user.id, current_user.role, "test_ladder.availability_feedback_listed",
+        "facility_capability", facility_id, {"row_count": len(rows)},
+    )
+    db.commit()
+    return [
+        {"feedback_id": r.id, "facility_id": r.facility_id, "modality": r.modality,
+         "available": r.available, "turnaround_days": r.turnaround_days, "price_band": r.price_band,
+         "source": r.source, "verified_on": r.verified_on.date().isoformat() if hasattr(r.verified_on, "date") else r.verified_on.isoformat(),
+         "submitted_by": r.submitted_by, "submitted_at": r.submitted_at.isoformat()}
+        for r in rows
+    ]

@@ -1,0 +1,61 @@
+{
+  "route": "/companion",
+  "data_status": "Measured from the Next.js production app build; JavaScript chunks only.",
+  "command": "npm run web:build && node scripts/check_companion_bundle.mjs",
+  "machine": "darwin-arm64 25.6.0",
+  "budget_gzip_bytes": 184320,
+  "measured_gzip_bytes": 126723,
+  "reported_gzip_bytes": 126723,
+  "seed_fail": false,
+  "asset_count": 8,
+  "assets": [
+    {
+      "path": "static/chunks/webpack-0cfe6f51555ca84e.js",
+      "raw_bytes": 3404,
+      "gzip_bytes": 1699,
+      "sha256": "f71512b1393a7c7cf67ebeac7ba4e1e567da13e1b2983b0ca09b45e4d1783b33"
+    },
+    {
+      "path": "static/chunks/87c73c54-24122e7b92478d00.js",
+      "raw_bytes": 173019,
+      "gzip_bytes": 54240,
+      "sha256": "0d30e73d8f3c24eee6941dd0861b15e22d943c0aec3bfc571eecfecb0e06b7c3"
+    },
+    {
+      "path": "static/chunks/18-8a0e9dadb94224f5.js",
+      "raw_bytes": 174075,
+      "gzip_bytes": 46593,
+      "sha256": "94563c6ddc4a43268411b0ef3e0bd47c5de3d62e48c54040e4eb66d13857b4c3"
+    },
+    {
+      "path": "static/chunks/main-app-e05ee8f3b6e26040.js",
+      "raw_bytes": 554,
+      "gzip_bytes": 223,
+      "sha256": "f32acc226e9439d954e4f27e52bfbeaf2f051b46e143011d7411061a9d0de076"
+    },
+    {
+      "path": "static/chunks/664-6d821dc1aacb6b48.js",
+      "raw_bytes": 8532,
+      "gzip_bytes": 3367,
+      "sha256": "a9aa1686c9d127267fa7dc62395df4f7fdb1e962e073b29a7d1fe8f0d118e483"
+    },
+    {
+      "path": "static/chunks/83-cb9ef3f9b92fa3c1.js",
+      "raw_bytes": 7552,
+      "gzip_bytes": 2829,
+      "sha256": "a2c1d338305951398309de879171003e4dcbeedc7152f9390ca9d835776ffb1f"
+    },
+    {
+      "path": "static/chunks/194-d025083eac8cee12.js",
+      "raw_bytes": 38319,
+      "gzip_bytes": 13254,
+      "sha256": "3ae31bc92a55fa509de85811fa30619996a95f75e5a80c198377fdc44c95913f"
+    },
+    {
+      "path": "static/chunks/app/companion/page-3f341bafdf213216.js",
+      "raw_bytes": 18553,
+      "gzip_bytes": 4518,
+      "sha256": "4ecc607c37f34f51649b1848b541c3dd3c421e4a1f3638954a77cc5d96e2aa5f"
+    }
+  ]
+}

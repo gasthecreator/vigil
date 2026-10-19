@@ -216,7 +216,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "20"
+          node-version: "20.19.0"
           cache: "npm"
           cache-dependency-path: "package-lock.json"
       - name: Install monorepo dependencies
@@ -225,6 +225,32 @@ jobs:
         run: npm run web:lint
       - name: Build web application
         run: npm run web:build
+      - name: Seed-fail companion bundle budget
+        run: |
+          if node scripts/check_companion_bundle.mjs --seed-fail; then
+            echo "::error::companion bundle --seed-fail unexpectedly passed"; exit 1
+          fi
+      - name: Measure companion route gzip budget
+        run: node scripts/check_companion_bundle.mjs
+
+  storybook-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "20.19.0"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+      - name: Install monorepo dependencies
+        run: npm ci
+      - name: Install browser for real-browser story tests
+        run: npx playwright install --with-deps chromium
+      - name: Build packages/ui Storybook
+        run: npm --workspace=@vigil/ui run build-storybook
+      - name: Run Storybook interaction and axe accessibility tests
+        run: npm --workspace=@vigil/ui run test:storybook
 
   e2e-and-lighthouse:
     runs-on: ubuntu-latest
@@ -242,7 +268,7 @@ jobs:
         run: uv sync --all-packages
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "20"
+          node-version: "20.19.0"
           cache: "npm"
           cache-dependency-path: "package-lock.json"
       - name: Install monorepo dependencies

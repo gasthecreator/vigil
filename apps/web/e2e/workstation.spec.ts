@@ -15,6 +15,20 @@ test.describe("M9 Clinician Workstation E2E Suite (Real Backend & Seeded SQLite)
     // and real Guardian state machine.
   });
 
+  test("Journey J6: M4 evidence ladder shows safety caveat and records audited facility feedback", async ({ page }) => {
+    await page.goto("/test-ladder");
+    await expect(page.getByRole("heading", { name: "M4 Resource-Aware Test Ladder" })).toBeVisible();
+    await expect(page.getByText("Illustrative facility templates only")).toBeVisible();
+    await page.getByRole("button", { name: "Show evidence-based options" }).click();
+    await expect(page.getByTestId("ladder-results")).toBeVisible();
+    await expect(page.getByTestId("negative-result-warning")).toContainText("A negative result does not exclude involvement");
+    await expect(page.getByText(/Unverified availability|Stale availability/).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Record audited feedback" }).click();
+    await expect(page.getByText(/Availability and cost feedback recorded/)).toContainText("feedback recorded");
+    await expect(page.getByText(/Availability and cost feedback recorded/)).toContainText("audit logged");
+  });
+
   test("Accessibility Audit: Clinician Workstation meets WCAG 2.2 AA (Zero serious/critical violations)", async ({ page }) => {
     await page.goto("/");
     await page.waitForSelector("header");

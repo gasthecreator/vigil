@@ -113,6 +113,13 @@ def _auth_header(role: str, patient_id: Optional[str] = None) -> Dict[str, str]:
 
 # Complete RBAC policy mapping (method, path) -> set of allowed roles (or "public")
 OPENAPI_RBAC_POLICY: Dict[Tuple[str, str], Set[str]] = {
+    ("GET", "/api/v1/test-ladder/feedback/{facility_id}"): {"clinician", "admin"},
+    ("POST", "/api/v1/test-ladder/feedback"): {"clinician", "admin"},
+    ("GET", "/api/v1/models/governance/status"): {"admin"},
+    ("POST", "/api/v1/models/governance/candidate-evaluations"): {"admin"},
+    ("POST", "/api/v1/models/governance/approvals"): {"admin"},
+    ("POST", "/api/v1/models/governance/promote"): {"admin"},
+    ("POST", "/api/v1/models/governance/rollback"): {"admin"},
     # Public & self-authenticating share routes
     ("GET", "/"): {"public"},
     ("GET", "/health"): {"public"},

@@ -63,6 +63,10 @@ def main() -> int:
             "docs/STATUS.md freshness",
         ),
         (
+            [sys.executable, str(ROOT / "scripts" / "run_alert_fatigue_simulation.py"), "--verify"],
+            "EXP-UF-001 synthetic alert-burden metrics",
+        ),
+        (
             [sys.executable, str(ROOT / "scripts" / "generate_sbom.py")],
             "Regenerate SBOM JSON under reports/sbom/",
         ),

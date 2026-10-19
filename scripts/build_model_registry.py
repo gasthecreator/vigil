@@ -20,6 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "packages" / "vigil-ml" / "vigil_ml" / "registry" / "model_registry.json"
+HASH_OUT = OUT.with_suffix(".json.sha256")
 
 ENTRIES = [
     {
@@ -144,9 +145,12 @@ def main() -> int:
     reg = build()
     bad = problems(reg)
     text = json.dumps(reg, indent=2) + "\n"
+    digest_text = hashlib.sha256(text.encode("utf-8")).hexdigest() + "  model_registry.json\n"
     if args.check:
         if not OUT.exists() or OUT.read_text(encoding="utf-8") != text:
             bad.append("registry file is stale; run scripts/build_model_registry.py")
+        if not HASH_OUT.exists() or HASH_OUT.read_text(encoding="utf-8") != digest_text:
+            bad.append("registry hash is stale or missing; run scripts/build_model_registry.py")
         for b in bad:
             print("FAIL:", b)
         return 1 if bad else 0
@@ -155,7 +159,8 @@ def main() -> int:
             print("FAIL:", b)
         return 1
     OUT.write_text(text, encoding="utf-8")
-    print(f"wrote {OUT.relative_to(ROOT)}")
+    HASH_OUT.write_text(digest_text, encoding="utf-8")
+    print(f"wrote {OUT.relative_to(ROOT)} and its SHA-256 sidecar")
     return 0
 
 

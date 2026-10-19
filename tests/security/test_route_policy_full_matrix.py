@@ -147,6 +147,7 @@ def fill(path: str) -> str:
         "share_id": "no-such-share",
         "share_token": "cg_no-such-token",
         "draft_id": "no-such-draft",
+        "facility_id": "TEMPLATE-TERTIARY",
     }
     out = path
     if path.startswith("/api/v1/fhir/Observation/"):
@@ -178,6 +179,17 @@ VALID_BODIES: Dict[Tuple[str, str], dict] = {
         "prior": {"value": 0.15, "provenance": "matrix"},
         "facility_id": "TEMPLATE-TERTIARY",
     },
+    ("POST", "/api/v1/test-ladder/feedback"): {
+        "facility_id": "TEMPLATE-TERTIARY", "modality": "ct", "available": True,
+        "turnaround_days": 3, "price_band": 2, "source": "role matrix", "verified_on": "2026-10-19",
+    },
+    ("POST", "/api/v1/models/governance/candidate-evaluations"): {
+        "monitor_report": {}, "candidate_id": "K2-SHADOW-1", "max_alert_rate_increase": 0.25,
+        "series": [{"observations": [{"day": 0, "value": 20}]}],
+    },
+    ("POST", "/api/v1/models/governance/approvals"): {"evaluation_id": "matrix"},
+    ("POST", "/api/v1/models/governance/promote"): {"evaluation_id": "matrix"},
+    ("POST", "/api/v1/models/governance/rollback"): {"reason": "role matrix"},
     ("POST", "/api/v1/patients/{id}/ocr-drafts"): {
         "filename": "report.png",
         "content_type": "image/png",

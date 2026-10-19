@@ -27,7 +27,7 @@ import {
   SyncBatchResponse,
 } from "@vigil/contracts";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export const apiClient = new VigilApiClient({
   baseUrl: API_BASE,
