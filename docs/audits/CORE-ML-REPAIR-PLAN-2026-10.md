@@ -40,8 +40,9 @@ Packages A–I are required for closure. They may be split into reviewable commi
 
 ## Current state and first action
 
-- A has a first-pass source audit in `CORE-ML-RERUN-2026-10.md`; the complete crosswalk remains to be finished.
+- A has a first-pass source audit in `CORE-ML-RERUN-2026-10.md`, a model/claim inventory, a data/runtime crosswalk, and a prompt-to-engine trace in `docs/audits/`. The complete source-to-claim and historical result-to-producer ledger remains open.
 - EXP-CORE-ML-003 and EXP-CORE-ML-004 are completed synthetic studies under the corrected baseline contract. Their scope does not close A–I.
 - Two legacy fixed-AUC tests still fail; proposal `PROP-CORE-ML-CENSOR-AWARE-GATE.md` awaits overseer review. Current K1/K3 proposals document invalid implementations but are not implementation evidence.
-- First active package: **D, K1 source/route consolidation audit and design**. Inspect all references and tests without touching frozen test data; commit a K1 preregistration before new fitting/evaluation; then repair, train, validate, integrate and reproduce its outputs.
+- Q-7 B has fixed several source-level simulator/export defects, but its full trainer/evaluator/serving call-path audit, verification-bias estimator and observed-vs-latent estimand closure remain open. The current focused suite is not green because the unchanged K3 shuffled-outcome canary fails; proposal `PROP-K3-SHUFFLED-OUTCOME-CANARY.md` awaits overseer disposition.
+- First active work remains **A–B closure**: finish the prompt/model/result inventory, trace every historical training and evaluation path against the corrected data contract, and fix or register defects before starting new model fitting. Then proceed to C and D/E in the listed execution order. No frozen result access or new tuning before its preregistration.
 

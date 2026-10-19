@@ -1,8 +1,8 @@
-"""
-packages/vigil-ml/vigil_ml/runtime.py
+"""ONNX execution wrapper for explicitly supplied research artifacts.
 
-Production ONNX and CPU Inference Runtime for Vigil.
-Provides sub-100ms p95 single-call inference latency and structured triage output.
+This wrapper does not train, calibrate, validate, or promote a model. It refuses
+to invent a fallback model or an uncertainty estimate when those inputs are
+missing. The conformal controller abstains until a calibration cohort is fitted.
 """
 
 from __future__ import annotations
@@ -15,23 +15,21 @@ import numpy as np
 import onnxruntime as ort
 
 from vigil_ml.conformal_k8 import ConformalPredictionResult, ConformalRiskControllerK8
-from vigil_ml.export import SurrogateInferenceNet, export_to_onnx
 
 
 class VigilProductionRuntime:
-    """
-    Production inference engine loading ONNX bytecode with CPUExecutionProvider.
+    """Run an explicitly supplied ONNX artifact on CPU.
+
+    The historical class name is retained for API compatibility; this class is
+    a research wrapper and does not imply production validation.
     """
 
     def __init__(self, onnx_model_path: Optional[Path] = None):
-        if onnx_model_path is None or not onnx_model_path.exists():
-            # Build and export standard model
-            net = SurrogateInferenceNet(input_dim=15, hidden_dim=32)
-            default_path = Path("/tmp/vigil_model.onnx")
-            export_to_onnx(net, default_path)
-            self.model_path = default_path
-        else:
-            self.model_path = onnx_model_path
+        if onnx_model_path is None:
+            raise ValueError("An explicit ONNX artifact path is required; no fallback model is available")
+        if not onnx_model_path.is_file():
+            raise FileNotFoundError(f"ONNX artifact does not exist: {onnx_model_path}")
+        self.model_path = onnx_model_path
 
         # Optimized session options
         opts = ort.SessionOptions()
@@ -39,32 +37,46 @@ class VigilProductionRuntime:
         opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         self.session = ort.InferenceSession(str(self.model_path), sess_options=opts, providers=["CPUExecutionProvider"])
         self.input_name = self.session.get_inputs()[0].name
+        input_shape = self.session.get_inputs()[0].shape
+        if not input_shape or not isinstance(input_shape[-1], int) or input_shape[-1] <= 0:
+            raise ValueError("ONNX artifact must declare a fixed positive feature dimension")
+        self.input_dimension = input_shape[-1]
         self.conformal = ConformalRiskControllerK8(alpha_conf=0.10)
 
-    def predict_single_patient(self, features: np.ndarray) -> ConformalPredictionResult:
+    def predict_single_patient(
+        self, features: np.ndarray, *, epistemic_std: float
+    ) -> ConformalPredictionResult:
         """
         Runs single-patient inference on CPU.
         """
-        x = features.reshape(1, -1).astype(np.float32)
+        features = np.asarray(features, dtype=np.float32)
+        if features.shape != (self.input_dimension,):
+            raise ValueError(f"features must have shape ({self.input_dimension},)")
+        if not np.isfinite(features).all():
+            raise ValueError("features must contain only finite values")
+        x = features.reshape(1, -1)
         raw_prob = float(self.session.run(None, {self.input_name: x})[0][0, 0])
-        # Epistemic uncertainty estimate (from latent distance)
-        epistemic_std = 0.04
         return self.conformal.predict(raw_prob, epistemic_std, features)
 
     def benchmark_latency(self, n_calls: int = 1000) -> Dict[str, float]:
         """
-        Measures CPU latency over >= 1,000 calls.
-        Asserts p95 < 100 ms.
+        Measures ONNX CPU execution latency over at least 1,000 calls.
+
+        This excludes feature construction, uncertainty estimation, calibration,
+        and API overhead. It is a runtime-mechanics measurement only.
         """
-        dummy_x = np.random.randn(15).astype(np.float32)
+        if n_calls < 1000:
+            raise ValueError("n_calls must be at least 1000")
+        dummy_x = np.zeros(self.input_dimension, dtype=np.float32)
+        model_input = dummy_x.reshape(1, -1)
         # Warmup
         for _ in range(50):
-            self.predict_single_patient(dummy_x)
+            self.session.run(None, {self.input_name: model_input})
 
         latencies = []
         for _ in range(n_calls):
             t0 = time.perf_counter()
-            self.predict_single_patient(dummy_x)
+            self.session.run(None, {self.input_name: model_input})
             t1 = time.perf_counter()
             latencies.append((t1 - t0) * 1000.0)  # ms
 

@@ -147,7 +147,7 @@ def test_k8_rejects_invalid_calibration_and_prediction_inputs():
         k8.predict(raw_risk=float("nan"), epistemic_std=0.1)
 
 
-def test_production_export_parity_and_latency(tmp_path):
+def test_explicit_onnx_export_parity_and_runtime_latency(tmp_path):
     net = SurrogateInferenceNet(input_dim=15, hidden_dim=32)
     onnx_file = tmp_path / "model.onnx"
     safetensors_file = tmp_path / "model.safetensors"
@@ -164,6 +164,36 @@ def test_production_export_parity_and_latency(tmp_path):
 
     # Runtime and CPU latency benchmark (p95 < 100 ms)
     runtime = VigilProductionRuntime(onnx_model_path=onnx_file)
-    bench = runtime.benchmark_latency(n_calls=200)
+    bench = runtime.benchmark_latency(n_calls=1000)
     assert bench["budget_passed"], f"Latency budget exceeded: {bench}"
     assert bench["p95_latency_ms"] < 100.0
+
+
+def test_runtime_latency_benchmark_rejects_reduced_sample_size(tmp_path):
+    net = SurrogateInferenceNet(input_dim=15, hidden_dim=32)
+    onnx_file = tmp_path / "model.onnx"
+    export_to_onnx(net, onnx_file)
+    runtime = VigilProductionRuntime(onnx_model_path=onnx_file)
+    with pytest.raises(ValueError, match="at least 1000"):
+        runtime.benchmark_latency(n_calls=999)
+
+
+def test_runtime_requires_an_explicit_existing_model(tmp_path):
+    with pytest.raises(ValueError, match="explicit ONNX artifact path"):
+        VigilProductionRuntime()
+    with pytest.raises(FileNotFoundError, match="ONNX artifact does not exist"):
+        VigilProductionRuntime(onnx_model_path=tmp_path / "missing.onnx")
+
+
+def test_runtime_rejects_invalid_feature_vector(tmp_path):
+    net = SurrogateInferenceNet(input_dim=15, hidden_dim=32)
+    onnx_file = tmp_path / "model.onnx"
+    export_to_onnx(net, onnx_file)
+    runtime = VigilProductionRuntime(onnx_model_path=onnx_file)
+    result = runtime.predict_single_patient(np.zeros(15), epistemic_std=0.1)
+    assert result.risk_score is None
+    assert result.alert_tier == "abstain"
+    with pytest.raises(ValueError, match="features must have shape"):
+        runtime.predict_single_patient(np.zeros(14), epistemic_std=0.1)
+    with pytest.raises(ValueError, match="finite values"):
+        runtime.predict_single_patient(np.full(15, np.nan), epistemic_std=0.1)
