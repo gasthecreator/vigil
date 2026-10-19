@@ -1,5 +1,7 @@
 # Model Card: Model K1 — Hybrid Mechanistic–Neural State-Space Model ("Kinetic")
 
+> **Audit correction (2026-10): RETRACTED FOR RECURRENCE-RISK USE.** The implementation and artifacts do not support the validation claims below. The three EXP-K1 studies pass boolean `observed_ca_15_3` flags as biomarker values; their interventions do not implement their preregistered changes. `risk_from_posterior` is a heuristic score, not a recurrence probability. The public package export resolves to a separate legacy implementation. The four inference routes have not been established as scientifically valid for the product simulator. Preserve this card as historical context only; do not use its numbers or claims for model selection or deployment. See [`CORE-ML-AUDIT-2026-10.md`](../audits/CORE-ML-AUDIT-2026-10.md).
+
 **Model Identifier:** `MODEL-K1-KINETIC-HYBRID`  
 **Model Version:** 1.3.1-research (Research Inference Module; ADR-0007)  
 **Date:** 2026-10-16  
