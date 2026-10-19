@@ -138,8 +138,8 @@ jobs:
           # dropped pkg_resources needed by semgrep's otel instrumentation).
           # Official image is hermetic and SHA-pinned via digest when practical; tag is OK here.
           docker run --rm -v "$PWD:/src" -w /src \
-            semgrep/semgrep:1.110.0 \
-            semgrep scan --config p/python --error \
+            semgrep/semgrep:1.110.0@sha256:a147965cd455dd773f639b09c53b1428aa2d24f1c3459ca203a8ce84845e8f18 \
+            semgrep scan --config p/python --error --metrics=off \
             --exclude='quarantine/**' --exclude='reports/**' --exclude='**/.venv/**' \
             apps/api packages/vigil-core packages/vigil-eval packages/vigil-ml
       - name: Trivy filesystem

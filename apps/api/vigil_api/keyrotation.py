@@ -2,6 +2,9 @@
 
 Rotates encrypted fields in the database using the provided SQLAlchemy Session.
 Master Plan §11 / Condition P9-E.
+
+Uses static parameterized SQL (not ORM) so EncryptedString does not decrypt on
+read or re-encrypt already-rotated ciphertext on write.
 """
 
 from __future__ import annotations
@@ -30,6 +33,7 @@ def rotate_patient_keys(db: Session, dry_run: bool = False) -> Tuple[int, int]:
     total_scanned = 0
     total_rotated = 0
 
+    # Raw ciphertext must be read (ORM EncryptedString would decrypt).
     rows = db.execute(text("SELECT id, mrn, external_id FROM patients")).fetchall()
     for row in rows:
         p_id, raw_mrn, raw_ext_id = row[0], row[1], row[2]
@@ -52,21 +56,17 @@ def rotate_patient_keys(db: Session, dry_run: bool = False) -> Tuple[int, int]:
         if mrn_rotated or ext_rotated:
             total_rotated += 1
             if not dry_run:
-                # Column names are fixed literals (not user input); values are bound.
-                allowed_columns = {"mrn", "external_id"}
-                updates = {}
+                # Static SQL only — no f-string column interpolation (Semgrep / Bandit).
                 if mrn_rotated:
-                    updates["mrn"] = new_mrn
+                    db.execute(
+                        text("UPDATE patients SET mrn = :mrn WHERE id = :id"),
+                        {"mrn": new_mrn, "id": p_id},
+                    )
                 if ext_rotated:
-                    updates["external_id"] = new_ext
-                if not set(updates).issubset(allowed_columns):
-                    raise RuntimeError("refusing unexpected column in key rotation")
-                set_clauses = ", ".join(f"{col} = :{col}" for col in updates)
-                updates["id"] = p_id
-                db.execute(
-                    text(f"UPDATE patients SET {set_clauses} WHERE id = :id"),  # nosec B608
-                    updates,
-                )
+                    db.execute(
+                        text("UPDATE patients SET external_id = :external_id WHERE id = :id"),
+                        {"external_id": new_ext, "id": p_id},
+                    )
 
     if not dry_run:
         db.commit()
