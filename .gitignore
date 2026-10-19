@@ -37,6 +37,9 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# MkDocs build output (G-08)
+site/
+
 # ML artifacts & test outputs
 *.pkl
 !quarantine/legacy_models/*.pkl

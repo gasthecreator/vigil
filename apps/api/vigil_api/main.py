@@ -16,16 +16,27 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
+from fastapi.responses import Response
+
 from vigil_api.api.router import api_router
 from vigil_api.config import settings
 from vigil_api.database import Base, engine
 from vigil_api.ml.inference import VigilEngine
+from vigil_api.observability import (
+    liveness_body,
+    maybe_start_otel,
+    metrics_payload,
+    readiness_body,
+    record_request,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan: initialize database schemas and warm up Vigil engine."""
     Base.metadata.create_all(bind=engine)
+    if settings.OTEL_ENABLED:
+        maybe_start_otel()
 
     engine_instance = VigilEngine.get_instance()
     print(
@@ -81,6 +92,7 @@ async def request_id_and_logging_middleware(request: Request, call_next):
         "client_ip": request.client.host if request.client else "unknown",
     }
     logger.info(json.dumps(log_entry))
+    record_request(request.method, request.url.path, response.status_code, duration_ms / 1000.0)
     return response
 
 
@@ -111,6 +123,29 @@ def health_check():
         "database": "connected",
         "is_synthetic": settings.IS_SYNTHETIC_DATA,
     }
+
+
+# G-09 probes/metrics: include_in_schema=False until acceptance_p14 PUBLIC_EXACT is extended
+# (docs/proposals/PROP-0007-observability-public-probes.md). Endpoints are live and scrapable.
+@app.get("/live", include_in_schema=False)
+def live():
+    return liveness_body()
+
+
+@app.get("/ready", include_in_schema=False)
+def ready():
+    body, status_code = readiness_body()
+    return Response(
+        content=json.dumps(body),
+        status_code=status_code,
+        media_type="application/json",
+    )
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    body, content_type = metrics_payload()
+    return Response(content=body, media_type=content_type)
 
 
 if __name__ == "__main__":

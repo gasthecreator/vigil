@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml typecheck coverage-ratchet import-lint api-dev web-dev demo status clean
+.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= uv
@@ -18,6 +18,8 @@ help:
 	@echo "make verify-phase       Verify phase exit gates (e.g. make verify-phase PHASE=0)"
 	@echo "make reproduce          Regenerate/verify committed cheap study reports (G-11)"
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
+	@echo "make docs-build         Build MkDocs Material site into site/"
+	@echo "make docs-check         Build docs + check_docs_links + README version claims"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
 	@echo "make web-dev            Run Next.js clinician workstation"
 	@echo "make demo               Seed synthetic DB + API + web (owner script in docs/demo/)"
@@ -76,6 +78,14 @@ coverage-ratchet:
 
 import-lint:
 	bash scripts/run_lint_imports.sh
+
+docs-build:
+	$(UV) sync --group docs
+	$(UV) run --group docs mkdocs build --config-file mkdocs.yml
+
+docs-check: docs-build
+	$(PYTHON) scripts/check_docs_links.py
+	$(UV) run python scripts/check_readme_version_claims.py
 
 reproduce:
 	@echo "==> Regenerating/verifying committed reports (G-11)..."

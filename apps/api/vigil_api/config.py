@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     SILENT_MODE: bool = os.getenv("VIGIL_SILENT_MODE", "false").lower() in ("true", "1", "yes")
     SILENT_SHADOW_DATABASE_URL: str = os.getenv("VIGIL_SILENT_SHADOW_DATABASE_URL", "")
 
+    # G-09: OpenTelemetry is off by default; set VIGIL_OTEL_ENABLED=true to install tracing hooks.
+    OTEL_ENABLED: bool = os.getenv("VIGIL_OTEL_ENABLED", "false").lower() in ("true", "1", "yes")
+
     # Disclaimer text required on API root
     DISCLAIMER: str = (
         "Vigil is a research prototype and decision-support aid. It is not a medical device, "
