@@ -40,8 +40,6 @@ jobs:
         run: uv run python scripts/check_i18n_review_state.py
       - name: Verify Hazard Log and safety controls
         run: uv run python scripts/verify_hazard_log.py
-      - name: Verify study reproducibility and anti-fabrication
-        run: uv run python scripts/verify_study_reproducibility.py
       - name: Verify docs/STATUS.md is fresh
         run: uv run python scripts/generate_status.py --check
 
@@ -66,10 +64,53 @@ jobs:
           cd "${CLEAN}/vigil"
           git checkout "${GITHUB_SHA}"
           uv sync --all-packages
-          uv run python scripts/verify_study_reproducibility.py
-          echo "Clean-clone study reproducibility OK at ${GITHUB_SHA}"
+          # The reproduce gate must be able to fail: the seeded run has to exit non-zero.
+          if uv run python scripts/reproduce.py --seed-fail >/dev/null 2>&1; then
+            echo "::error::reproduce --seed-fail unexpectedly passed"; exit 1
+          fi
+          # make reproduce = study regeneration + bit-diff (verify_study_reproducibility.py), STATUS freshness,
+          # SBOM regeneration diff, release manifest verify. Absorbed the former reproduce-smoke job.
+          make reproduce
+          echo "Clean-clone reproducibility OK at ${GITHUB_SHA}"
 
-  backend-lint-and-test:
+  # Backend CI is split into parallel jobs (wall time = slowest, not the sum). Nothing was dropped:
+  # `backend-tests` shards cover the same `uv run pytest` selection, `backend-acceptance` runs the same
+  # phase-gated acceptance steps with their own env vars, and the aggregate job below keeps the
+  # required-check name `backend-lint-and-test` stable.
+  backend-tests:
+    name: backend-tests (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ml, rest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install uv (pinned action, pinned version)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Install Tesseract (local OCR for lab-report images)
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr fonts-dejavu-core
+      - name: Run linting
+        if: matrix.shard == 'rest'
+        run: uv run ruff check .
+      - name: Run tests (pytest-randomly shuffles order; seed printed in header)
+        # G-07: pytest-randomly is a committed dev dependency and auto-loads.
+        run: |
+          if [ "${{ matrix.shard }}" = "ml" ]; then
+            uv run pytest packages/vigil-ml/tests
+          else
+            uv run pytest --ignore=packages/vigil-ml/tests
+          fi
+
+  backend-acceptance:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -85,11 +126,6 @@ jobs:
         run: uv sync --all-packages
       - name: Install Tesseract (local OCR for lab-report images)
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr fonts-dejavu-core
-      - name: Run linting
-        run: uv run ruff check .
-      - name: Run tests (pytest-randomly shuffles order; seed printed in header)
-        # G-07: pytest-randomly is a committed dev dependency and auto-loads.
-        run: uv run pytest
       - name: Run K1 acceptance contract tests
         run: VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -v
       - name: Run Phase 3B acceptance contract tests
@@ -115,6 +151,15 @@ jobs:
       - name: Run Phase 15 acceptance contract tests
         run: VIGIL_ACCEPT_P15=1 uv run pytest tests/acceptance_p15 -v
 
+  backend-lint-and-test:
+    needs: [backend-tests, backend-acceptance]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All backend jobs must have succeeded
+        run: |
+          echo "tests=${{ needs.backend-tests.result }} acceptance=${{ needs.backend-acceptance.result }}"
+          [ "${{ needs.backend-tests.result }}" = "success" ] && [ "${{ needs.backend-acceptance.result }}" = "success" ]
 
   frontend-lint-and-build:
     runs-on: ubuntu-latest

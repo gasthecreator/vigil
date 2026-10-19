@@ -21,12 +21,20 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Build API image
-        run: docker build -f infra/Dockerfile.api -t vigil-api:ci .
-      - name: Build worker image
-        run: docker build -f infra/Dockerfile.worker -t vigil-worker:ci .
-      - name: Build web image
-        run: docker build -f infra/Dockerfile.web -t vigil-web:ci .
+      - name: Build API, worker and web images (concurrently; any failure fails the step)
+        run: |
+          set -u
+          pids=""
+          for n in api worker web; do
+            docker build -f "infra/Dockerfile.${n}" -t "vigil-${n}:ci" . >"build-${n}.log" 2>&1 &
+            pids="$pids $!:${n}"
+          done
+          rc=0
+          for entry in $pids; do
+            pid="${entry%%:*}"; n="${entry##*:}"
+            if wait "$pid"; then echo "built vigil-${n}:ci"; else echo "::error::docker build ${n} failed"; tail -40 "build-${n}.log"; rc=1; fi
+          done
+          exit $rc
       - name: Compose config validates
         run: |
           cp infra/.env.compose.example infra/.env.compose
