@@ -1,0 +1,43 @@
+{
+  "completed": true,
+  "completed_utc_epoch": 1792445854.503658,
+  "config_sha256": "99e0af4e31c450c5b1817cba3025078048ff6dc9f4358204cb830510f3fdf475",
+  "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "experiment_id": "EXP-K1-004",
+  "g3_first_access_utc_epoch": 1792445851.746261,
+  "g3_frozen_transfer_accessed": true,
+  "protocol_version": "1.10",
+  "results_sha256": "b164eb28e2039d25e36cdefe8f2a63029d410c82b1ff0de91da84b65fa7ad157",
+  "seed_plan": {
+    "acceptance_contract": "fixed by tests/acceptance_k1; run once at final candidate SHA",
+    "engineering_smoke": 46001,
+    "own_world_final": [
+      43001,
+      43002,
+      43003
+    ],
+    "own_world_train": [
+      41001,
+      41002,
+      41003
+    ],
+    "own_world_validation": [
+      42001,
+      42002,
+      42003
+    ],
+    "product_world_development": [
+      44001,
+      44002,
+      44003
+    ],
+    "product_world_frozen_transfer": [
+      45001,
+      45002,
+      45003
+    ]
+  },
+  "source_commit": "bbc1eded06ee9445e8a49c2a0e30324d46b45f42",
+  "started_utc_epoch": 1792444906.2685592,
+  "training_results_sha256": "ad42773d9d78a89507486405d5574094b9992a33b2d59f9333b8e9fdbd434b99"
+}
