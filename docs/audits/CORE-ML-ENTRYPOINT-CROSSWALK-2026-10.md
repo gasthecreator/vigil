@@ -4,12 +4,16 @@
 
 ## Canonical current censor-aware baseline path
 
+`EXP-CORE-ML-003/004` are historical under the feature contract correction recorded in ADR-0039. `EXP-CORE-ML-007` is independently preregistered with new seeds to re-evaluate the cross-generator comparison; its output is not yet available and must not be inferred from the old runs.
+
 | Entry point | Data / label / fit path | Status |
 |---|---|---|
 | `experiments/EXP-CORE-ML-003/run.py::generate_cohort` | Historical simulated cohort → `WindowedFeatureExtractor.transform_cohort` → observed-diagnosis horizon labels and times/event codes → `patient_landmark_ipcw_weights` → train-only imputation/selection → one G1 synthetic evaluation. | Results are stale after Q-7 feature-contract corrections (90-day slope, irregular-time acceleration, zero follow-up, explicit outcomes); preserve as historical evidence, no longer current selection evidence. Does not estimate latent recurrence under partial verification. |
 | `experiments/EXP-CORE-ML-004/run.py::generate_cohort` | Historical G1/G2/G3 synthetic cohorts → shared extractor → patient-grouped IPCW → validation-selected B3/B4 → patient-cluster bootstrap on registered held-out cohorts. | Results are stale after Q-7 feature-contract corrections; preserve as historical evidence, no longer current selection evidence. The reported G3 metric is not reusable as current performance; no real-site/clinical claim. A fresh preregistration is required. |
 | `packages/vigil-ml/vigil_ml/features.py::WindowedFeatureExtractor.transform_cohort` | Consumes patient and observation tables; excludes post-landmark/terminal-event visits; validates explicit outcome and censoring metadata; creates one landmark row per eligible observation and censor-aware horizon label. | Q-7 local changes fix mislabeled 90-day slope, time-normalized acceleration, zero-mean CV availability, zero follow-up, missing labels, unknown patient references, duplicate days, and observation/event boundary validation. Feature-only tests pass; downstream study outputs are stale. Repeated landmarks still require patient-grouped splitting and inference of dependence. |
 | `packages/vigil-eval/vigil_eval/metrics.py` | Censor-aware metrics with 0=censor, 1=recurrence, 2=competing event. | Metric unit tests pass; independent semantic/live checks and caller parity remain open. |
+
+| `experiments/EXP-CORE-ML-007/run.py` | New seed namespace on G1/G2 training, calibration and validation; G1/G2/G3 test; current shared extractor; same validation grid and patient-cluster bootstrap as registered EXP-004. | Preregistered, hash-pinned profile; runner refuses repeat test access. Runner contract checks pass. Not run yet; no performance evidence. |
 
 ## Simulator and training/evaluation sources
 

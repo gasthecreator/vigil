@@ -45,3 +45,8 @@ The fixed synthetic AUC floors in `packages/vigil-ml/tests/test_baselines_sanity
 ## Verification limits
 
 The final package command `./.venv/bin/pytest packages/vigil-core/tests packages/vigil-eval/tests packages/vigil-ml/tests packages/vigil-sim/tests tests/clinical/test_partner_analysis.py` completed with 477 passed and two failures: `test_gbm_reaches_at_least_single_threshold_auc` and `test_k3_joint_model_distinct_from_single_threshold`. Both are the pre-existing fixed-performance gate failures covered by `PROP-CORE-ML-CENSOR-AWARE-GATE.md`; their thresholds remain unchanged. The synthetic partner dry-run was regenerated with `./.venv/bin/python scripts/run_partner_dry_run.py`, and `test_committed_dry_run_reports_reproduce_byte_for_byte` passes. Ruff, byte-compilation, and `git diff --check` pass. The simulator wheel build could not be verified because the package index was unreachable while resolving the build backend. No claim is made that historical Phase 2, K1, or later model reports have been regenerated under the corrected label/feature contract.
+
+
+## EXP-CORE-ML-007 status
+
+The corrected-feature cross-generator baseline re-evaluation is preregistered in `experiments/EXP-CORE-ML-007/PREREG.md`. It uses new seed namespaces, fixed G1/G2 training-validation and G1/G2/G3 held-out design, and the existing registered model grid. Its runner validates the exact synthetic profile hash and refuses repeat outputs/access logs. Runner contract tests pass (3); no cohort generation or frozen-test access has occurred. It must be committed cleanly and run once at a logged source SHA before any of its performance metrics can be cited.
