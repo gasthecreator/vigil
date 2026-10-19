@@ -266,6 +266,11 @@ def render_s1_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    raise RuntimeError(
+        "Legacy S3 is retracted: its binary label and verification analysis do not follow the registered "
+        "time-to-event/partial-verification contract. See reports/ml/S3_VERIFICATION_BIAS/RETRACTION.md."
+    )
+
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S3: PARTIAL VERIFICATION BIAS CORRECTION")
     print("------------------------------------------------------------")
@@ -726,6 +731,12 @@ def render_master_benchmark_report(
 
 
 def main() -> int:
+    raise RuntimeError(
+        "The Phase 2/3 aggregate benchmark runner is retired. Its S1/S3/S9 outputs and K3 identity "
+        "are under Q-7 evidence reconciliation; do not regenerate them. See "
+        "docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
+    )
+
     start_time = time.time()
     print("============================================================")
     print("🚀 VIGIL REPRODUCIBLE ML BENCHMARK RUNNER (PHASE 2 & 3)")

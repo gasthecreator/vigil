@@ -1,5 +1,7 @@
 # VigilBench Phase 2 & 3: Longitudinal Surveillance & Advanced Modeling Benchmark
 
+> **RETRACTED — historical only.** The reported model leaderboard and S3 verification-bias conclusions are not valid selection or performance evidence. The runner used invalid/stale estimands and model identities, including a hand-set outcome score and unsupported K3 label. This historical table is retained unchanged for traceability; do not cite its numbers. See [`CORE-ML-CLAIMS-INVENTORY-2026-10.md`](../../docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md), [`S3 retraction`](./S3_VERIFICATION_BIAS/RETRACTION.md), and the current synthetic-only comparison in [`EXP-CORE-ML-004`](../../experiments/EXP-CORE-ML-004/REPORT.md).
+
 > **CLINICAL DISCLAIMER & SYNTHETIC DATA NOTICE:**  
 > This benchmark was conducted exclusively on **SYNTHETIC DATA** (Tiers G1, G2, G3). All metrics, lead times, and calibration curves reflect synthetic cohort properties and simulator dynamics. They DO NOT represent clinical evidence of patient benefit, diagnostic accuracy, or regulatory validation.
 
