@@ -173,3 +173,33 @@ def test_silent_mode_blocks_the_recommendation_but_not_the_registry_listing(api_
     fac = api_env.client.get("/api/v1/test-ladder/facilities", headers=api_env.headers("clinician"))
     assert fac.status_code == 200
     assert all(f["illustrative"] for f in fac.json())
+
+
+def test_availability_feedback_is_role_gated_append_only_and_audited(api_env):
+    body = {
+        "facility_id": "TEMPLATE-TERTIARY", "modality": "ct", "available": True,
+        "turnaround_days": 4, "price_band": 3, "source": "facility call",
+        "verified_on": date.today().isoformat(),
+    }
+    assert api_env.client.post("/api/v1/test-ladder/feedback", json=body).status_code == 401
+    denied = api_env.client.post("/api/v1/test-ladder/feedback", json=body, headers=api_env.headers("patient"))
+    assert denied.status_code == 403
+    accepted = api_env.client.post("/api/v1/test-ladder/feedback", json=body, headers=api_env.headers("clinician"))
+    assert accepted.status_code == 201, accepted.text
+    assert accepted.json()["audit_recorded"] is True
+    rows = api_env.client.get(
+        "/api/v1/test-ladder/feedback/TEMPLATE-TERTIARY", headers=api_env.headers("admin")
+    )
+    assert rows.status_code == 200
+    assert rows.json()[0]["modality"] == "ct"
+    assert rows.json()[0]["price_band"] == 3
+
+
+def test_availability_feedback_rejects_future_verification_date(api_env):
+    body = {
+        "facility_id": "TEMPLATE-TERTIARY", "modality": "ct", "available": True,
+        "price_band": 3, "source": "facility call",
+        "verified_on": (date.today() + timedelta(days=1)).isoformat(),
+    }
+    response = api_env.client.post("/api/v1/test-ladder/feedback", json=body, headers=api_env.headers("clinician"))
+    assert response.status_code == 422

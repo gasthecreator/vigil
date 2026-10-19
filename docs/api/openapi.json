@@ -831,6 +831,36 @@
         "title": "FollowUpTransitionRequest",
         "type": "object"
       },
+      "GovernanceApprovalRequest": {
+        "properties": {
+          "evaluation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Evaluation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluation_id"
+        ],
+        "title": "GovernanceApprovalRequest",
+        "type": "object"
+      },
+      "GovernanceRollbackRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "GovernanceRollbackRequest",
+        "type": "object"
+      },
       "HL7ORUImportResponse": {
         "properties": {
           "imported_count": {
@@ -1146,6 +1176,50 @@
           "status"
         ],
         "title": "LinacMachineStatusUpdate",
+        "type": "object"
+      },
+      "ModelGovernanceObservation": {
+        "properties": {
+          "day": {
+            "minimum": 0.0,
+            "title": "Day",
+            "type": "number"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "day"
+        ],
+        "title": "ModelGovernanceObservation",
+        "type": "object"
+      },
+      "ModelGovernanceSeries": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/ModelGovernanceObservation"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Observations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "observations"
+        ],
+        "title": "ModelGovernanceSeries",
         "type": "object"
       },
       "ObservationCreateRequest": {
@@ -2951,6 +3025,45 @@
         "title": "SecondLookResponse",
         "type": "object"
       },
+      "ShadowEvaluationRequest": {
+        "properties": {
+          "candidate_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "max_alert_rate_increase": {
+            "description": "Pre-declared criterion; absolute series rate increase",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Max Alert Rate Increase",
+            "type": "number"
+          },
+          "monitor_report": {
+            "additionalProperties": true,
+            "title": "Monitor Report",
+            "type": "object"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/ModelGovernanceSeries"
+            },
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "monitor_report",
+          "candidate_id",
+          "max_alert_rate_increase",
+          "series"
+        ],
+        "title": "ShadowEvaluationRequest",
+        "type": "object"
+      },
       "SimulationRequest": {
         "properties": {
           "hypothetical_lab": {
@@ -3410,6 +3523,66 @@
           "brain"
         ],
         "title": "TargetOrganVector",
+        "type": "object"
+      },
+      "TestLadderAvailabilityFeedback": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "facility_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Facility Id",
+            "type": "string"
+          },
+          "modality": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Modality",
+            "type": "string"
+          },
+          "price_band": {
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Price Band",
+            "type": "integer"
+          },
+          "source": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Source",
+            "type": "string"
+          },
+          "turnaround_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turnaround Days"
+          },
+          "verified_on": {
+            "format": "date",
+            "title": "Verified On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facility_id",
+          "modality",
+          "available",
+          "price_band",
+          "source",
+          "verified_on"
+        ],
+        "title": "TestLadderAvailabilityFeedback",
         "type": "object"
       },
       "TestLadderFacility": {
@@ -6196,6 +6369,386 @@
         "summary": "Ingest HL7 v2 ORU^R01 unsolicited laboratory result message",
         "tags": [
           "HL7 v2 ORU^R01 Interoperability"
+        ]
+      }
+    },
+    "/api/v1/models/governance/approvals": {
+      "post": {
+        "operationId": "approve_evaluation_api_v1_models_governance_approvals_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernanceApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve Evaluation",
+        "tags": [
+          "Model Governance (M11)"
+        ]
+      }
+    },
+    "/api/v1/models/governance/candidate-evaluations": {
+      "post": {
+        "operationId": "start_shadow_evaluation_api_v1_models_governance_candidate_evaluations_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShadowEvaluationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Shadow Evaluation",
+        "tags": [
+          "Model Governance (M11)"
+        ]
+      }
+    },
+    "/api/v1/models/governance/promote": {
+      "post": {
+        "operationId": "promote_evaluation_api_v1_models_governance_promote_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernanceApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Promote Evaluation",
+        "tags": [
+          "Model Governance (M11)"
+        ]
+      }
+    },
+    "/api/v1/models/governance/rollback": {
+      "post": {
+        "operationId": "rollback_model_api_v1_models_governance_rollback_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GovernanceRollbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rollback Model",
+        "tags": [
+          "Model Governance (M11)"
+        ]
+      }
+    },
+    "/api/v1/models/governance/status": {
+      "get": {
+        "operationId": "governance_status_api_v1_models_governance_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Governance Status",
+        "tags": [
+          "Model Governance (M11)"
         ]
       }
     },
@@ -9240,6 +9793,162 @@
           }
         ],
         "summary": "List Registry Facilities",
+        "tags": [
+          "Resource-Aware Test Ladder (M4)"
+        ]
+      }
+    },
+    "/api/v1/test-ladder/feedback": {
+      "post": {
+        "description": "Record a facility capability report as an append-only, audited observation.",
+        "operationId": "submit_availability_feedback_api_v1_test_ladder_feedback_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestLadderAvailabilityFeedback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Submit Availability Feedback",
+        "tags": [
+          "Resource-Aware Test Ladder (M4)"
+        ]
+      }
+    },
+    "/api/v1/test-ladder/feedback/{facility_id}": {
+      "get": {
+        "operationId": "list_availability_feedback_api_v1_test_ladder_feedback__facility_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "facility_id",
+            "required": true,
+            "schema": {
+              "title": "Facility Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-Role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-Role"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Vigil-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Vigil-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Availability Feedback",
         "tags": [
           "Resource-Aware Test Ladder (M4)"
         ]

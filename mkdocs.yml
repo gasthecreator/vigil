@@ -60,3 +60,7 @@ nav:
   - Explanation:
       - Reality rules: REALITY_RULES.md
       - Evidence: EVIDENCE.md
+      - Content policy: design/CONTENT.md
+      - Usability protocol: clinical/USABILITY/ALERT-FATIGUE-PROTOCOL.md
+      - Moderator script: clinical/USABILITY/MODERATOR-SCRIPT.md
+      - Consent draft: clinical/USABILITY/CONSENT-DRAFT.md

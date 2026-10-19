@@ -11,6 +11,7 @@ from vigil_api.api.endpoints import (
     continuity,
     fhir,
     follow_up,
+    governance,
     hl7,
     ocr_drafts,
     patients,
@@ -45,3 +46,4 @@ api_router.include_router(
 api_router.include_router(
     test_escalation.router, prefix="/test-ladder", tags=["Resource-Aware Test Ladder (M4)"]
 )
+api_router.include_router(governance.router, prefix="/models/governance", tags=["Model Governance (M11)"])

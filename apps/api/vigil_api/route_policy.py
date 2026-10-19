@@ -109,6 +109,14 @@ ROUTE_POLICY: Dict[Tuple[str, str], RoutePolicy] = {
     # Resource-aware test ladder (M4): stateless decision aid, a model output, so blocked in silent mode
     ("POST", "/api/v1/test-ladder/recommend"): RoutePolicy(_r("clinician", "admin"), silent="blocked", note="stateless; no patient id"),
     ("GET", "/api/v1/test-ladder/facilities"): RoutePolicy(_r("clinician", "admin"), note="registry listing, not a model output"),
+    ("POST", "/api/v1/test-ladder/feedback"): RoutePolicy(_r("clinician", "admin"), note="append-only, audited facility feedback"),
+    ("GET", "/api/v1/test-ladder/feedback/{facility_id}"): RoutePolicy(_r("clinician", "admin"), note="facility feedback history"),
+    # J8 governance records and shadow summaries are admin-only and are not exposed on clinical routes.
+    ("GET", "/api/v1/models/governance/status"): RoutePolicy(_r("admin"), note="hash-verified governance ledger and aggregate shadow outputs"),
+    ("POST", "/api/v1/models/governance/candidate-evaluations"): RoutePolicy(_r("admin"), note="starts evaluation only from a shadow-store monitor breach"),
+    ("POST", "/api/v1/models/governance/approvals"): RoutePolicy(_r("admin"), note="separate human administrator approval"),
+    ("POST", "/api/v1/models/governance/promote"): RoutePolicy(_r("admin"), note="requires criterion and approval"),
+    ("POST", "/api/v1/models/governance/rollback"): RoutePolicy(_r("admin"), note="append-only rollback record"),
     # Audit, analytics, quality
     ("GET", "/api/v1/audit/verify"): RoutePolicy(_r("admin", "clinician", "quality_lead")),
     ("GET", "/api/v1/audit/events"): RoutePolicy(_r("admin", "quality_lead")),

@@ -34,6 +34,7 @@ import numpy as np
 from scipy.stats import chi2, norm
 from sqlalchemy import select
 
+from vigil_api.governance_attestation import attest_monitor_report
 from vigil_api.shadow_store import (
     OUTCOME_TYPES,
     ShadowIngestRejection,
@@ -424,7 +425,7 @@ def build_report(store: ShadowStore, params: Parameters, generated_at: Optional[
             "resolved by editing a parameter.",
         ],
     }
-    return report
+    return attest_monitor_report(report)
 
 
 def render_markdown(report: Dict[str, Any]) -> str:

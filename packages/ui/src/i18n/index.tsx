@@ -26,6 +26,7 @@ export const translations: Record<SupportedLocale, TranslationDictionary> = {
 
 interface I18nContextValue {
   locale: SupportedLocale;
+  direction: "ltr" | "rtl";
   setLocale: (locale: SupportedLocale) => void;
   t: TranslationDictionary;
   isReviewed: boolean;
@@ -34,6 +35,7 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue>({
   locale: "en-NG",
+  direction: "ltr",
   setLocale: () => {},
   t: enNG,
   isReviewed: true,
@@ -41,8 +43,9 @@ const I18nContext = createContext<I18nContextValue>({
 
 export const I18nProvider: React.FC<{
   initialLocale?: SupportedLocale;
+  direction?: "ltr" | "rtl";
   children: React.ReactNode;
-}> = ({ initialLocale = "en-NG", children }) => {
+}> = ({ initialLocale = "en-NG", direction = "ltr", children }) => {
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
 
   useEffect(() => {
@@ -67,13 +70,14 @@ export const I18nProvider: React.FC<{
     <I18nContext.Provider
       value={{
         locale,
+        direction,
         setLocale,
         t: currentDict,
         isReviewed: currentDict.metadata.isReviewed,
         unreviewedNotice: currentDict.metadata.unreviewedNotice,
       }}
     >
-      {children}
+      <div dir={direction} lang={locale} className="contents">{children}</div>
     </I18nContext.Provider>
   );
 };

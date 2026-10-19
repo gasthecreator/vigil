@@ -1,0 +1,15 @@
+{
+  "schema": "vigil-governance-candidates-v1",
+  "candidates": [
+    {
+      "id": "K2-SHADOW-1",
+      "model_id": "K2",
+      "version": "1.0.0-shadow1",
+      "alpha_pt": 0.05,
+      "sigma_log": 0.1,
+      "burn_in": 3,
+      "module": "vigil_ml.k2.SequentialDetector",
+      "status": "research-only; config candidate; no clinical performance claim"
+    }
+  ]
+}

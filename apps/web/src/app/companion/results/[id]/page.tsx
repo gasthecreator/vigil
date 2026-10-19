@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslation, Button, Card, CardHeader, CardTitle, CardContent, Badge } from "@vigil/ui";
 import { apiClient } from "@/lib/api";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
 import { PlainLanguageExplainerResponse } from "@/lib/types";
 import {
   ArrowLeft,
@@ -116,6 +117,18 @@ export default function PlainLanguageExplainerPage() {
             </CardTitle>
           </div>
           {explainer && getVerdictBadge(explainer.verdict)}
+          {loadState === "ok" && explainer && (
+            <ReadAloudButton
+              verified={explainer.verified === true}
+              text={[
+                explainer.headline,
+                explainer.verbal_band,
+                explainer.what_this_means,
+                explainer.recommended_action,
+                ...explainer.questions_to_ask_your_doctor,
+              ].join(". ")}
+            />
+          )}
         </CardHeader>
 
         <CardContent className="p-6 space-y-6">

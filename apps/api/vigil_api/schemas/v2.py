@@ -538,6 +538,40 @@ class TestLadderResponse(BaseModel):
     scope_statement: str
 
 
+class ModelGovernanceObservation(BaseModel):
+    day: float = Field(..., ge=0)
+    value: Optional[float] = Field(None, gt=0)
+
+
+class ModelGovernanceSeries(BaseModel):
+    observations: List[ModelGovernanceObservation] = Field(..., min_length=1, max_length=500)
+
+
+class ShadowEvaluationRequest(BaseModel):
+    monitor_report: Dict[str, Any]
+    candidate_id: str = Field(..., min_length=1, max_length=80)
+    max_alert_rate_increase: float = Field(..., ge=0, le=1, description="Pre-declared criterion; absolute series rate increase")
+    series: List[ModelGovernanceSeries] = Field(..., min_length=1, max_length=10000)
+
+
+class GovernanceApprovalRequest(BaseModel):
+    evaluation_id: str = Field(..., min_length=1, max_length=64)
+
+
+class GovernanceRollbackRequest(BaseModel):
+    reason: str = Field(..., min_length=8, max_length=500)
+
+
+class TestLadderAvailabilityFeedback(BaseModel):
+    facility_id: str = Field(..., min_length=1, max_length=64)
+    modality: str = Field(..., min_length=1, max_length=64)
+    available: bool
+    turnaround_days: Optional[int] = Field(None, ge=0, le=365)
+    price_band: int = Field(..., ge=1, le=4)
+    source: str = Field(..., min_length=3, max_length=200)
+    verified_on: date
+
+
 class OcrDraftUploadRequest(BaseModel):
     filename: str = Field(..., min_length=1, max_length=255)
     content_type: str = Field(..., min_length=3, max_length=100)

@@ -85,6 +85,12 @@ export const Header: React.FC = () => {
             RT Continuity (M7)
           </Link>
           <Link
+            href="/test-ladder"
+            className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-cyan-50 text-cyan-900 border border-cyan-200 hover:bg-cyan-100 transition-colors"
+          >
+            Test Ladder (M4)
+          </Link>
+          <Link
             href="/quality"
             className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100 transition-colors"
           >
