@@ -31,6 +31,7 @@
 | T2d | Final build Tier 2: K6 active sensing rebuilt (planner, dense-world engine, export tests), old stub and S6 retracted, pre-registered study EXP-K6-001 (H1 and H2 met in simulation, 2.3 and 0.8 days; H3 not met; suggestion-only, nothing clinical) | SUBMITTED FOR REVIEW | `feat/tier2-k6` | [`docs/progress/TIER2-K6-REPORT.md`](progress/TIER2-K6-REPORT.md) | — |
 | T2e | Final build Tier 2: M12 federated averaging and DP-SGD, old S10 retracted, pre-registered study EXP-M12-001 (H3 met on this MLP, H2 not met, not wired) | SUBMITTED FOR REVIEW | `feat/tier2-m12` | [`docs/progress/TIER2-M12-REPORT.md`](progress/TIER2-M12-REPORT.md) | — |
 | T2f | Final build Tier 2: local OCR lab importer (S-015) with mandatory human confirm gate, synthetic accuracy EXP-OCR-001, hazard H27 | SUBMITTED FOR REVIEW | `feat/tier2-ocr-lab-importer` | [`docs/progress/TIER2-OCR-REPORT.md`](progress/TIER2-OCR-REPORT.md) | — |
+| T2g | Final build Tier 2: localisation review-state ledger and medical glossary (pcm/yo/ha/ig unreviewed; H-118) | SUBMITTED FOR REVIEW | `feat/tier2-localisation` | [`docs/progress/TIER2-LOCALISATION-REPORT.md`](progress/TIER2-LOCALISATION-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |

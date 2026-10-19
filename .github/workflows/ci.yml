@@ -36,6 +36,8 @@ jobs:
         run: uv run python scripts/audit_excerpts.py
       - name: Verify reality audit and anti-fabrication policy
         run: uv run python scripts/reality_audit.py --require-stub-registry
+      - name: Verify i18n review-state and glossary
+        run: uv run python scripts/check_i18n_review_state.py
       - name: Verify Hazard Log and safety controls
         run: uv run python scripts/verify_hazard_log.py
       - name: Verify study reproducibility and anti-fabrication
