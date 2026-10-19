@@ -18,7 +18,7 @@ Verified software artefacts (not clinical outcomes):
 | Consent and disclosure gates | `tests/acceptance_p11`, `tests/acceptance_p12`, hazard H17 |
 | Missed-signal audit engine (synthetic study) | `reports/ml/STUDY_M10_MISSED_SIGNALS.json`, `scripts/run_study_m10_audit.py` |
 | Silent-mode design (shadow store) | `docs/clinical/SILENT-MODE.md`, ADR-0022 |
-| Hazard log with OPEN residual risks | `docs/safety/HAZARD_LOG.md` (H10, H16, H25–H27 OPEN) |
+| Hazard log with OPEN residual risks | `docs/safety/HAZARD_LOG.md` (H10, H16, H26 and H27 OPEN; H25 controlled) |
 
 ### What it is not
 - Not a medical device clearance; not NAFDAC/SaMD approved.
