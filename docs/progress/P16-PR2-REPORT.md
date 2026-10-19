@@ -36,6 +36,7 @@ Pre-commit, scoped `mypy --strict`, import-linter, coverage ratchet, security sc
 2. **`make reproduce`** covers cheap study regeneration + STATUS/SBOM/manifest; full classical ML remains `make reproduce-ml` (nightly-capable).
 3. **ZAP** `fail_action: false` on local e2e profile; triage in `docs/security/ZAP-BASELINE.md` (auth-off findings expected).
 4. **NOTICE / full licence inventory** remains PR3 (G-08…); this PR only ships the allowlist gate.
+5. **dependency-review-action** is wired but unsupported until the owner enables Dependency graph / GHAS (H-305). Job records PARTIAL and exits 0; `pip-audit`/`npm audit` remain hard gates.
 
 ## Overseer notes
 None yet.
