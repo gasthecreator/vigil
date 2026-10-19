@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:f6dee9f9-e57e-5ab7-94b8-db2d04cffd8b",
+  "serialNumber": "urn:uuid:3115862c-9d3c-52f3-8eca-c962ae097f0e",
   "version": 1,
   "metadata": {
     "timestamp": "1970-01-01T00:00:00+00:00",
@@ -95,6 +95,32 @@
         {
           "alg": "SHA256",
           "content": "401cc84e8888d4d76f2c8d296fa006ed1a5ff993b6aff90dd777c03973efd025"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "babel",
+      "version": "2.18.0",
+      "purl": "pkg:pypi/babel@2.18.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "b80b99a14bd085fcacfa15c9165f651fbb3406e66cc603abf11c5750937c992d"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "backrefs",
+      "version": "8.1",
+      "purl": "pkg:pypi/backrefs@8.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "f86d9312df3ebae1241758af80809a319cafa1d8f32189edfb242c9aa55573b6"
         }
       ]
     },
@@ -344,6 +370,19 @@
         {
           "alg": "SHA256",
           "content": "0f08147951c8cb31d844c3547d631053b127863b60be04cf06e121333ee0e2fe"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ghp-import",
+      "version": "2.1.0",
+      "purl": "pkg:pypi/ghp-import@2.1.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "9c535c4c61193c2df8871222567d7fd7e5014d835f97dc7b7439069e2413d343"
         }
       ]
     },
@@ -644,6 +683,71 @@
         {
           "alg": "SHA256",
           "content": "bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mergedeep",
+      "version": "1.3.4",
+      "purl": "pkg:pypi/mergedeep@1.3.4",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "0096d52e9dad9939c3d975a774666af186eda617e6ca84df4c94dec30004f2a8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mkdocs",
+      "version": "1.6.1",
+      "purl": "pkg:pypi/mkdocs@1.6.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "7b432f01d928c084353ab39c57282f29f92136665bdd6abf7c1ec8d822ef86f2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mkdocs-get-deps",
+      "version": "0.2.2",
+      "purl": "pkg:pypi/mkdocs-get-deps@0.2.2",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "8ee8d5f316cdbbb2834bc1df6e69c08fe769a83e040060de26d3c19fad3599a1"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mkdocs-material",
+      "version": "9.7.7",
+      "purl": "pkg:pypi/mkdocs-material@9.7.7",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "c0649c065b1b0512d60aad8c10f947f8e455284475239b364b610f2deb4d0855"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mkdocs-material-extensions",
+      "version": "1.3.1",
+      "purl": "pkg:pypi/mkdocs-material-extensions@1.3.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "10c9511cea88f568257f960358a467d12b970e1f7b2c0e5fb2bb48cab1928443"
         }
       ]
     },
@@ -989,6 +1093,32 @@
     },
     {
       "type": "library",
+      "name": "opentelemetry-sdk",
+      "version": "1.45.1",
+      "purl": "pkg:pypi/opentelemetry-sdk@1.45.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "63d24a6ca645019a631e6a51999c73e93adcac1196ca640b8ae78a7cc4762bf3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "opentelemetry-semantic-conventions",
+      "version": "0.66b1",
+      "purl": "pkg:pypi/opentelemetry-semantic-conventions@0.66b1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "497ca63bf383723411e8eaf60c8779e9877633c936bb641080adab59d0eb6ec8"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "opt-einsum",
       "version": "3.4.0",
       "purl": "pkg:pypi/opt-einsum@3.4.0",
@@ -1017,6 +1147,19 @@
         {
           "alg": "SHA256",
           "content": "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "paginate",
+      "version": "0.5.7",
+      "purl": "pkg:pypi/paginate@0.5.7",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "22bd083ab41e1a8b4f3690544afb2c60c25e5c9a63a30fa2f483f6c60c8e5945"
         }
       ]
     },
@@ -1074,6 +1217,19 @@
     },
     {
       "type": "library",
+      "name": "platformdirs",
+      "version": "4.13.5",
+      "purl": "pkg:pypi/platformdirs@4.13.5",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "05831adf87d392760f4b5c3a0a95579ab5a10b18b9b9bd43680dcb47544788a0"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "pluggy",
       "version": "1.6.0",
       "purl": "pkg:pypi/pluggy@1.6.0",
@@ -1082,6 +1238,19 @@
         {
           "alg": "SHA256",
           "content": "7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "prometheus-client",
+      "version": "0.26.0",
+      "purl": "pkg:pypi/prometheus-client@0.26.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "04a91bcf94e2cf74a44a1a874d651a2e853ed354b6e822f3b7487751465d5c2b"
         }
       ]
     },
@@ -1193,6 +1362,19 @@
         {
           "alg": "SHA256",
           "content": "4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pymdown-extensions",
+      "version": "12.3",
+      "purl": "pkg:pypi/pymdown-extensions@12.3",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "a7f2a4e0bc60c6e6babfa7922cfb3b01cd640eb00fb208f3c582e12bae00ea67"
         }
       ]
     },
@@ -1310,6 +1492,19 @@
         {
           "alg": "SHA256",
           "content": "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pyyaml-env-tag",
+      "version": "1.1",
+      "purl": "pkg:pypi/pyyaml-env-tag@1.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "2eb38b75a2d21ee0475d6d97ec19c63287a7e140231e4214969d0eac923cd7ff"
         }
       ]
     },
@@ -1727,6 +1922,19 @@
       "version": "0.1.0a0",
       "purl": "pkg:pypi/vigil-workspace@0.1.0a0",
       "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "watchdog",
+      "version": "6.0.0",
+      "purl": "pkg:pypi/watchdog@6.0.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "9ddf7c82fda3ae8e24decda1338ede66e1c99883db93711d8fb941eaa2d8c282"
+        }
+      ]
     },
     {
       "type": "library",
