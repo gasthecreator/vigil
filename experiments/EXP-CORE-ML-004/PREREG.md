@@ -13,7 +13,7 @@ Do B3 (regularized logistic horizon classifier) and B4 (XGBoost horizon classifi
 - Synthetic profile: `packages/vigil-sim/vigil_sim/config/synthetic_population_v1.json`, profile `balanced_synthetic_v1`. This profile is a stress-test assumption, not a population estimate.
 - Generators: G1 smooth kinetics and G2 shedding bursts for training, calibration, and validation; G1, G2, and structurally distinct G3 heavy-tailed noise/inter-laboratory shifts for test.
 - Each split/generator/replicate cohort has 1,000 patients and 730 days of follow-up. Use five independent replicates (`replicate ∈ {0,1,2,3,4}`). Patient identifiers include split, generator, and replicate namespaces; all splits must be disjoint.
-- Deterministic seed formula: `44_000 + split_offset + generator_offset + replicate`, with split offsets train=100, calibration=200, validation=300, test=400; generator offsets G1=1, G2=2, G3=3. G3 is generated only for the test split.
+- Deterministic seed formula: `44_000 + split_offset + generator_offset + replicate`, with split offsets train=100, calibration=200, validation=300, test=400; generator offsets G1=10, G2=20, G3=30. G3 is generated only for the test split. These non-overlapping offsets ensure every split/generator/replicate tuple has a unique seed.
 - Prediction horizon: 365 days. Early censoring remains unknown; a competing event before the horizon is a known non-recurrence under the registered observed-event estimand.
 - Training and validation use the pooled G1+G2 cohorts. Fit weights are estimated within their own split and normalize each determinable patient's total contribution equally. No patient, seed, or generated cohort is shared across splits.
 
