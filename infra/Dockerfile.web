@@ -1,0 +1,38 @@
+# Vigil Next.js workstation/companion — multi-stage, non-root, pinned (G-01).
+FROM node:20.18.1-bookworm-slim@sha256:b2c8e0eb8a6aeeae33b2711f8f516003e27ee45804e270468d937b3214f2f0cc AS deps
+WORKDIR /src
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/
+COPY packages/ui/package.json packages/ui/
+RUN npm ci --omit=dev=false
+
+FROM node:20.18.1-bookworm-slim@sha256:b2c8e0eb8a6aeeae33b2711f8f516003e27ee45804e270468d937b3214f2f0cc AS builder
+WORKDIR /src
+COPY --from=deps /src/node_modules ./node_modules
+COPY --from=deps /src/apps/web/node_modules ./apps/web/node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+# Browser calls go through compose network hostname `api` via rewrite override at runtime
+# (see next.config.mjs rewrites; docker compose sets API_PROXY_TARGET).
+RUN npm run web:build
+
+FROM node:20.18.1-bookworm-slim@sha256:b2c8e0eb8a6aeeae33b2711f8f516003e27ee45804e270468d937b3214f2f0cc AS runtime
+RUN groupadd --gid 10001 vigil \
+    && useradd --uid 10001 --gid vigil --create-home --shell /usr/sbin/nologin vigil
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+COPY --from=builder --chown=vigil:vigil /src/apps/web/.next ./apps/web/.next
+COPY --from=builder --chown=vigil:vigil /src/apps/web/public ./apps/web/public
+COPY --from=builder --chown=vigil:vigil /src/apps/web/package.json ./apps/web/package.json
+COPY --from=builder --chown=vigil:vigil /src/apps/web/next.config.mjs ./apps/web/next.config.mjs
+COPY --from=builder --chown=vigil:vigil /src/node_modules ./node_modules
+COPY --from=builder --chown=vigil:vigil /src/apps/web/node_modules ./apps/web/node_modules
+USER vigil
+EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+WORKDIR /app/apps/web
+CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]

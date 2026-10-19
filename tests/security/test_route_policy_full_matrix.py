@@ -58,11 +58,28 @@ def policy_coverage_problems(routes: Set[Tuple[str, str]], policy: Dict) -> List
 
 @pytest.fixture
 def env(tmp_path):
+    import os
+
     orig = settings.REQUIRE_AUTH
     settings.REQUIRE_AUTH = True
-    engine = create_engine(
-        f"sqlite:///{tmp_path / 'matrix.db'}", connect_args={"check_same_thread": False}
-    )
+    pg = os.environ.get("VIGIL_POSTGRES_TEST_URL", "")
+    if pg.startswith("postgresql"):
+        from sqlalchemy import text as sa_text
+
+        suffix = tmp_path.name.replace("-", "")[:8]
+        schema = f"vigil_mx_{suffix}"
+        admin = create_engine(pg)
+        with admin.begin() as conn:
+            conn.execute(sa_text(f"DROP SCHEMA IF EXISTS {schema} CASCADE"))
+            conn.execute(sa_text(f"CREATE SCHEMA {schema}"))
+        admin.dispose()
+        sep = "&" if "?" in pg else "?"
+        db_url = f"{pg}{sep}options=-csearch_path%3D{schema}"
+        engine = create_engine(db_url)
+    else:
+        engine = create_engine(
+            f"sqlite:///{tmp_path / 'matrix.db'}", connect_args={"check_same_thread": False}
+        )
     Base.metadata.create_all(bind=engine)
 
     def override_get_db():

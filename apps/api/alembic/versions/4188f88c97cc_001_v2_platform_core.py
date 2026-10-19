@@ -182,7 +182,7 @@ def upgrade() -> None:
         sa.Column("specimen_collected_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("result_received_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("laboratory_id", sa.String(length=100), nullable=True),
-        sa.Column("lab_changed", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("lab_changed", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("plausibility_status", sa.String(length=50), nullable=False),
         sa.Column("raw_value", sa.Float(), nullable=False),
         sa.Column("raw_unit", sa.String(length=50), nullable=False),

@@ -19,6 +19,8 @@ help:
 	@echo "make web-dev            Run Next.js clinician workstation"
 	@echo "make demo               Seed synthetic DB + API + web (owner script in docs/demo/)"
 	@echo "make status             Regenerate docs/STATUS.md from ledger/hazards/stubs/CI"
+	@echo "make compose-up         docker compose -f infra/docker-compose.yml up --build"
+	@echo "make scale-postgres     Run Postgres scale probe (writes reports/perf/SCALE_TEST_RESULTS.json)"
 	@echo "make clean              Remove build artifacts, caches, and test state"
 
 setup:
@@ -72,6 +74,15 @@ demo:
 
 status:
 	$(UV) run python scripts/generate_status.py
+
+compose-up:
+	docker compose -f infra/docker-compose.yml --env-file infra/.env.compose up --build
+
+scale-postgres:
+	@if [ -z "$$DATABASE_URL" ] || echo "$$DATABASE_URL" | grep -q '^sqlite'; then \
+		echo "Set DATABASE_URL=postgresql+psycopg://... first"; exit 2; \
+	fi
+	$(UV) run python scripts/run_scale_test_postgres.py
 
 clean:
 	rm -rf .pytest_cache .ruff_cache dist build *.egg-info

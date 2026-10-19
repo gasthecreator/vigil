@@ -8,13 +8,15 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from vigil_api.config import settings
 
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+_is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+connect_args = {"check_same_thread": False} if _is_sqlite else {}
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args=connect_args,
-    echo=False,
-)
+# Postgres (and other servers): use a small pool. SQLite: NullPool via default single connection.
+_engine_kwargs: dict = {"connect_args": connect_args, "echo": False}
+if not _is_sqlite:
+    _engine_kwargs.update({"pool_pre_ping": True, "pool_size": 5, "max_overflow": 10})
+
+engine = create_engine(settings.DATABASE_URL, **_engine_kwargs)
 
 if settings.DATABASE_URL.startswith("sqlite"):
     # SQLite is the local/dev/staging-single-node database (PostgreSQL is the multi-writer target).

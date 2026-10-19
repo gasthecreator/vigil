@@ -1,0 +1,43 @@
+# Vigil API — multi-stage, non-root, pinned base (G-01).
+# python:3.12.8-slim-bookworm digest from Docker Hub (2026-10-19).
+FROM python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0 AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential libpq-dev curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir "uv==0.13.1"
+
+WORKDIR /src
+COPY pyproject.toml uv.lock README.md ./
+COPY apps/api apps/api
+COPY packages packages
+# Install workspace package + Postgres driver into a relocatable venv
+RUN uv sync --frozen --no-dev --package vigil-api \
+    && uv pip install --python .venv/bin/python "psycopg[binary]==3.2.9"
+
+FROM python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0 AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libpq5 tesseract-ocr fonts-dejavu-core curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 vigil \
+    && useradd --uid 10001 --gid vigil --create-home --shell /usr/sbin/nologin vigil
+
+WORKDIR /app
+COPY --from=builder /src/.venv /app/.venv
+COPY --from=builder /src/apps/api /app/apps/api
+COPY --from=builder /src/packages /app/packages
+COPY infra/entrypoint-api.sh /app/entrypoint-api.sh
+RUN chmod +x /app/entrypoint-api.sh && chown -R vigil:vigil /app
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/apps/api:/app/packages/vigil-ml:/app/packages/vigil-core:/app/packages/contracts" \
+    ENVIRONMENT=production \
+    REQUIRE_AUTH=true
+
+USER vigil
+EXPOSE 8000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:8000/health || exit 1
+
+ENTRYPOINT ["/app/entrypoint-api.sh"]

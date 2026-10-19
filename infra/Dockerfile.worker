@@ -1,0 +1,33 @@
+# Vigil reminder worker — same runtime as API, different entrypoint (G-01).
+FROM python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0 AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir "uv==0.13.1"
+
+WORKDIR /src
+COPY pyproject.toml uv.lock README.md ./
+COPY apps/api apps/api
+COPY packages packages
+RUN uv sync --frozen --no-dev --package vigil-api \
+    && uv pip install --python .venv/bin/python "psycopg[binary]==3.2.9"
+
+FROM python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0 AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 vigil \
+    && useradd --uid 10001 --gid vigil --create-home --shell /usr/sbin/nologin vigil
+
+WORKDIR /app
+COPY --from=builder /src/.venv /app/.venv
+COPY --from=builder /src/apps/api /app/apps/api
+COPY --from=builder /src/packages /app/packages
+RUN chown -R vigil:vigil /app
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/apps/api:/app/packages/vigil-ml:/app/packages/vigil-core:/app/packages/contracts"
+
+USER vigil
+CMD ["python", "-m", "vigil_api.worker", "--interval", "30"]

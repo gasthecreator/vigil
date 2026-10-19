@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 
 import pytest
+from fastapi import Response
 from sqlalchemy import create_engine, desc, event
 from sqlalchemy.orm import Session
 from vigil_api.api.endpoints.patients import get_triage_queue
@@ -221,7 +222,7 @@ def _as_rows(items: List[TriageQueueItem]):
 
 def test_batched_triage_equals_legacy_implementation(db):
     _seed(db)
-    new = _as_rows(get_triage_queue(db=db, current_user=None))
+    new = _as_rows(get_triage_queue(response=Response(), limit=1000, offset=0, db=db, current_user=None))
     old = _as_rows(_legacy_triage(db))
     assert len(new) == len(old) == 14
     assert [r["patient_id"] for r in new] == [r["patient_id"] for r in old]
@@ -241,7 +242,7 @@ def test_triage_statement_count_does_not_scale_with_patients(db):
     counts: List[int] = []
     eng = db.get_bind()
     event.listen(eng, "before_cursor_execute", lambda *a, **k: counts.append(1))
-    get_triage_queue(db=db, current_user=None)
+    get_triage_queue(response=Response(), limit=1000, offset=0, db=db, current_user=None)
     assert len(counts) <= 10, f"{len(counts)} SQL statements for 24 patients"
 
 
@@ -257,10 +258,25 @@ def test_triage_does_not_materialise_every_pending_task(db):
 
     event.listen(FollowUpTask, "load", _count)
     try:
-        new = _as_rows(get_triage_queue(db=db, current_user=None))
+        new = _as_rows(get_triage_queue(response=Response(), limit=1000, offset=0, db=db, current_user=None))
     finally:
         event.remove(FollowUpTask, "load", _count)
     assert not loaded, f"{len(loaded)} FollowUpTask rows materialised"
     old = {r["patient_id"]: r for r in _as_rows(_legacy_triage(db))}
     for r in new:
         assert r["action_urgency"] == pytest.approx(old[r["patient_id"]]["action_urgency"], abs=2e-3)
+
+
+def test_triage_pagination_preserves_order_and_reports_total(db):
+    """Paging must return exactly the same ordered rows as the full queue and report the total (scale fix)."""
+    _seed(db)
+    full_resp = Response()
+    full = get_triage_queue(response=full_resp, limit=1000, offset=0, db=db, current_user=None)
+    assert full_resp.headers["x-total-count"] == str(len(full)) == "14"
+    page1_resp, page2_resp = Response(), Response()
+    p1 = get_triage_queue(response=page1_resp, limit=5, offset=0, db=db, current_user=None)
+    p2 = get_triage_queue(response=page2_resp, limit=5, offset=5, db=db, current_user=None)
+    assert [x.patient_id for x in p1 + p2] == [x.patient_id for x in full[:10]]
+    assert page1_resp.headers["x-total-count"] == "14"
+    urgencies = [x.action_urgency for x in full]
+    assert urgencies == sorted(urgencies, reverse=True)

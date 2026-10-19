@@ -1,0 +1,78 @@
+# Vigil on-prem compose stack (G-01). Postgres is the production database.
+# SECURE BY DEFAULT: ENVIRONMENT=production, REQUIRE_AUTH=true, secrets required (no defaults).
+# For a throw-away local demo use infra/.env.compose.dev.example (insecure on purpose, never on a network).
+# Usage (from repo root):
+#   docker compose -f infra/docker-compose.yml --env-file infra/.env.compose up --build
+#
+# Image tags are pinned by digest in the Dockerfiles; postgres service pin below.
+
+name: vigil
+
+services:
+  postgres:
+    image: postgres:16.6-alpine@sha256:1d04b9ba1d4996401f2552b51beda8187f175c0645c091e4781134fc9c9a3eef
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vigil}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env.compose}
+      POSTGRES_DB: ${POSTGRES_DB:-vigil}
+    volumes:
+      - vigil_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Bound to loopback only: the database must never be reachable from the network by default.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      REQUIRE_AUTH: ${REQUIRE_AUTH:-true}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vigil}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigil}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in infra/.env.compose (openssl rand -hex 32)}
+      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:?set VIGIL_FIELD_ENCRYPTION_KEYS in infra/.env.compose (Fernet key)}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vigil}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigil}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in infra/.env.compose (openssl rand -hex 32)}
+      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:?set VIGIL_FIELD_ENCRYPTION_KEYS in infra/.env.compose (Fernet key)}
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  vigil_pgdata:

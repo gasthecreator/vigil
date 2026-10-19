@@ -79,7 +79,11 @@ def test_on_prem_install_full_flow(tmp_path, monkeypatch):
     """Tests migrations, admin seeding, and verification in a clean temporary environment."""
     db_file = tmp_path / "on_prem_test.db"
     from vigil_api.config import settings
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+
+    db_url = f"sqlite:///{db_file}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    # settings is process-global; CI may have already loaded a Postgres DATABASE_URL.
+    monkeypatch.setattr(settings, "DATABASE_URL", db_url)
     monkeypatch.setenv("REQUIRE_AUTH", "true")
     monkeypatch.setattr(settings, "REQUIRE_AUTH", True)
     monkeypatch.setenv("JWT_SECRET_KEY", "a8f5c9e2b4d13708e5f2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9")
@@ -136,3 +140,56 @@ DATABASE_URL=sqlite:///{db_file}
     assert proc.returncode == 0, f"CLI installer failed:\nSTDOUT: {proc.stdout}\nSTDERR: {proc.stderr}"
     assert "Production Security Audit PASSED" in proc.stdout
     assert "Vigil On-Premise installation and setup completed successfully." in proc.stdout
+
+
+def test_compose_stack_files_exist_and_are_non_root():
+    """G-01: compose + Dockerfiles present; runtime USER is non-root vigil."""
+    compose = (ROOT / "infra" / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "postgres:16.6-alpine@sha256:" in compose
+    assert "Dockerfile.api" in compose
+    assert "Dockerfile.web" in compose
+    assert "Dockerfile.worker" in compose
+    assert "healthcheck:" in compose
+    for name in ("Dockerfile.api", "Dockerfile.web", "Dockerfile.worker"):
+        text = (ROOT / "infra" / name).read_text(encoding="utf-8")
+        assert "USER vigil" in text
+        assert "@sha256:" in text
+    env_ex = ROOT / "infra" / ".env.compose.example"
+    assert env_ex.exists()
+    assert "POSTGRES_PASSWORD" in env_ex.read_text(encoding="utf-8")
+
+
+def _env_file(path) -> dict:
+    out = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip() and not line.lstrip().startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def test_compose_is_secure_by_default_and_dev_profile_is_separate():
+    """The example operators copy must be the production profile; the insecure demo profile is a different file.
+    Found by overseer review: the first version shipped ENVIRONMENT=local / REQUIRE_AUTH=false / default JWT secret."""
+    compose = (ROOT / "infra" / "docker-compose.yml").read_text(encoding="utf-8")
+    prod = _env_file(ROOT / "infra" / ".env.compose.example")
+    dev = _env_file(ROOT / "infra" / ".env.compose.dev.example")
+
+    assert prod["ENVIRONMENT"] == "production" and prod["REQUIRE_AUTH"] == "true"
+    for key in ("POSTGRES_PASSWORD", "JWT_SECRET_KEY", "VIGIL_FIELD_ENCRYPTION_KEYS"):
+        assert "REPLACE_ME" in prod[key], f"{key} must be a placeholder the API refuses to start with"
+    assert dev["ENVIRONMENT"] == "local" and dev["REQUIRE_AUTH"] == "false"
+
+    # compose defaults are the secure ones and secrets have no default
+    assert "ENVIRONMENT: ${ENVIRONMENT:-production}" in compose
+    assert "REQUIRE_AUTH: ${REQUIRE_AUTH:-true}" in compose
+    assert "JWT_SECRET_KEY: ${JWT_SECRET_KEY:?" in compose
+    assert "VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:?" in compose
+    assert "local-dev-only" not in compose
+    # the database is never published on all interfaces
+    assert '"127.0.0.1:${POSTGRES_PORT:-5432}:5432"' in compose
+    assert '- "${POSTGRES_PORT:-5432}:5432"' not in compose
+
+    # the entrypoint refuses unreplaced placeholders
+    entry = (ROOT / "infra" / "entrypoint-api.sh").read_text(encoding="utf-8")
+    assert "REPLACE_ME" in entry and "exit 78" in entry

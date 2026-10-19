@@ -1,0 +1,41 @@
+{
+  "study": "SCALE_SCALING",
+  "plan_patients": 100000,
+  "sizes_measured": [
+    2000,
+    10000,
+    30000
+  ],
+  "obs_per_patient": [
+    10
+  ],
+  "metrics": {
+    "triage_p95_ms": {
+      "measured_p95_ms": {
+        "2000": 116.5,
+        "10000": 339.0,
+        "30000": 1283.4
+      },
+      "slope_ms_per_patient": 0.04274153682826391,
+      "extrapolated_at_plan_size_ms": 4255.4,
+      "budget_ms": 400.0,
+      "basis": "linear extrapolation (plan size not run)",
+      "meets_budget_at_plan_size": false,
+      "patients_within_budget_linear_estimate": 9797
+    },
+    "timeline_p95_ms": {
+      "measured_p95_ms": {
+        "2000": 11.3,
+        "10000": 11.5,
+        "30000": 12.5
+      },
+      "slope_ms_per_patient": 4.551881787707456e-05,
+      "extrapolated_at_plan_size_ms": 15.7,
+      "budget_ms": 600.0,
+      "basis": "linear extrapolation (plan size not run)",
+      "meets_budget_at_plan_size": true,
+      "patients_within_budget_linear_estimate": 12937433
+    }
+  },
+  "verdict": "NOT MET at plan size (see metrics; fix or file a proposal, do not reword the budget)"
+}
