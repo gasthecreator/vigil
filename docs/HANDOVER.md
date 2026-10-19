@@ -72,3 +72,14 @@ Complete checklist. Do **not** touch real patient data until every row marked **
 | H-211 | Who signs what before any patient is touched | MUST | **Ethics chair / HREC** (protocol), **site DPO or legal** (DUA/DPIA), **clinical lead** (stop rules + go/no-go in `docs/clinical/PILOT/` — today **NO-GO**), **quality lead** (silent-mode shadow DB access list, H-105), **owner** (signing key + GitHub protection). No Vigil model output may drive care until go/no-go is explicitly flipped by the clinical lead after real-data evidence. | READY (roles named; signatures absent) |
 | H-212 | Public-data applications (optional parallel track) | not required for a hospital DUA path | H-103: MIMIC-IV, Project Data Sphere, SEER drafts in `docs/clinical/APPLICATIONS/`. | READY (unsubmitted) |
 | H-213 | Demo to a hospital without real data | no patients involved | `make demo` + [`docs/demo/OWNER-SCRIPT.md`](demo/OWNER-SCRIPT.md). Say “synthetic” for every number. | READY |
+
+## E. Added by the overseer audit (2026-10-19): repository and release actions only the owner can do
+
+| ID | Action | Exact step |
+|---|---|---|
+| H-301 | **Protect `main`** (it is currently unprotected) | Create a ruleset: require PR, the CI checks listed in `docs/ops/GITHUB-SETTINGS.md`, linear history, block force-push and deletion; see that file for the `gh api` commands. |
+| H-302 | Second CODEOWNER or a team | Add a second maintainer/team to `.github/CODEOWNERS` for `/apps/api/`, `/packages/` and `.github/`; enable required code-owner review in the ruleset. |
+| H-303 | Enable Dependabot security updates | Repo Settings > Code security > Dependabot security updates (currently disabled). |
+| H-304 | First tagged release | After `PROMPT-P16` PR 3 lands: `git tag v1.0.0-rc.2` on a green `main` and let the release workflow build SBOM + provenance; sign with your key (H-209). |
+| H-305 | OpenSSF Best Practices badge and Scorecard | Register the project at bestpractices.dev; record the Scorecard score from the scorecard workflow in `docs/PROGRESS.md` notes; target >= 8. |
+| H-306 | L1 acceptance walkthrough | Run `make demo` with `docs/demo/OWNER-SCRIPT.md`; if satisfied, sign the L1 acceptance line in `docs/PROGRESS.md` (plan section 18.2 item 9). |
