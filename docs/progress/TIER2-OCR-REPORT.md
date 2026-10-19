@@ -9,10 +9,10 @@ A local (no cloud) pipeline turns a PNG, JPEG or PDF into an `OcrDraft`. **An un
 | Item | Where |
 |---|---|
 | Pre-registration, committed alone | `experiments/EXP-OCR-001/PREREG.md` (commit `27704e4`) |
-| Extractor, parser, synthetic renderer | `apps/api/vigil_api/ocr.py` |
+| Extractor, parser, synthetic renderer | `apps/api/vigil_api/ocr.py` (commit `2d4d1d7`) |
 | Draft routes + confirm gate | `apps/api/vigil_api/api/endpoints/ocr_drafts.py`, ADR-0028 |
 | HTTP attack tests (no Tesseract) | `apps/api/tests/test_ocr_http.py` |
-| Frozen accuracy | `scripts/run_ocr_accuracy.py` → `experiments/EXP-OCR-001/results.json` |
+| Frozen accuracy | `scripts/run_ocr_accuracy.py` → `experiments/EXP-OCR-001/results.json` (commit `edfacf3`) |
 | Companion vault + clinician confirm panel | `apps/web/src/app/companion/vault/page.tsx`, `apps/web/src/components/OcrDraftsPanel.tsx` |
 | Hazard H27 (OPEN) | `docs/safety/HAZARD_LOG.md` |
 
