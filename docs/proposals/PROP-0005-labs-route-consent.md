@@ -3,7 +3,7 @@ id: PROP-0005
 title: A Phase 5 acceptance test requires POST /patients/{id}/labs to ingest for a patient without consent
 author: Executor (final-build Tier 1)
 date: 2026-10-18
-status: DRAFT
+status: RESOLVED (option 1, by the overseer on review; see HAZARD_LOG H25)
 plan_version_impact: NONE (acceptance-test fixture; safety review)
 ---
 

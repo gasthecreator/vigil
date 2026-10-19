@@ -7,13 +7,10 @@ record and requires the draw to be ingested. Enforcing consent on `/labs` makes 
 tests are read-only for the executor, so the check is NOT enforced and the gap is pinned here:
 
 * the control test passes today (the sibling route refuses);
-* the two `xfail(strict=True)` tests state the required behaviour. They fail today; when the gap is closed
-  they pass and strict mode turns the unexpected pass into a failure that says to remove the marker.
+* the two tests state the required behaviour (the gap was closed by the overseer; the xfail markers are gone).
 """
 
 from __future__ import annotations
-
-import pytest
 
 LAB_BODY = {"alt_level": 25.0, "ast_level": 25.0, "creatinine": 0.9, "ca_15_3": 22.0, "wbc_count": 6.0}
 OBS_BODY = {"analyte_code": "ca_15_3", "value": 22.0, "unit": "U/mL"}
@@ -27,9 +24,6 @@ def test_control_observations_route_refuses_a_patient_without_consent(api_env):
     assert res.status_code == 403, res.text
 
 
-@pytest.mark.xfail(
-    strict=True, reason="PROP-0005: /labs does not call verify_patient_consent (acceptance_p5 conflict)"
-)
 def test_labs_route_refuses_a_patient_without_consent(api_env):
     pid = api_env.create_patient("MRN-GAP-1", consent=False)
     res = api_env.client.post(
@@ -38,9 +32,6 @@ def test_labs_route_refuses_a_patient_without_consent(api_env):
     assert res.status_code == 403, res.text
 
 
-@pytest.mark.xfail(
-    strict=True, reason="PROP-0005: /labs does not call verify_patient_consent (acceptance_p5 conflict)"
-)
 def test_labs_route_refuses_a_patient_who_withdrew_consent(api_env):
     pid = api_env.create_patient("MRN-GAP-2", consent=True)
     w = api_env.client.post(

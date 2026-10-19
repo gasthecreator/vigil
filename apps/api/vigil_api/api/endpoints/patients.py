@@ -81,7 +81,6 @@ from vigil_ml.m5 import (
 router = APIRouter()
 
 
-
 def _audit_withheld(db: Session, user: User, patient: Patient, route: str) -> None:
     """Record that a patient-facing route withheld locked bad news (hazard H17)."""
     record_audit_event(
@@ -238,7 +237,9 @@ def _latest_row_per_patient(db: Session, model: Any, ts_column: Any) -> Dict[str
         .over(partition_by=model.patient_id, order_by=(desc(ts_column), desc(model.id)))
         .label("rn"),
     ).subquery()
-    rows = db.execute(select(model).join(ranked, model.id == ranked.c.row_id).where(ranked.c.rn == 1)).scalars()
+    rows = db.execute(
+        select(model).join(ranked, model.id == ranked.c.row_id).where(ranked.c.rn == 1)
+    ).scalars()
     return {r.patient_id: r for r in rows}
 
 
@@ -271,8 +272,12 @@ def get_triage_queue(
     # Batched reads (constant number of statements, independent of the number of patients). This replaced a
     # per-patient query loop (about 6 statements per patient) found by the real-HTTP load test; the original
     # implementation is kept as the oracle in apps/api/tests/test_triage_batched.py.
-    latest_inference_by_patient = _latest_row_per_patient(db, RiskInference, RiskInference.created_at)
-    latest_assessment_by_patient = _latest_row_per_patient(db, RiskAssessment, RiskAssessment.created_at)
+    latest_inference_by_patient = _latest_row_per_patient(
+        db, RiskInference, RiskInference.created_at
+    )
+    latest_assessment_by_patient = _latest_row_per_patient(
+        db, RiskAssessment, RiskAssessment.created_at
+    )
     lab_stats = {
         pid: (last_drawn, count)
         for pid, last_drawn, count in db.query(
@@ -560,7 +565,9 @@ def submit_baseline_profile(
     ),
 ):
     """Submits primary tumor pathology and comorbidities."""
-    silent_mode.block_in_silent_mode("Baseline profile entry (returns the organ-susceptibility vector)")
+    silent_mode.block_in_silent_mode(
+        "Baseline profile entry (returns the organ-susceptibility vector)"
+    )
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     engine = SentinelEngine.get_instance()
@@ -972,13 +979,8 @@ def submit_lab_result(
     pipeline (M3 adjudication, K2 sequential detector, M5 clinical narrative, alert/task creation,
     and cryptographic audit logging) to enforce the no-dismissal invariant on all write paths.
     """
-    # KNOWN GAP (docs/proposals/PROP-0005-labs-route-consent.md): unlike /observations this route does
-    # not call verify_patient_consent. tests/acceptance_p5 (overseer-owned, read-only) posts to it for
-    # a patient that has no consent record and expects the draw to be ingested; adding the check
-    # makes that test fail. The role gate above stays. Pinned by a strict xfail test.
-    patient = db.query(Patient).filter(Patient.id == id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+    # Every write of patient data requires active consent, exactly like POST /observations (H21, H25).
+    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     drawn_date = payload.date_drawn if payload.date_drawn else datetime.now(timezone.utc)
     if drawn_date.tzinfo is None:
@@ -1519,7 +1521,13 @@ def record_patient_symptom(
     payload: SymptomCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(UserRole.PATIENT, UserRole.CAREGIVER, UserRole.NURSE_CLERK, UserRole.CLINICIAN, UserRole.ADMIN)
+        require_roles(
+            UserRole.PATIENT,
+            UserRole.CAREGIVER,
+            UserRole.NURSE_CLERK,
+            UserRole.CLINICIAN,
+            UserRole.ADMIN,
+        )
     ),
 ):
     """Records a structured patient symptom in the diary (Master Plan §6.8)."""
@@ -1776,9 +1784,7 @@ def submit_second_look_request(
     payload: SecondLookCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(
-            UserRole.PATIENT, UserRole.CAREGIVER, UserRole.CLINICIAN, UserRole.ADMIN
-        )
+        require_roles(UserRole.PATIENT, UserRole.CAREGIVER, UserRole.CLINICIAN, UserRole.ADMIN)
     ),
 ):
     """Submits a patient-initiated Second-Look Request to the clinical care team."""
