@@ -2,14 +2,14 @@
   "release": "v1.0.0-rc.2",
   "kind": "sha256-hash-manifest",
   "description": "Vigil release candidate v1.0.0-rc.2: SHA-256 digests of the listed artifacts as committed at git_commit",
-  "timestamp": "2026-10-19T02:39:52.885193+00:00",
-  "git_commit": "f9a4a9e81ae1bb37fe63b85712d04335ddbb9a55",
+  "timestamp": "2026-10-19T05:19:15.152501+00:00",
+  "git_commit": "4d9e44808ac025690039ed9e57b0580e58c86151",
   "artifact_count": 23,
   "artifacts": [
     {
       "path": "docs/safety/HAZARD_LOG.md",
-      "sha256": "69018a0b48b9ab07a2055db68514d98e1d02850f8aca3930c5154be2c09dd0d4",
-      "size_bytes": 21245
+      "sha256": "dab4d0b03868fc549a51b045586b5afbffddf45d9112bc389ef7ff9a25a57611",
+      "size_bytes": 21142
     },
     {
       "path": "docs/security/THREAT_MODEL.md",
@@ -78,8 +78,8 @@
     },
     {
       "path": "docs/deployment/ON_PREM_INSTALL.md",
-      "sha256": "16aaa54d938eceaf640dca937e997a33e3c1d5d5fa08c4475160dfdf1efd4858",
-      "size_bytes": 6806
+      "sha256": "350fc27569a5149b630972dbe43cf873a36fa1ca456c50a6a9c3a17341e48f93",
+      "size_bytes": 7748
     },
     {
       "path": "docs/resilience/DISASTER_RECOVERY.md",

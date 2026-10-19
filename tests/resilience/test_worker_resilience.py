@@ -3,6 +3,8 @@
 Adheres to MASTER_PLAN.md §9.2, §9.4, and Phase 5 deliverables:
 - Verifies that killing the background worker (SIGTERM / interruption) does not corrupt database state.
 - Proves that restarting the worker picks up pending tasks without task loss or duplication.
+
+G-13: deterministic — poll for first receipt instead of a fixed sleep (see docs/ops/FLAKE-REGISTER.md F-001).
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 from vigil_api.database import Base
 from vigil_api.models.v2 import (
@@ -38,6 +40,11 @@ def resilience_db(tmp_path):
     engine = create_engine(db_url)
     Base.metadata.create_all(bind=engine)
     return db_url, db_file
+
+
+def _receipt_count(engine) -> int:
+    with Session(engine) as session:
+        return len(session.execute(select(ReminderReceipt)).scalars().all())
 
 
 def test_worker_kill_and_restart_lifecycle(resilience_db):
@@ -84,31 +91,42 @@ def test_worker_kill_and_restart_lifecycle(resilience_db):
             session.add(task)
         session.commit()
 
-    # Verify 5 tasks exist and 0 receipts
     with Session(engine) as session:
         tasks = session.execute(select(FollowUpTask)).scalars().all()
         assert len(tasks) == 5
-        receipts = session.execute(select(ReminderReceipt)).scalars().all()
-        assert len(receipts) == 0
+        assert _receipt_count(engine) == 0
 
-    # 2. Spawn worker in a background subprocess
     env = {
         **os.environ,
         "DATABASE_URL": db_url,
         "PYTHONPATH": str(ROOT / "apps" / "api"),
+        "ENVIRONMENT": "local",
+        "REQUIRE_AUTH": "false",
     }
     worker_proc = subprocess.Popen(
-        [sys.executable, "-m", "vigil_api.worker", "--interval", "0.2"],
+        [sys.executable, "-m", "vigil_api.worker", "--interval", "0.05"],
         cwd=str(ROOT),
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
 
-    # Let worker run briefly
-    time.sleep(0.5)
+    # Poll until the first cycle has committed at least one receipt (deterministic).
+    deadline = time.monotonic() + 15.0
+    intermediate_count = 0
+    while time.monotonic() < deadline:
+        intermediate_count = _receipt_count(engine)
+        if intermediate_count >= 1:
+            break
+        time.sleep(0.05)
+    else:
+        worker_proc.kill()
+        out, err = worker_proc.communicate(timeout=5)
+        pytest.fail(
+            f"Worker produced no receipts within 15s.\nstdout={out!r}\nstderr={err!r}"
+        )
 
-    # 3. Simulate process termination (SIGTERM)
+    # 3. Simulate process termination (SIGTERM) mid-flight
     worker_proc.send_signal(signal.SIGTERM)
     try:
         worker_proc.wait(timeout=5)
@@ -116,15 +134,15 @@ def test_worker_kill_and_restart_lifecycle(resilience_db):
         worker_proc.kill()
         worker_proc.wait()
 
-    # 4. Check DB state post-kill: no corruption, valid database
     with Session(engine) as session:
-        # All 5 tasks must still exist (no task disappeared!)
         tasks_post_kill = session.execute(select(FollowUpTask)).scalars().all()
         assert len(tasks_post_kill) == 5
+        assert _receipt_count(engine) >= 1
 
-        receipts_post_kill = session.execute(select(ReminderReceipt)).scalars().all()
-        intermediate_count = len(receipts_post_kill)
-        assert intermediate_count >= 1, "At least one reminder was processed during initial run"
+    # Integrity: SQLite file still opens and answers a query
+    with engine.connect() as conn:
+        n = conn.execute(text("SELECT count(*) FROM follow_up_tasks")).scalar()
+        assert n == 5
 
     # 5. Restart worker with --once to finish remaining cycles
     restart_res = subprocess.run(
@@ -133,15 +151,12 @@ def test_worker_kill_and_restart_lifecycle(resilience_db):
         env=env,
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=30,
     )
-    assert restart_res.returncode == 0
+    assert restart_res.returncode == 0, restart_res.stderr
 
-    # 6. Verify terminal state: all 5 tasks processed without loss
     with Session(engine) as session:
         all_receipts = session.execute(select(ReminderReceipt)).scalars().all()
         assert len(all_receipts) >= 5, f"Expected at least 5 receipts, got {len(all_receipts)}"
-
-        # Verify distinct recipients/tasks
         task_ids_with_receipts = {r.task_id for r in all_receipts}
         assert len(task_ids_with_receipts) == 5

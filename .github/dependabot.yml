@@ -1,3 +1,5 @@
+# Grouping + merge policy: docs/ops/DEPENDABOT-MERGE-POLICY.md (G-14).
+# Dependabot *security* updates remain an owner GitHub-settings action.
 version: 2
 updates:
   - package-ecosystem: github-actions

@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce-ml api-dev web-dev demo status clean
+.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml typecheck coverage-ratchet import-lint api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= /Users/gsanni/.local/bin/uv
@@ -12,8 +12,11 @@ help:
 	@echo "make setup              Install workspace dependencies (uv + npm)"
 	@echo "make fmt                Format Python code with ruff"
 	@echo "make lint               Run linters (ruff, claims-check, web lint)"
+	@echo "make typecheck          mypy --strict (ADR-0030 scope) + import-linter"
+	@echo "make coverage-ratchet   Measure core+eval coverage and enforce floor"
 	@echo "make test               Run unit, property, and integration tests"
 	@echo "make verify-phase       Verify phase exit gates (e.g. make verify-phase PHASE=0)"
+	@echo "make reproduce          Regenerate/verify committed cheap study reports (G-11)"
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
 	@echo "make web-dev            Run Next.js clinician workstation"
@@ -57,6 +60,26 @@ verify-phase:
 		exit 1; \
 	fi
 	$(PYTHON) scripts/verify_phase.py --phase $(PHASE)
+
+typecheck:
+	@echo "==> mypy --strict (vigil-core, vigil-eval, m5.py)..."
+	$(UV) run mypy --config-file pyproject.toml
+	@echo "==> import-linter contracts..."
+	bash scripts/run_lint_imports.sh
+
+coverage-ratchet:
+	@mkdir -p reports/quality
+	$(UV) run pytest packages/vigil-core/tests packages/vigil-eval/tests \
+		--cov=vigil_core --cov=vigil_eval \
+		--cov-report=json:reports/quality/coverage-run.json -q
+	$(UV) run python scripts/check_coverage_ratchet.py --coverage-json reports/quality/coverage-run.json
+
+import-lint:
+	bash scripts/run_lint_imports.sh
+
+reproduce:
+	@echo "==> Regenerating/verifying committed reports (G-11)..."
+	$(UV) run python scripts/reproduce.py
 
 reproduce-ml:
 	@echo "==> Reproducing VigilBench Phase 2 Classical Core Benchmarks..."

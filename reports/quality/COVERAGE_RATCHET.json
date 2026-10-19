@@ -1,0 +1,13 @@
+{
+  "scope": "vigil_core + vigil_eval (packages unit tests)",
+  "target_percent": 90.0,
+  "floor_percent": 88.7,
+  "plan_note": "MASTER_PLAN §12 target remains ≥90% for core/verifier and ≥80% elsewhere. Floor is the measured value on 2026-10-19 (88.72% → floor 88.7). Do not lower the floor to pass CI.",
+  "measurement_command": "uv run pytest packages/vigil-core/tests packages/vigil-eval/tests --cov=vigil_core --cov=vigil_eval --cov-report=json:reports/quality/coverage-core-eval.json -q",
+  "machine": {
+    "platform": "macOS-arm64",
+    "python": "3.12.15",
+    "date": "2026-10-19"
+  },
+  "verifier_note": "vigil_ml.m5 (explanation verifier) is covered by packages/vigil-ml/tests/test_m3_m5.py; included in mypy --strict scope (ADR-0030)."
+}

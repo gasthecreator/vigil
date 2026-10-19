@@ -1,0 +1,200 @@
+name: quality-gates
+
+# G-05, G-06, G-07 (partial), G-11 smoke — gates that must be able to fail.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typing-and-imports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Seeded failure — mypy on deliberately bad snippet
+        run: |
+          set +e
+          cat > /tmp/vigil_mypy_seed.py <<'PY'
+          def f(x: int) -> str:
+              return x  # type error under --strict
+          PY
+          uv run mypy --strict /tmp/vigil_mypy_seed.py
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Expected mypy to fail on seed snippet" >&2
+            exit 1
+          fi
+          echo "Seeded mypy failure OK (exit $code)"
+      - name: mypy --strict (ADR-0030 scope)
+        run: uv run mypy --config-file pyproject.toml
+      - name: Seeded failure — import-linter broken contract
+        run: |
+          set +e
+          # Temporarily plant a forbidden import; restore after.
+          seed="packages/vigil-core/vigil_core/_import_linter_seed.py"
+          printf 'from vigil_api import main  # noqa: F401\n' > "$seed"
+          bash scripts/run_lint_imports.sh
+          code=$?
+          rm -f "$seed"
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Expected lint-imports to fail on seeded vigil_api import" >&2
+            exit 1
+          fi
+          echo "Seeded import-linter failure OK (exit $code)"
+      - name: import-linter contracts
+        run: bash scripts/run_lint_imports.sh
+
+  coverage-ratchet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Seeded failure — coverage ratchet
+        run: |
+          set +e
+          uv run python scripts/check_coverage_ratchet.py --seed-fail
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Expected coverage ratchet seed-fail" >&2
+            exit 1
+          fi
+          echo "Seeded coverage failure OK"
+      - name: Measure coverage (core + eval)
+        run: |
+          mkdir -p reports/quality
+          uv run pytest packages/vigil-core/tests packages/vigil-eval/tests \
+            --cov=vigil_core --cov=vigil_eval \
+            --cov-report=json:reports/quality/coverage-run.json \
+            --cov-report=term-missing:skip-covered \
+            -q
+      - name: Coverage ratchet vs floor
+        run: uv run python scripts/check_coverage_ratchet.py --coverage-json reports/quality/coverage-run.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: coverage-run-json
+          path: reports/quality/coverage-run.json
+
+  security-scanners:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Install gitleaks
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: gitleaks detect
+        run: gitleaks detect --source . --verbose --redact --no-banner
+      - name: Bandit (API + core + eval)
+        run: |
+          mkdir -p reports/quality
+          uv run bandit -r apps/api/vigil_api packages/vigil-core/vigil_core packages/vigil-eval/vigil_eval \
+            -ll -f json -o reports/quality/bandit.json
+          uv run bandit -r apps/api/vigil_api packages/vigil-core/vigil_core packages/vigil-eval/vigil_eval -ll
+      - name: Semgrep (p/python)
+        run: |
+          uvx --from semgrep==1.110.0 semgrep scan --config p/python --error \
+            --exclude='quarantine/**' --exclude='reports/**' --exclude='**/.venv/**' \
+            apps/api packages/vigil-core packages/vigil-eval packages/vigil-ml
+      - name: Trivy filesystem
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+      - name: Licence allowlist
+        run: uv run python scripts/check_licences.py
+      - name: Seeded failure — licence gate
+        run: |
+          set +e
+          uv run python scripts/check_licences.py --seed-fail
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Expected licence seed-fail" >&2
+            exit 1
+          fi
+          echo "Seeded licence failure OK"
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/dependency-review-action@da24556b548a50705dd671f47852072ea4c105d9 # v4.7.1
+        with:
+          fail-on-severity: high
+
+  reproduce-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Seeded failure — make reproduce
+        run: |
+          set +e
+          uv run python scripts/reproduce.py --seed-fail
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "Expected reproduce seed-fail" >&2
+            exit 1
+          fi
+          echo "Seeded reproduce failure OK"
+      - name: make reproduce (smoke)
+        run: make reproduce

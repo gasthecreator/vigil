@@ -68,3 +68,52 @@ markers = [
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "import-linter>=2.15",
+    "mypy>=2.4.0",
+    "pandas-stubs>=3.0.5.260914",
+    "pytest-cov>=7.1.0",
+    "pytest-randomly>=5.0.0",
+    "types-pyyaml>=6.0.12.20260906",
+]
+
+# G-05: strict typing on the packages named in PROMPT-P16 PR2 (see ADR-0030).
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+files = [
+    "packages/vigil-core/vigil_core",
+    "packages/vigil-eval/vigil_eval",
+    "packages/vigil-ml/vigil_ml/m5.py",
+]
+mypy_path = ["packages/vigil-core", "packages/vigil-eval", "packages/vigil-ml"]
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "sklearn"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# G-05: hexagonal-ish layering — domain packages must not import the API app.
+[tool.importlinter]
+root_packages = ["vigil_core", "vigil_eval", "vigil_ml", "vigil_sim", "contracts", "vigil_api"]
+
+[[tool.importlinter.contracts]]
+name = "Domain packages do not import the API"
+type = "forbidden"
+source_modules = ["vigil_core", "vigil_eval", "vigil_ml", "vigil_sim", "contracts"]
+forbidden_modules = ["vigil_api"]
+
+[[tool.importlinter.contracts]]
+name = "vigil-core has no ML/eval/sim imports"
+type = "forbidden"
+source_modules = ["vigil_core"]
+forbidden_modules = ["vigil_ml", "vigil_eval", "vigil_sim"]

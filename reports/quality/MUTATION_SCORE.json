@@ -1,0 +1,14 @@
+{
+  "module": "vigil_ml.m5",
+  "tool": "mutmut",
+  "status": "tool_not_installed",
+  "target_kill_percent": 80.0,
+  "kill_percent": null,
+  "honest_note": "mutmut was not installed in this environment; install with `uv add --dev mutmut` and re-run scripts/run_mutation_m5.py on the nightly job.",
+  "generated_at": "2026-10-19T05:19:15.261093+00:00",
+  "machine": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.15"
+  },
+  "command": "uv run python scripts/run_mutation_m5.py"
+}

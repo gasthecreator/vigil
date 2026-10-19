@@ -87,7 +87,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr fonts-dejavu-core
       - name: Run linting
         run: uv run ruff check .
-      - name: Run tests
+      - name: Run tests (pytest-randomly shuffles order; seed printed in header)
+        # G-07: pytest-randomly is a committed dev dependency and auto-loads.
         run: uv run pytest
       - name: Run K1 acceptance contract tests
         run: VIGIL_ACCEPTANCE=1 VIGIL_CONTRACT_V2=1 uv run pytest tests/acceptance_k1 -v

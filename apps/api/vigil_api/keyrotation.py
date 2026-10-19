@@ -52,15 +52,19 @@ def rotate_patient_keys(db: Session, dry_run: bool = False) -> Tuple[int, int]:
         if mrn_rotated or ext_rotated:
             total_rotated += 1
             if not dry_run:
+                # Column names are fixed literals (not user input); values are bound.
+                allowed_columns = {"mrn", "external_id"}
                 updates = {}
                 if mrn_rotated:
                     updates["mrn"] = new_mrn
                 if ext_rotated:
                     updates["external_id"] = new_ext
-                set_clauses = ", ".join([f"{k} = :{k}" for k in updates.keys()])
+                if not set(updates).issubset(allowed_columns):
+                    raise RuntimeError("refusing unexpected column in key rotation")
+                set_clauses = ", ".join(f"{col} = :{col}" for col in updates)
                 updates["id"] = p_id
                 db.execute(
-                    text(f"UPDATE patients SET {set_clauses} WHERE id = :id"),
+                    text(f"UPDATE patients SET {set_clauses} WHERE id = :id"),  # nosec B608
                     updates,
                 )
 
