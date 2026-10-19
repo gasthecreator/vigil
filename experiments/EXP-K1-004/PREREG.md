@@ -2,7 +2,7 @@
 
 - **Status:** registered before implementation fitting or new K1 evaluation in this repair.
 - **Owner:** Vigil maintainers; independent acceptance verdict remains overseer-owned.
-- **Protocol version:** 1.9
+- **Protocol version:** 1.10
 - **Code baseline:** `2499752d392f0cf5bc9a40a10a840ed24dfe1477` (audit/design baseline only; no results from this protocol have been generated).
 - **Target:** one canonical `vigil_ml.k1` implementation, including all inference routes and any model-facing prediction API.
 - **Purpose:** repair route identity and inference behavior, establish whether the four-parameter model is identifiable and calibrated under its declared generative assumptions, and test transfer to the project's observed-data simulator without promoting K1.
@@ -58,6 +58,7 @@
 - **Amendment 1.7 (2026-10-19 21:07 UTC; before any fitting or evaluation):** stratify product-world marker forecasts into all eligible patients and the preregistered low-data subgroup with at most six measured pre-landmark CA 15-3 visits. Report each marker model's metrics and patient-bootstrap intervals separately. The low-data analysis retains the same patients, observed values, forecast horizon, exclusion rules and baselines; it does not compare marker forecasts with recurrence classifiers because those models estimate a different outcome.
 - **Amendment 1.8 (2026-10-19 21:09 UTC; before any fitting or evaluation):** move all remaining model-specific numerical settings that affect burden scaling, transformed-prior clipping, neural scale bounds, particle count and finite-difference identifiability into schema version 2 of `k1_assumptions.json`, and read them from that file at runtime. Values match the prior implementation where relevant; the configured burden-at-onset value is now applied consistently by simulation, likelihood prediction, particle filtering and NUTS. This removes hidden defaults without fitting to any result.
 - **Amendment 1.9 (2026-10-19 21:10 UTC; before any fitting or evaluation):** register the default route draw count, estimator training sizes/epochs, default random seed and validation-seed offset in the assumptions file, and make route/trainer defaults consume those values. Preserve the legacy `shuffle_pairs` option while shuffling both observations and paired parameters together. This removes hidden default budgets and fixes a latent pair-shuffle defect; the preregistered EXP-K1-004 explicitly supplies its own counts and seeds.
+- **Amendment 1.10 (2026-10-19 21:20 UTC; after training and the non-study smoke attempt, before any study cohort access):** correct porcelain status parsing in the runner. The smoke attempt stopped before any cohort generation or access because the validator stripped the leading status column from the first Git line. No study result was generated. The runner now preserves the status column when checking that only registered generated artifacts are dirty. Retrain against this amended runner so the provenance hash matches; no estimator or selection rule changes.
 - Any further protocol change must be timestamped and committed before the affected data or result is accessed; explain the reason and preserve the prior protocol text.
 
 ## Known limits

@@ -38,6 +38,25 @@ def git_output(*args: str) -> str:
     ).stdout.strip()
 
 
+def git_dirty_paths() -> set[str]:
+    output = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    paths: set[str] = set()
+    for line in output.splitlines():
+        if not line:
+            continue
+        path = line[3:].strip().strip('"')
+        if " -> " in path:
+            path = path.split(" -> ", maxsplit=1)[1]
+        paths.add(path)
+    return paths
+
+
 def verify_artifacts(config: dict[str, Any], training: dict[str, Any]) -> None:
     generated_paths = {
         "experiments/EXP-K1-004/training_results.json",
@@ -47,10 +66,7 @@ def verify_artifacts(config: dict[str, Any], training: dict[str, Any]) -> None:
         "packages/vigil-ml/vigil_ml/models/k1_amortized_weights.safetensors",
         "packages/vigil-ml/vigil_ml/models/k1_npe_weights.safetensors",
     }
-    dirty_paths = {
-        line[3:].strip().strip('"')
-        for line in git_output("status", "--porcelain", "--untracked-files=all").splitlines()
-    }
+    dirty_paths = git_dirty_paths()
     unexpected_dirty = dirty_paths - generated_paths
     if unexpected_dirty:
         raise RuntimeError(

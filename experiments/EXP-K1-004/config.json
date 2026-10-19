@@ -1,6 +1,6 @@
 {
   "experiment_id": "EXP-K1-004",
-  "protocol_version": "1.9",
+  "protocol_version": "1.10",
   "status": "registered_before_fitting",
   "code_baseline": "2499752d392f0cf5bc9a40a10a840ed24dfe1477",
   "purpose": "canonical K1 own-world inference validation and synthetic product-simulator transfer",
