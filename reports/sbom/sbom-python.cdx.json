@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:50876db5-d872-4ec3-afce-90b76f349884",
+  "serialNumber": "urn:uuid:f6dee9f9-e57e-5ab7-94b8-db2d04cffd8b",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-19T02:35:34.381961+00:00",
+    "timestamp": "1970-01-01T00:00:00+00:00",
     "tools": [
       {
         "vendor": "Vigil Security",
@@ -82,6 +82,32 @@
         {
           "alg": "SHA256",
           "content": "9f28306018cbd6d329e64a36d58256edff76dd996fe423bc957326e578b82a94"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ast-serialize",
+      "version": "0.13.1",
+      "purl": "pkg:pypi/ast-serialize@0.13.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "401cc84e8888d4d76f2c8d296fa006ed1a5ff993b6aff90dd777c03973efd025"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bandit",
+      "version": "1.9.4",
+      "purl": "pkg:pypi/bandit@1.9.4",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "b589e5de2afe70bd4d53fa0c1da6199f4085af666fde00e8a034f152a52cd628"
         }
       ]
     },
@@ -323,6 +349,19 @@
     },
     {
       "type": "library",
+      "name": "grimp",
+      "version": "3.17",
+      "purl": "pkg:pypi/grimp@3.17",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "5161e03c6f518fe4da43b06c97ff49a1e224ecb0e4b9fd6ef48235373d1b7b33"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "grpcio",
       "version": "1.84.0",
       "purl": "pkg:pypi/grpcio@1.84.0",
@@ -409,6 +448,19 @@
         {
           "alg": "SHA256",
           "content": "f844a669106cfdc73f47b1a9da003782fb17dc955a54c80972e0d93d1c63c514"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "import-linter",
+      "version": "2.15",
+      "purl": "pkg:pypi/import-linter@2.15",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "1da912bea5e172a82a3ce617b5543f75cf64dc0d8f4d9b46c5578b68ccb81590"
         }
       ]
     },
@@ -506,6 +558,19 @@
     },
     {
       "type": "library",
+      "name": "librt",
+      "version": "0.16.0",
+      "purl": "pkg:pypi/librt@0.16.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "ac38d6d8d66bf3d744148dbbc0b8e193e195a51e364ed55e224631f5721891fc"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "mako",
       "version": "1.4.3",
       "purl": "pkg:pypi/mako@1.4.3",
@@ -532,6 +597,19 @@
     },
     {
       "type": "library",
+      "name": "markdown-it-py",
+      "version": "4.2.0",
+      "purl": "pkg:pypi/markdown-it-py@4.2.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "markupsafe",
       "version": "3.0.4",
       "purl": "pkg:pypi/markupsafe@3.0.4",
@@ -553,6 +631,19 @@
         {
           "alg": "SHA256",
           "content": "cec596316640f2b394b8f0daa0ea61a8eae82d017b620b9f202befb972a59ea4"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mdurl",
+      "version": "0.1.2",
+      "purl": "pkg:pypi/mdurl@0.1.2",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"
         }
       ]
     },
@@ -592,6 +683,32 @@
         {
           "alg": "SHA256",
           "content": "5c839915465c68206c3e9c473357908216c28383b425361e5d144594bf85a7e0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mypy",
+      "version": "2.4.0",
+      "purl": "pkg:pypi/mypy@2.4.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "77bdaebd452f43fcfc4cc3ba94352a3ea537cd01e3f2d0879f48673d2ec00d6e"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mypy-extensions",
+      "version": "1.1.0",
+      "purl": "pkg:pypi/mypy-extensions@1.1.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558"
         }
       ]
     },
@@ -918,6 +1035,32 @@
     },
     {
       "type": "library",
+      "name": "pandas-stubs",
+      "version": "3.0.5.260914",
+      "purl": "pkg:pypi/pandas-stubs@3.0.5.260914",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "3f6fc1f147f68fd89c007105e7c94a948acb4ecd7eb20dc1c02e153c4ed5c250"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pathspec",
+      "version": "1.1.1",
+      "purl": "pkg:pypi/pathspec@1.1.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "pillow",
       "version": "12.3.0",
       "purl": "pkg:pypi/pillow@12.3.0",
@@ -954,6 +1097,26 @@
           "content": "a6768d25248312c297558af96a9f9c929e8c4cee0659cb07e780731095f38135"
         }
       ]
+    },
+    {
+      "type": "library",
+      "name": "psycopg",
+      "version": "3.3.6",
+      "purl": "pkg:pypi/psycopg@3.3.6",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "c081f2250df751a943036e42db6df4571c66cd0aabe8291a7a506512b12007d2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "psycopg-binary",
+      "version": "3.3.6",
+      "purl": "pkg:pypi/psycopg-binary@3.3.6",
+      "scope": "required"
     },
     {
       "type": "library",
@@ -1100,6 +1263,19 @@
     },
     {
       "type": "library",
+      "name": "pytest-randomly",
+      "version": "5.0.0",
+      "purl": "pkg:pypi/pytest-randomly@5.0.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "e9c575a5873ef168ddbe340ed9e97ce9edb4492ccc821e4b2ac6bb1f0ed515d2"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "python-dateutil",
       "version": "2.9.0.post0",
       "purl": "pkg:pypi/python-dateutil@2.9.0.post0",
@@ -1126,6 +1302,19 @@
     },
     {
       "type": "library",
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "requests",
       "version": "2.34.2",
       "purl": "pkg:pypi/requests@2.34.2",
@@ -1134,6 +1323,19 @@
         {
           "alg": "SHA256",
           "content": "f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rich",
+      "version": "15.0.0",
+      "purl": "pkg:pypi/rich@15.0.0",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36"
         }
       ]
     },
@@ -1295,6 +1497,19 @@
     },
     {
       "type": "library",
+      "name": "stevedore",
+      "version": "5.9.1",
+      "purl": "pkg:pypi/stevedore@5.9.1",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "e97a2667923efda926e8713fde6a73616df68210a3cbc6f02b48967b676fd8bf"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "sympy",
       "version": "1.14.0",
       "purl": "pkg:pypi/sympy@1.14.0",
@@ -1385,6 +1600,19 @@
       "version": "3.8.0",
       "purl": "pkg:pypi/triton@3.8.0",
       "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "types-pyyaml",
+      "version": "6.0.12.20260906",
+      "purl": "pkg:pypi/types-pyyaml@6.0.12.20260906",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA256",
+          "content": "f59c1cc05010b833d2d72287bbaa72610106b28d42d89a907313117faba85212"
+        }
+      ]
     },
     {
       "type": "library",

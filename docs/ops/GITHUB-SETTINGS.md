@@ -108,6 +108,13 @@ gh api --method PATCH -H "Accept: application/vnd.github+json" \
   - (names verified against `gh api repos/gasthecreator/vigil/commits/main/check-runs`; a required context that no job reports blocks every merge forever)
 - [ ] Review requirement: see the note below.
 - [ ] Secret scanning and Dependabot alerts are active.
+- [ ] **Dependency graph** enabled (Settings → Code security → Dependency graph) so `actions/dependency-review-action` can run on PRs. Private repos also need GitHub Advanced Security. Until then the quality-gates job records PARTIAL in `reports/quality/DEPENDENCY_REVIEW.json` and does not block; `pip-audit` / `npm audit` remain hard gates.
+
+```bash
+# Enable dependency graph (public repos) — adjust for private + GHAS as needed:
+gh api -X PUT "repos/gasthecreator/vigil/vulnerability-alerts"
+# UI: https://github.com/gasthecreator/vigil/settings/security_analysis
+```
 
 ## 4. Notes added in the final-build Tier 0
 

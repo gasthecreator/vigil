@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "forbidden_findings": [],
+  "lgpl_review_notes": [
+    {
+      "ecosystem": "pip",
+      "name": "psycopg-binary",
+      "license": "LGPL-3.0-only"
+    },
+    {
+      "ecosystem": "pip",
+      "name": "psycopg",
+      "license": "LGPL-3.0-only"
+    },
+    {
+      "ecosystem": "pip",
+      "name": "scipy",
+      "license": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers."
+    }
+  ],
+  "policy": "Fail on SPDX/classifier AGPL, GPL-3, SSPL, BUSL, Commons-Clause. LGPL noted but not failed. Long licence prose is not substring-scanned."
+}

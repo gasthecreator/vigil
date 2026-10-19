@@ -35,6 +35,7 @@
 | T2g | Final build Tier 2: localisation review-state ledger and medical glossary (pcm/yo/ha/ig unreviewed; H-118) | SUBMITTED FOR REVIEW | `feat/tier2-localisation` | [`docs/progress/TIER2-LOCALISATION-REPORT.md`](progress/TIER2-LOCALISATION-REPORT.md) | — |
 | T3 | Final build Tier 3: honesty sweep, STATUS.md, make demo, partner packet, HANDOVER, v1.0.0-rc.2, regression | SUBMITTED FOR REVIEW | `feat/tier3-finish-verify-handover` | [`docs/progress/TIER3-REPORT.md`](progress/TIER3-REPORT.md) | — |
 | P16-1 | Gap close PR1: production reality (G-01 Docker/compose, G-02 Postgres+Alembic+CI, G-03 scale probe) | SUBMITTED FOR REVIEW | `feat/p16-pr1-production-reality` | [`docs/progress/P16-PR1-REPORT.md`](progress/P16-PR1-REPORT.md) | — |
+| P16-2 | Gap close PR2: quality gates (G-04 pre-commit, G-05 mypy+import-linter, G-06 coverage/mutation, G-07 scanners, G-11 reproduce, G-13 flake, G-14 Dependabot) | SUBMITTED FOR REVIEW | `feat/p16-pr2-quality-gates` | [`docs/progress/P16-PR2-REPORT.md`](progress/P16-PR2-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |
@@ -104,12 +105,13 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | H-004 | Complete CITI Training & submit PhysioNet MIMIC-IV credentialing | Master Plan §7.2 / WP1.3 | `docs/data/ACCESS.md` §6 | OPEN |
 | H-117 | Clinician usability of OCR confirm + consented real lab reports | H27 residual risk; EXP-OCR-001 is synthetic | `docs/HANDOVER.md` H-117 | OPEN |
 | H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
-| H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
+| H-305 | Enable Dependency graph (+ GHAS if private) so dependency-review CI can hard-fail | G-07; action unsupported until graph is on | `docs/ops/GITHUB-SETTINGS.md` §3 | OPEN |
 
 ## Open blockers
 _None recorded. External public datasets bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers._
 
 ## Decisions log (pointers to ADRs)
+- ADR-0030: Typing and import-linter scope (P16 PR2 / G-05) — strict mypy on vigil-core, vigil-eval, m5.py only
 - ADR-0001: Monorepo layout (`apps/api`, `apps/web`, `packages/*`)
 - ADR-0002: Quarantine prototype models (`quarantine/legacy_models/`)
 - ADR-0003: Claims policy and truth reset (`scripts/check_claims.py`)

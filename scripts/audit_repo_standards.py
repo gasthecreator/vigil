@@ -155,7 +155,8 @@ def t0_hazards(r: Repo) -> Item:
 
 def t0_root_clean(r: Repo) -> Item:
     allowed = {
-        ".editorconfig", ".gitignore", "AGENTS.md", "CHANGELOG.md", "CITATION.cff", "CODE_OF_CONDUCT.md",
+        ".editorconfig", ".gitignore", ".gitleaks.toml", ".gitleaksignore",
+        "AGENTS.md", "CHANGELOG.md", "CITATION.cff", "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md", "LICENSE", "Makefile", "README.md", "SECURITY.md", "conftest.py",
         "package-lock.json", "package.json", "pyproject.toml", "uv.lock", ".python-version", ".nvmrc",
         ".pre-commit-config.yaml", ".gitattributes", "docker-compose.yml", "Dockerfile", ".dockerignore",

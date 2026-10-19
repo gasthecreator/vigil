@@ -445,8 +445,12 @@ def test_reminder_worker_honours_patient_opt_out(client):
     try:
         db = SessionLocal()
         receipts = run_reminder_cycle(db=db, provider=sandbox, current_time=now)
-        # Sandbox provider should NOT have sent any message for this task
-        assert len(sandbox.sent_messages) == 0
+        # Opted-out patient must not receive a dispatch for *this* task.
+        # Other overdue tasks may exist in a shared Postgres DB (pytest-randomly reorder);
+        # only this task_id is in scope for the assertion.
+        assert not any(
+            (m.get("metadata") or {}).get("task_id") == tid for m in sandbox.sent_messages
+        )
 
         # Receipt should record opted_out status
         task_receipts = [r for r in receipts if r.task_id == tid]

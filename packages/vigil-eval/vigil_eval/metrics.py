@@ -16,9 +16,10 @@ Includes:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 
 @dataclass
@@ -28,7 +29,7 @@ class KaplanMeierEstimate:
     times: np.ndarray  # Unique event/censoring times (sorted)
     survival_prob: np.ndarray  # Estimated S(t) = P(T > t)
 
-    def predict_survival(self, t: float | np.ndarray) -> np.ndarray:
+    def predict_survival(self, t: float | np.ndarray) -> NDArray[np.floating]:
         """Evaluates S(t) at arbitrary query times t using right-continuous step function."""
         t_arr = np.atleast_1d(t)
         # Search sorted insertion indices
@@ -40,7 +41,7 @@ class KaplanMeierEstimate:
         probs[~valid_mask] = 1.0  # Before first event, survival is 1.0
 
         # Floor probabilities at small positive epsilon to prevent division by zero in IPCW
-        return np.clip(probs, 1e-4, 1.0)
+        return cast(NDArray[np.floating], np.clip(probs, 1e-4, 1.0))
 
 
 def compute_kaplan_meier(

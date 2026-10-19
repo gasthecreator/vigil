@@ -1,0 +1,77 @@
+name: zap-baseline
+
+# G-07: ZAP baseline against the seeded e2e API (nightly / manual).
+on:
+  schedule:
+    - cron: "40 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-baseline
+  cancel-in-progress: true
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Start e2e API
+        run: |
+          mkdir -p data reports/quality
+          uv run python scripts/run_e2e_server.py &
+          echo $! > /tmp/vigil-e2e.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/health >/dev/null; then
+              echo "API up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start" >&2
+          exit 1
+      - name: ZAP baseline
+        uses: zaproxy/action-baseline@7c4deb10e6261301961c86d65d54a516394f9aed # v0.14.0
+        with:
+          target: "http://127.0.0.1:8000"
+          fail_action: false
+          allow_issue_writing: false
+          cmd_options: "-a"
+      - name: Write ZAP summary stub
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          Path("reports/quality").mkdir(parents=True, exist_ok=True)
+          payload = {
+              "target": "http://127.0.0.1:8000",
+              "profile": "local e2e (REQUIRE_AUTH=false)",
+              "triage_doc": "docs/security/ZAP-BASELINE.md",
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "note": "Full HTML report is the workflow artefact from zaproxy/action-baseline; local-profile findings are expected (see triage doc).",
+          }
+          Path("reports/quality/ZAP_SUMMARY.json").write_text(json.dumps(payload, indent=2) + "\n")
+          print(json.dumps(payload, indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: zap-summary
+          path: reports/quality/ZAP_SUMMARY.json
+      - name: Stop e2e API
+        if: always()
+        run: |
+          if [ -f /tmp/vigil-e2e.pid ]; then kill "$(cat /tmp/vigil-e2e.pid)" || true; fi

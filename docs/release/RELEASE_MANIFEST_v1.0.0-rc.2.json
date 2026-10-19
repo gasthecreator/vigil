@@ -2,14 +2,14 @@
   "release": "v1.0.0-rc.2",
   "kind": "sha256-hash-manifest",
   "description": "Vigil release candidate v1.0.0-rc.2: SHA-256 digests of the listed artifacts as committed at git_commit",
-  "timestamp": "2026-10-19T02:39:52.885193+00:00",
-  "git_commit": "f9a4a9e81ae1bb37fe63b85712d04335ddbb9a55",
+  "timestamp": "2026-10-19T05:52:50.098619+00:00",
+  "git_commit": "1f159e619225ee3a0dd4e681dcf1e2e95ed39158",
   "artifact_count": 23,
   "artifacts": [
     {
       "path": "docs/safety/HAZARD_LOG.md",
-      "sha256": "69018a0b48b9ab07a2055db68514d98e1d02850f8aca3930c5154be2c09dd0d4",
-      "size_bytes": 21245
+      "sha256": "dab4d0b03868fc549a51b045586b5afbffddf45d9112bc389ef7ff9a25a57611",
+      "size_bytes": 21142
     },
     {
       "path": "docs/security/THREAT_MODEL.md",
@@ -78,8 +78,8 @@
     },
     {
       "path": "docs/deployment/ON_PREM_INSTALL.md",
-      "sha256": "16aaa54d938eceaf640dca937e997a33e3c1d5d5fa08c4475160dfdf1efd4858",
-      "size_bytes": 6806
+      "sha256": "350fc27569a5149b630972dbe43cf873a36fa1ca456c50a6a9c3a17341e48f93",
+      "size_bytes": 7748
     },
     {
       "path": "docs/resilience/DISASTER_RECOVERY.md",
@@ -88,13 +88,13 @@
     },
     {
       "path": "reports/sbom/sbom-python.cdx.json",
-      "sha256": "bf4c0314546bb5732ddfb1297b758e17b6a7716303ca4d50c34d00e95b205045",
-      "size_bytes": 38276
+      "sha256": "c2b7a5a049e9a93f8b5d17a24b26cf5af66253691ced3cc587927eb7a4330b35",
+      "size_bytes": 43931
     },
     {
       "path": "reports/sbom/sbom-npm.cdx.json",
-      "sha256": "77f24cf2d8d1085b4bcc1914ea6e84655567fa85cbdc3b2616046925c8556903",
-      "size_bytes": 184268
+      "sha256": "e676cbe9533a3c5c3c0eb60f4a7be00f330fa2c5d5faccc1ebf0b2a7faf47fbc",
+      "size_bytes": 184261
     },
     {
       "path": "reports/load/LOAD_TEST_RESULTS.json",

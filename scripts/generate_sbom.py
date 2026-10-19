@@ -12,6 +12,7 @@ Generates:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tomllib
 import uuid
@@ -20,6 +21,18 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def _deterministic_meta(components: List[Dict[str, Any]], lock_path: Path) -> Dict[str, str]:
+    """Stable serial + timestamp so regenerate-and-diff is bit-identical across clones."""
+    body = json.dumps(components, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    lock_bytes = lock_path.read_bytes()
+    digest = hashlib.sha256(body + b"\0" + lock_bytes).hexdigest()
+    serial = f"urn:uuid:{uuid.uuid5(uuid.NAMESPACE_URL, f'vigil-sbom:{digest}')}"
+    # Fixed epoch — wall clock / checkout mtime would break cross-machine diffs.
+    # Dependency identity lives in components (+ serial derived from lock contents).
+    ts = datetime(1970, 1, 1, tzinfo=timezone.utc).isoformat()
+    return {"serialNumber": serial, "timestamp": ts}
 
 
 def generate_python_sbom() -> Dict[str, Any]:
@@ -58,14 +71,15 @@ def generate_python_sbom() -> Dict[str, Any]:
         components.append(comp)
 
     components.sort(key=lambda c: c["name"])
+    meta = _deterministic_meta(components, uv_lock)
 
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{uuid.uuid4()}",
+        "serialNumber": meta["serialNumber"],
         "version": 1,
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": meta["timestamp"],
             "tools": [{"vendor": "Vigil Security", "name": "generate_sbom.py", "version": "1.0.0"}],
             "component": {
                 "type": "application",
@@ -119,14 +133,15 @@ def generate_npm_sbom() -> Dict[str, Any]:
         components.append(comp)
 
     components.sort(key=lambda c: c["name"])
+    meta = _deterministic_meta(components, lock_path)
 
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
-        "serialNumber": f"urn:uuid:{uuid.uuid4()}",
+        "serialNumber": meta["serialNumber"],
         "version": 1,
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": meta["timestamp"],
             "tools": [{"vendor": "Vigil Security", "name": "generate_sbom.py", "version": "1.0.0"}],
             "component": {
                 "type": "application",
