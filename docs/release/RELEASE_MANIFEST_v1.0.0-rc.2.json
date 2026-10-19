@@ -2,8 +2,8 @@
   "release": "v1.0.0-rc.2",
   "kind": "sha256-hash-manifest",
   "description": "Vigil release candidate v1.0.0-rc.2: SHA-256 digests of the listed artifacts as committed at git_commit",
-  "timestamp": "2026-10-19T05:19:15.152501+00:00",
-  "git_commit": "4d9e44808ac025690039ed9e57b0580e58c86151",
+  "timestamp": "2026-10-19T05:52:05.304727+00:00",
+  "git_commit": "89d274d580fbf6fdbbedbf771284eeed82a6eacd",
   "artifact_count": 23,
   "artifacts": [
     {
@@ -88,12 +88,12 @@
     },
     {
       "path": "reports/sbom/sbom-python.cdx.json",
-      "sha256": "bf4c0314546bb5732ddfb1297b758e17b6a7716303ca4d50c34d00e95b205045",
-      "size_bytes": 38276
+      "sha256": "a034626ea6c116cdd7e861b8e8031076819cd60e12564c7589577e5d35105159",
+      "size_bytes": 43938
     },
     {
       "path": "reports/sbom/sbom-npm.cdx.json",
-      "sha256": "77f24cf2d8d1085b4bcc1914ea6e84655567fa85cbdc3b2616046925c8556903",
+      "sha256": "8b59ca701cec4ce5909c35a2aee237136709d71058cf149b8e7591dac0df4f00",
       "size_bytes": 184268
     },
     {
