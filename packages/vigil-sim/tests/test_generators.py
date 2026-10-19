@@ -221,3 +221,27 @@ def test_training_labels_are_unknown_when_loss_to_follow_up_precedes_horizon():
     assert np.isnan(y.iloc[row])
     assert times[row] == pytest.approx(10.0)
     assert event_codes[row] == 0
+
+
+def test_oracle_training_labels_censor_recurrence_after_loss_to_follow_up():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=83).generate_cohort(
+        num_patients=10, duration_days=365.0
+    )
+    patient = cohort.patients[0]
+    first_observation = min(
+        (obs for obs in cohort.observations if obs.patient_id == patient.patient_id),
+        key=lambda obs: obs.day,
+    )
+    patient.true_recurrence_event = True
+    patient.true_recurrence_day = first_observation.day + 100.0
+    patient.competing_event = "lost_to_follow_up"
+    patient.competing_event_day = first_observation.day + 10.0
+    patient.administrative_censor_day = first_observation.day + 365.0
+
+    X, y, times, event_codes = cohort.get_survival_training_examples(
+        horizon_days=180.0, use_observed_labels=False
+    )
+    row = X.index[(X["patient_id"] == patient.patient_id) & (X["day"] == first_observation.day)][0]
+    assert np.isnan(y.iloc[row])
+    assert times[row] == pytest.approx(10.0)
+    assert event_codes[row] == 0

@@ -305,15 +305,25 @@ class CohortDataset:
             admin_end = pt.administrative_censor_day
             if admin_end is None or not np.isfinite(admin_end):
                 admin_end = last_observation_day[pt.patient_id]
+            censor_day = min(
+                float(admin_end),
+                float(competing_day)
+                if loss_to_follow_up and has_competing_day
+                else float(admin_end),
+            )
             first_event_day: float | None = None
             event_code = 0
-            if rec_event and rec_day is not None and np.isfinite(rec_day) and rec_day <= admin_end:
+            if (
+                rec_event
+                and rec_day is not None
+                and np.isfinite(rec_day)
+                and rec_day <= censor_day
+            ):
                 first_event_day, event_code = float(rec_day), 1
             if terminal_competing and competing_day <= admin_end and (
                 first_event_day is None or competing_day < first_event_day
             ):
                 first_event_day, event_code = float(competing_day), 2
-            censor_day = min(float(admin_end), float(competing_day) if loss_to_follow_up and has_competing_day else float(admin_end))
             end_day = first_event_day if first_event_day is not None else censor_day
             time_from_landmark = max(0.0, end_day - obs.day)
             if event_code == 1 and time_from_landmark <= horizon_days:
