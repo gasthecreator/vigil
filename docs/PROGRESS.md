@@ -30,6 +30,7 @@
 | T2c | Final build Tier 2: K4 deep irregular-time families rebuilt (six, with export and parity tests), old stub and S4 retracted, pre-registered study EXP-K4-001 (all three kill rules fired: pre-training lowered AUC, no deep family beat the strongest baseline, scale does not help) | SUBMITTED FOR REVIEW | `feat/tier2-k4-s4` | [`docs/progress/TIER2-K4-REPORT.md`](progress/TIER2-K4-REPORT.md) | — |
 | T2d | Final build Tier 2: K6 active sensing rebuilt (planner, dense-world engine, export tests), old stub and S6 retracted, pre-registered study EXP-K6-001 (H1 and H2 met in simulation, 2.3 and 0.8 days; H3 not met; suggestion-only, nothing clinical) | SUBMITTED FOR REVIEW | `feat/tier2-k6` | [`docs/progress/TIER2-K6-REPORT.md`](progress/TIER2-K6-REPORT.md) | — |
 | T2e | Final build Tier 2: M12 federated averaging and DP-SGD, old S10 retracted, pre-registered study EXP-M12-001 (H3 met on this MLP, H2 not met, not wired) | SUBMITTED FOR REVIEW | `feat/tier2-m12` | [`docs/progress/TIER2-M12-REPORT.md`](progress/TIER2-M12-REPORT.md) | — |
+| T2f | Final build Tier 2: local OCR lab importer (S-015) with mandatory human confirm gate, synthetic accuracy EXP-OCR-001, hazard H27 | SUBMITTED FOR REVIEW | `feat/tier2-ocr-lab-importer` | [`docs/progress/TIER2-OCR-REPORT.md`](progress/TIER2-OCR-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |
@@ -97,6 +98,7 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | H-002 | Submit SEER electronic Research Data Agreement | Master Plan §7.2 / WP1.3 | `docs/data/ACCESS.md` §2 | OPEN |
 | H-003 | Submit Project Data Sphere non-commercial research application | Master Plan §7.2 / WP1.3 | `docs/data/ACCESS.md` §5 | OPEN |
 | H-004 | Complete CITI Training & submit PhysioNet MIMIC-IV credentialing | Master Plan §7.2 / WP1.3 | `docs/data/ACCESS.md` §6 | OPEN |
+| H-117 | Clinician usability of OCR confirm + consented real lab reports | H27 residual risk; EXP-OCR-001 is synthetic | `docs/HANDOVER.md` H-117 | OPEN |
 
 ## Open blockers
 _None recorded. External public datasets bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers._
@@ -111,6 +113,7 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 - ADR-0007: Model K1 designated as research inference module; K3/B4 shipped surveillance baselines
 - ADR-0008: Self-Contained JWT Bearer Authentication with Keycloak / OIDC Federation (`docs/adr/0008-auth-provider.md`)
 - ADR-0009: Postgres-Native Transactional Outbox with ARQ Async Worker (`docs/adr/0009-async-queue.md`)
+- ADR-0028: Local OCR lab importer is draft-only; the confirm body is the record (`docs/adr/0028-ocr-draft-confirm-gate.md`)
 
 ## Verdict history (overseer)
 _None yet._

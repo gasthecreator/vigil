@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - K4 deep irregular-time risk models rebuilt as six tested families (`vigil_ml.k4`: GRU-D, GRU-ODE-Bayes encoder, Neural CDE, continuous-time transformer, GRUwE, state-space; masked-analyte pre-training code; safetensors and ONNX export with parity tests) and pre-registered study `experiments/EXP-K4-001/`: all three kill rules fired (pre-training lowered AUC; no deep family beat the strongest classical baseline; scale does not help), so K4 is not claimed to help (ADR-0025). Stub S-016 records the hand-written `ProductionEnsembleK8`.
 - M12 federated averaging and DP-SGD as in-process research code (`vigil_ml.m12`) and pre-registered study `experiments/EXP-M12-001/` (synthetic sites only; H3 met on this MLP, H2 not met, not wired; ADR-0027).
+- Local OCR lab-report importer (`vigil_api.ocr`): photo/PDF → *draft* suggestions, human confirm required before an observation is written (ADR-0028). Accuracy on generated reports in `experiments/EXP-OCR-001/` (synthetic). Hazard H27 OPEN.
 
 ### Changed
 - Old study S4 and the `DeepZooK4` stub retracted (literal dictionaries; hand-written formula scored as `K4_DeepZoo` in S9); the S9 row is removed and disclosed; K4 model card rewritten without retracted numbers (ADR-0025).
