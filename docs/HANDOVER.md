@@ -49,6 +49,26 @@
 
 | ID | Item | Evidence | Plan |
 |---|---|---|---|
-| X-DEP-1 | (RESOLVED on branch `fix/web-next15-security`, pending merge) `npm audit --omit=dev` reported 1 critical and 1 high advisory for `next@14.2.35` and `postcss`. Upgraded to `next@15.5.28` with a `postcss` override; `npm audit --package-lock-only --omit=dev` now reports 0 vulnerabilities and is a CI gate. Dev-only tooling advisories remain (`braces`/`tailwindcss`/`eslint-config-next` chain, 7 high, 2 moderate; build-time only, fix needs `tailwindcss@4`, a breaking change) | `cd apps/web && npm audit` | Merge that PR after the owner reviews; the dev-tooling advisories stay OPEN |
+| X-DEP-1 | Production `npm audit --omit=dev` is clean on `next@15.5.28` (merged). Dev-only tooling advisories remain (`braces`/`tailwindcss`/`eslint-config-next` chain; build-time only; fix needs `tailwindcss@4`, a breaking change) | `cd apps/web && npm audit` | Leave until a deliberate Tailwind 4 migration |
 | X-AUD-1 | Repo-standards audit is below its Master-Plan target in every tier | `docs/audits/REPO-AUDIT-P15.md` (script-written; gap list at the end) | Items that need the owner are in section A; the rest are listed there with fixes |
 | X-ADR-0018-2 | Direct dependencies use lower bounds (`>=`), reproducibility rests on lockfiles | ADR-0018 Amendment 1 | Documented, not changed |
+
+## D. Partner outreach, ethics/regulatory routes, and sign-off before any patient is touched (Tier 3)
+
+Complete checklist. Do **not** touch real patient data until every row marked **MUST** is done. Drafted text lives in the linked files; this table is the execution order.
+
+| ID | Action | MUST before patients? | Exact steps / drafted text | Status |
+|---|---|---|---|---|
+| H-201 | Choose partner site(s) and a named clinical champion | MUST (for any real extract) | Send [`docs/clinical/PARTNERSHIP/PARTNER-PACKET.md`](clinical/PARTNERSHIP/PARTNER-PACKET.md) + [`VALUE-PROPOSITION.md`](clinical/PARTNERSHIP/VALUE-PROPOSITION.md). Record site name, champion, and decision date in an owner-held note (not in git if it names people without consent). | BLOCKED on a person |
+| H-202 | Institutional ethics (NHREC / local HREC) | MUST | Fill applicant identity fields in [`ETHICS-APPLICATION.md`](clinical/PARTNERSHIP/ETHICS-APPLICATION.md); submit under the owner's or site PI identity. Keep approval letter outside the public repo if required. | READY (draft); BLOCKED on submission |
+| H-203 | Execute DUA + complete DPIA with site DPO | MUST | [`DUA-TEMPLATE.md`](clinical/PARTNERSHIP/DUA-TEMPLATE.md), [`DPIA.md`](clinical/PARTNERSHIP/DPIA.md) (partnership) and [`docs/regulatory/DPIA.md`](regulatory/DPIA.md) (product draft). | READY (templates) |
+| H-204 | Freeze pre-registration before analysis | MUST | Ratify PR-01…PR-09 (H-101); create `docs/clinical/PREREG-FREEZE.json`; `python scripts/check_prereg_freeze.py` exits 0. | READY; gate exits 1 today |
+| H-205 | On-premises de-identified ingest only | MUST | Partner staff run [`DEIDENTIFICATION-CHECKLIST.md`](clinical/PARTNERSHIP/DEIDENTIFICATION-CHECKLIST.md) then `scripts/run_partner_ingest.py` on **their** machine; only the rejection report leaves the site (H-102). | READY; BLOCKED on partner |
+| H-206 | Regulator pre-submission (NAFDAC / SaMD) if claiming a device | MUST before marketing as a device | [`docs/regulatory/`](regulatory/) — all `DRAFT-UNREVIEWED`. Optional for a pure retrospective quality audit with no device claim. | READY (drafts) |
+| H-207 | Clinical advisor engagement | MUST before pilot UI use | Appoint oncology + chemical pathology advisors; have them review stop rules and M4 evidence rows (H-107, H-112). | BLOCKED on people |
+| H-208 | Translation / clinical review of local-language strings | MUST before patient-facing non-English | H-118 workflow in `packages/ui/i18n/review_state.json`. | READY; BLOCKED on reviewers |
+| H-209 | Repository settings + release signing | MUST before a public signed release | H-GH-1, H-GH-2, H-SIGN-1 (`docs/ops/GITHUB-SETTINGS.md`, `docs/release/SIGNING.md`). | READY |
+| H-210 | Hosting decision (on-prem vs cloud) | MUST before production deploy | Follow [`docs/deployment/ON_PREM_INSTALL.md`](deployment/ON_PREM_INSTALL.md); provision field-encryption keys (H-004); never ship default JWT secrets. | READY (docs) |
+| H-211 | Who signs what before any patient is touched | MUST | **Ethics chair / HREC** (protocol), **site DPO or legal** (DUA/DPIA), **clinical lead** (stop rules + go/no-go in `docs/clinical/PILOT/` — today **NO-GO**), **quality lead** (silent-mode shadow DB access list, H-105), **owner** (signing key + GitHub protection). No Vigil model output may drive care until go/no-go is explicitly flipped by the clinical lead after real-data evidence. | READY (roles named; signatures absent) |
+| H-212 | Public-data applications (optional parallel track) | not required for a hospital DUA path | H-103: MIMIC-IV, Project Data Sphere, SEER drafts in `docs/clinical/APPLICATIONS/`. | READY (unsubmitted) |
+| H-213 | Demo to a hospital without real data | no patients involved | `make demo` + [`docs/demo/OWNER-SCRIPT.md`](demo/OWNER-SCRIPT.md). Say “synthetic” for every number. | READY |

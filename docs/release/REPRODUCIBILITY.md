@@ -1,7 +1,7 @@
-# Vigil Release Candidate (v1.0.0-rc.1) Reproducibility Guide
+# Vigil Release Candidate (v1.0.0-rc.2) Reproducibility Guide
 
 **Document ID:** VIG-REL-001  
-**Version:** 1.0.0-rc.1  
+**Version:** 1.0.0-rc.2  
 **Standard Compliance:** Master Plan §3, §10, §12, §18.2, Reality Rule RR1  
 **Target:** Independent Evaluators, Overseers, Research Collaborators  
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview & Hermetic Guarantee
 
-Vigil is committed to total mathematical and bit-for-bit computational reproducibility. All scientific studies, machine learning models, simulation benchmarks, and governance audits are deterministic and execute from a clean repository checkout without internet access or manual intervention.
+Vigil is committed to total mathematical and bit-for-bit computational reproducibility. All scientific studies, machine learning models, simulation benchmarks, and governance audits are deterministic and execute from a clean repository checkout without internet access or manual intervention. CI job `clean-clone-reproducibility` clones the commit into a fresh directory and re-runs `scripts/verify_study_reproducibility.py`.
 
 ### Frozen Environment Specifications
 - **Operating System:** Ubuntu 22.04 / 24.04 LTS or macOS Sonoma 14+
@@ -42,6 +42,15 @@ python3 scripts/verify_hazard_log.py
 
 # 4. Execute Study Reproducibility verifier (asserts bit-for-bit reproduction)
 python3 scripts/verify_study_reproducibility.py
+python3 scripts/generate_status.py --check
+```
+
+STATUS and the release hash manifest:
+```bash
+python3 scripts/generate_status.py
+python3 scripts/generate_sbom.py
+python3 scripts/generate_release_manifest.py generate --release v1.0.0-rc.2
+python3 scripts/generate_release_manifest.py verify   --release v1.0.0-rc.2
 ```
 
 ---

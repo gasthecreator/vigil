@@ -22,20 +22,19 @@ sys.path.insert(0, str(ROOT / "packages" / "vigil-core"))
 
 from cryptography.fernet import Fernet
 
-# Generate a valid urlsafe base64 key
-real_key = Fernet.generate_key().decode()
-os.environ["ENVIRONMENT"] = "local"
-os.environ["REQUIRE_AUTH"] = "false"
-os.environ["DATABASE_URL"] = f"sqlite:///{ROOT / 'data' / 'e2e_workstation.db'}"
-os.environ["VIGIL_FIELD_ENCRYPTION_KEYS"] = real_key
-os.environ["FIELD_ENCRYPTION_KEYS"] = real_key
+# Local-profile defaults for e2e/demo seeding (do not clobber caller-set values).
+os.environ.setdefault("ENVIRONMENT", "local")
+os.environ.setdefault("REQUIRE_AUTH", "false")
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{ROOT / 'data' / 'e2e_workstation.db'}")
+if not os.environ.get("VIGIL_FIELD_ENCRYPTION_KEYS") and not os.environ.get("FIELD_ENCRYPTION_KEYS"):
+    real_key = Fernet.generate_key().decode()
+    os.environ["VIGIL_FIELD_ENCRYPTION_KEYS"] = real_key
+    os.environ["FIELD_ENCRYPTION_KEYS"] = real_key
 
-import uvicorn  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from vigil_api.crypto import compute_blind_index  # noqa: E402
 from vigil_api.database import Base  # noqa: E402
-from vigil_api.main import app  # noqa: E402
 from vigil_api.models.patient import BaselineProfile, Patient  # noqa: E402
 from vigil_api.models.v2 import (  # noqa: E402
     Alert,
@@ -59,14 +58,24 @@ from vigil_api.models.v2 import (  # noqa: E402
     UserRole,
 )
 
+# Deliberately do not import vigil_api.main here: seeding must stay light for `make demo`.
 
-def seed_database():
+
+def seed_database(db_path: Path | None = None):
     """Initializes schema and seeds realistic clinical data for M9 workstation tests."""
-    db_path = ROOT / "data" / "e2e_workstation.db"
+    if db_path is None:
+        # Prefer DATABASE_URL sqlite path when set; else default e2e file.
+        url = os.environ.get("DATABASE_URL", "")
+        if url.startswith("sqlite:///"):
+            db_path = Path(url.removeprefix("sqlite:///"))
+        else:
+            db_path = ROOT / "data" / "e2e_workstation.db"
+    db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
         db_path.unlink()
 
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
     engine = create_engine(os.environ["DATABASE_URL"])
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
@@ -444,6 +453,9 @@ def seed_database():
 
 
 def main():
+    import uvicorn
+    from vigil_api.main import app
+
     seed_database()
     print("🚀 Starting FastAPI E2E server on http://127.0.0.1:8000 ...")
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
