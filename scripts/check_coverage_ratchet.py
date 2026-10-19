@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,9 +34,13 @@ def main() -> int:
     args = p.parse_args()
 
     if args.seed_fail:
-        print("Seeded failure: requiring 100.0% against a synthetic 0.0% run")
-        print("❌ coverage 0.00% < floor 100.00%")
-        return 1
+        # Run the REAL comparison against a synthetic 0% report so this demo cannot drift from the gate.
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            fake = Path(d) / "cov.json"
+            fake.write_text(json.dumps({"totals": {"percent_covered": 0.0}}), encoding="utf-8")
+            return subprocess.run([sys.executable, __file__, "--coverage-json", str(fake)]).returncode
 
     if not args.coverage_json or not args.coverage_json.exists():
         print(f"Missing coverage JSON: {args.coverage_json}", file=sys.stderr)

@@ -46,8 +46,12 @@ def verify_m10_reproducibility() -> bool:
         new_data = json.load(f)
 
     # Compare all facility results and hypotheses (excluding volatile timestamp)
-    match = True
-    for key in ("study", "facilities", "hypotheses", "privacy_controls"):
+    # Compare every key except the volatile timestamp. An earlier version listed key names that do not
+    # exist in the report, so both sides were None and the check could never fail (overseer review, PR #71).
+    match = bool(committed_data) and set(committed_data) == set(new_data)
+    if not match:
+        print("❌ M10 report key set changed or is empty!")
+    for key in sorted((set(committed_data) | set(new_data)) - {"timestamp_utc"}):
         if committed_data.get(key) != new_data.get(key):
             print(f"❌ M10 reproducibility mismatch in section '{key}'!")
             match = False

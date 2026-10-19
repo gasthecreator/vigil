@@ -40,5 +40,12 @@ Pre-commit, scoped `mypy --strict`, import-linter, coverage ratchet, security sc
 6. **gitleaks** allowlists `tests/`, `scripts/attack_api.py`, and example env templates (`.gitleaks.toml`) — those strings are synthetic fixtures, not production secrets.
 7. **Makefile `UV`** default is `uv` on PATH (was a machine-local absolute path that broke `make reproduce` on CI).
 
-## Overseer notes
-None yet.
+## Overseer notes (PR #71 review)
+Verified independently: mypy --strict fails on a planted untyped function; import-linter fails on a planted `vigil_api` import; the licence gate passes; the real coverage comparison fails at 80% against the 88.7 floor; acceptance tests and others' ledger rows are untouched.
+Defects found and fixed by the overseer:
+1. `scripts/verify_study_reproducibility.py` (step 1 of `make reproduce`) compared keys (`study`, `facilities`, `hypotheses`, `privacy_controls`) that do not exist in the M10 report, so both sides were `None` and it could never fail. It now compares every key except `timestamp_utc`; a tampered `facility_evaluations` value now exits 1.
+2. `check_coverage_ratchet.py --seed-fail` printed a hardcoded failure without running the comparison. It now runs the real check against a synthetic 0% report.
+Not met, stated plainly:
+- G-06 mutation testing has **no measured score** (`status: tool_not_installed`); the nightly job is untested until it first runs. Do not cite a mutation score.
+- gitleaks allowlists all of `tests/` and `docs/`; no seeded-secret demonstration exists for gitleaks, Bandit, Semgrep or Trivy. Carry into PR3.
+- dependency-review is soft-fail until H-305.
