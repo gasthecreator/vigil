@@ -1,4 +1,6 @@
 # Vigil on-prem compose stack (G-01). Postgres is the production database.
+# SECURE BY DEFAULT: ENVIRONMENT=production, REQUIRE_AUTH=true, secrets required (no defaults).
+# For a throw-away local demo use infra/.env.compose.dev.example (insecure on purpose, never on a network).
 # Usage (from repo root):
 #   docker compose -f infra/docker-compose.yml --env-file infra/.env.compose up --build
 #
@@ -20,8 +22,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    # Bound to loopback only: the database must never be reachable from the network by default.
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
 
   api:
     build:
@@ -31,12 +34,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-local}
-      REQUIRE_AUTH: ${REQUIRE_AUTH:-false}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      REQUIRE_AUTH: ${REQUIRE_AUTH:-true}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vigil}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigil}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-local-dev-only-change-me-32chars-min}
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
-      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in infra/.env.compose (openssl rand -hex 32)}
+      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:?set VIGIL_FIELD_ENCRYPTION_KEYS in infra/.env.compose (Fernet key)}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "${API_PORT:-8000}:8000"
@@ -55,10 +57,10 @@ services:
       api:
         condition: service_healthy
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-local}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vigil}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigil}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-local-dev-only-change-me-32chars-min}
-      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in infra/.env.compose (openssl rand -hex 32)}
+      VIGIL_FIELD_ENCRYPTION_KEYS: ${VIGIL_FIELD_ENCRYPTION_KEYS:?set VIGIL_FIELD_ENCRYPTION_KEYS in infra/.env.compose (Fernet key)}
 
   web:
     build:

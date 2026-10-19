@@ -21,7 +21,9 @@ Pinned multi-stage images and a four-service compose file live under `infra/`:
 
 ```bash
 cp infra/.env.compose.example infra/.env.compose
-# edit POSTGRES_PASSWORD, JWT_SECRET_KEY, VIGIL_FIELD_ENCRYPTION_KEYS
+# replace every REPLACE_ME value (database password, JWT secret, Fernet key, CORS origin);
+# the example is the PRODUCTION profile (auth required) and the API refuses to start with placeholders.
+# For a throw-away demo on one machine use infra/.env.compose.dev.example instead (insecure on purpose).
 docker compose -f infra/docker-compose.yml --env-file infra/.env.compose up --build
 ```
 
