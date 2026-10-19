@@ -38,6 +38,7 @@
 | P16-2 | Gap close PR2: quality gates (G-04 pre-commit, G-05 mypy+import-linter, G-06 coverage/mutation, G-07 scanners, G-11 reproduce, G-13 flake, G-14 Dependabot) | SUBMITTED FOR REVIEW | `feat/p16-pr2-quality-gates` | [`docs/progress/P16-PR2-REPORT.md`](progress/P16-PR2-REPORT.md) | — |
 | P16-3 | Gap close PR3: ops/docs (G-08 MkDocs, G-09 metrics/SLOs, G-10 release/NOTICE, G-12 worker/opt ADR, G-25 cards, G-26 A1–A17) | SUBMITTED FOR REVIEW | `feat/p16-pr3-ops-docs` | [`docs/progress/P16-PR3-REPORT.md`](progress/P16-PR3-REPORT.md) | — |
 | P16-4 | Gap close PR4: product (G-20 J8 governance, G-21 J6 ladder, G-22 companion/UI, G-23 content, G-24 usability) | SUBMITTED FOR REVIEW | `feat/p16-pr4-product-gaps` | [`docs/progress/P16-PR4-REPORT.md`](progress/P16-PR4-REPORT.md) | — |
+| P16-5 | Gap close PR5: decisions (G-27 translation review gate, G-28 SMART-on-FHIR deferral) | SUBMITTED FOR REVIEW | `feat/p16-pr5-decisions` | [`docs/progress/P16-PR5-REPORT.md`](progress/P16-PR5-REPORT.md) | — |
 | P6 | Clinician workstation & Family/Patient Companion | NOT STARTED | — | — | — |
 | P7 | Treatment continuity, RT triage, quality audit | NOT STARTED | — | — | — |
 | P8 | Safety, security, governance, clinical-readiness package | IN PROGRESS (8a, 8b delivered with conditions) | — | — | — |
