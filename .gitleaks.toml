@@ -1,0 +1,13 @@
+# G-07 gitleaks config. Synthetic test / local-profile placeholders are allowlisted;
+# real production secrets must never appear in the tree.
+title = "vigil"
+
+[allowlist]
+description = "Documented synthetic fixtures and example env templates (not production credentials)"
+paths = [
+  '''(^|/)tests/''',
+  '''(^|/)tests/acceptance_''',
+  '''scripts/attack_api\.py$''',
+  '''infra/\.env\.compose(\.dev)?\.example$''',
+  '''docs/''',
+]

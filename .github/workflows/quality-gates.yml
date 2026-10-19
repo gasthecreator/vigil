@@ -124,8 +124,8 @@ jobs:
             | tar -xz gitleaks
           sudo mv gitleaks /usr/local/bin/gitleaks
           gitleaks version
-      - name: gitleaks detect
-        run: gitleaks detect --source . --verbose --redact --no-banner
+      - name: gitleaks detect (working tree + history; allowlist in .gitleaks.toml)
+        run: gitleaks detect --source . --verbose --redact --no-banner --config .gitleaks.toml
       - name: Bandit (API + core + eval)
         run: |
           mkdir -p reports/quality

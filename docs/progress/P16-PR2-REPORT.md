@@ -37,6 +37,8 @@ Pre-commit, scoped `mypy --strict`, import-linter, coverage ratchet, security sc
 3. **ZAP** `fail_action: false` on local e2e profile; triage in `docs/security/ZAP-BASELINE.md` (auth-off findings expected).
 4. **NOTICE / full licence inventory** remains PR3 (G-08…); this PR only ships the allowlist gate.
 5. **dependency-review-action** is wired but unsupported until the owner enables Dependency graph / GHAS (H-305). Job records PARTIAL and exits 0; `pip-audit`/`npm audit` remain hard gates.
+6. **gitleaks** allowlists `tests/`, `scripts/attack_api.py`, and example env templates (`.gitleaks.toml`) — those strings are synthetic fixtures, not production secrets.
+7. **Makefile `UV`** default is `uv` on PATH (was a machine-local absolute path that broke `make reproduce` on CI).
 
 ## Overseer notes
 None yet.

@@ -4,7 +4,7 @@
 .PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml typecheck coverage-ratchet import-lint api-dev web-dev demo status clean
 
 PYTHON ?= python3
-UV ?= /Users/gsanni/.local/bin/uv
+UV ?= uv
 
 help:
 	@echo "Vigil Precision Oncology Surveillance Platform"
