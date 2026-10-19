@@ -1,0 +1,2068 @@
+{
+  "assay_missingness_by_generator_and_analyte": {
+    "G1": {
+      "albumin": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1521,
+        "observed_missing_rate": 0.02962025316455696,
+        "total": 51350
+      },
+      "alp": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1548,
+        "observed_missing_rate": 0.0301460564751704,
+        "total": 51350
+      },
+      "alt": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1540,
+        "observed_missing_rate": 0.029990262901655306,
+        "total": 51350
+      },
+      "anc": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1551,
+        "observed_missing_rate": 0.03020447906523856,
+        "total": 51350
+      },
+      "ast": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1461,
+        "observed_missing_rate": 0.02845180136319377,
+        "total": 51350
+      },
+      "ca_15_3": {
+        "mean_expected_missing_probability": 0.19388134888080663,
+        "missing": 9937,
+        "observed_missing_rate": 0.1935150925024343,
+        "total": 51350
+      },
+      "ca_27_29": {
+        "mean_expected_missing_probability": 0.19388134888080663,
+        "missing": 9994,
+        "observed_missing_rate": 0.1946251217137293,
+        "total": 51350
+      },
+      "calcium": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1576,
+        "observed_missing_rate": 0.030691333982473222,
+        "total": 51350
+      },
+      "cea": {
+        "mean_expected_missing_probability": 0.19388134888080663,
+        "missing": 10073,
+        "observed_missing_rate": 0.19616358325219085,
+        "total": 51350
+      },
+      "corrected_calcium": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1526,
+        "observed_missing_rate": 0.029717624148003895,
+        "total": 51350
+      },
+      "creatinine": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1444,
+        "observed_missing_rate": 0.0281207400194742,
+        "total": 51350
+      },
+      "crp": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1483,
+        "observed_missing_rate": 0.028880233690360274,
+        "total": 51350
+      },
+      "direct_bilirubin": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1529,
+        "observed_missing_rate": 0.029776046738072055,
+        "total": 51350
+      },
+      "egfr": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1468,
+        "observed_missing_rate": 0.028588120740019474,
+        "total": 51350
+      },
+      "esr": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1523,
+        "observed_missing_rate": 0.029659201557935735,
+        "total": 51350
+      },
+      "ggt": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1475,
+        "observed_missing_rate": 0.02872444011684518,
+        "total": 51350
+      },
+      "haemoglobin": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1606,
+        "observed_missing_rate": 0.03127555988315482,
+        "total": 51350
+      },
+      "inr": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1577,
+        "observed_missing_rate": 0.03071080817916261,
+        "total": 51350
+      },
+      "ldh": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1573,
+        "observed_missing_rate": 0.030632911392405062,
+        "total": 51350
+      },
+      "nlr": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1500,
+        "observed_missing_rate": 0.029211295034079845,
+        "total": 51350
+      },
+      "phosphate": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1513,
+        "observed_missing_rate": 0.02946445959104187,
+        "total": 51350
+      },
+      "platelets": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1590,
+        "observed_missing_rate": 0.030963972736124636,
+        "total": 51350
+      },
+      "total_bilirubin": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1574,
+        "observed_missing_rate": 0.03065238558909445,
+        "total": 51350
+      },
+      "total_protein": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1578,
+        "observed_missing_rate": 0.030730282375851996,
+        "total": 51350
+      },
+      "urea": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1459,
+        "observed_missing_rate": 0.028412852969814995,
+        "total": 51350
+      },
+      "wbc": {
+        "mean_expected_missing_probability": 0.029999999999977427,
+        "missing": 1627,
+        "observed_missing_rate": 0.03168451801363194,
+        "total": 51350
+      }
+    },
+    "G2": {
+      "albumin": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2522,
+        "observed_missing_rate": 0.049298252472731535,
+        "total": 51158
+      },
+      "alp": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2483,
+        "observed_missing_rate": 0.048535908362328475,
+        "total": 51158
+      },
+      "alt": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2595,
+        "observed_missing_rate": 0.050725204269127015,
+        "total": 51158
+      },
+      "anc": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2519,
+        "observed_missing_rate": 0.04923961061808515,
+        "total": 51158
+      },
+      "ast": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2701,
+        "observed_missing_rate": 0.05279721646663278,
+        "total": 51158
+      },
+      "ca_15_3": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2583,
+        "observed_missing_rate": 0.05049063685054146,
+        "total": 51158
+      },
+      "ca_27_29": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2626,
+        "observed_missing_rate": 0.05133117010047304,
+        "total": 51158
+      },
+      "calcium": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2510,
+        "observed_missing_rate": 0.04906368505414598,
+        "total": 51158
+      },
+      "cea": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2502,
+        "observed_missing_rate": 0.04890730677508894,
+        "total": 51158
+      },
+      "corrected_calcium": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2448,
+        "observed_missing_rate": 0.04785175339145393,
+        "total": 51158
+      },
+      "creatinine": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2559,
+        "observed_missing_rate": 0.05002150201337034,
+        "total": 51158
+      },
+      "crp": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2489,
+        "observed_missing_rate": 0.04865319207162125,
+        "total": 51158
+      },
+      "direct_bilirubin": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2593,
+        "observed_missing_rate": 0.050686109699362755,
+        "total": 51158
+      },
+      "egfr": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2642,
+        "observed_missing_rate": 0.05164392665858712,
+        "total": 51158
+      },
+      "esr": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2545,
+        "observed_missing_rate": 0.04974784002502052,
+        "total": 51158
+      },
+      "ggt": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2596,
+        "observed_missing_rate": 0.05074475155400915,
+        "total": 51158
+      },
+      "haemoglobin": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2521,
+        "observed_missing_rate": 0.04927870518784941,
+        "total": 51158
+      },
+      "inr": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2554,
+        "observed_missing_rate": 0.049923765588959695,
+        "total": 51158
+      },
+      "ldh": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2484,
+        "observed_missing_rate": 0.0485554556472106,
+        "total": 51158
+      },
+      "nlr": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2574,
+        "observed_missing_rate": 0.05031471128660229,
+        "total": 51158
+      },
+      "phosphate": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2493,
+        "observed_missing_rate": 0.04873138121114977,
+        "total": 51158
+      },
+      "platelets": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2565,
+        "observed_missing_rate": 0.05013878572266312,
+        "total": 51158
+      },
+      "total_bilirubin": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2559,
+        "observed_missing_rate": 0.05002150201337034,
+        "total": 51158
+      },
+      "total_protein": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2646,
+        "observed_missing_rate": 0.05172211579811564,
+        "total": 51158
+      },
+      "urea": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2543,
+        "observed_missing_rate": 0.04970874545525626,
+        "total": 51158
+      },
+      "wbc": {
+        "mean_expected_missing_probability": 0.05000000000001055,
+        "missing": 2545,
+        "observed_missing_rate": 0.04974784002502052,
+        "total": 51158
+      }
+    },
+    "G3": {
+      "albumin": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3261,
+        "observed_missing_rate": 0.0627127444758553,
+        "total": 51999
+      },
+      "alp": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3085,
+        "observed_missing_rate": 0.05932806400123079,
+        "total": 51999
+      },
+      "alt": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3121,
+        "observed_missing_rate": 0.06002038500740399,
+        "total": 51999
+      },
+      "anc": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3154,
+        "observed_missing_rate": 0.060655012596396086,
+        "total": 51999
+      },
+      "ast": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3147,
+        "observed_missing_rate": 0.06052039462297352,
+        "total": 51999
+      },
+      "ca_15_3": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3228,
+        "observed_missing_rate": 0.06207811688686321,
+        "total": 51999
+      },
+      "ca_27_29": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3049,
+        "observed_missing_rate": 0.058635742995057596,
+        "total": 51999
+      },
+      "calcium": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3080,
+        "observed_missing_rate": 0.05923190830592896,
+        "total": 51999
+      },
+      "cea": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3134,
+        "observed_missing_rate": 0.06027038981518875,
+        "total": 51999
+      },
+      "corrected_calcium": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3108,
+        "observed_missing_rate": 0.05977038019961922,
+        "total": 51999
+      },
+      "creatinine": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3088,
+        "observed_missing_rate": 0.05938575741841189,
+        "total": 51999
+      },
+      "crp": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3085,
+        "observed_missing_rate": 0.05932806400123079,
+        "total": 51999
+      },
+      "direct_bilirubin": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3031,
+        "observed_missing_rate": 0.058289582491971,
+        "total": 51999
+      },
+      "egfr": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3148,
+        "observed_missing_rate": 0.06053962576203389,
+        "total": 51999
+      },
+      "esr": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3159,
+        "observed_missing_rate": 0.06075116829169792,
+        "total": 51999
+      },
+      "ggt": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3120,
+        "observed_missing_rate": 0.06000115386834362,
+        "total": 51999
+      },
+      "haemoglobin": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3076,
+        "observed_missing_rate": 0.059154983749687494,
+        "total": 51999
+      },
+      "inr": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3140,
+        "observed_missing_rate": 0.06038577664955095,
+        "total": 51999
+      },
+      "ldh": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3110,
+        "observed_missing_rate": 0.05980884247773996,
+        "total": 51999
+      },
+      "nlr": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3009,
+        "observed_missing_rate": 0.05786649743264294,
+        "total": 51999
+      },
+      "phosphate": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3175,
+        "observed_missing_rate": 0.061058866516663785,
+        "total": 51999
+      },
+      "platelets": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3101,
+        "observed_missing_rate": 0.05963576222619666,
+        "total": 51999
+      },
+      "total_bilirubin": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3175,
+        "observed_missing_rate": 0.061058866516663785,
+        "total": 51999
+      },
+      "total_protein": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3209,
+        "observed_missing_rate": 0.06171272524471624,
+        "total": 51999
+      },
+      "urea": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3121,
+        "observed_missing_rate": 0.06002038500740399,
+        "total": 51999
+      },
+      "wbc": {
+        "mean_expected_missing_probability": 0.059999999999954735,
+        "missing": 3132,
+        "observed_missing_rate": 0.06023192753706802,
+        "total": 51999
+      }
+    }
+  },
+  "design": {
+    "duration_days": 730.0,
+    "generators": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "patients_per_cell": 2000,
+    "replicates_per_generator": 5,
+    "seed_formula": "960000 + 10000 * generator_index + replicate_index"
+  },
+  "experiment_id": "EXP-CORE-ML-006",
+  "facility_effect_distribution_by_generator_and_analyte": {
+    "G1": {
+      "albumin": {
+        "facilities_observed": 30,
+        "offset_max": 0.13815217592051313,
+        "offset_mean": -0.000777109325764946,
+        "offset_min": -0.1669869910223853,
+        "offset_sd": 0.0747449721438552,
+        "scale_max": 1.0585854480270627,
+        "scale_mean": 0.9998689647303637,
+        "scale_min": 0.9442300079885053,
+        "scale_sd": 0.03585957166851345
+      },
+      "alp": {
+        "facilities_observed": 30,
+        "offset_max": 0.11538963360606957,
+        "offset_mean": -0.010928410662027687,
+        "offset_min": -0.125657785599528,
+        "offset_sd": 0.06301879784837722,
+        "scale_max": 1.0578424925003285,
+        "scale_mean": 1.0054773589747403,
+        "scale_min": 0.9400906761425526,
+        "scale_sd": 0.0360540248048916
+      },
+      "alt": {
+        "facilities_observed": 30,
+        "offset_max": 0.1279448429932586,
+        "offset_mean": 0.007196098665321462,
+        "offset_min": -0.10622030210317174,
+        "offset_sd": 0.05819095474435299,
+        "scale_max": 1.057793472876795,
+        "scale_mean": 1.0007745318957193,
+        "scale_min": 0.9417114150032536,
+        "scale_sd": 0.033477694058066935
+      },
+      "anc": {
+        "facilities_observed": 30,
+        "offset_max": 0.11760563064283314,
+        "offset_mean": -0.003922151233166888,
+        "offset_min": -0.08132499105129805,
+        "offset_sd": 0.05617193044177554,
+        "scale_max": 1.0570952271284297,
+        "scale_mean": 0.9966699287942654,
+        "scale_min": 0.9494865597151417,
+        "scale_sd": 0.03455460187286523
+      },
+      "ast": {
+        "facilities_observed": 30,
+        "offset_max": 0.17603991243885597,
+        "offset_mean": -0.005395534151940583,
+        "offset_min": -0.15911038736733618,
+        "offset_sd": 0.07291641303529615,
+        "scale_max": 1.0592140347847885,
+        "scale_mean": 1.0114457176855929,
+        "scale_min": 0.9429934865300248,
+        "scale_sd": 0.041360714596137604
+      },
+      "ca_15_3": {
+        "facilities_observed": 30,
+        "offset_max": 0.2304105311610319,
+        "offset_mean": 0.02147459357633694,
+        "offset_min": -0.10610150730764793,
+        "offset_sd": 0.06696578501224212,
+        "scale_max": 1.0575963760768547,
+        "scale_mean": 0.9991055310083048,
+        "scale_min": 0.9429140778807054,
+        "scale_sd": 0.03734758297325396
+      },
+      "ca_27_29": {
+        "facilities_observed": 30,
+        "offset_max": 0.15749345055208733,
+        "offset_mean": 0.01118199271783583,
+        "offset_min": -0.11950861136908518,
+        "offset_sd": 0.06159032107104316,
+        "scale_max": 1.0599065577003972,
+        "scale_mean": 1.0073925596469602,
+        "scale_min": 0.9465617762469863,
+        "scale_sd": 0.03791982416418304
+      },
+      "calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.10971753185767961,
+        "offset_mean": 0.007330467730540812,
+        "offset_min": -0.09961231902171952,
+        "offset_sd": 0.05253250356043402,
+        "scale_max": 1.0589318568194084,
+        "scale_mean": 1.0089838594368716,
+        "scale_min": 0.9441402004243759,
+        "scale_sd": 0.03389811329552251
+      },
+      "cea": {
+        "facilities_observed": 30,
+        "offset_max": 0.09945721186078355,
+        "offset_mean": -0.016483556453094874,
+        "offset_min": -0.16400192691520563,
+        "offset_sd": 0.06631468355553957,
+        "scale_max": 1.0572896462778771,
+        "scale_mean": 0.9997519250677875,
+        "scale_min": 0.9429470014473368,
+        "scale_sd": 0.03671870968539241
+      },
+      "corrected_calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.1376866282034923,
+        "offset_mean": -0.0018545683602022467,
+        "offset_min": -0.2121911124404153,
+        "offset_sd": 0.06929049255678425,
+        "scale_max": 1.0525728360732665,
+        "scale_mean": 0.9994196104289085,
+        "scale_min": 0.941339594927811,
+        "scale_sd": 0.03516910807863624
+      },
+      "creatinine": {
+        "facilities_observed": 30,
+        "offset_max": 0.12292904178352869,
+        "offset_mean": 0.005297786103496431,
+        "offset_min": -0.1048796549438336,
+        "offset_sd": 0.07008473413371896,
+        "scale_max": 1.0577587483553128,
+        "scale_mean": 1.0085830228503563,
+        "scale_min": 0.9478172220765961,
+        "scale_sd": 0.03275502413759427
+      },
+      "crp": {
+        "facilities_observed": 30,
+        "offset_max": 0.1522405408623561,
+        "offset_mean": 0.00116257979560136,
+        "offset_min": -0.1116575600319498,
+        "offset_sd": 0.05305962611475925,
+        "scale_max": 1.0566312034715772,
+        "scale_mean": 0.9938745917128748,
+        "scale_min": 0.9428104502278415,
+        "scale_sd": 0.04137006881707132
+      },
+      "direct_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.10493632267814232,
+        "offset_mean": 0.0029297496292355276,
+        "offset_min": -0.11759302117091897,
+        "offset_sd": 0.05301463785489463,
+        "scale_max": 1.0591492586669706,
+        "scale_mean": 0.9960666715422793,
+        "scale_min": 0.9428801883215107,
+        "scale_sd": 0.036493789823289186
+      },
+      "egfr": {
+        "facilities_observed": 30,
+        "offset_max": 0.11974211524943362,
+        "offset_mean": 0.012333351154382988,
+        "offset_min": -0.09290254791801823,
+        "offset_sd": 0.060283065409220675,
+        "scale_max": 1.0584151324753772,
+        "scale_mean": 0.9955257733471469,
+        "scale_min": 0.9481735887123189,
+        "scale_sd": 0.03409688400320892
+      },
+      "esr": {
+        "facilities_observed": 30,
+        "offset_max": 0.11111041394044388,
+        "offset_mean": -0.002382895047115782,
+        "offset_min": -0.10429595030571491,
+        "offset_sd": 0.0520922233704776,
+        "scale_max": 1.0599521248168626,
+        "scale_mean": 1.0028487300783804,
+        "scale_min": 0.9457172150954145,
+        "scale_sd": 0.035643943012246646
+      },
+      "ggt": {
+        "facilities_observed": 30,
+        "offset_max": 0.09993707815149275,
+        "offset_mean": 0.004004699075175194,
+        "offset_min": -0.11188166170302717,
+        "offset_sd": 0.055809980895021635,
+        "scale_max": 1.051633615715642,
+        "scale_mean": 0.9990252755194647,
+        "scale_min": 0.950722554883394,
+        "scale_sd": 0.030634011111698087
+      },
+      "haemoglobin": {
+        "facilities_observed": 30,
+        "offset_max": 0.07798896028086806,
+        "offset_mean": -0.006438912863752448,
+        "offset_min": -0.16845381680210955,
+        "offset_sd": 0.05569828834432786,
+        "scale_max": 1.0592857318939133,
+        "scale_mean": 0.9992130194858496,
+        "scale_min": 0.9427426354645378,
+        "scale_sd": 0.0381294931496308
+      },
+      "inr": {
+        "facilities_observed": 30,
+        "offset_max": 0.14826843839888038,
+        "offset_mean": 0.012443791930498774,
+        "offset_min": -0.1143362277805072,
+        "offset_sd": 0.07110142194685692,
+        "scale_max": 1.0574880116041714,
+        "scale_mean": 1.0083163449553436,
+        "scale_min": 0.9404801182158787,
+        "scale_sd": 0.03853270557284998
+      },
+      "ldh": {
+        "facilities_observed": 30,
+        "offset_max": 0.15567678576484206,
+        "offset_mean": 0.009721504206084763,
+        "offset_min": -0.1250367058335869,
+        "offset_sd": 0.06729938423458408,
+        "scale_max": 1.0578208161731595,
+        "scale_mean": 1.004791485029885,
+        "scale_min": 0.9486091075844623,
+        "scale_sd": 0.033251579626785654
+      },
+      "nlr": {
+        "facilities_observed": 30,
+        "offset_max": 0.17560793103105216,
+        "offset_mean": 0.018135545873575895,
+        "offset_min": -0.10251618421233502,
+        "offset_sd": 0.07160996882502642,
+        "scale_max": 1.058221931151828,
+        "scale_mean": 1.0090409853571323,
+        "scale_min": 0.9427445517241037,
+        "scale_sd": 0.035859671614655364
+      },
+      "phosphate": {
+        "facilities_observed": 30,
+        "offset_max": 0.1729229419321596,
+        "offset_mean": 0.005346658904225357,
+        "offset_min": -0.09069260785797408,
+        "offset_sd": 0.0633821306211134,
+        "scale_max": 1.0536081372254449,
+        "scale_mean": 0.9999512929690998,
+        "scale_min": 0.9402366554721567,
+        "scale_sd": 0.035274821164158233
+      },
+      "platelets": {
+        "facilities_observed": 30,
+        "offset_max": 0.07361544784411458,
+        "offset_mean": -0.033699002565106904,
+        "offset_min": -0.12263668056265492,
+        "offset_sd": 0.05724282666059512,
+        "scale_max": 1.058823082392176,
+        "scale_mean": 0.9926320908597641,
+        "scale_min": 0.9458746975718048,
+        "scale_sd": 0.03103323942098766
+      },
+      "total_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.17778635019908492,
+        "offset_mean": -0.004738415932997287,
+        "offset_min": -0.1600339026907313,
+        "offset_sd": 0.07849413185119558,
+        "scale_max": 1.0479770389713974,
+        "scale_mean": 1.0052741146849244,
+        "scale_min": 0.9517188726467624,
+        "scale_sd": 0.02866795818195021
+      },
+      "total_protein": {
+        "facilities_observed": 30,
+        "offset_max": 0.10168193089959414,
+        "offset_mean": -0.0026733663441046236,
+        "offset_min": -0.15949651484984825,
+        "offset_sd": 0.06532932788861473,
+        "scale_max": 1.056870366120271,
+        "scale_mean": 1.006555428493835,
+        "scale_min": 0.9448288860713302,
+        "scale_sd": 0.03710165875583673
+      },
+      "urea": {
+        "facilities_observed": 30,
+        "offset_max": 0.09222447066082153,
+        "offset_mean": -0.01953021003058071,
+        "offset_min": -0.16204923955318296,
+        "offset_sd": 0.055615820593256655,
+        "scale_max": 1.0594239384895396,
+        "scale_mean": 1.006688234705358,
+        "scale_min": 0.9475960230717163,
+        "scale_sd": 0.034894945676274776
+      },
+      "wbc": {
+        "facilities_observed": 30,
+        "offset_max": 0.11155087658545314,
+        "offset_mean": 0.01644808310630001,
+        "offset_min": -0.08140138578610437,
+        "offset_sd": 0.05429735180120843,
+        "scale_max": 1.0594875894403675,
+        "scale_mean": 1.002507644007761,
+        "scale_min": 0.9477810209076062,
+        "scale_sd": 0.0325585837265277
+      }
+    },
+    "G2": {
+      "albumin": {
+        "facilities_observed": 30,
+        "offset_max": 0.13661737625550363,
+        "offset_mean": 0.009596473137395808,
+        "offset_min": -0.132680671600141,
+        "offset_sd": 0.06327676879904162,
+        "scale_max": 1.0552068822514113,
+        "scale_mean": 0.9959589994332081,
+        "scale_min": 0.9432066914664737,
+        "scale_sd": 0.031289190609911685
+      },
+      "alp": {
+        "facilities_observed": 30,
+        "offset_max": 0.14063810451648137,
+        "offset_mean": 0.0032265415135741262,
+        "offset_min": -0.11462464103062724,
+        "offset_sd": 0.05779513782061801,
+        "scale_max": 1.0592276257504532,
+        "scale_mean": 1.01025372357622,
+        "scale_min": 0.9416260823744613,
+        "scale_sd": 0.03388251178212352
+      },
+      "alt": {
+        "facilities_observed": 30,
+        "offset_max": 0.11873552601331124,
+        "offset_mean": -0.006936161970298785,
+        "offset_min": -0.1010326923344223,
+        "offset_sd": 0.053122264287355184,
+        "scale_max": 1.0578267213020083,
+        "scale_mean": 0.9968119214639415,
+        "scale_min": 0.9433690325127294,
+        "scale_sd": 0.029294609227840166
+      },
+      "anc": {
+        "facilities_observed": 30,
+        "offset_max": 0.09134741274776222,
+        "offset_mean": -0.0235304304424247,
+        "offset_min": -0.13809548889096102,
+        "offset_sd": 0.050956585453973934,
+        "scale_max": 1.040874379646111,
+        "scale_mean": 0.9937399080179444,
+        "scale_min": 0.9415451723778652,
+        "scale_sd": 0.03617502826220323
+      },
+      "ast": {
+        "facilities_observed": 30,
+        "offset_max": 0.1797829281181357,
+        "offset_mean": -0.004169864764644185,
+        "offset_min": -0.13033199028363038,
+        "offset_sd": 0.07500214963717806,
+        "scale_max": 1.059175178452836,
+        "scale_mean": 1.0041030627380245,
+        "scale_min": 0.948753925267453,
+        "scale_sd": 0.03295359493303671
+      },
+      "ca_15_3": {
+        "facilities_observed": 30,
+        "offset_max": 0.10533071663747129,
+        "offset_mean": -0.0005789085768295189,
+        "offset_min": -0.11537367296512235,
+        "offset_sd": 0.05429445307045776,
+        "scale_max": 1.0559446033212907,
+        "scale_mean": 1.0022248080049323,
+        "scale_min": 0.9422827831166977,
+        "scale_sd": 0.03451200755014625
+      },
+      "ca_27_29": {
+        "facilities_observed": 30,
+        "offset_max": 0.12863614822701328,
+        "offset_mean": -0.0011046894610615351,
+        "offset_min": -0.11970717097257076,
+        "offset_sd": 0.05771765748922117,
+        "scale_max": 1.0546291486617383,
+        "scale_mean": 1.0000346791817816,
+        "scale_min": 0.9456782360967735,
+        "scale_sd": 0.03282124253261148
+      },
+      "calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.08583034566777951,
+        "offset_mean": -0.005649700408774277,
+        "offset_min": -0.07548485030545754,
+        "offset_sd": 0.04372352238360015,
+        "scale_max": 1.054984776273962,
+        "scale_mean": 0.9932771349090713,
+        "scale_min": 0.9406631017730126,
+        "scale_sd": 0.03203537113703333
+      },
+      "cea": {
+        "facilities_observed": 30,
+        "offset_max": 0.17379365669819827,
+        "offset_mean": 0.003051435265367208,
+        "offset_min": -0.11479839815834506,
+        "offset_sd": 0.07090728979344593,
+        "scale_max": 1.059226703021609,
+        "scale_mean": 1.007880282255734,
+        "scale_min": 0.9445600096563972,
+        "scale_sd": 0.035058427201640194
+      },
+      "corrected_calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.1425676806157593,
+        "offset_mean": 0.009966060453383678,
+        "offset_min": -0.11155879200855255,
+        "offset_sd": 0.061383378640308205,
+        "scale_max": 1.0585877485068367,
+        "scale_mean": 0.999473938281911,
+        "scale_min": 0.9431799654317766,
+        "scale_sd": 0.03247603692710134
+      },
+      "creatinine": {
+        "facilities_observed": 30,
+        "offset_max": 0.15472798047505487,
+        "offset_mean": 0.012104863606271924,
+        "offset_min": -0.07860612388288629,
+        "offset_sd": 0.05860725590474161,
+        "scale_max": 1.0583947831451133,
+        "scale_mean": 0.9951307494994797,
+        "scale_min": 0.9442744344585948,
+        "scale_sd": 0.034481182403007446
+      },
+      "crp": {
+        "facilities_observed": 30,
+        "offset_max": 0.14271675779749218,
+        "offset_mean": 0.027282341000849704,
+        "offset_min": -0.06843931023739504,
+        "offset_sd": 0.05593040324764009,
+        "scale_max": 1.0580933006089952,
+        "scale_mean": 0.9913433251959399,
+        "scale_min": 0.9408124160131597,
+        "scale_sd": 0.037967269945609165
+      },
+      "direct_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.08445646630843984,
+        "offset_mean": -0.0013522713605098092,
+        "offset_min": -0.14552766680620713,
+        "offset_sd": 0.051987493297444495,
+        "scale_max": 1.0568463824171677,
+        "scale_mean": 1.0096911326984528,
+        "scale_min": 0.9436639045220587,
+        "scale_sd": 0.037562767102634946
+      },
+      "egfr": {
+        "facilities_observed": 30,
+        "offset_max": 0.15731126957186434,
+        "offset_mean": 0.02061533839465255,
+        "offset_min": -0.1379950693366347,
+        "offset_sd": 0.0567577444765997,
+        "scale_max": 1.058014614913738,
+        "scale_mean": 1.0022193334936866,
+        "scale_min": 0.9411061955219447,
+        "scale_sd": 0.030952415350210746
+      },
+      "esr": {
+        "facilities_observed": 30,
+        "offset_max": 0.15643690468922763,
+        "offset_mean": -0.006013637696493476,
+        "offset_min": -0.11076947080274811,
+        "offset_sd": 0.06397236918811519,
+        "scale_max": 1.0551900059771808,
+        "scale_mean": 0.9954704425451731,
+        "scale_min": 0.9462948157134563,
+        "scale_sd": 0.033604986450262976
+      },
+      "ggt": {
+        "facilities_observed": 30,
+        "offset_max": 0.10442355625366839,
+        "offset_mean": -0.0031408217032924445,
+        "offset_min": -0.1083569508874746,
+        "offset_sd": 0.05500583281464814,
+        "scale_max": 1.0573450940077154,
+        "scale_mean": 0.9916439028927111,
+        "scale_min": 0.9441787595622364,
+        "scale_sd": 0.035956449945746725
+      },
+      "haemoglobin": {
+        "facilities_observed": 30,
+        "offset_max": 0.13983108748044137,
+        "offset_mean": -0.0013102198684338568,
+        "offset_min": -0.1308049555558345,
+        "offset_sd": 0.0541757184370943,
+        "scale_max": 1.0541737369039863,
+        "scale_mean": 1.0027278613916812,
+        "scale_min": 0.9432925693120308,
+        "scale_sd": 0.038487652889397
+      },
+      "inr": {
+        "facilities_observed": 30,
+        "offset_max": 0.09742686990411532,
+        "offset_mean": -0.008981091815343959,
+        "offset_min": -0.12497209503589905,
+        "offset_sd": 0.051413171769111705,
+        "scale_max": 1.0599319138823053,
+        "scale_mean": 1.000351968196121,
+        "scale_min": 0.9432066850460991,
+        "scale_sd": 0.034874636716037744
+      },
+      "ldh": {
+        "facilities_observed": 30,
+        "offset_max": 0.08318026609089628,
+        "offset_mean": -0.004199952730865393,
+        "offset_min": -0.08193695255004028,
+        "offset_sd": 0.0407203335826242,
+        "scale_max": 1.0573087509665582,
+        "scale_mean": 1.0022649804361585,
+        "scale_min": 0.9443129195268597,
+        "scale_sd": 0.04007569498617078
+      },
+      "nlr": {
+        "facilities_observed": 30,
+        "offset_max": 0.13532937115929997,
+        "offset_mean": 0.006881161765145657,
+        "offset_min": -0.11018996782418529,
+        "offset_sd": 0.06785454701370251,
+        "scale_max": 1.0570152256470096,
+        "scale_mean": 1.0015760204585948,
+        "scale_min": 0.9443096265085458,
+        "scale_sd": 0.035088102706513434
+      },
+      "phosphate": {
+        "facilities_observed": 30,
+        "offset_max": 0.14425434877503335,
+        "offset_mean": 0.005124016181530707,
+        "offset_min": -0.14355211118125888,
+        "offset_sd": 0.06341417061877433,
+        "scale_max": 1.0591265281769773,
+        "scale_mean": 0.9910381696677104,
+        "scale_min": 0.9409230962893628,
+        "scale_sd": 0.037515366964943946
+      },
+      "platelets": {
+        "facilities_observed": 30,
+        "offset_max": 0.1314218232338493,
+        "offset_mean": 0.015762109241239563,
+        "offset_min": -0.07984889266442831,
+        "offset_sd": 0.06074595346563366,
+        "scale_max": 1.0582473939344308,
+        "scale_mean": 0.9928918380322909,
+        "scale_min": 0.9410365668231768,
+        "scale_sd": 0.035359400081439764
+      },
+      "total_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.12296265279982974,
+        "offset_mean": 0.0012389339778825605,
+        "offset_min": -0.11733068988443608,
+        "offset_sd": 0.054590509614731206,
+        "scale_max": 1.0589319306668028,
+        "scale_mean": 1.0004994990153788,
+        "scale_min": 0.940667613863074,
+        "scale_sd": 0.03325147934182834
+      },
+      "total_protein": {
+        "facilities_observed": 30,
+        "offset_max": 0.11944040320320894,
+        "offset_mean": -0.0013721774027865676,
+        "offset_min": -0.13530448208765997,
+        "offset_sd": 0.06114710573829634,
+        "scale_max": 1.059598044200312,
+        "scale_mean": 1.0114533861508845,
+        "scale_min": 0.9522193988771233,
+        "scale_sd": 0.03536984252139298
+      },
+      "urea": {
+        "facilities_observed": 30,
+        "offset_max": 0.11421138208270026,
+        "offset_mean": 0.0019067016249210015,
+        "offset_min": -0.14718198642215743,
+        "offset_sd": 0.05823689518432334,
+        "scale_max": 1.0553759809682224,
+        "scale_mean": 1.0000925023217833,
+        "scale_min": 0.9402063279334257,
+        "scale_sd": 0.03762956066096425
+      },
+      "wbc": {
+        "facilities_observed": 30,
+        "offset_max": 0.09404438578145699,
+        "offset_mean": 0.0003209105579950612,
+        "offset_min": -0.09906199451487543,
+        "offset_sd": 0.05125406693007152,
+        "scale_max": 1.0595821624589594,
+        "scale_mean": 1.0010261197007577,
+        "scale_min": 0.9417256821272927,
+        "scale_sd": 0.03809249184117258
+      }
+    },
+    "G3": {
+      "albumin": {
+        "facilities_observed": 30,
+        "offset_max": 0.11518465683564098,
+        "offset_mean": 0.011526430350684621,
+        "offset_min": -0.11172283749598692,
+        "offset_sd": 0.06496190781166812,
+        "scale_max": 1.0517960438764697,
+        "scale_mean": 0.9957329760226291,
+        "scale_min": 0.940755731027358,
+        "scale_sd": 0.03820829915899922
+      },
+      "alp": {
+        "facilities_observed": 30,
+        "offset_max": 0.12561154982756575,
+        "offset_mean": 0.0073198232152663755,
+        "offset_min": -0.09365566497788477,
+        "offset_sd": 0.058510068961271096,
+        "scale_max": 1.0578780968644295,
+        "scale_mean": 1.0006635192392541,
+        "scale_min": 0.941136938182031,
+        "scale_sd": 0.03618003017093423
+      },
+      "alt": {
+        "facilities_observed": 30,
+        "offset_max": 0.10221360610631917,
+        "offset_mean": -0.024220798824305723,
+        "offset_min": -0.1210957873363287,
+        "offset_sd": 0.0642721178660044,
+        "scale_max": 1.0598972624549567,
+        "scale_mean": 1.0022545270949061,
+        "scale_min": 0.946263290560122,
+        "scale_sd": 0.038790949437994916
+      },
+      "anc": {
+        "facilities_observed": 30,
+        "offset_max": 0.10321409357365782,
+        "offset_mean": -0.012333172093356558,
+        "offset_min": -0.12143886252889619,
+        "offset_sd": 0.057601829699690806,
+        "scale_max": 1.0596261708619186,
+        "scale_mean": 0.9942519215155389,
+        "scale_min": 0.9406650591189113,
+        "scale_sd": 0.038307487189256154
+      },
+      "ast": {
+        "facilities_observed": 30,
+        "offset_max": 0.1366011084890001,
+        "offset_mean": 0.010079271598441342,
+        "offset_min": -0.1212545051115675,
+        "offset_sd": 0.05744959936319752,
+        "scale_max": 1.0596184801816806,
+        "scale_mean": 1.0031963105916792,
+        "scale_min": 0.9413698484406187,
+        "scale_sd": 0.0350336813788695
+      },
+      "ca_15_3": {
+        "facilities_observed": 30,
+        "offset_max": 0.05306607898108203,
+        "offset_mean": -0.008163040033518051,
+        "offset_min": -0.09047672573865284,
+        "offset_sd": 0.04033536772659515,
+        "scale_max": 1.050564277723173,
+        "scale_mean": 0.9958099913852663,
+        "scale_min": 0.9405175416029916,
+        "scale_sd": 0.030998993764159793
+      },
+      "ca_27_29": {
+        "facilities_observed": 30,
+        "offset_max": 0.13670860692807085,
+        "offset_mean": -0.0048228920602512776,
+        "offset_min": -0.1264962770553835,
+        "offset_sd": 0.06067348433908259,
+        "scale_max": 1.0592966215475268,
+        "scale_mean": 0.998180883479266,
+        "scale_min": 0.9455228975657733,
+        "scale_sd": 0.030603990466423068
+      },
+      "calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.11124154292267813,
+        "offset_mean": -0.008073589472504254,
+        "offset_min": -0.1572632485871448,
+        "offset_sd": 0.06011585826504787,
+        "scale_max": 1.0582381250071604,
+        "scale_mean": 0.9911939410276684,
+        "scale_min": 0.9400642037915418,
+        "scale_sd": 0.03735893012118996
+      },
+      "cea": {
+        "facilities_observed": 30,
+        "offset_max": 0.11733190271682918,
+        "offset_mean": 0.019487337286853295,
+        "offset_min": -0.0986089048334046,
+        "offset_sd": 0.06358867047482553,
+        "scale_max": 1.058271252133769,
+        "scale_mean": 0.9954830900589255,
+        "scale_min": 0.9407874520896023,
+        "scale_sd": 0.04295143949387786
+      },
+      "corrected_calcium": {
+        "facilities_observed": 30,
+        "offset_max": 0.18633930647067268,
+        "offset_mean": 0.007869655485333504,
+        "offset_min": -0.15477247929800483,
+        "offset_sd": 0.07251046043105785,
+        "scale_max": 1.0587687763077365,
+        "scale_mean": 0.9972865378491866,
+        "scale_min": 0.9407202369436327,
+        "scale_sd": 0.036793862536162354
+      },
+      "creatinine": {
+        "facilities_observed": 30,
+        "offset_max": 0.13683189513484645,
+        "offset_mean": -0.0005650436110387978,
+        "offset_min": -0.12442056944849704,
+        "offset_sd": 0.058358369315588465,
+        "scale_max": 1.0585552557724904,
+        "scale_mean": 0.9936063469055462,
+        "scale_min": 0.9412794740438254,
+        "scale_sd": 0.038809796142921175
+      },
+      "crp": {
+        "facilities_observed": 30,
+        "offset_max": 0.09653307814700944,
+        "offset_mean": -0.009627618382211628,
+        "offset_min": -0.15936395412361712,
+        "offset_sd": 0.055363059825159384,
+        "scale_max": 1.0425355750077259,
+        "scale_mean": 1.0008732620350458,
+        "scale_min": 0.9505882234585048,
+        "scale_sd": 0.026463580642910944
+      },
+      "direct_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.08036243330901849,
+        "offset_mean": -0.005642445143321033,
+        "offset_min": -0.18121092774108577,
+        "offset_sd": 0.05886133168011146,
+        "scale_max": 1.0587661925216034,
+        "scale_mean": 1.0100368114258689,
+        "scale_min": 0.9434744582716331,
+        "scale_sd": 0.03680247327751614
+      },
+      "egfr": {
+        "facilities_observed": 30,
+        "offset_max": 0.12452920754856936,
+        "offset_mean": -0.015247095746034086,
+        "offset_min": -0.12579715629052649,
+        "offset_sd": 0.0544493895896314,
+        "scale_max": 1.059946370672985,
+        "scale_mean": 0.9957681792237394,
+        "scale_min": 0.9416426416604121,
+        "scale_sd": 0.03775163478366071
+      },
+      "esr": {
+        "facilities_observed": 30,
+        "offset_max": 0.13798265477909438,
+        "offset_mean": -0.01580940320853782,
+        "offset_min": -0.12600688681991698,
+        "offset_sd": 0.06660862297025455,
+        "scale_max": 1.0579906137887605,
+        "scale_mean": 0.9980843662478889,
+        "scale_min": 0.9450874207246721,
+        "scale_sd": 0.03253087245978969
+      },
+      "ggt": {
+        "facilities_observed": 30,
+        "offset_max": 0.1305965658890132,
+        "offset_mean": 0.005394297459285806,
+        "offset_min": -0.11033938120065546,
+        "offset_sd": 0.059073336538838284,
+        "scale_max": 1.0580069985219889,
+        "scale_mean": 1.0126551534044312,
+        "scale_min": 0.9481337097030947,
+        "scale_sd": 0.03404395141240213
+      },
+      "haemoglobin": {
+        "facilities_observed": 30,
+        "offset_max": 0.11707669003019427,
+        "offset_mean": -0.004026959387749228,
+        "offset_min": -0.10164117475092799,
+        "offset_sd": 0.05641097330464835,
+        "scale_max": 1.0589094972355608,
+        "scale_mean": 0.9985090629291725,
+        "scale_min": 0.9452902563217059,
+        "scale_sd": 0.03870047401926221
+      },
+      "inr": {
+        "facilities_observed": 30,
+        "offset_max": 0.15814928968298142,
+        "offset_mean": -0.003405209769026101,
+        "offset_min": -0.16035097427389539,
+        "offset_sd": 0.07041906795600615,
+        "scale_max": 1.054909173336514,
+        "scale_mean": 1.0074826931000052,
+        "scale_min": 0.9442223274466233,
+        "scale_sd": 0.03339777042279003
+      },
+      "ldh": {
+        "facilities_observed": 30,
+        "offset_max": 0.12966497033047747,
+        "offset_mean": -0.006112969139454438,
+        "offset_min": -0.10910695501791115,
+        "offset_sd": 0.06331001215599931,
+        "scale_max": 1.0588353212323158,
+        "scale_mean": 1.002258296134627,
+        "scale_min": 0.9421584814290971,
+        "scale_sd": 0.03668206264659091
+      },
+      "nlr": {
+        "facilities_observed": 30,
+        "offset_max": 0.10047248398260149,
+        "offset_mean": 0.0004001964738811733,
+        "offset_min": -0.08865610205750252,
+        "offset_sd": 0.04302133452623978,
+        "scale_max": 1.0584443860872088,
+        "scale_mean": 0.9989002240633648,
+        "scale_min": 0.9420006698693596,
+        "scale_sd": 0.04060972176456047
+      },
+      "phosphate": {
+        "facilities_observed": 30,
+        "offset_max": 0.10402667671816822,
+        "offset_mean": 0.00331465159693274,
+        "offset_min": -0.111115143839933,
+        "offset_sd": 0.056540199079822745,
+        "scale_max": 1.057284750524328,
+        "scale_mean": 1.0023419793522172,
+        "scale_min": 0.9418172462235923,
+        "scale_sd": 0.03620432878422562
+      },
+      "platelets": {
+        "facilities_observed": 30,
+        "offset_max": 0.1219718749278423,
+        "offset_mean": 0.0023912100260018864,
+        "offset_min": -0.10941595663657058,
+        "offset_sd": 0.05699553670315781,
+        "scale_max": 1.0507390383624382,
+        "scale_mean": 0.9907556061275309,
+        "scale_min": 0.9408100680457174,
+        "scale_sd": 0.0342903500543858
+      },
+      "total_bilirubin": {
+        "facilities_observed": 30,
+        "offset_max": 0.07414779341647265,
+        "offset_mean": -0.006247401929976952,
+        "offset_min": -0.09865865108860254,
+        "offset_sd": 0.04915011801110556,
+        "scale_max": 1.0566472431352378,
+        "scale_mean": 1.0014175616407772,
+        "scale_min": 0.9458817566297689,
+        "scale_sd": 0.035596906179158276
+      },
+      "total_protein": {
+        "facilities_observed": 30,
+        "offset_max": 0.14788710876104275,
+        "offset_mean": -0.00042773138219062305,
+        "offset_min": -0.19799961704034116,
+        "offset_sd": 0.06964467204914901,
+        "scale_max": 1.0593049453833887,
+        "scale_mean": 0.9978388163995365,
+        "scale_min": 0.9455229316242698,
+        "scale_sd": 0.040679052512656216
+      },
+      "urea": {
+        "facilities_observed": 30,
+        "offset_max": 0.1596378673698951,
+        "offset_mean": 0.00438126278090871,
+        "offset_min": -0.10007873160481703,
+        "offset_sd": 0.061753590154814096,
+        "scale_max": 1.0555498910497179,
+        "scale_mean": 0.9886509306604497,
+        "scale_min": 0.9403714607063539,
+        "scale_sd": 0.03299485131634166
+      },
+      "wbc": {
+        "facilities_observed": 30,
+        "offset_max": 0.10362387907872138,
+        "offset_mean": -0.003652011675759188,
+        "offset_min": -0.16314681793915914,
+        "offset_sd": 0.05855307577085351,
+        "scale_max": 1.054366541602294,
+        "scale_mean": 1.003001891261145,
+        "scale_min": 0.941063155850732,
+        "scale_sd": 0.03450819910077836
+      }
+    }
+  },
+  "facility_effect_invariants": {
+    "G1": {
+      "facilities": 30,
+      "inconsistent": 0,
+      "patients": 10000
+    },
+    "G2": {
+      "facilities": 30,
+      "inconsistent": 0,
+      "patients": 10000
+    },
+    "G3": {
+      "facilities": 30,
+      "inconsistent": 0,
+      "patients": 10000
+    }
+  },
+  "follow_up_boundary_checks": {
+    "G1": {
+      "patients": 10000,
+      "patients_with_competing_event": 883,
+      "patients_with_confirmed_recurrence": 2847,
+      "patients_without_observations": 0,
+      "post_competing_event_violations": 0,
+      "post_recurrence_window_violations": 0,
+      "single_zero_day_observation_patients": 0
+    },
+    "G2": {
+      "patients": 10000,
+      "patients_with_competing_event": 888,
+      "patients_with_confirmed_recurrence": 2991,
+      "patients_without_observations": 0,
+      "post_competing_event_violations": 0,
+      "post_recurrence_window_violations": 0,
+      "single_zero_day_observation_patients": 0
+    },
+    "G3": {
+      "patients": 10000,
+      "patients_with_competing_event": 878,
+      "patients_with_confirmed_recurrence": 2863,
+      "patients_without_observations": 0,
+      "post_competing_event_violations": 0,
+      "post_recurrence_window_violations": 0,
+      "single_zero_day_observation_patients": 0
+    }
+  },
+  "g1_high_cost_missingness_by_factor_quintile": {
+    "ca_15_3": [
+      {
+        "absolute_deviation": 0.002326993585200998,
+        "expected_probability": 0.13638417780525167,
+        "observed_rate": 0.13405718422005067,
+        "quintile": 1,
+        "successes": 1852,
+        "total": 13815,
+        "wilson_95": [
+          0.12847729986069928,
+          0.13984052329906677
+        ]
+      },
+      {
+        "absolute_deviation": 0.004544563699636961,
+        "expected_probability": 0.17001423413366726,
+        "observed_rate": 0.17455879783330422,
+        "quintile": 2,
+        "successes": 1998,
+        "total": 11446,
+        "wilson_95": [
+          0.1677142861481436,
+          0.18162168266907602
+        ]
+      },
+      {
+        "absolute_deviation": 0.0033748394168665874,
+        "expected_probability": 0.20419199978458874,
+        "observed_rate": 0.20081716036772215,
+        "quintile": 3,
+        "successes": 1966,
+        "total": 9790,
+        "wilson_95": [
+          0.19299958970053427,
+          0.2088694292507507
+        ]
+      },
+      {
+        "absolute_deviation": 0.00454909244157492,
+        "expected_probability": 0.2373788982669036,
+        "observed_rate": 0.2419279907084785,
+        "quintile": 4,
+        "successes": 2083,
+        "total": 8610,
+        "wilson_95": [
+          0.23299861170111502,
+          0.25108755110499487
+        ]
+      },
+      {
+        "absolute_deviation": 0.005827146935449612,
+        "expected_probability": 0.27088112014392923,
+        "observed_rate": 0.2650539732084796,
+        "quintile": 5,
+        "successes": 2038,
+        "total": 7689,
+        "wilson_95": [
+          0.25530781153940385,
+          0.2750347778223857
+        ]
+      }
+    ],
+    "ca_27_29": [
+      {
+        "absolute_deviation": 0.0021822234078575364,
+        "expected_probability": 0.13638417780525167,
+        "observed_rate": 0.13420195439739413,
+        "quintile": 1,
+        "successes": 1854,
+        "total": 13815,
+        "wilson_95": [
+          0.12861943955572733,
+          0.13998784347025975
+        ]
+      },
+      {
+        "absolute_deviation": 0.008912901983753663,
+        "expected_probability": 0.17001423413366726,
+        "observed_rate": 0.17892713611742092,
+        "quintile": 2,
+        "successes": 2048,
+        "total": 11446,
+        "wilson_95": [
+          0.17201338096045654,
+          0.1860563332417668
+        ]
+      },
+      {
+        "absolute_deviation": 0.0015281227894664295,
+        "expected_probability": 0.20419199978458874,
+        "observed_rate": 0.20572012257405517,
+        "quintile": 3,
+        "successes": 2014,
+        "total": 9790,
+        "wilson_95": [
+          0.197829064224093,
+          0.2138420329417152
+        ]
+      },
+      {
+        "absolute_deviation": 0.0034648448406550403,
+        "expected_probability": 0.2373788982669036,
+        "observed_rate": 0.23391405342624855,
+        "quintile": 4,
+        "successes": 2014,
+        "total": 8610,
+        "wilson_95": [
+          0.22509236194409166,
+          0.24297307414447616
+        ]
+      },
+      {
+        "absolute_deviation": 0.002445692910218733,
+        "expected_probability": 0.27088112014392923,
+        "observed_rate": 0.2684354272337105,
+        "quintile": 5,
+        "successes": 2064,
+        "total": 7689,
+        "wilson_95": [
+          0.25864774602205637,
+          0.2784543742982683
+        ]
+      }
+    ],
+    "cea": [
+      {
+        "absolute_deviation": 0.0007131801390118098,
+        "expected_probability": 0.13638417780525167,
+        "observed_rate": 0.13709735794426348,
+        "quintile": 1,
+        "successes": 1894,
+        "total": 13815,
+        "wilson_95": [
+          0.13146269235041091,
+          0.14293378799999695
+        ]
+      },
+      {
+        "absolute_deviation": 0.006641366076012983,
+        "expected_probability": 0.17001423413366726,
+        "observed_rate": 0.17665560020968024,
+        "quintile": 2,
+        "successes": 2022,
+        "total": 11446,
+        "wilson_95": [
+          0.1697776552691223,
+          0.1837505113328991
+        ]
+      },
+      {
+        "absolute_deviation": 0.0002083429919431945,
+        "expected_probability": 0.20419199978458874,
+        "observed_rate": 0.20398365679264555,
+        "quintile": 3,
+        "successes": 1997,
+        "total": 9790,
+        "wilson_95": [
+          0.19611841688541493,
+          0.21208111091274962
+        ]
+      },
+      {
+        "absolute_deviation": 0.0029230761814123263,
+        "expected_probability": 0.2373788982669036,
+        "observed_rate": 0.2403019744483159,
+        "quintile": 4,
+        "successes": 2069,
+        "total": 8610,
+        "wilson_95": [
+          0.2313940913859734,
+          0.24944148918759174
+        ]
+      },
+      {
+        "absolute_deviation": 0.0010658170390594468,
+        "expected_probability": 0.27088112014392923,
+        "observed_rate": 0.2719469371829887,
+        "quintile": 5,
+        "successes": 2091,
+        "total": 7689,
+        "wilson_95": [
+          0.26211691580452773,
+          0.2820047174342755
+        ]
+      }
+    ]
+  },
+  "imaging_propensity_by_generator": {
+    "G1": [
+      {
+        "absolute_deviation": 0.003433496975900195,
+        "decile": 1,
+        "expected_probability": 0.03491573409281695,
+        "observed_rate": 0.03834923106871715,
+        "successes": 197,
+        "total": 5137,
+        "wilson_95": [
+          0.03343337334286592,
+          0.0439550195899826
+        ]
+      },
+      {
+        "absolute_deviation": 0.005905860443900908,
+        "decile": 2,
+        "expected_probability": 0.038291958870740835,
+        "observed_rate": 0.04419781931464174,
+        "successes": 227,
+        "total": 5136,
+        "wilson_95": [
+          0.03890918128025053,
+          0.05016778004021462
+        ]
+      },
+      {
+        "absolute_deviation": 0.005036639066223113,
+        "decile": 3,
+        "expected_probability": 0.042030408536628094,
+        "observed_rate": 0.03699376947040498,
+        "successes": 190,
+        "total": 5136,
+        "wilson_95": [
+          0.032168196527589024,
+          0.04251143355360111
+        ]
+      },
+      {
+        "absolute_deviation": 0.002997323461928693,
+        "decile": 4,
+        "expected_probability": 0.04606809709881897,
+        "observed_rate": 0.04906542056074766,
+        "successes": 252,
+        "total": 5136,
+        "wilson_95": [
+          0.0434876112904152,
+          0.0553172765430736
+        ]
+      },
+      {
+        "absolute_deviation": 0.0001718500906015552,
+        "decile": 5,
+        "expected_probability": 0.05085054523559124,
+        "observed_rate": 0.05102239532619279,
+        "successes": 262,
+        "total": 5135,
+        "wilson_95": [
+          0.04533244444063292,
+          0.057383598280371304
+        ]
+      },
+      {
+        "absolute_deviation": 0.00018402378566655803,
+        "decile": 6,
+        "expected_probability": 0.05609640464666061,
+        "observed_rate": 0.05628042843232717,
+        "successes": 289,
+        "total": 5135,
+        "wilson_95": [
+          0.05030230989625382,
+          0.06292193791975492
+        ]
+      },
+      {
+        "absolute_deviation": 0.0004600931959977475,
+        "decile": 7,
+        "expected_probability": 0.06199855473445929,
+        "observed_rate": 0.06153846153846154,
+        "successes": 316,
+        "total": 5135,
+        "wilson_95": [
+          0.055287577248240544,
+          0.0684448756627727
+        ]
+      },
+      {
+        "absolute_deviation": 0.0024283110318907425,
+        "decile": 8,
+        "expected_probability": 0.06827679220145558,
+        "observed_rate": 0.07070510323334632,
+        "successes": 363,
+        "total": 5134,
+        "wilson_95": [
+          0.06400967073068255,
+          0.0780424857381971
+        ]
+      },
+      {
+        "absolute_deviation": 0.005406544941337577,
+        "decile": 9,
+        "expected_probability": 0.07562189292387474,
+        "observed_rate": 0.08102843786521231,
+        "successes": 416,
+        "total": 5134,
+        "wilson_95": [
+          0.07387359801202238,
+          0.08880979062888512
+        ]
+      },
+      {
+        "absolute_deviation": 0.0036858544223064005,
+        "decile": 10,
+        "expected_probability": 0.8343561583973649,
+        "observed_rate": 0.8306703039750585,
+        "successes": 4263,
+        "total": 5132,
+        "wilson_95": [
+          0.820162923699692,
+          0.8406830208671677
+        ]
+      }
+    ],
+    "G2": [
+      {
+        "absolute_deviation": 0.0006543355992871744,
+        "decile": 1,
+        "expected_probability": 0.034847379757161345,
+        "observed_rate": 0.03419304415787417,
+        "successes": 175,
+        "total": 5118,
+        "wilson_95": [
+          0.029553371960082956,
+          0.039531440927148886
+        ]
+      },
+      {
+        "absolute_deviation": 0.00377690787432558,
+        "decile": 2,
+        "expected_probability": 0.038036300410160546,
+        "observed_rate": 0.04181320828448613,
+        "successes": 214,
+        "total": 5118,
+        "wilson_95": [
+          0.03666437417805086,
+          0.047649336484935155
+        ]
+      },
+      {
+        "absolute_deviation": 0.0018325535548594646,
+        "decile": 3,
+        "expected_probability": 0.04174766923192967,
+        "observed_rate": 0.043580222786789136,
+        "successes": 223,
+        "total": 5117,
+        "wilson_95": [
+          0.03832040580691022,
+          0.049524816982762024
+        ]
+      },
+      {
+        "absolute_deviation": 0.0028769403910468214,
+        "decile": 4,
+        "expected_probability": 0.0461848266144262,
+        "observed_rate": 0.049061767005473024,
+        "successes": 251,
+        "total": 5116,
+        "wilson_95": [
+          0.04347390635914849,
+          0.05532631292287784
+        ]
+      },
+      {
+        "absolute_deviation": 0.0019998306005646893,
+        "decile": 5,
+        "expected_probability": 0.051071189349342794,
+        "observed_rate": 0.049071358748778104,
+        "successes": 251,
+        "total": 5115,
+        "wilson_95": [
+          0.04348242905201007,
+          0.05533709151529278
+        ]
+      },
+      {
+        "absolute_deviation": 0.0012718644764905945,
+        "decile": 6,
+        "expected_probability": 0.05601063796730217,
+        "observed_rate": 0.057282502443792765,
+        "successes": 293,
+        "total": 5115,
+        "wilson_95": [
+          0.05124011621820536,
+          0.06398936755576269
+        ]
+      },
+      {
+        "absolute_deviation": 0.0026551160949458905,
+        "decile": 7,
+        "expected_probability": 0.0616655095160023,
+        "observed_rate": 0.06432062561094819,
+        "successes": 329,
+        "total": 5115,
+        "wilson_95": [
+          0.05791914503162674,
+          0.07137602149091145
+        ]
+      },
+      {
+        "absolute_deviation": 0.007523202070551363,
+        "decile": 8,
+        "expected_probability": 0.06794111855505959,
+        "observed_rate": 0.07546432062561095,
+        "successes": 386,
+        "total": 5115,
+        "wilson_95": [
+          0.0685399656161385,
+          0.08302586525830248
+        ]
+      },
+      {
+        "absolute_deviation": 0.008383079781507527,
+        "decile": 9,
+        "expected_probability": 0.07485424302686432,
+        "observed_rate": 0.06647116324535679,
+        "successes": 340,
+        "total": 5115,
+        "wilson_95": [
+          0.05996469707683216,
+          0.07362831695221358
+        ]
+      },
+      {
+        "absolute_deviation": 0.0017141773824426165,
+        "decile": 10,
+        "expected_probability": 0.7937492563289379,
+        "observed_rate": 0.7954634337113805,
+        "successes": 4068,
+        "total": 5114,
+        "wilson_95": [
+          0.784188466704904,
+          0.8062948502004149
+        ]
+      }
+    ],
+    "G3": [
+      {
+        "absolute_deviation": 0.00040325052070144113,
+        "decile": 1,
+        "expected_probability": 0.03500532664526892,
+        "observed_rate": 0.03460207612456748,
+        "successes": 180,
+        "total": 5202,
+        "wilson_95": [
+          0.029968777547804495,
+          0.03992222118866432
+        ]
+      },
+      {
+        "absolute_deviation": 0.0018783099321244834,
+        "decile": 2,
+        "expected_probability": 0.038402723619167925,
+        "observed_rate": 0.03652441368704344,
+        "successes": 190,
+        "total": 5202,
+        "wilson_95": [
+          0.03175912835643001,
+          0.04197370846869444
+        ]
+      },
+      {
+        "absolute_deviation": 0.0022212032874225976,
+        "decile": 3,
+        "expected_probability": 0.04220187363565433,
+        "observed_rate": 0.044423076923076926,
+        "successes": 231,
+        "total": 5200,
+        "wilson_95": [
+          0.039151414118243355,
+          0.05036735053033689
+        ]
+      },
+      {
+        "absolute_deviation": 0.007238778711219848,
+        "decile": 4,
+        "expected_probability": 0.04646954794198908,
+        "observed_rate": 0.03923076923076923,
+        "successes": 204,
+        "total": 5200,
+        "wilson_95": [
+          0.034285115668092225,
+          0.04485669948513624
+        ]
+      },
+      {
+        "absolute_deviation": 0.0012707432786389083,
+        "decile": 5,
+        "expected_probability": 0.05107843558633122,
+        "observed_rate": 0.04980769230769231,
+        "successes": 259,
+        "total": 5200,
+        "wilson_95": [
+          0.04421997240048844,
+          0.05606007320623437
+        ]
+      },
+      {
+        "absolute_deviation": 0.000565828493333663,
+        "decile": 6,
+        "expected_probability": 0.05617585259918413,
+        "observed_rate": 0.056741681092517794,
+        "successes": 295,
+        "total": 5199,
+        "wilson_95": [
+          0.05077415519322154,
+          0.06336375646924486
+        ]
+      },
+      {
+        "absolute_deviation": 0.0036790394974879972,
+        "decile": 7,
+        "expected_probability": 0.0619594780433622,
+        "observed_rate": 0.058280438545874204,
+        "successes": 303,
+        "total": 5199,
+        "wilson_95": [
+          0.0522324719385111,
+          0.06498068238253644
+        ]
+      },
+      {
+        "absolute_deviation": 0.007218452141734395,
+        "decile": 8,
+        "expected_probability": 0.06819171623098233,
+        "observed_rate": 0.060973264089247935,
+        "successes": 317,
+        "total": 5199,
+        "wilson_95": [
+          0.054787495952105414,
+          0.06780733302145917
+        ]
+      },
+      {
+        "absolute_deviation": 0.001121942186705402,
+        "decile": 9,
+        "expected_probability": 0.07504655175443713,
+        "observed_rate": 0.07616849394114253,
+        "successes": 396,
+        "total": 5199,
+        "wilson_95": [
+          0.0692666837698696,
+          0.08369616645718388
+        ]
+      },
+      {
+        "absolute_deviation": 0.00913738709603995,
+        "decile": 10,
+        "expected_probability": 0.7623571310805325,
+        "observed_rate": 0.7714945181765724,
+        "successes": 4011,
+        "total": 5199,
+        "wilson_95": [
+          0.7598834351162644,
+          0.782704691457148
+        ]
+      }
+    ]
+  },
+  "imaging_result_by_generator_and_stratum": {
+    "G1": {
+      "no_recurrence": {
+        "absolute_deviation": 0.0032762836185819162,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.006723716381418093,
+        "successes": 11,
+        "total": 1636,
+        "wilson_95": [
+          0.003758550767303372,
+          0.01199995971655659
+        ]
+      },
+      "nonvisible_recurrence": {
+        "absolute_deviation": 0.0002912621359223398,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.009708737864077669,
+        "successes": 13,
+        "total": 1339,
+        "wilson_95": [
+          0.005682564187721602,
+          0.016540058315236708
+        ]
+      },
+      "visible_recurrence": {
+        "absolute_deviation": 0.001052631578947305,
+        "expected_probability": 0.9,
+        "observed_rate": 0.9010526315789473,
+        "successes": 3424,
+        "total": 3800,
+        "wilson_95": [
+          0.8911501117808895,
+          0.9101451138474077
+        ]
+      }
+    },
+    "G2": {
+      "no_recurrence": {
+        "absolute_deviation": 0.0009529553679131567,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.009047044632086852,
+        "successes": 15,
+        "total": 1658,
+        "wilson_95": [
+          0.005490264737000499,
+          0.014873566386041351
+        ]
+      },
+      "nonvisible_recurrence": {
+        "absolute_deviation": 0.004266055045871568,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.005733944954128441,
+        "successes": 5,
+        "total": 872,
+        "wilson_95": [
+          0.0024516116812951984,
+          0.013352000583567692
+        ]
+      },
+      "visible_recurrence": {
+        "absolute_deviation": 0.0004999999999999449,
+        "expected_probability": 0.9,
+        "observed_rate": 0.9005,
+        "successes": 3602,
+        "total": 4000,
+        "wilson_95": [
+          0.8908360052308725,
+          0.9093954806940766
+        ]
+      }
+    },
+    "G3": {
+      "no_recurrence": {
+        "absolute_deviation": 0.00038286826735884835,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.010382868267358857,
+        "successes": 16,
+        "total": 1541,
+        "wilson_95": [
+          0.006401074453074273,
+          0.016799661529280113
+        ]
+      },
+      "nonvisible_recurrence": {
+        "absolute_deviation": 0.0022254616132167246,
+        "expected_probability": 0.010000000000000009,
+        "observed_rate": 0.007774538386783284,
+        "successes": 8,
+        "total": 1029,
+        "wilson_95": [
+          0.003944648455213546,
+          0.015265907677330985
+        ]
+      },
+      "visible_recurrence": {
+        "absolute_deviation": 0.0009433962264150386,
+        "expected_probability": 0.9,
+        "observed_rate": 0.9009433962264151,
+        "successes": 3438,
+        "total": 3816,
+        "wilson_95": [
+          0.8910579884921541,
+          0.9100223791063269
+        ]
+      }
+    }
+  },
+  "profile_sha256": "0d591debdba4c7cedff6692d13e49b35cbb002c099d7aeff49d324d71e9d9c3c",
+  "source_commit": "55581773f7b88c78b084be0f4707960ece3def65",
+  "synthetic_only": true
+}
