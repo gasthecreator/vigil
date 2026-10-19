@@ -101,6 +101,7 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | H-004 | Complete CITI Training & submit PhysioNet MIMIC-IV credentialing | Master Plan §7.2 / WP1.3 | `docs/data/ACCESS.md` §6 | OPEN |
 | H-117 | Clinician usability of OCR confirm + consented real lab reports | H27 residual risk; EXP-OCR-001 is synthetic | `docs/HANDOVER.md` H-117 | OPEN |
 | H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
+| H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
 
 ## Open blockers
 _None recorded. External public datasets bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers._
