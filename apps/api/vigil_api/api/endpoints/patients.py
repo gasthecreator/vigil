@@ -8,10 +8,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import desc, func, select
-from sqlalchemy.orm import Session, defer, selectinload
+from sqlalchemy.orm import Session
 from vigil_api import silent_mode
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
@@ -243,8 +243,26 @@ def _latest_row_per_patient(db: Session, model: Any, ts_column: Any) -> Dict[str
     return {r.patient_id: r for r in rows}
 
 
+def _latest_columns_per_patient(db: Session, model: Any, ts_column: Any, *columns: Any) -> Dict[str, Any]:
+    """Like ``_latest_row_per_patient`` but selects plain columns (no ORM entities): the triage roster only needs a
+    few fields per patient and entity construction dominated its cost at scale."""
+    ranked = select(
+        model.id.label("row_id"),
+        func.row_number()
+        .over(partition_by=model.patient_id, order_by=(desc(ts_column), desc(model.id)))
+        .label("rn"),
+    ).subquery()
+    rows = db.execute(
+        select(model.patient_id, *columns).join(ranked, model.id == ranked.c.row_id).where(ranked.c.rn == 1)
+    ).all()
+    return {r.patient_id: r for r in rows}
+
+
 @router.get("/triage", response_model=List[TriageQueueItem])
 def get_triage_queue(
+    response: Response,
+    limit: int = Query(200, ge=1, le=1000, description="Page size (the queue screen needs the top rows)."),
+    offset: int = Query(0, ge=0, description="Rows to skip, in urgency order."),
     db: Session = Depends(get_db),
     current_user: User = Depends(
         require_roles(
@@ -259,24 +277,41 @@ def get_triage_queue(
     Master Plan §6.9 (M9) / Phase 5b.
     """
     now = datetime.now(timezone.utc)
-    patients = (
-        db.query(Patient)
-        .options(selectinload(Patient.baseline_profile), defer(Patient.detector_state))
-        .all()
-    )
+    patients = db.query(Patient.id, Patient.age, Patient.status).all()
+    baselines = {
+        r.patient_id: r
+        for r in db.query(
+            BaselineProfile.patient_id,
+            BaselineProfile.tumor_stage,
+            BaselineProfile.er_status,
+            BaselineProfile.pr_status,
+            BaselineProfile.her2_status,
+            BaselineProfile.target_organ_susceptibility_vector,
+        )
+    }
     # Every read of patient data requires active consent: patients without it are not in the queue.
     consented = consented_patient_ids(db)
     patients = [p for p in patients if p.id in consented]
-    triage_roster: List[TriageQueueItem] = []
+    rows: list = []
 
     # Batched reads (constant number of statements, independent of the number of patients). This replaced a
     # per-patient query loop (about 6 statements per patient) found by the real-HTTP load test; the original
     # implementation is kept as the oracle in apps/api/tests/test_triage_batched.py.
-    latest_inference_by_patient = _latest_row_per_patient(
-        db, RiskInference, RiskInference.created_at
+    latest_inference_by_patient = _latest_columns_per_patient(
+        db,
+        RiskInference,
+        RiskInference.created_at,
+        RiskInference.calculated_metastasis_risk,
+        RiskInference.triage_flag,
+        RiskInference.justification_text,
     )
-    latest_assessment_by_patient = _latest_row_per_patient(
-        db, RiskAssessment, RiskAssessment.created_at
+    latest_assessment_by_patient = _latest_columns_per_patient(
+        db,
+        RiskAssessment,
+        RiskAssessment.created_at,
+        RiskAssessment.abstention,
+        RiskAssessment.uncertainty,
+        RiskAssessment.score,
     )
     lab_stats = {
         pid: (last_drawn, count)
@@ -301,7 +336,7 @@ def get_triage_queue(
     for patient in patients:
         latest_inference = latest_inference_by_patient.get(patient.id)
 
-        baseline = patient.baseline_profile
+        baseline = baselines.get(patient.id)
         subtype = "Unknown"
         organ_vector = None
         tumor_stage = None
@@ -385,34 +420,33 @@ def get_triage_queue(
             "delay_component": round(0.15 * s_delay, 4),
         }
 
-        triage_roster.append(
-            TriageQueueItem(
-                patient_id=patient.id,
-                age=patient.age,
-                status=patient.status,
-                tumor_stage=tumor_stage,
-                subtype=subtype,
-                latest_risk=latest_risk,
-                triage_flag=triage_flag,
-                latest_justification=justification,
-                target_organ_susceptibility_vector=organ_vector,
-                last_lab_date=last_lab_date,
-                total_labs=total_labs,
-                action_urgency=action_urgency,
-                urgency_breakdown=urgency_breakdown,
+        # Cheap tuples only: pydantic objects are built for the requested page, not for the whole roster
+        # (found by the scale probe: cost grew linearly with the number of patients).
+        rows.append(
+            (
+                (action_urgency, latest_risk, last_lab_date.timestamp() if last_lab_date else 0.0),
+                dict(
+                    patient_id=patient.id,
+                    age=patient.age,
+                    status=patient.status,
+                    tumor_stage=tumor_stage,
+                    subtype=subtype,
+                    latest_risk=latest_risk,
+                    triage_flag=triage_flag,
+                    latest_justification=justification,
+                    target_organ_susceptibility_vector=organ_vector,
+                    last_lab_date=last_lab_date,
+                    total_labs=total_labs,
+                    action_urgency=action_urgency,
+                    urgency_breakdown=urgency_breakdown,
+                ),
             )
         )
 
-    # Sort strictly descending by action_urgency, breaking ties by latest_risk and recency
-    triage_roster.sort(
-        key=lambda x: (
-            x.action_urgency,
-            x.latest_risk,
-            x.last_lab_date.timestamp() if x.last_lab_date else 0.0,
-        ),
-        reverse=True,
-    )
-    return triage_roster
+    # Strictly descending by action_urgency, ties broken by latest_risk and recency (unchanged ordering).
+    rows.sort(key=lambda r: r[0], reverse=True)
+    response.headers["X-Total-Count"] = str(len(rows))
+    return [TriageQueueItem(**kw) for _, kw in rows[offset : offset + limit]]
 
 
 @router.get("/{id}", response_model=dict)

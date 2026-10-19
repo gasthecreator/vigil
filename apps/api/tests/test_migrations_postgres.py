@@ -102,3 +102,38 @@ def test_postgres_alembic_upgrade_downgrade_upgrade(postgres_alembic):
             {"t": datetime.now(timezone.utc)},
         )
         session.commit()
+
+
+def test_gate_catches_sqlite_only_boolean_default_that_migration_001_once_had():
+    """Seeded-defect proof that the Postgres job can fail: the pattern `server_default=text("0")` on a boolean column
+    (what migration 001 shipped with) is valid on SQLite and rejected by Postgres. If this test ever stops raising on
+    Postgres, the gate no longer detects the class of bug it exists for."""
+    url = _pg_url()
+    if not url:
+        pytest.skip("No Postgres URL (set VIGIL_POSTGRES_TEST_URL)")
+    from sqlalchemy import Boolean, Column, Integer, MetaData, Table
+    from sqlalchemy.exc import DBAPIError
+    from sqlalchemy.schema import CreateTable
+
+    eng = create_engine(url)
+    try:
+        bad = Table(
+            "zz_seeded_bad",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("flag", Boolean, nullable=False, server_default=text("0")),
+        )
+        good = Table(
+            "zz_seeded_good",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("flag", Boolean, nullable=False, server_default=text("false")),
+        )
+        with eng.connect() as conn:
+            with pytest.raises(DBAPIError):
+                conn.execute(CreateTable(bad))
+            conn.rollback()
+            conn.execute(CreateTable(good))
+            conn.rollback()
+    finally:
+        eng.dispose()

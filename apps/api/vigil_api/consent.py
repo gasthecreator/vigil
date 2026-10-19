@@ -143,9 +143,16 @@ def consented_patient_ids(db: Session) -> set[str]:
     now = datetime.now(timezone.utc)
     active: set[str] = set()
     seen: set[tuple[str, str]] = set()
-    rows = (
-        db.execute(select(ConsentRecord).order_by(ConsentRecord.granted_at.desc())).scalars().all()
-    )
+    # Plain columns, not ORM entities: constructing one entity per consent record dominated roster cost at scale.
+    rows = db.execute(
+        select(
+            ConsentRecord.patient_id,
+            ConsentRecord.consent_type,
+            ConsentRecord.granted,
+            ConsentRecord.withdrawn_at,
+            ConsentRecord.expires_at,
+        ).order_by(ConsentRecord.granted_at.desc())
+    ).all()
     for c in rows:
         key = (c.patient_id, c.consent_type)
         if key in seen:

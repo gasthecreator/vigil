@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unsigned release hash manifest `docs/release/RELEASE_MANIFEST_v1.0.0-rc.2.json` (signing remains H-SIGN-1).
 
 ### Changed
+- `GET /patients/triage` is paginated (`limit` default 200, max 1000; `offset`; `X-Total-Count`) and reads plain columns; the 400 ms budget is NOT met at the 100,000-patient plan size (`reports/perf/SCALE_SCALING.json`, PROP-0007). The Docker compose example is now the production profile (secrets required); the demo profile is `infra/.env.compose.dev.example`.
 - Honesty sweep: README Master Plan badge v1.3; cognitive walkthrough 2.2 no longer claims native-speaker validation; VALUE-PROPOSITION scoped to research / NO-GO pilot.
 - Default release id in `generate_release_manifest.py` is `v1.0.0-rc.2`.
 - Regenerated CycloneDX SBOMs under `reports/sbom/`.

@@ -117,16 +117,11 @@ jobs:
           VIGIL_ACCEPT_P13=1 uv run pytest tests/acceptance_p13 -q --tb=line
           VIGIL_ACCEPT_P14=1 uv run pytest tests/acceptance_p14 -q --tb=line
           VIGIL_ACCEPT_P15=1 uv run pytest tests/acceptance_p15 -q --tb=line
-      - name: Scale probe (honest size; nightly larger)
-        env:
-          DATABASE_URL: postgresql+psycopg://vigil:vigil_ci_password@localhost:5432/vigil_test
+      - name: Scale probe at several sizes + scaling analysis (honest size; nightly larger)
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            export SCALE_N_PATIENTS=10000
-          else
-            export SCALE_N_PATIENTS=2000
-          fi
-          export SCALE_OBS_PER_PATIENT=50
-          uv run python scripts/run_scale_test_postgres.py
-          test -f reports/perf/SCALE_TEST_RESULTS.json
-          python3 -c "import json; d=json.load(open('reports/perf/SCALE_TEST_RESULTS.json')); print(d['metrics']['triage_p95_ms'], d['metrics']['timeline_p95_ms'], d['verdicts'])"
+          if [ "${{ github.event_name }}" = "schedule" ]; then SIZES="2000 10000 30000"; else SIZES="2000 6000"; fi
+          for n in $SIZES; do
+            SCALE_N_PATIENTS=$n SCALE_OBS_PER_PATIENT=10 SCALE_SAMPLES=12 uv run python scripts/run_scale_test_postgres.py
+          done
+          uv run python scripts/analyze_scale_scaling.py
+          test -f reports/perf/SCALE_SCALING.json

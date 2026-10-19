@@ -1,0 +1,72 @@
+{
+  "study": "SCALE_TEST_POSTGRES",
+  "plan_budgets": {
+    "patients": 100000,
+    "observations": 10000000,
+    "triage_p95_ms": 400.0,
+    "timeline_p95_ms": 600.0
+  },
+  "run": {
+    "n_patients": 10000,
+    "obs_per_patient": 10,
+    "approx_observations": 100000,
+    "full_plan_size": false,
+    "warmup": 2,
+    "samples": 12,
+    "client_mode": "asgi",
+    "database": "postgres",
+    "indexes": [
+      "ix_observations_patient_specimen",
+      "ix_risk_assessments_patient_created",
+      "ix_follow_up_tasks_status_patient_due",
+      "ix_consent_records_patient_granted"
+    ],
+    "machine": {
+      "platform": "macOS-26.6.2-arm64-arm-64bit",
+      "python": "3.12.15",
+      "cpu_count": 8
+    },
+    "command": "SCALE_N_PATIENTS=10000 SCALE_OBS_PER_PATIENT=10 uv run python scripts/run_scale_test_postgres.py",
+    "generated_at": "2026-10-19T04:37:14.922771+00:00"
+  },
+  "metrics": {
+    "triage_p50_ms": 325.64206249662675,
+    "triage_p95_ms": 338.98620802210644,
+    "triage_samples_ms": [
+      339.153,
+      329.142,
+      338.986,
+      258.553,
+      322.234,
+      327.818,
+      322.502,
+      323.728,
+      322.213,
+      324.364,
+      327.184,
+      326.92
+    ],
+    "timeline_p50_ms": 11.12722948892042,
+    "timeline_p95_ms": 11.473167047370225,
+    "timeline_samples_ms": [
+      11.235,
+      11.023,
+      11.152,
+      10.788,
+      11.172,
+      11.218,
+      11.731,
+      10.827,
+      11.102,
+      11.473,
+      10.662,
+      10.528
+    ]
+  },
+  "verdicts": {
+    "triage_p95_under_budget": true,
+    "timeline_p95_under_budget": true,
+    "plan_size_reached": false,
+    "honest_note": "Full plan size (1e5 patients \u00d7 ~1e7 observations) was not run on this machine; see run.n_patients / run.approx_observations. Budgets are unchanged."
+  }
+}

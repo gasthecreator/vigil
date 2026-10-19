@@ -19,3 +19,7 @@
 
 ## Gate that can fail
 CI step “Seeded failure — alembic against … bad host” expects non-zero exit before the real upgrade path runs.
+
+## Overseer revisions (review of PR 70, 2026-10-19)
+- Lint error fixed (import order). Compose is now **production by default**: the shipped example selected `ENVIRONMENT=local`, `REQUIRE_AUTH=false` and a default JWT secret; secrets are required, placeholders are refused by the entrypoint, Postgres is published on 127.0.0.1 only, the insecure demo profile is `infra/.env.compose.dev.example` (`tests/deployment/test_on_prem_install.py::test_compose_is_secure_by_default_and_dev_profile_is_separate`).
+- Scale: the first probe (2,000 patients) hid a linear cost. Re-run at 2k/10k/30k on Postgres 15 with a realistic seed (assessments, inferences, tasks): triage p95 117 / 339 / 1,283 ms; **budget NOT MET at plan size** (extrapolated about 4.3 s; holds up to about 10,000 patients). Triage now pages (`limit`/`offset`, `X-Total-Count`) and reads plain columns; the SQL-side fix is `docs/proposals/PROP-0007-triage-urgency-in-sql.md`. Files: `reports/perf/SCALE_SCALING.json`, `reports/perf/scale_runs/`.

@@ -89,8 +89,13 @@ def main() -> int:
     from sqlalchemy import text
     from sqlalchemy.orm import sessionmaker
     from vigil_api.database import Base, engine
-    from vigil_api.models.patient import BaselineProfile, Patient
-    from vigil_api.models.v2 import ConsentRecord, Observation
+    from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
+    from vigil_api.models.v2 import (
+        ConsentRecord,
+        FollowUpTask,
+        Observation,
+        RiskAssessment,
+    )
 
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
@@ -117,6 +122,10 @@ def main() -> int:
         db = Session()
         try:
             for table in (
+                "follow_up_tasks",
+                "risk_assessments",
+                "risk_inferences",
+                "lab_results",
                 "observations",
                 "consent_records",
                 "baseline_profiles",
@@ -165,6 +174,46 @@ def main() -> int:
                     )
                 )
                 db.flush()
+                # The triage roster also reads the latest legacy inference, the latest risk assessment and
+                # active follow-up tasks per patient; seed them so the probe measures the real work.
+                lab = LabResult(
+                    patient_id=pid,
+                    date_drawn=(now - timedelta(days=i % 200)).replace(tzinfo=None),
+                    alt_level=25.0,
+                    ast_level=25.0,
+                    creatinine=0.9,
+                    ca_15_3=20.0 + (i % 40),
+                    wbc_count=6.0,
+                )
+                db.add(lab)
+                db.flush()
+                db.add(
+                    RiskInference(
+                        patient_id=pid,
+                        lab_result_id=lab.id,
+                        calculated_metastasis_risk=((i * 37) % 100) / 100.0,
+                        triage_flag=(i % 17 == 0),
+                        justification_text="synthetic scale-probe inference",
+                    )
+                )
+                db.add(
+                    RiskAssessment(
+                        patient_id=pid,
+                        model_versions={"probe": "1"},
+                        input_hash=f"probe-{i}",
+                        score=((i * 53) % 100) / 100.0,
+                        abstention=(i % 23 == 0),
+                        uncertainty={"p_error": 0.05},
+                    )
+                )
+                if i % 10 == 0:
+                    db.add(
+                        FollowUpTask(
+                            patient_id=pid,
+                            task_type="repeat_specimen",
+                            due_date=now - timedelta(days=i % 20),
+                        )
+                    )
                 for j in range(obs_per):
                     batch_o.append(
                         Observation(
@@ -310,6 +359,10 @@ def main() -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    # Keep one file per cohort size so scripts/analyze_scale_scaling.py can fit the scaling slope.
+    runs_dir = OUT.parent / "scale_runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    (runs_dir / f"size_{n_patients}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(
         json.dumps(
             {
