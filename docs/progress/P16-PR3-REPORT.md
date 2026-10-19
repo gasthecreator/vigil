@@ -71,4 +71,5 @@ Not done / disclosed:
 - MkDocs stays `strict: false` with 102 warnings, all links from docs to files outside `docs/` (experiments, scripts) that are valid in the repo and covered by `check_docs_links.py`.
 - `packages/vigil-opt` not extracted (ADR-0031 records the deviation; the prompt allowed this).
 - The release workflow is untested until a `v*` tag exists (owner action H-304).
+- G-06 mutation: `vigil_ml.m5` kill rate raised from 43.9% to **87.2%** (326/374, target 80% met; `reports/quality/MUTATION_SCORE.json`). 44 survivors + 4 suspicious are listed in the note there; most are equivalent mutants.
 - Audit-chain, outbox, silent-mode and consent SLOs have no runtime metric.
