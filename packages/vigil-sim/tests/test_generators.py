@@ -75,6 +75,10 @@ def test_profile_override_is_seeded_and_rejects_invalid_probabilities():
     with pytest.raises(ValueError, match="stage_probabilities"):
         get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=invalid)
 
+    invalid = {**profile, "recurrence_day_cap": float("nan")}
+    with pytest.raises(ValueError, match="recurrence_day_cap"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=invalid)
+
 
 def test_k3_profile_shares_lab_effects_within_facility_and_records_verification():
     config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
@@ -94,9 +98,12 @@ def test_k3_profile_shares_lab_effects_within_facility_and_records_verification(
     assert observed["facility_id"].notna().all()
     assert observed["treatment_active"].dropna().eq("chemotherapy").all()
     assert observed["treatment_active"].notna().any()
+    assert observed["imaging_probability"].between(0.0, 1.0).all()
+    assert observed.loc[observed["imaging_performed"], "imaging_result"].notna().all()
     assert observed.loc[~observed["imaging_performed"], "imaging_result"].isna().all()
     imaged = observed[observed["imaging_performed"]]
     assert imaged["imaging_result"].notna().all()
+    assert set(imaged["imaging_result"].unique()) == {True, False}
     assert imaged["imaging_result"].isin([True, False]).all()
 
     patients = cohort.to_patients_dataframe().set_index("patient_id")
@@ -104,6 +111,17 @@ def test_k3_profile_shares_lab_effects_within_facility_and_records_verification(
     assert all(bool(patients.loc[row.patient_id, "observed_recurrence_event"])
                and bool(patients.loc[row.patient_id, "true_recurrence_event"])
                for row in positives.itertuples())
+
+    generator = get_generator(GeneratorType.G1_SMOOTH, seed=48102, population_config=profile)
+    patient = generator.sample_baseline(1)
+    missingness = profile["measurement_missingness"]
+    assert generator.measurement_skip_probability(patient, "ca_15_3", 1.0) == pytest.approx(
+        min(1.0, missingness["high_cost_skip_probability_per_cost_factor"]
+            * patient.out_of_pocket_delay_factor)
+    )
+    assert generator.measurement_skip_probability(patient, "alt", 1.0) == pytest.approx(
+        missingness["base_skip_probability_by_generator"][GeneratorType.G1_SMOOTH.value]
+    )
 
 
 def test_latent_states_export_for_recovery_studies():

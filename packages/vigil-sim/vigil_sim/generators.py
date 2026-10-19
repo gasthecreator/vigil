@@ -127,6 +127,7 @@ class LongitudinalObservation:
     preanalytical_error: Optional[str] = None
     is_synthetic: bool = True
     imaging_result: Optional[bool] = None
+    imaging_probability: Optional[float] = None
     facility_id: Optional[str] = None
     treatment_active: Optional[str] = None
 
@@ -154,6 +155,7 @@ class CohortDataset:
                 "date_drawn": obs.date_drawn,
                 "imaging_performed": obs.imaging_performed,
                 "imaging_result": obs.imaging_result,
+                "imaging_probability": obs.imaging_probability,
                 "facility_id": obs.facility_id,
                 "treatment_active": obs.treatment_active,
                 "preanalytical_error": obs.preanalytical_error,
@@ -442,6 +444,34 @@ class BaseCohortGenerator(ABC):
             if (not np.isfinite(verification.get("visible_burden_threshold", np.nan))
                     or verification["visible_burden_threshold"] < 0):
                 raise ValueError("verification.visible_burden_threshold must be finite and non-negative")
+            if (not 0 <= verification.get("routine_imaging_probability", -1) <= 1
+                    or not 0 <= verification.get("maximum_imaging_probability", -1) <= 1):
+                raise ValueError("verification imaging probabilities must be in [0, 1]")
+            for threshold_key, increment_key in (
+                ("symptom_grade_thresholds", "symptom_probability_increments"),
+                ("marker_thresholds", "marker_probability_increments"),
+            ):
+                thresholds = verification.get(threshold_key, [])
+                increments = verification.get(increment_key, [])
+                if (len(thresholds) != 2 or len(increments) != 2
+                        or not np.isfinite(thresholds).all()
+                        or not np.isfinite(increments).all()
+                        or thresholds[0] >= thresholds[1]
+                        or np.any(np.asarray(increments) < 0)):
+                    raise ValueError(f"verification.{threshold_key} and {increment_key} are malformed")
+        missingness = config.get("measurement_missingness")
+        if missingness is not None:
+            for generator_type in GeneratorType:
+                probability = missingness.get("base_skip_probability_by_generator", {}).get(
+                    generator_type.value
+                )
+                if probability is None or not np.isfinite(probability) or not 0 <= probability <= 1:
+                    raise ValueError("measurement_missingness requires a valid skip probability for each generator")
+            if (not np.isfinite(missingness.get("high_cost_skip_probability_per_cost_factor", np.nan))
+                    or not 0 <= missingness["high_cost_skip_probability_per_cost_factor"] <= 1):
+                raise ValueError("measurement_missingness high-cost skip rate must be in [0, 1]")
+            if not missingness.get("high_cost_analytes"):
+                raise ValueError("measurement_missingness requires high_cost_analytes")
         if len(config["recurrence_time_gamma_by_subtype"]) != 3:
             raise ValueError("recurrence_time_gamma_by_subtype must match the three subtypes")
         if len(config["recurrence_multiplier_by_subtype"]) != 3:
@@ -466,6 +496,25 @@ class BaseCohortGenerator(ABC):
                 raise ValueError("Recurrence gamma shape/scale must be positive and offset non-negative")
         if not np.isfinite(config["recurrence_day_cap"]) or config["recurrence_day_cap"] <= 0:
             raise ValueError("recurrence_day_cap must be positive and finite")
+
+    def measurement_skip_probability(
+        self, pt: PatientBaseline, analyte_code: str, legacy_probability: float
+    ) -> float:
+        """Return the registered synthetic missingness probability for one assay."""
+        config = self.population_config.get("measurement_missingness")
+        if config is None:
+            return float(np.clip(legacy_probability, 0.0, 1.0))
+        if (self.get_generator_type() == GeneratorType.G1_SMOOTH
+                and analyte_code in config["high_cost_analytes"]):
+            probability = (
+                float(config["high_cost_skip_probability_per_cost_factor"])
+                * pt.out_of_pocket_delay_factor
+            )
+        else:
+            probability = float(
+                config["base_skip_probability_by_generator"][self.get_generator_type().value]
+            )
+        return float(np.clip(probability, 0.0, 1.0))
 
     def sample_baseline(self, patient_idx: int) -> PatientBaseline:
         """
@@ -679,7 +728,7 @@ class BaseCohortGenerator(ABC):
         symptoms: Dict[str, int],
         analytes: Dict[str, float],
         latent_state: LatentCompartmentState,
-    ) -> Tuple[bool, Optional[bool]]:
+    ) -> Tuple[bool, Optional[bool], float]:
         """
         Partial verification mechanism (ML_PROGRAM §4.2, H-D):
         Imaging (CT/US/bone scan) is triggered primarily by:
@@ -688,23 +737,35 @@ class BaseCohortGenerator(ABC):
         3. Scheduled surveillance protocol (occasional baseline verification ~15%)
         """
         # Baseline probability of routine surveillance imaging
-        p_image = 0.08 / pt.out_of_pocket_delay_factor
+        verification = self.population_config.get("verification")
+        if verification:
+            p_image = float(verification["routine_imaging_probability"]) / pt.out_of_pocket_delay_factor
+            symptom_thresholds = verification["symptom_grade_thresholds"]
+            symptom_increments = verification["symptom_probability_increments"]
+            marker_thresholds = verification["marker_thresholds"]
+            marker_increments = verification["marker_probability_increments"]
+            max_probability = float(verification["maximum_imaging_probability"])
+        else:
+            p_image = 0.08 / pt.out_of_pocket_delay_factor
+            symptom_thresholds, symptom_increments = [2, 3], [0.40, 0.70]
+            marker_thresholds, marker_increments = [35.0, 75.0], [0.30, 0.65]
+            max_probability = 0.95
 
         # Symptoms dramatically raise clinical suspicion
         max_symptom = max(symptoms.values()) if symptoms else 0
-        if max_symptom >= 3:
-            p_image += 0.70
-        elif max_symptom >= 2:
-            p_image += 0.40
+        if max_symptom >= symptom_thresholds[1]:
+            p_image += symptom_increments[1]
+        elif max_symptom >= symptom_thresholds[0]:
+            p_image += symptom_increments[0]
 
         # High tumour marker triggers imaging workup
         ca153_val = analytes.get("ca_15_3", 0.0)
-        if ca153_val >= 75.0:
-            p_image += 0.65
-        elif ca153_val >= 35.0:
-            p_image += 0.30
+        if ca153_val >= marker_thresholds[1]:
+            p_image += marker_increments[1]
+        elif ca153_val >= marker_thresholds[0]:
+            p_image += marker_increments[0]
 
-        p_image = min(0.95, p_image)
+        p_image = min(max_probability, p_image)
         performed = bool(self.rng.random() < p_image)
 
         # If imaging is performed and total metastatic burden exceeds radiological resolution threshold (burden >= 12.0)
@@ -715,7 +776,6 @@ class BaseCohortGenerator(ABC):
             + latent_state.b_brain
             + latent_state.b_loc
         )
-        verification = self.population_config.get("verification")
         burden_threshold = (
             float(verification["visible_burden_threshold"]) if verification else 12.0
         )
@@ -736,7 +796,7 @@ class BaseCohortGenerator(ABC):
                 pt.observed_recurrence_day = day
                 pt.observed_recurrence_site = pt.true_recurrence_site
 
-        return performed, result
+        return performed, result, p_image
 
     def generate_cohort(
         self,
@@ -793,7 +853,7 @@ class BaseCohortGenerator(ABC):
                 error_type = analyte_vals.pop("_preanalytical_error", None)
 
                 # Verification mechanism
-                imaging_done, imaging_result = self.evaluate_verification_mechanism(
+                imaging_done, imaging_result, imaging_probability = self.evaluate_verification_mechanism(
                     pt, d, symptoms, analyte_vals, latent_st
                 )
 
@@ -809,6 +869,7 @@ class BaseCohortGenerator(ABC):
                     preanalytical_error=error_type,
                     is_synthetic=True,
                     imaging_result=imaging_result,
+                    imaging_probability=imaging_probability,
                     facility_id=pt.facility_id,
                     treatment_active=latent_st.treatment_active,
                 )
@@ -984,12 +1045,16 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
 
                 # Informative missingness (MNAR): CA 15-3 and CEA skipped occasionally due to out-of-pocket costs
-                if code in ["ca_15_3", "ca_27_29", "cea"]:
-                    # Expensive tests skipped with higher probability when financial friction is high
-                    skip_prob = 0.12 * pt.out_of_pocket_delay_factor
-                    is_measured = bool(self.rng.random() > skip_prob)
-                else:
-                    is_measured = bool(self.rng.random() > 0.03)
+                # Expensive tests are skipped more often under financial friction.
+                legacy_skip_probability = (
+                    0.12 * pt.out_of_pocket_delay_factor
+                    if code in ["ca_15_3", "ca_27_29", "cea"]
+                    else 0.03
+                )
+                skip_probability = self.measurement_skip_probability(
+                    pt, code, legacy_skip_probability
+                )
+                is_measured = bool(self.rng.random() > skip_probability)
 
                 obs_mask[code] = is_measured
 
@@ -1093,7 +1158,8 @@ class BurstSheddingGenerator(BaseCohortGenerator):
 
                 p = analyte.plausibility
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
-                obs_mask[code] = bool(self.rng.random() > 0.05)
+                skip_probability = self.measurement_skip_probability(pt, code, 0.05)
+                obs_mask[code] = bool(self.rng.random() > skip_probability)
 
             trajectories.append(vals)
             masks.append(obs_mask)
@@ -1205,7 +1271,8 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
 
                 p = analyte.plausibility
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
-                obs_mask[code] = bool(self.rng.random() > 0.06)
+                skip_probability = self.measurement_skip_probability(pt, code, 0.06)
+                obs_mask[code] = bool(self.rng.random() > skip_probability)
 
             if preanalytical_error:
                 vals["_preanalytical_error"] = preanalytical_error

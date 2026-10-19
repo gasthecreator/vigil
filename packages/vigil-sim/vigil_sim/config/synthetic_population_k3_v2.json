@@ -40,6 +40,22 @@
     "visible_burden_threshold": 12.0,
     "sensitivity": 0.9,
     "specificity": 0.99,
+    "routine_imaging_probability": 0.08,
+    "symptom_grade_thresholds": [2, 3],
+    "symptom_probability_increments": [0.4, 0.7],
+    "marker_thresholds": [35.0, 75.0],
+    "marker_probability_increments": [0.3, 0.65],
+    "maximum_imaging_probability": 0.95,
     "result_semantics": "positive/negative only when imaging is performed; otherwise unknown"
+  },
+  "measurement_missingness": {
+    "high_cost_analytes": ["ca_15_3", "ca_27_29", "cea"],
+    "high_cost_skip_probability_per_cost_factor": 0.12,
+    "base_skip_probability_by_generator": {
+      "g1_smooth_kinetics": 0.03,
+      "g2_shedding_bursts": 0.05,
+      "g3_heavy_tailed_noise": 0.06
+    },
+    "interpretation": "G1 high-cost analytes have cost-dependent missingness; all other profiles use generator-specific MCAR rates"
   }
 }
