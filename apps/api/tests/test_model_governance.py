@@ -85,3 +85,18 @@ def test_tampered_hash_chained_record_is_refused(api_env):
     response = api_env.client.get(f"{URL}/status", headers=api_env.headers("admin"))
     assert response.status_code == 409
     assert "chain failed verification" in response.json()["detail"]
+
+
+def test_governance_transition_and_audit_event_roll_back_together(api_env, monkeypatch):
+    from vigil_api.api.endpoints import governance
+
+    def fail_audit(*_args, **_kwargs):
+        raise ValueError("audit write failed")
+
+    monkeypatch.setattr(governance, "record_audit_event", fail_audit)
+    response = api_env.client.post(EVALUATION_URL, json=payload(), headers=api_env.headers("admin"))
+    assert response.status_code == 409
+    assert response.json()["detail"] == "audit write failed"
+    status = api_env.client.get(f"{URL}/status", headers=api_env.headers("admin"))
+    assert status.status_code == 200
+    assert status.json()["records"] == []

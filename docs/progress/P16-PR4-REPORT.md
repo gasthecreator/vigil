@@ -14,10 +14,11 @@ Status: SUBMITTED FOR REVIEW. Maturity remains L0. Acceptance tests, audit files
 
 - `uv run ruff check .` — passed.
 - Focused API/migration/silent-monitor checks — 51 passed; route-policy/security/content rerun — 59 passed.
+- Post-review governance transaction/audit rollback regression — 4 tests passed; targeted Ruff checks passed.
 - Full `uv run pytest` — 864 passed, 18 skipped; PostgreSQL-only migration cases skipped locally (CI runs its PostgreSQL service).
 - All 12 CI acceptance suites — 86 passed in total.
 - `npm run web:lint`, `npm run web:build` — passed.
-- Companion gzip gate — 126,723 bytes; seeded failure confirmed above the 184,320-byte budget.
+- Companion gzip gate — 126,723 bytes; CI's seeded failure adds a deterministic incompressible fixture, runs it through the real gzip measurement and budget check, and asserts the budget failure message (184,320-byte budget).
 - Storybook build — passed; interaction/axe — 2 passed.
 - Real-server Playwright e2e — 28 passed.
 - MkDocs build and repository-wide docs links — passed (warnings remain for existing out-of-nav documents/relative links; the dedicated link checker passed with zero broken links).
@@ -29,5 +30,6 @@ Status: SUBMITTED FOR REVIEW. Maturity remains L0. Acceptance tests, audit files
 - RTL test validates document direction behavior with an English sample; it does not establish Arabic translation quality.
 - Read-aloud is browser speech synthesis, not a clinical accessibility validation.
 - Governance operates on admin-supplied live-format series and stores aggregate metrics only; this is not evidence of model safety or clinical validity. HMAC report signing uses the configured JWT secret.
+- The test-ladder UI leaves the clinician-entered prior and feedback fields blank until supplied; its end-to-end fixture enters explicit values. The UI uses the repo's local-profile role-header convention; API auth rejects those headers outside the local profile, where this page requires integration with authenticated sessions before use.
 - Storybook 10 requires Node.js 20.19 or newer; root engine and CI Node pins were raised accordingly. Full npm audit still reports 7 high and 2 moderate development-tree advisories in the existing Tailwind 3 / ESLint dependency chain; the forced fix requires Tailwind 4. The CI production dependency audit reports zero vulnerabilities.
 - No suppressions were added for this PR. Storybook emits existing-style `use client` bundler and large-chunk warnings; build succeeds.

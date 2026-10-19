@@ -227,9 +227,14 @@ jobs:
         run: npm run web:build
       - name: Seed-fail companion bundle budget
         run: |
-          if node scripts/check_companion_bundle.mjs --seed-fail; then
+          if output=$(node scripts/check_companion_bundle.mjs --seed-fail 2>&1); then
+            echo "$output"
             echo "::error::companion bundle --seed-fail unexpectedly passed"; exit 1
           fi
+          echo "$output"
+          echo "$output" | grep -Fq "Companion JS gzip budget exceeded" || {
+            echo "::error::seed-fail did not reach the companion bundle budget check"; exit 1;
+          }
       - name: Measure companion route gzip budget
         run: node scripts/check_companion_bundle.mjs
 

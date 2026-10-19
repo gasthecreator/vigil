@@ -19,11 +19,17 @@ test.describe("M9 Clinician Workstation E2E Suite (Real Backend & Seeded SQLite)
     await page.goto("/test-ladder");
     await expect(page.getByRole("heading", { name: "M4 Resource-Aware Test Ladder" })).toBeVisible();
     await expect(page.getByText("Illustrative facility templates only")).toBeVisible();
+    await page.getByLabel("Clinician-entered prior estimate").fill("0.15");
     await page.getByRole("button", { name: "Show evidence-based options" }).click();
     await expect(page.getByTestId("ladder-results")).toBeVisible();
     await expect(page.getByTestId("negative-result-warning")).toContainText("A negative result does not exclude involvement");
     await expect(page.getByText(/Unverified availability|Stale availability/).first()).toBeVisible();
 
+    await page.getByLabel("Feedback modality").fill("ct");
+    await page.getByLabel("Feedback availability").selectOption("true");
+    await page.getByLabel("Turnaround days").fill("3");
+    await page.getByLabel("Feedback price band").selectOption("3");
+    await page.getByLabel("Verification source").fill("E2E test fixture");
     await page.getByRole("button", { name: "Record audited feedback" }).click();
     await expect(page.getByText(/Availability and cost feedback recorded/)).toContainText("feedback recorded");
     await expect(page.getByText(/Availability and cost feedback recorded/)).toContainText("audit logged");

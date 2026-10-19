@@ -212,7 +212,6 @@ def evaluate_shadow(
         ),
     }
     _append(db, "shadow_evaluated", actor_id, payload)
-    db.commit()
     return {**payload, "clinician_routes_unchanged": True, "patient_level_outputs_stored": False}
 
 
@@ -229,7 +228,6 @@ def approve(db: Session, actor_id: str, evaluation_id: str) -> dict[str, Any]:
     if evaluation["approval"] is not None:
         raise GovernanceError("Evaluation approval has already been recorded")
     row = _append(db, "human_approved", actor_id, {"evaluation_id": evaluation_id})
-    db.commit()
     return {"evaluation_id": evaluation_id, "approval_record_id": row.id, "approved_by": actor_id}
 
 
@@ -248,7 +246,6 @@ def promote(db: Session, actor_id: str, evaluation_id: str) -> dict[str, Any]:
         db, "promoted", actor_id,
         {"evaluation_id": evaluation_id, "candidate_id": evaluation["candidate_id"], "previous_model": active},
     )
-    db.commit()
     return {"active_candidate": evaluation["candidate_id"], "change_record_id": row.id}
 
 
@@ -262,7 +259,6 @@ def rollback(db: Session, actor_id: str, reason: str) -> dict[str, Any]:
     if previous is None:
         raise GovernanceError("No promoted candidate is available to roll back")
     row = _append(db, "rolled_back", actor_id, {"candidate_id": previous, "from_candidate": active, "reason": reason})
-    db.commit()
     return {"active_candidate": previous, "change_record_id": row.id}
 
 

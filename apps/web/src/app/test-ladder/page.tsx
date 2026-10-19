@@ -49,12 +49,12 @@ export default function TestLadderPage() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [facilityId, setFacilityId] = useState("TEMPLATE-TERTIARY");
   const [organ, setOrgan] = useState("liver");
-  const [prior, setPrior] = useState("0.15");
+  const [prior, setPrior] = useState("");
   const [maxPriceBand, setMaxPriceBand] = useState("4");
   const [result, setResult] = useState<Ladder | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [feedback, setFeedback] = useState({ modality: "ct", available: "true", turnaround: "3", price: "3", source: "Clinician phone verification" });
+  const [feedback, setFeedback] = useState({ modality: "", available: "", turnaround: "", price: "", source: "" });
 
   useEffect(() => {
     request("/facilities").then(setFacilities).catch((error) => setMessage(error.message));
@@ -158,9 +158,9 @@ export default function TestLadderPage() {
         <div><h2 className="text-lg font-bold">Report local availability and cost</h2><p className="text-sm text-slate-600">Feedback is stored as an append-only audited report. It does not silently change evidence or recommendations.</p></div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="grid gap-1 text-sm">Modality<input aria-label="Feedback modality" value={feedback.modality} onChange={(event) => setFeedback({ ...feedback, modality: event.target.value })} className="rounded border p-2" required /></label>
-          <label className="grid gap-1 text-sm">Available<select aria-label="Feedback availability" value={feedback.available} onChange={(event) => setFeedback({ ...feedback, available: event.target.value })} className="rounded border p-2"><option value="true">Yes</option><option value="false">No</option></select></label>
+          <label className="grid gap-1 text-sm">Available<select aria-label="Feedback availability" value={feedback.available} onChange={(event) => setFeedback({ ...feedback, available: event.target.value })} className="rounded border p-2" required><option value="">Select availability</option><option value="true">Yes</option><option value="false">No</option></select></label>
           <label className="grid gap-1 text-sm">Turnaround days<input aria-label="Feedback turnaround days" type="number" min="0" max="365" value={feedback.turnaround} onChange={(event) => setFeedback({ ...feedback, turnaround: event.target.value })} className="rounded border p-2" /></label>
-          <label className="grid gap-1 text-sm">Price band (1–4)<select aria-label="Feedback price band" value={feedback.price} onChange={(event) => setFeedback({ ...feedback, price: event.target.value })} className="rounded border p-2">{[1, 2, 3, 4].map((band) => <option key={band}>{band}</option>)}</select></label>
+          <label className="grid gap-1 text-sm">Price band (1–4)<select aria-label="Feedback price band" value={feedback.price} onChange={(event) => setFeedback({ ...feedback, price: event.target.value })} className="rounded border p-2" required><option value="">Select price band</option>{[1, 2, 3, 4].map((band) => <option key={band}>{band}</option>)}</select></label>
           <label className="grid gap-1 text-sm">Verification source<input aria-label="Verification source" value={feedback.source} onChange={(event) => setFeedback({ ...feedback, source: event.target.value })} className="rounded border p-2" required /></label>
         </div>
         <button className="min-h-11 rounded border border-emerald-800 px-4 py-2 font-semibold text-emerald-900">Record audited feedback</button>

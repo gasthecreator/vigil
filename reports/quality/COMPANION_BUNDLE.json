@@ -5,7 +5,6 @@
   "machine": "darwin-arm64 25.6.0",
   "budget_gzip_bytes": 184320,
   "measured_gzip_bytes": 126723,
-  "reported_gzip_bytes": 126723,
   "seed_fail": false,
   "asset_count": 8,
   "assets": [
