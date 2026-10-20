@@ -1,0 +1,40 @@
+{
+  "artifacts_written": [],
+  "bootstrap_resamples_completed": 40000,
+  "cohort_condition_runs_completed": 40,
+  "cohort_conditions_completed": [
+    "measured_confounding",
+    "unmeasured_confounding"
+  ],
+  "evaluation_seeds_consumed": [
+    620261101,
+    620261102,
+    620261103,
+    620261104,
+    620261105,
+    620261106,
+    620261107,
+    620261108,
+    620261109,
+    620261110,
+    620261111,
+    620261112,
+    620261113,
+    620261114,
+    620261115,
+    620261116,
+    620261117,
+    620261118,
+    620261119,
+    620261120
+  ],
+  "event": "one_time_run_failed_after_cohort_generation",
+  "exception": "KeyError: 'aipw'",
+  "experiment_id": "EXP-S8-K7-002",
+  "failed_at_utc": "2026-10-20T20:11:19.314835+00:00",
+  "failure_location": "run.py::_summarize, estimator output is nested under row[\"estimates\"][\"estimates\"]",
+  "replacement_requires": "new experiment ID and disjoint registered seeds",
+  "replay_allowed": false,
+  "result_rows_persisted": false,
+  "run_commit": "c24aa4b87afd9546c3c5e21cf04658a9cd20e643"
+}
