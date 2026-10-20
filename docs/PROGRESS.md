@@ -263,6 +263,10 @@ Call-path review found the separate `CohortDataset.get_survival_training_example
 
 Audit of `experiments/EXP-CORE-ML-008/run.py::fit_calibrator` found weighted Platt calibration implemented as logistic regression with `C=1.0`, `max_iter=2000`, and `solver="lbfgs"`, while the preregistration names weighted Platt calibration but does not specify regularization/loss or convergence handling. The run and frozen test access are preserved; these settings were not tuned after access. EXP-008 remains a reproducible synthetic result for the implemented method, but the calibration protocol is under-specified; any replacement needs a new preregistration and independent seeds. This further keeps package C open.
 
+### Q-7 follow-up — reject ambiguous event ties in direct simulator labels (2026-10-20)
+
+The separate `CohortDataset.get_survival_training_examples` label path assigned recurrence when recurrence and a competing event occurred on the same day, while `WindowedFeatureExtractor.transform_cohort` rejects that unresolved order. The simulator helper now fails closed for the tie in both observed-diagnosis and oracle modes. Generator tests pass (26); the full simulator package is 57 passed and 1 unchanged calibration-gate failure (G1 conditional lead-time SD 113.615 days vs 110); Ruff, docs links, and `git diff --check` pass. Other parity between direct simulator labels and the shared cohort extractor remains open under package B.
+
 ### Q-7 follow-up — correct a stale model-constructor claim in the inventory (2026-10-20)
 
 Package A's claim inventory said `FastLandmarkJointModel` still accepted an ignored `horizon_days` argument. Source inspection confirmed it inherits the canonical logistic baseline constructor and rejects that argument; the horizon is carried by the fit labels. The inventory now matches the source and its discrepancy list numbering is unique. This is an audit-record correction only; packages A–B remain open.

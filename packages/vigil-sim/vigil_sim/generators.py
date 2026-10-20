@@ -304,6 +304,16 @@ class CohortDataset:
             has_competing_day = competing_day is not None and np.isfinite(competing_day)
             loss_to_follow_up = pt.competing_event == "lost_to_follow_up"
             terminal_competing = has_competing_day and not loss_to_follow_up
+            if (
+                rec_event
+                and rec_day is not None
+                and np.isfinite(rec_day)
+                and has_competing_day
+                and float(rec_day) == float(competing_day)
+            ):
+                raise ValueError(
+                    f"recurrence and competing event share an ambiguous day for patient {pt.patient_id}"
+                )
             if competing_day is not None and np.isfinite(competing_day) and competing_day <= obs.day:
                 continue
 

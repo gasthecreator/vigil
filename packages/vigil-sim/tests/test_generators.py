@@ -491,6 +491,32 @@ def test_oracle_training_labels_censor_recurrence_after_loss_to_follow_up():
     assert event_codes[row] == 0
 
 
+@pytest.mark.parametrize("use_observed_labels", [True, False])
+def test_survival_training_rejects_same_day_recurrence_and_competing_event(
+    use_observed_labels,
+):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=85).generate_cohort(
+        num_patients=10, duration_days=365.0
+    )
+    patient = cohort.patients[0]
+    first_observation = min(
+        (obs for obs in cohort.observations if obs.patient_id == patient.patient_id),
+        key=lambda obs: obs.day,
+    )
+    tied_event_day = first_observation.day + 10.0
+    patient.observed_recurrence_event = True
+    patient.observed_recurrence_day = tied_event_day
+    patient.true_recurrence_event = True
+    patient.true_recurrence_day = tied_event_day
+    patient.competing_event = "death"
+    patient.competing_event_day = tied_event_day
+
+    with pytest.raises(ValueError, match="share an ambiguous day"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=use_observed_labels
+        )
+
+
 def test_training_helper_requires_an_explicit_observed_or_oracle_estimand():
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=84).generate_cohort(
         num_patients=4, duration_days=180.0
