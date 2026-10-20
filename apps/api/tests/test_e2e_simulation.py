@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from vigil_api.config import settings
 from vigil_api.database import Base, engine
 from vigil_api.main import app
 
@@ -34,11 +33,10 @@ def test_e2e_surveillance_simulation(client):
     """Executes a 5-stage patient surveillance progression:
 
     1. Enrolls patient
-    2. Submits baseline pathology (triggers Model A literature/SEER prior)
-    3. Submits 5 sequential longitudinal lab draws (transitioning to an anomaly cascade)
-    4. Verifies risk elevates past the clinical alert threshold
-    5. Verifies justification_text cites biomarker velocity and organ concordance
-    6. Verifies the patient ranks in the prioritized Triage Queue
+    2. Stores baseline pathology without the retracted M1 prior
+    3. Submits 5 sequential lab draws through the separate M3/K2 workflow
+    4. Verifies recurrence-risk estimates remain unavailable
+    5. Verifies the patient remains visible in the task-oriented Triage Queue
     """
     # Step 1: Enroll Patient
     p_resp = client.post("/api/v1/patients/", json={"age": 54, "status": "active"})
@@ -61,8 +59,7 @@ def test_e2e_surveillance_simulation(client):
     )
     assert b_resp.status_code == 200, f"Failed baseline: {b_resp.text}"
     baseline = b_resp.json()
-    organ_vec = baseline["target_organ_susceptibility_vector"]
-    assert "liver" in organ_vec
+    assert baseline["target_organ_susceptibility_vector"] is None
 
     # Step 3: Ingest 5 Sequential Lab Draws (Normal -> Accelerated Spike)
     base_date = datetime(2025, 1, 15, 9, 0, 0)
@@ -120,16 +117,11 @@ def test_e2e_surveillance_simulation(client):
         assert resp.status_code == 200, f"Lab submission failed: {resp.text}"
         last_risk_response = resp.json()
 
-    # Step 4: Verify Final Lab triggered Actionable Alert
+    # Step 4: Lab data is saved while the unsupported recurrence-risk output abstains.
     assert last_risk_response is not None
-    final_risk = last_risk_response["calculated_metastasis_risk"]
-    final_flag = last_risk_response["triage_flag"]
-    final_justification = last_risk_response["justification_text"]
-
-    assert final_flag is True
-    assert final_risk >= settings.CLINICAL_ALERT_THRESHOLD
-    assert "ACTIONABLE ALERT" in final_justification
-    assert "transaminitis" in final_justification
+    assert last_risk_response["status"] == "unavailable"
+    assert last_risk_response["calculated_metastasis_risk"] is None
+    assert last_risk_response["triage_flag"] is None
 
     # Step 5: Verify Full Trajectory
     traj_resp = client.get(f"/api/v1/patients/{patient_id}/trajectory")
@@ -142,7 +134,8 @@ def test_e2e_surveillance_simulation(client):
     assert queue_resp.status_code == 200
     queue = queue_resp.json()
     assert len(queue) >= 1
-    # Eleanor Vance should be in the queue with high risk
+    # The patient remains in the queue without a fabricated recurrence-risk score.
     matching = [q for q in queue if q["patient_id"] == patient_id]
     assert len(matching) == 1
-    assert matching[0]["triage_flag"] is True
+    assert matching[0]["triage_flag"] is None
+    assert matching[0]["latest_risk"] is None

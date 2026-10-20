@@ -19,6 +19,12 @@ def map_schema_type_to_ts(prop: dict) -> str:
     if "$ref" in prop:
         return prop["$ref"].split("/")[-1]
 
+    if "const" in prop:
+        return json.dumps(prop["const"])
+
+    if "enum" in prop:
+        return " | ".join(json.dumps(value) for value in prop["enum"])
+
     any_of = prop.get("anyOf")
     if any_of:
         types = [map_schema_type_to_ts(t) for t in any_of]

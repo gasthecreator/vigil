@@ -17,6 +17,7 @@ from vigil_api.models.v2 import (
     AlertSeverity,
     AlertStatus,
     AuditEvent,
+    BaselineProfile,
     ConsentRecord,
     Facility,
     FollowUpTask,
@@ -67,6 +68,15 @@ def test_migration_lifecycle_and_constraints(temp_db_alembic):
 
     # 1. Upgrade to head
     command.upgrade(alembic_cfg, "head")
+
+    # The retracted M1 prior is optional for new records; existing JSON values
+    # are retained by the migration rather than backfilled or rewritten.
+    with engine.connect() as conn:
+        columns = conn.execute(text("PRAGMA table_info(baseline_profiles)")).mappings().all()
+    vector_column = next(
+        column for column in columns if column["name"] == "target_organ_susceptibility_vector"
+    )
+    assert vector_column["notnull"] == 0
 
     now = datetime.now(timezone.utc)
 
@@ -306,4 +316,34 @@ def test_p16_governance_and_feedback_tables_are_db_enforced_append_only(temp_db_
         with pytest.raises(DBAPIError, match="append-only table"):
             with engine.begin() as connection:
                 connection.execute(text(f"DELETE FROM {table}"))
+    engine.dispose()
+
+
+def test_quarantine_migration_preserves_legacy_m1_values(temp_db_alembic):
+    alembic_cfg, db_url = temp_db_alembic
+    engine = create_engine(db_url)
+    command.upgrade(alembic_cfg, "heads")
+    prior = {"bone": 0.4, "liver": 0.3, "lung": 0.2, "brain": 0.1}
+    with Session(engine) as session:
+        patient = Patient(age=50, status="active", synthetic=True)
+        session.add(patient)
+        session.flush()
+        session.add(
+            BaselineProfile(
+                patient_id=patient.id,
+                tumor_stage=2,
+                er_status=True,
+                pr_status=True,
+                her2_status=False,
+                has_hypertension=False,
+                renal_history=False,
+                target_organ_susceptibility_vector=prior,
+            )
+        )
+        session.commit()
+
+    command.upgrade(alembic_cfg, "head")
+    with Session(engine) as session:
+        baseline = session.query(BaselineProfile).one()
+        assert baseline.target_organ_susceptibility_vector == prior
     engine.dispose()

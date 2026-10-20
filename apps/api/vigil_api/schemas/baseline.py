@@ -28,6 +28,6 @@ class BaselineResponse(BaseModel):
     her2_status: bool
     has_hypertension: bool
     renal_history: bool
-    target_organ_susceptibility_vector: TargetOrganVector
+    target_organ_susceptibility_vector: TargetOrganVector | None
 
     model_config = ConfigDict(from_attributes=True)

@@ -238,8 +238,8 @@ def test_fhir_r4_observation_round_trip(client):
 # ============================================================================
 
 
-def test_triage_queue_action_urgency_ordering_differs_from_risk(client):
-    """Proves that Triage Queue sorts by composite Action Urgency and differs from risk alone.
+def test_triage_queue_orders_recorded_follow_up_tasks_without_risk_scores(client):
+    """The queue prioritizes stored follow-up work and never invents recurrence-risk urgency.
 
     Fixture:
     - Patient LowRiskOverdue:
@@ -315,14 +315,10 @@ def test_triage_queue_action_urgency_ordering_differs_from_risk(client):
     item_high_risk = next(q for q in queue if q["patient_id"] == p_high_risk)
     item_overdue = next(q for q in queue if q["patient_id"] == p_overdue)
 
-    # Verify that raw risk ordering is HighRisk > Overdue
-    assert item_high_risk["latest_risk"] > item_overdue["latest_risk"]
-
-    # Verify that action urgency ordering is Overdue > HighRisk
-    assert item_overdue["action_urgency"] > item_high_risk["action_urgency"], (
-        f"Expected Overdue ({item_overdue['action_urgency']}) to have higher action urgency "
-        f"than HighRisk ({item_high_risk['action_urgency']})"
-    )
+    assert item_high_risk["latest_risk"] is None
+    assert item_overdue["latest_risk"] is None
+    assert item_high_risk["action_urgency"] is None
+    assert item_overdue["action_urgency"] is None
 
     # Verify queue ordering places Overdue ahead of HighRisk
     idx_overdue = [i for i, q in enumerate(queue) if q["patient_id"] == p_overdue][0]

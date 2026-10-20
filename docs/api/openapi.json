@@ -255,7 +255,14 @@
             "type": "boolean"
           },
           "target_organ_susceptibility_vector": {
-            "$ref": "#/components/schemas/TargetOrganVector"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetOrganVector"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "tumor_stage": {
             "title": "Tumor Stage",
@@ -1057,6 +1064,53 @@
           "wbc_count"
         ],
         "title": "LabResultCreate",
+        "type": "object"
+      },
+      "LabSubmissionResponse": {
+        "properties": {
+          "calculated_metastasis_risk": {
+            "title": "Calculated Metastasis Risk",
+            "type": "null"
+          },
+          "lab_result_id": {
+            "title": "Lab Result Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "outputs_withheld": {
+            "title": "Outputs Withheld",
+            "type": "boolean"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "recorded",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "triage_flag": {
+            "title": "Triage Flag",
+            "type": "null"
+          }
+        },
+        "required": [
+          "status",
+          "patient_id",
+          "lab_result_id",
+          "message",
+          "outputs_withheld",
+          "calculated_metastasis_risk",
+          "triage_flag"
+        ],
+        "title": "LabSubmissionResponse",
         "type": "object"
       },
       "LinacMachineResponse": {
@@ -2505,52 +2559,6 @@
         "title": "RiskAssessmentSummary",
         "type": "object"
       },
-      "RiskInferenceResponse": {
-        "properties": {
-          "calculated_metastasis_risk": {
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Calculated Metastasis Risk",
-            "type": "number"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "justification_text": {
-            "title": "Justification Text",
-            "type": "string"
-          },
-          "lab_result_id": {
-            "title": "Lab Result Id",
-            "type": "string"
-          },
-          "patient_id": {
-            "title": "Patient Id",
-            "type": "string"
-          },
-          "triage_flag": {
-            "title": "Triage Flag",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "patient_id",
-          "lab_result_id",
-          "calculated_metastasis_risk",
-          "triage_flag",
-          "justification_text",
-          "created_at"
-        ],
-        "title": "RiskInferenceResponse",
-        "type": "object"
-      },
       "RowReport": {
         "properties": {
           "adjudicated_action": {
@@ -3083,23 +3091,55 @@
       "SimulationResponse": {
         "properties": {
           "delta_risk": {
-            "title": "Delta Risk",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Risk"
           },
           "justification_text": {
             "title": "Justification Text",
             "type": "string"
           },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
           "projected_risk": {
-            "title": "Projected Risk",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Risk"
+          },
+          "status": {
+            "const": "abstained",
+            "title": "Status",
+            "type": "string"
           },
           "triage_flag": {
-            "title": "Triage Flag",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triage Flag"
           }
         },
         "required": [
+          "status",
+          "message",
           "projected_risk",
           "triage_flag",
           "justification_text",
@@ -3955,8 +3995,15 @@
             "type": "number"
           },
           "calculated_metastasis_risk": {
-            "title": "Calculated Metastasis Risk",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculated Metastasis Risk"
           },
           "ci_lower": {
             "anyOf": [
@@ -3967,7 +4014,6 @@
                 "type": "null"
               }
             ],
-            "default": 0.0,
             "title": "Ci Lower"
           },
           "ci_upper": {
@@ -3979,7 +4025,6 @@
                 "type": "null"
               }
             ],
-            "default": 1.0,
             "title": "Ci Upper"
           },
           "creatinine": {
@@ -4000,8 +4045,15 @@
             "type": "string"
           },
           "triage_flag": {
-            "title": "Triage Flag",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triage Flag"
           },
           "wbc_count": {
             "title": "Wbc Count",
@@ -4017,6 +4069,8 @@
           "ca_15_3",
           "wbc_count",
           "calculated_metastasis_risk",
+          "ci_lower",
+          "ci_upper",
           "triage_flag",
           "justification_text"
         ],
@@ -4026,9 +4080,15 @@
       "TriageQueueItem": {
         "properties": {
           "action_urgency": {
-            "default": 0.0,
-            "title": "Action Urgency",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Urgency"
           },
           "age": {
             "title": "Age",
@@ -4051,8 +4111,15 @@
             "type": "string"
           },
           "latest_risk": {
-            "title": "Latest Risk",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Risk"
           },
           "patient_id": {
             "title": "Patient Id",
@@ -4087,8 +4154,15 @@
             "type": "integer"
           },
           "triage_flag": {
-            "title": "Triage Flag",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triage Flag"
           },
           "tumor_stage": {
             "anyOf": [
@@ -4122,7 +4196,10 @@
           "status",
           "latest_risk",
           "triage_flag",
-          "latest_justification"
+          "latest_justification",
+          "target_organ_susceptibility_vector",
+          "action_urgency",
+          "urgency_breakdown"
         ],
         "title": "TriageQueueItem",
         "type": "object"
@@ -4506,7 +4583,7 @@
     },
     "/api/v1/analytics/cohort": {
       "get": {
-        "description": "Provides population-level surveillance KPIs and organ tropism distribution.\n\nRestricted to clinical/quality roles and computed only over patients with active consent.",
+        "description": "Provides cohort size and explicit unavailable model-metric status.\n\nRestricted to clinical/quality roles and computed only over patients with active consent.",
         "operationId": "get_cohort_analytics_api_v1_analytics_cohort_get",
         "parameters": [
           {
@@ -4575,7 +4652,7 @@
     },
     "/api/v1/analytics/seed-demo-cohort": {
       "post": {
-        "description": "Seeds a clinical demo cohort with diverse risk profiles.\n\nGated strictly to local development environments and admin role per Condition S5-2.",
+        "description": "Seeds explicitly synthetic demo patients and lab trajectories.\n\nGated strictly to local development environments and admin role per Condition S5-2.",
         "operationId": "seed_demo_cohort_api_v1_analytics_seed_demo_cohort_post",
         "parameters": [
           {
@@ -7100,7 +7177,7 @@
     },
     "/api/v1/patients/triage": {
       "get": {
-        "description": "View 1: Triage Queue.\nReturns the complete roster of patients dynamically ordered by composite Action Urgency\n(combining risk, uncertainty/abstention, overdue follow-ups, and treatment delay).\nMaster Plan \u00a76.9 (M9) / Phase 5b.",
+        "description": "View 1: Triage Queue.\nReturns the consented patient roster. Patients with active follow-up tasks are\nordered by stored escalation level and due date; no recurrence-risk score is used.\nMaster Plan \u00a76.9 (M9) / Phase 5b.",
         "operationId": "get_triage_queue_api_v1_patients_triage_get",
         "parameters": [
           {
@@ -7372,7 +7449,7 @@
     },
     "/api/v1/patients/{id}/baseline": {
       "post": {
-        "description": "Submits primary tumor pathology and comorbidities.",
+        "description": "Stores primary tumor pathology and comorbidities without deriving M1 priors.",
         "operationId": "submit_baseline_profile_api_v1_patients__id__baseline_post",
         "parameters": [
           {
@@ -7951,13 +8028,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RiskInferenceResponse"
+                  "$ref": "#/components/schemas/LabSubmissionResponse"
                 }
               }
             },
             "description": "Successful Response"
           },
           "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabSubmissionResponse"
+                }
+              }
+            },
             "description": "Silent mode: the draw is recorded and outputs are withheld."
           },
           "422": {
@@ -9127,7 +9211,7 @@
     },
     "/api/v1/patients/{id}/simulate": {
       "post": {
-        "description": "'What-If' Simulation Endpoint.\nAllows oncologists to project the impact of a hypothetical future lab draw\non the patient's continuous metastasis risk trajectory. Clinician/admin only,\nrequires active consent.",
+        "description": "What-if endpoint contract retained for compatibility. It explicitly abstains\nwhile no validated recurrence-risk model is available.",
         "operationId": "simulate_future_lab_api_v1_patients__id__simulate_post",
         "parameters": [
           {

@@ -11,8 +11,10 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import pytest
 from fastapi.testclient import TestClient
 from vigil_api.config import settings
-from vigil_api.database import Base, engine
+from vigil_api.database import Base, SessionLocal, engine
 from vigil_api.main import app
+from vigil_api.ml.inference import VigilEngine
+from vigil_api.models.patient import RiskInference
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -38,7 +40,8 @@ def test_root_and_health(client):
     h = client.get("/health")
     assert h.status_code == 200
     h_data = h.json()
-    assert h_data["ml_engine_loaded"] is True
+    assert h_data["ml_engine_loaded"] is False
+    assert h_data["ml_model_status"] == "quarantined_no_validated_model"
     assert h_data["is_synthetic"] is True
 
 
@@ -66,10 +69,7 @@ def test_patient_workflow(client):
     assert b_resp.status_code == 200
     b_data = b_resp.json()
     assert "target_organ_susceptibility_vector" in b_data
-    organ_vec = b_data["target_organ_susceptibility_vector"]
-    assert "bone" in organ_vec
-    assert "liver" in organ_vec
-    assert organ_vec["bone"] > organ_vec["brain"]  # Luminal A bone tropism prior
+    assert b_data["target_organ_susceptibility_vector"] is None
 
     # 3. Submit Normal Lab Result
     l1_resp = client.post(
@@ -85,9 +85,9 @@ def test_patient_workflow(client):
     )
     assert l1_resp.status_code == 200
     l1_data = l1_resp.json()
-    assert "calculated_metastasis_risk" in l1_data
-    assert l1_data["triage_flag"] is False
-    assert l1_data["calculated_metastasis_risk"] < settings.CLINICAL_ALERT_THRESHOLD
+    assert l1_data["status"] == "unavailable"
+    assert l1_data["calculated_metastasis_risk"] is None
+    assert l1_data["triage_flag"] is None
 
     # 4. Submit Anomaly Lab Result
     l2_resp = client.post(
@@ -103,10 +103,10 @@ def test_patient_workflow(client):
     )
     assert l2_resp.status_code == 200
     l2_data = l2_resp.json()
-    assert l2_data["triage_flag"] is True
-    assert l2_data["calculated_metastasis_risk"] >= settings.CLINICAL_ALERT_THRESHOLD
-    assert "ACTIONABLE ALERT" in l2_data["justification_text"]
-    assert "SYNTHETIC RESEARCH PROTOTYPE" in l2_data["justification_text"]
+    assert l2_data["status"] == "unavailable"
+    assert l2_data["calculated_metastasis_risk"] is None
+    assert l2_data["triage_flag"] is None
+    assert "validated recurrence-risk model is unavailable" in l2_data["message"]
 
     # 5. Check Trajectory Endpoint
     t_resp = client.get(f"/api/v1/patients/{patient_id}/trajectory")
@@ -115,14 +115,18 @@ def test_patient_workflow(client):
     assert len(trajectory) == 2
     assert trajectory[0]["alt_level"] == 22.0
     assert trajectory[1]["alt_level"] == 95.0
-    assert trajectory[1]["triage_flag"] is True
+    assert trajectory[1]["calculated_metastasis_risk"] is None
+    assert trajectory[1]["ci_lower"] is None
+    assert trajectory[1]["ci_upper"] is None
+    assert trajectory[1]["triage_flag"] is None
 
     # 6. Check Triage Queue
     q_resp = client.get("/api/v1/patients/triage")
     assert q_resp.status_code == 200
     queue = q_resp.json()
     assert len(queue) >= 1
-    assert queue[0]["latest_risk"] >= settings.CLINICAL_ALERT_THRESHOLD
+    assert queue[0]["latest_risk"] is None
+    assert queue[0]["triage_flag"] is None
 
     # 7. Check Simulation Endpoint
     s_resp = client.post(
@@ -139,7 +143,47 @@ def test_patient_workflow(client):
     )
     assert s_resp.status_code == 200
     sim_data = s_resp.json()
-    assert sim_data["projected_risk"] >= settings.CLINICAL_ALERT_THRESHOLD
+    assert sim_data["status"] == "abstained"
+    assert sim_data["projected_risk"] is None
+    assert sim_data["delta_risk"] is None
+    assert sim_data["triage_flag"] is None
+
+    # Historical heuristic rows stay hidden even if present in storage.
+    db = SessionLocal()
+    try:
+        assert db.query(RiskInference).filter_by(patient_id=patient_id).count() == 0
+        db.add(
+            RiskInference(
+                patient_id=patient_id,
+                lab_result_id=l2_data["lab_result_id"],
+                calculated_metastasis_risk=0.99,
+                triage_flag=True,
+                justification_text="historical quarantined output",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    detail = client.get(f"/api/v1/patients/{patient_id}").json()
+    assert detail["latest_risk"] is None
+    assert detail["triage_flag"] is None
+    assert "historical quarantined output" not in str(detail)
+    trajectory = client.get(f"/api/v1/patients/{patient_id}/trajectory").json()
+    assert all(point["calculated_metastasis_risk"] is None for point in trajectory)
+    assert all(point["triage_flag"] is None for point in trajectory)
+    cohort = client.get("/api/v1/analytics/cohort", headers={"X-Vigil-Role": "clinician"}).json()
+    assert cohort["risk_metrics_status"] == "unavailable"
+    assert cohort["average_cohort_risk"] is None
+    assert cohort["critical_alerts"] is None
+
+
+def test_legacy_inference_methods_fail_closed():
+    engine = VigilEngine()
+    with pytest.raises(RuntimeError, match="quarantined"):
+        engine.predict_baseline_susceptibility({"er_status": True})
+    with pytest.raises(RuntimeError, match="quarantined"):
+        engine.predict_risk("patient", {"ca_15_3": 100})
 
 
 def test_cors_security(client):
@@ -157,6 +201,18 @@ def test_demo_seeding_gating(client, monkeypatch):
         "/api/v1/analytics/seed-demo-cohort?num_patients=2", headers={"X-Vigil-Role": "admin"}
     )
     assert r_local.status_code == 201
+    seeded = r_local.json()
+    assert "no recurrence-risk estimates were generated" in seeded["message"]
+    db = SessionLocal()
+    try:
+        assert (
+            db.query(RiskInference)
+            .filter(RiskInference.patient_id.in_(seeded["patient_ids"]))
+            .count()
+            == 0
+        )
+    finally:
+        db.close()
 
     # In production environment, it is forbidden/unauthorized (HTTP 401 or 403)
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")

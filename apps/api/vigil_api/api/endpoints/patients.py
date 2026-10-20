@@ -15,14 +15,12 @@ from sqlalchemy.orm import Session
 from vigil_api import silent_mode
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
-from vigil_api.config import settings
 from vigil_api.consent import consented_patient_ids, has_active_consent, verify_patient_consent
 from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
 from vigil_api.disclosure import DISCLOSURE_LOCKED_DETAIL, withheld_for
 from vigil_api.ml.detector_helpers import detector_from_dict, detector_to_dict
-from vigil_api.ml.inference import SentinelEngine
-from vigil_api.models.patient import BaselineProfile, LabResult, Patient, RiskInference
+from vigil_api.models.patient import BaselineProfile, LabResult, Patient
 from vigil_api.models.v2 import (
     Alert,
     AlertSeverity,
@@ -40,7 +38,7 @@ from vigil_api.models.v2 import (
 )
 from vigil_api.schemas.baseline import BaselineCreate, BaselineResponse
 from vigil_api.schemas.inference import (
-    RiskInferenceResponse,
+    LabSubmissionResponse,
     SimulationRequest,
     SimulationResponse,
     TrajectoryPoint,
@@ -272,11 +270,10 @@ def get_triage_queue(
 ):
     """
     View 1: Triage Queue.
-    Returns the complete roster of patients dynamically ordered by composite Action Urgency
-    (combining risk, uncertainty/abstention, overdue follow-ups, and treatment delay).
+    Returns the consented patient roster. Patients with active follow-up tasks are
+    ordered by stored escalation level and due date; no recurrence-risk score is used.
     Master Plan §6.9 (M9) / Phase 5b.
     """
-    now = datetime.now(timezone.utc)
     patients = db.query(Patient.id, Patient.age, Patient.status).all()
     baselines = {
         r.patient_id: r
@@ -297,45 +294,44 @@ def get_triage_queue(
     # Batched reads (constant number of statements, independent of the number of patients). This replaced a
     # per-patient query loop (about 6 statements per patient) found by the real-HTTP load test; the original
     # implementation is kept as the oracle in apps/api/tests/test_triage_batched.py.
-    latest_inference_by_patient = _latest_columns_per_patient(
-        db,
-        RiskInference,
-        RiskInference.created_at,
-        RiskInference.calculated_metastasis_risk,
-        RiskInference.triage_flag,
-        RiskInference.justification_text,
-    )
-    latest_assessment_by_patient = _latest_columns_per_patient(
-        db,
-        RiskAssessment,
-        RiskAssessment.created_at,
-        RiskAssessment.abstention,
-        RiskAssessment.uncertainty,
-        RiskAssessment.score,
-    )
     lab_stats = {
         pid: (last_drawn, count)
         for pid, last_drawn, count in db.query(
             LabResult.patient_id, func.max(LabResult.date_drawn), func.count(LabResult.id)
         ).group_by(LabResult.patient_id)
     }
-    # Active tasks are reduced in SQL to what the urgency formula uses: the earliest due date (=> largest overdue
-    # days) and the highest escalation level per patient. Materialising every pending task made the cost grow with
-    # the number of unresolved tasks (thousands after a soak run).
-    task_stats = {
-        pid: (earliest_due, max_escalation)
-        for pid, earliest_due, max_escalation in db.query(
-            FollowUpTask.patient_id,
-            func.min(FollowUpTask.due_date),
-            func.max(FollowUpTask.escalation_level),
+    # Select one real active task per patient, ordered by persisted escalation,
+    # due date, and stable ID. Do not combine the due date of one task with the
+    # escalation of another or synthesize a patient risk score.
+    ranked_tasks = (
+        db.query(
+            FollowUpTask.patient_id.label("patient_id"),
+            FollowUpTask.due_date.label("due_date"),
+            FollowUpTask.escalation_level.label("escalation_level"),
+            func.row_number()
+            .over(
+                partition_by=FollowUpTask.patient_id,
+                order_by=(
+                    desc(FollowUpTask.escalation_level),
+                    FollowUpTask.due_date.asc(),
+                    FollowUpTask.id.asc(),
+                ),
+            )
+            .label("task_rank"),
         )
         .filter(FollowUpTask.status.in_(["pending", "in_progress", "escalated"]))
-        .group_by(FollowUpTask.patient_id)
+        .subquery()
+    )
+    task_stats = {
+        patient_id: (due_date, escalation_level)
+        for patient_id, due_date, escalation_level in db.query(
+            ranked_tasks.c.patient_id,
+            ranked_tasks.c.due_date,
+            ranked_tasks.c.escalation_level,
+        ).filter(ranked_tasks.c.task_rank == 1)
     }
 
     for patient in patients:
-        latest_inference = latest_inference_by_patient.get(patient.id)
-
         baseline = baselines.get(patient.id)
         subtype = "Unknown"
         organ_vector = None
@@ -343,7 +339,8 @@ def get_triage_queue(
 
         if baseline:
             tumor_stage = baseline.tumor_stage
-            organ_vector = baseline.target_organ_susceptibility_vector
+            # Historical M1 priors are unsupported and are not served as predictions.
+            organ_vector = None
             if baseline.er_status and not baseline.her2_status:
                 subtype = "Luminal A (ER+/PR+)"
             elif baseline.her2_status and (baseline.er_status or baseline.pr_status):
@@ -355,96 +352,37 @@ def get_triage_queue(
 
         last_lab_date, total_labs = lab_stats.get(patient.id, (None, 0))
 
-        latest_risk = latest_inference.calculated_metastasis_risk if latest_inference else 0.0
-        triage_flag = latest_inference.triage_flag if latest_inference else False
-        justification = (
-            latest_inference.justification_text
-            if latest_inference
-            else "Awaiting initial surveillance lab draw."
-        )
-
-        # 1. Risk component (weight 0.40)
-        s_risk = float(latest_risk)
-
-        # 2. Uncertainty / Abstention component (weight 0.25)
-        latest_assessment = latest_assessment_by_patient.get(patient.id)
-        if latest_assessment:
-            if latest_assessment.abstention:
-                s_unc = 1.0
-            else:
-                p_err = (latest_assessment.uncertainty or {}).get("p_error", 0.0)
-                margin = 0.04 * (1.0 - abs(latest_assessment.score - 0.5))
-                s_unc = min(1.0, max(float(p_err), float(2.0 * margin)))
-        else:
-            margin = 0.04 * (1.0 - abs(latest_risk - 0.5))
-            s_unc = min(1.0, float(2.0 * margin))
-
-        # 3. Overdue follow-up tasks component (weight 0.20)
-        max_overdue_days = 0.0
         max_escalation = 0
         has_active_tasks = patient.id in task_stats
+        earliest_due = None
         if has_active_tasks:
             earliest_due, max_escalation = task_stats[patient.id]
-            due = earliest_due if earliest_due.tzinfo else earliest_due.replace(tzinfo=timezone.utc)
-            max_overdue_days = max(0.0, (now - due).total_seconds() / 86400.0)
-
-        if has_active_tasks:
-            s_overdue = min(1.0, max(max_overdue_days / 14.0, max_escalation / 3.0))
-        else:
-            s_overdue = 0.0
-
-        # 4. Treatment / surveillance delay component (weight 0.15)
-        if last_lab_date:
-            lab_date = (
-                last_lab_date
-                if last_lab_date.tzinfo
-                else last_lab_date.replace(tzinfo=timezone.utc)
-            )
-            days_since = max(0.0, (now - lab_date).total_seconds() / 86400.0)
-            if days_since > 90.0:
-                s_delay = min(1.0, (days_since - 90.0) / 90.0)
-            else:
-                s_delay = 0.0
-        else:
-            s_delay = 0.5
-
-        # Composite Action Urgency
-        action_urgency = round(
-            0.40 * s_risk + 0.25 * s_unc + 0.20 * s_overdue + 0.15 * s_delay,
-            4,
-        )
-        urgency_breakdown = {
-            "risk_component": round(0.40 * s_risk, 4),
-            "uncertainty_component": round(0.25 * s_unc, 4),
-            "overdue_component": round(0.20 * s_overdue, 4),
-            "delay_component": round(0.15 * s_delay, 4),
-        }
 
         # Cheap tuples only: pydantic objects are built for the requested page, not for the whole roster
         # (found by the scale probe: cost grew linearly with the number of patients).
         rows.append(
             (
-                (action_urgency, latest_risk, last_lab_date.timestamp() if last_lab_date else 0.0),
+                (0 if has_active_tasks else 1, -max_escalation, earliest_due.timestamp() if earliest_due else float("inf"), last_lab_date.timestamp() if last_lab_date else 0.0, patient.id),
                 dict(
                     patient_id=patient.id,
                     age=patient.age,
                     status=patient.status,
                     tumor_stage=tumor_stage,
                     subtype=subtype,
-                    latest_risk=latest_risk,
-                    triage_flag=triage_flag,
-                    latest_justification=justification,
+                    latest_risk=None,
+                    triage_flag=None,
+                    latest_justification="Validated recurrence-risk estimate unavailable.",
                     target_organ_susceptibility_vector=organ_vector,
                     last_lab_date=last_lab_date,
                     total_labs=total_labs,
-                    action_urgency=action_urgency,
-                    urgency_breakdown=urgency_breakdown,
+                    action_urgency=None,
+                    urgency_breakdown=None,
                 ),
             )
         )
 
-    # Strictly descending by action_urgency, ties broken by latest_risk and recency (unchanged ordering).
-    rows.sort(key=lambda r: r[0], reverse=True)
+    # Patients with active tasks appear first, ordered by stored escalation and due date.
+    rows.sort(key=lambda r: r[0])
     response.headers["X-Total-Count"] = str(len(rows))
     return [TriageQueueItem(**kw) for _, kw in rows[offset : offset + limit]]
 
@@ -459,13 +397,6 @@ def get_patient_detail(
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
 
     baseline = patient.baseline_profile
-    latest_inference = (
-        db.query(RiskInference)
-        .filter(RiskInference.patient_id == id)
-        .order_by(desc(RiskInference.created_at))
-        .first()
-    )
-
     record_audit_event(
         db=db,
         actor_id=current_user.id,
@@ -478,8 +409,6 @@ def get_patient_detail(
     db.commit()
 
     withheld = withheld_for(db, patient, current_user)
-    if withheld:
-        latest_inference = None
 
     return {
         "id": patient.id,
@@ -497,13 +426,14 @@ def get_patient_detail(
             "her2_status": baseline.her2_status,
             "has_hypertension": baseline.has_hypertension,
             "renal_history": baseline.renal_history,
-            "target_organ_susceptibility_vector": baseline.target_organ_susceptibility_vector,
+            "target_organ_susceptibility_vector": None,
         }
         if baseline
         else None,
-        "latest_risk": latest_inference.calculated_metastasis_risk if latest_inference else None,
-        "triage_flag": latest_inference.triage_flag if latest_inference else False,
-        "latest_justification": latest_inference.justification_text if latest_inference else None,
+        "latest_risk": None,
+        "triage_flag": None,
+        "latest_justification": "Validated recurrence-risk estimate unavailable.",
+        "risk_assessment_status": "unavailable",
         "results_withheld": withheld,
     }
 
@@ -598,24 +528,14 @@ def submit_baseline_profile(
         require_roles(UserRole.CLINICIAN, UserRole.NURSE_CLERK, UserRole.ADMIN)
     ),
 ):
-    """Submits primary tumor pathology and comorbidities."""
+    """Stores primary tumor pathology and comorbidities without deriving M1 priors."""
     silent_mode.block_in_silent_mode(
-        "Baseline profile entry (returns the organ-susceptibility vector)"
+        "Baseline profile entry"
     )
-    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    verify_patient_consent(patient_id=id, db=db, user=current_user)
 
-    engine = SentinelEngine.get_instance()
-    model_a_input = {
-        "age": patient.age,
-        "tumor_stage": payload.tumor_stage,
-        "er_status": payload.er_status,
-        "pr_status": payload.pr_status,
-        "her2_status": payload.her2_status,
-        "has_hypertension": payload.has_hypertension,
-        "renal_history": payload.renal_history,
-    }
-    organ_vector = engine.predict_baseline_susceptibility(model_a_input)
-
+    # E12's saved numerical excerpt was retracted; preserve pathology inputs but
+    # do not return the unsupported M1 organ-susceptibility prior.
     # Check if baseline already exists, update or create
     baseline = db.query(BaselineProfile).filter(BaselineProfile.patient_id == id).first()
     if baseline:
@@ -625,7 +545,7 @@ def submit_baseline_profile(
         baseline.her2_status = payload.her2_status
         baseline.has_hypertension = payload.has_hypertension
         baseline.renal_history = payload.renal_history
-        baseline.target_organ_susceptibility_vector = organ_vector
+        baseline.target_organ_susceptibility_vector = None
     else:
         baseline = BaselineProfile(
             id=str(uuid.uuid4()),
@@ -636,7 +556,7 @@ def submit_baseline_profile(
             her2_status=payload.her2_status,
             has_hypertension=payload.has_hypertension,
             renal_history=payload.renal_history,
-            target_organ_susceptibility_vector=organ_vector,
+            target_organ_susceptibility_vector=None,
         )
         db.add(baseline)
 
@@ -652,7 +572,17 @@ def submit_baseline_profile(
 
     db.commit()
     db.refresh(baseline)
-    return baseline
+    return {
+        "id": baseline.id,
+        "patient_id": baseline.patient_id,
+        "tumor_stage": baseline.tumor_stage,
+        "er_status": baseline.er_status,
+        "pr_status": baseline.pr_status,
+        "her2_status": baseline.her2_status,
+        "has_hypertension": baseline.has_hypertension,
+        "renal_history": baseline.renal_history,
+        "target_organ_susceptibility_vector": None,
+    }
 
 
 def ingest_single_observation_internal(
@@ -996,8 +926,13 @@ def ingest_single_observation_internal(
 
 @router.post(
     "/{id}/labs",
-    response_model=RiskInferenceResponse,
-    responses={202: {"description": "Silent mode: the draw is recorded and outputs are withheld."}},
+    response_model=LabSubmissionResponse,
+    responses={
+        202: {
+            "model": LabSubmissionResponse,
+            "description": "Silent mode: the draw is recorded and outputs are withheld.",
+        }
+    },
 )
 def submit_lab_result(
     id: str,
@@ -1029,13 +964,9 @@ def submit_lab_result(
         ("wbc", payload.wbc_count, "10^3/uL"),
     ]
 
-    last_risk_score = 0.0
-    has_alert = False
-    justifications = []
-
     for code, val, unit in analyte_draws:
         if val is not None and val > 0.0:
-            obs, risk, alert, task, m3_res = ingest_single_observation_internal(
+            ingest_single_observation_internal(
                 db=db,
                 patient=patient,
                 current_user=current_user,
@@ -1044,31 +975,34 @@ def submit_lab_result(
                 unit=unit,
                 specimen_collected_at=drawn_date,
             )
-            if risk is not None:
-                last_risk_score = max(last_risk_score, risk.score)
-            if alert is not None:
-                has_alert = True
-            justifications.append(f"{code}: {m3_res['action']}")
 
-    # Save legacy LabResult record for backward schema compatibility
+    # Preserve silent mode's disclosure contract while recording the lab data.
     if silent_mode.is_silent():
         # Silent mode: record the draw (data), run no legacy engine, return no risk (the prototype engine's
         # output would be a clinician-visible model output).
-        db.add(
-            LabResult(
-                patient_id=id,
-                date_drawn=drawn_date,
-                alt_level=payload.alt_level,
-                ast_level=payload.ast_level,
-                creatinine=payload.creatinine,
-                ca_15_3=payload.ca_15_3,
-                wbc_count=payload.wbc_count,
-            )
+        silent_lab_record = LabResult(
+            patient_id=id,
+            date_drawn=drawn_date,
+            alt_level=payload.alt_level,
+            ast_level=payload.ast_level,
+            creatinine=payload.creatinine,
+            ca_15_3=payload.ca_15_3,
+            wbc_count=payload.wbc_count,
         )
+        db.add(silent_lab_record)
+        db.flush()
         db.commit()
         return JSONResponse(
             status_code=status.HTTP_202_ACCEPTED,
-            content={"status": "recorded", "outputs_withheld": True, "patient_id": id},
+            content={
+                "status": "recorded",
+                "outputs_withheld": True,
+                "patient_id": id,
+                "lab_result_id": silent_lab_record.id,
+                "message": "Lab data recorded; model outputs are withheld in silent mode.",
+                "calculated_metastasis_risk": None,
+                "triage_flag": None,
+            },
         )
 
     lab_record = LabResult(
@@ -1083,60 +1017,16 @@ def submit_lab_result(
     db.add(lab_record)
     db.flush()
 
-    # Query historical labs for legacy SentinelEngine risk projection
-    historical_labs = (
-        db.query(LabResult)
-        .filter(LabResult.patient_id == id, LabResult.id != lab_record.id)
-        .order_by(LabResult.date_drawn.asc())
-        .all()
-    )
-    historical_dicts = [
-        {
-            "date_drawn": h.date_drawn.isoformat(),
-            "alt_level": h.alt_level,
-            "ast_level": h.ast_level,
-            "creatinine": h.creatinine,
-            "ca_15_3": h.ca_15_3,
-            "wbc_count": h.wbc_count,
-        }
-        for h in historical_labs
-    ]
-    baseline_dict = None
-    if patient.baseline_profile:
-        baseline_dict = {
-            "target_organ_susceptibility_vector": patient.baseline_profile.target_organ_susceptibility_vector
-        }
-
-    engine = SentinelEngine.get_instance()
-    calc_risk, legacy_triage, legacy_justification = engine.predict_risk(
-        patient_id=id,
-        new_lab_result={
-            "date_drawn": lab_record.date_drawn.isoformat(),
-            "alt_level": lab_record.alt_level,
-            "ast_level": lab_record.ast_level,
-            "creatinine": lab_record.creatinine,
-            "ca_15_3": lab_record.ca_15_3,
-            "wbc_count": lab_record.wbc_count,
-        },
-        historical_labs=historical_dicts,
-        baseline_profile=baseline_dict,
-    )
-
-    is_triage = has_alert or last_risk_score >= settings.CLINICAL_ALERT_THRESHOLD or legacy_triage
-    final_risk = max(last_risk_score, calc_risk)
-    risk_record = RiskInference(
-        patient_id=id,
-        lab_result_id=lab_record.id,
-        calculated_metastasis_risk=final_risk,
-        triage_flag=is_triage,
-        justification_text=legacy_justification,
-        created_at=datetime.now(timezone.utc),
-    )
-    db.add(risk_record)
     db.commit()
-    db.refresh(risk_record)
-
-    return risk_record
+    return {
+        "patient_id": id,
+        "lab_result_id": lab_record.id,
+        "status": "unavailable",
+        "message": "Lab results were recorded and the validated recurrence-risk model is unavailable.",
+        "outputs_withheld": False,
+        "calculated_metastasis_risk": None,
+        "triage_flag": None,
+    }
 
 
 @router.get("/{id}/trajectory", response_model=List[TrajectoryPoint])
@@ -1167,13 +1057,6 @@ def get_patient_trajectory(
     prev_alt = None
 
     for lab in labs:
-        inference = lab.risk_inference
-        risk = inference.calculated_metastasis_risk if inference else 0.0
-
-        # Conformal uncertainty margin
-        margin = 0.04 * (1.0 - abs(risk - 0.5))
-        ci_lower = max(0.0, round(risk - margin, 4))
-        ci_upper = min(1.0, round(risk + margin, 4))
 
         # Velocity calculations
         ca_vel = 0.0
@@ -1195,15 +1078,13 @@ def get_patient_trajectory(
                 creatinine=lab.creatinine,
                 ca_15_3=lab.ca_15_3,
                 wbc_count=lab.wbc_count,
-                calculated_metastasis_risk=risk,
-                ci_lower=ci_lower,
-                ci_upper=ci_upper,
+                calculated_metastasis_risk=None,
+                ci_lower=None,
+                ci_upper=None,
                 ca153_velocity_pct=ca_vel,
                 alt_velocity_pct=alt_vel,
-                triage_flag=inference.triage_flag if inference else False,
-                justification_text=inference.justification_text
-                if inference
-                else "Pending model evaluation.",
+                triage_flag=None,
+                justification_text="Validated recurrence-risk estimate unavailable.",
             )
         )
 
@@ -1218,63 +1099,19 @@ def simulate_future_lab(
     current_user: User = Depends(require_roles(UserRole.CLINICIAN, UserRole.ADMIN)),
 ):
     """
-    'What-If' Simulation Endpoint.
-    Allows oncologists to project the impact of a hypothetical future lab draw
-    on the patient's continuous metastasis risk trajectory. Clinician/admin only,
-    requires active consent.
+    What-if endpoint contract retained for compatibility. It explicitly abstains
+    while no validated recurrence-risk model is available.
     """
     silent_mode.block_in_silent_mode("The what-if simulation")
-    patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
+    verify_patient_consent(patient_id=id, db=db, user=current_user)
 
-    labs = (
-        db.query(LabResult)
-        .filter(LabResult.patient_id == id)
-        .order_by(LabResult.date_drawn.asc())
-        .all()
-    )
-    historical_dicts = [
-        {
-            "date_drawn": lab.date_drawn.isoformat(),
-            "alt_level": lab.alt_level,
-            "ast_level": lab.ast_level,
-            "creatinine": lab.creatinine,
-            "ca_15_3": lab.ca_15_3,
-            "wbc_count": lab.wbc_count,
-        }
-        for lab in labs
-    ]
-
-    baseline_dict = None
-    if patient.baseline_profile:
-        baseline_dict = {
-            "target_organ_susceptibility_vector": patient.baseline_profile.target_organ_susceptibility_vector
-        }
-
-    latest_inference = (
-        db.query(RiskInference)
-        .filter(RiskInference.patient_id == id)
-        .order_by(desc(RiskInference.created_at))
-        .first()
-    )
-    current_risk = latest_inference.calculated_metastasis_risk if latest_inference else 0.0
-
-    hypothetical_lab = dict(payload.hypothetical_lab)
-    hypothetical_lab.setdefault("date_drawn", datetime.utcnow().isoformat())
-
-    engine = SentinelEngine.get_instance()
-    proj_risk, triage_flag, justification = engine.predict_risk(
-        patient_id=id,
-        new_lab_result=hypothetical_lab,
-        historical_labs=historical_dicts,
-        baseline_profile=baseline_dict,
-    )
-
-    delta = float(round(proj_risk - current_risk, 4))
     return SimulationResponse(
-        projected_risk=proj_risk,
-        triage_flag=triage_flag,
-        justification_text=justification,
-        delta_risk=delta,
+        status="abstained",
+        message="No validated recurrence-risk model is available; hypothetical risk was not calculated.",
+        projected_risk=None,
+        triage_flag=None,
+        justification_text="No prediction was generated.",
+        delta_risk=None,
     )
 
 

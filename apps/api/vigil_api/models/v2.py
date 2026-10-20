@@ -564,7 +564,7 @@ class BaselineProfile(Base):
     her2_status = Column(Boolean, nullable=False)
     has_hypertension = Column(Boolean, default=False, nullable=False)
     renal_history = Column(Boolean, default=False, nullable=False)
-    target_organ_susceptibility_vector = Column(JSON, nullable=False)
+    target_organ_susceptibility_vector = Column(JSON, nullable=True)
 
     patient = relationship("Patient", back_populates="baseline_profile")
 

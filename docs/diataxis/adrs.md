@@ -42,3 +42,4 @@
 - [ADR-0038: K8 utilities validate inputs and narrow claims to evidence](../adr/0038-k8-contract-input-validation-and-claim-boundary.md)
 - [ADR-0039: Landmark features respect observation time and outcome contracts](../adr/0039-landmark-features-respect-observation-time-and-outcome-contract.md)
 - [ADR-0040: Version generator mechanics without rehabilitating results](../adr/0040-version-generator-mechanics-without-rehabilitating-results.md)
+- [ADR-0041: Quarantine unsupported API risk outputs](../adr/0041-quarantine-unsupported-api-risk-outputs.md)
