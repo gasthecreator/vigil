@@ -15,6 +15,7 @@ Includes:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List
 
 import numpy as np
@@ -24,6 +25,46 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from vigil_core.analytes import ANALYTE_REGISTRY
+
+
+@dataclass(frozen=True)
+class TrainingTargetContract:
+    """Source target metadata retained by fitted models when supplied by the caller."""
+
+    estimand: str
+    horizon_days: float
+    synthetic_only: bool | None = None
+
+
+def _training_target_contract(y: pd.Series) -> TrainingTargetContract | None:
+    """Validate explicit label metadata; never infer an estimand or horizon from values."""
+    attrs = getattr(y, "attrs", {})
+    keys = {"target_estimand", "horizon_days", "synthetic_only"}
+    present = keys & set(attrs)
+    if not present:
+        return None
+    if not {"target_estimand", "horizon_days"} <= present:
+        raise ValueError("target metadata must include target_estimand and horizon_days")
+    estimand = attrs["target_estimand"]
+    horizon = attrs["horizon_days"]
+    if not isinstance(estimand, str) or not estimand.strip():
+        raise ValueError("target_estimand must be a non-empty string")
+    if isinstance(horizon, (bool, np.bool_)) or not np.isscalar(horizon):
+        raise ValueError("target horizon_days must be a finite positive number, not boolean")
+    try:
+        horizon_days = float(horizon)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("target horizon_days must be finite and positive") from exc
+    if not np.isfinite(horizon_days) or horizon_days <= 0:
+        raise ValueError("target horizon_days must be finite and positive")
+    synthetic_only = attrs.get("synthetic_only")
+    if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
+        raise ValueError("synthetic_only target metadata must be boolean when supplied")
+    return TrainingTargetContract(
+        estimand=estimand.strip(),
+        horizon_days=horizon_days,
+        synthetic_only=None if synthetic_only is None else bool(synthetic_only),
+    )
 
 
 def _reject_unknown_fit_options(options: dict[str, object]) -> None:
@@ -107,6 +148,9 @@ class BaseSurveillanceModel(ABC):
     def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> BaseSurveillanceModel:  # reality: stateless
         pass
 
+    def _validate_target_contract(self, y: pd.Series) -> TrainingTargetContract | None:
+        return _training_target_contract(y)
+
     @abstractmethod
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
         """Returns a prospective score in [0, 1]; it is not necessarily calibrated."""
@@ -122,6 +166,7 @@ class PrevalenceBaseline(BaseSurveillanceModel):
 
     def __init__(self):
         self.prevalence: float | None = None
+        self.target_contract_: TrainingTargetContract | None = None
 
     def fit(
         self,
@@ -131,7 +176,9 @@ class PrevalenceBaseline(BaseSurveillanceModel):
         **kwargs,
     ) -> PrevalenceBaseline:
         _reject_unknown_fit_options(kwargs)
+        target_contract = self._validate_target_contract(y)
         self.prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
+        self.target_contract_ = target_contract
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -157,12 +204,15 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
             else cutoff
         )
         self.fallback_prevalence: float | None = None
+        self.target_contract_: TrainingTargetContract | None = None
 
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> SingleThresholdBaseline:
         _reject_unknown_fit_options(kwargs)
+        target_contract = self._validate_target_contract(y)
         self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
+        self.target_contract_ = target_contract
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -196,12 +246,15 @@ class VelocityBaseline(BaseSurveillanceModel):
         self.cea_slope_col = cea_slope_col
         self.cutoff = velocity_cutoff
         self.fallback_prevalence: float | None = None
+        self.target_contract_: TrainingTargetContract | None = None
 
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> VelocityBaseline:
         _reject_unknown_fit_options(kwargs)
+        target_contract = self._validate_target_contract(y)
         self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
+        self.target_contract_ = target_contract
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -247,6 +300,7 @@ class RegularizedCoxHazardBaseline(BaseSurveillanceModel):
             C=C, max_iter=2000, random_state=random_state, solver="lbfgs"
         )
         self.feature_cols: List[str] = []
+        self.target_contract_: TrainingTargetContract | None = None
 
     def fit(
         self,
@@ -256,6 +310,7 @@ class RegularizedCoxHazardBaseline(BaseSurveillanceModel):
         **kwargs,
     ) -> RegularizedCoxHazardBaseline:
         _reject_unknown_fit_options(kwargs)
+        target_contract = self._validate_target_contract(y)
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         self.feature_cols = list(feat_df.columns)
 
@@ -263,6 +318,7 @@ class RegularizedCoxHazardBaseline(BaseSurveillanceModel):
         imputed_X = self.imputer.fit_transform(feat_df)
         scaled_X = self.scaler.fit_transform(imputed_X)
         self.model.fit(scaled_X, labels, sample_weight=weights)
+        self.target_contract_ = target_contract
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -312,6 +368,7 @@ class GradientBoostingBaseline(BaseSurveillanceModel):
         )
         self.feature_cols: List[str] = []
         self.imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+        self.target_contract_: TrainingTargetContract | None = None
 
     def fit(
         self,
@@ -321,11 +378,13 @@ class GradientBoostingBaseline(BaseSurveillanceModel):
         **kwargs,
     ) -> GradientBoostingBaseline:
         _reject_unknown_fit_options(kwargs)
+        target_contract = self._validate_target_contract(y)
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         self.feature_cols = list(feat_df.columns)
 
         imputed_X = self.imputer.fit_transform(feat_df)
         self.model.fit(imputed_X, labels, sample_weight=weights)
+        self.target_contract_ = target_contract
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:

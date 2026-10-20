@@ -406,6 +406,18 @@ def _model_view(X: pd.DataFrame) -> pd.DataFrame:
     return X.drop(columns=[c for c in ("eval_day",) if c in X.columns])
 
 
+def _target_series(values: np.ndarray, horizon: float) -> pd.Series:
+    """Attach the partner fixed-horizon estimand before fitting a surveillance model."""
+    horizon_days = float(horizon)
+    labels = pd.Series(
+        np.asarray(values, dtype=float),
+        name=f"observed_recurrence_before_competing_death_within_{horizon_days:g}d",
+    )
+    labels.attrs["target_estimand"] = "observed_recurrence_before_competing_death"
+    labels.attrs["horizon_days"] = horizon_days
+    return labels
+
+
 def _out_of_fold(
     dev: Landmarks, horizon: float, folds: int = 5
 ) -> Dict[str, np.ndarray]:
@@ -430,7 +442,7 @@ def _out_of_fold(
         train_weights_all = compute_ipcw_weights(dev.T[tr], dev.E[tr], horizon)
         det_train = train_weights_all > 0
         trd = tr[det_train]
-        ytr = pd.Series(dev.y[trd])
+        ytr = _target_series(dev.y[trd], horizon)
         if ytr.nunique() < 2:
             raise InsufficientData(
                 "a cross-fitting fold has a single outcome class in its training part"
@@ -471,7 +483,7 @@ def fit_on_development(
     first = dev.first
     Tf, Ef = dev.T[first], dev.E[first]
     det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
-    Xtr, ytr = _model_view(dev.X[det]), pd.Series(dev.y[det])
+    Xtr, ytr = _model_view(dev.X[det]), _target_series(dev.y[det], horizon)
     train_weights = compute_ipcw_weights(dev.T, dev.E, horizon)[det]
     b1 = SingleThresholdBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     b2 = VelocityBaseline().fit(Xtr, ytr, sample_weight=train_weights)

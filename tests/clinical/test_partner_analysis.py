@@ -560,6 +560,8 @@ def test_dev_and_test_share_no_patient(runs):
 def test_the_operating_point_is_chosen_on_development_to_meet_the_budget(runs):
     _, _, plan = runs["signal"]
     assert plan.dev_alert_rate <= PARAMS["PR-04"] + 1e-9 and 0.0 < plan.threshold < 1.0
+    assert plan.candidate.target_contract_.estimand == "observed_recurrence_before_competing_death"
+    assert plan.candidate.target_contract_.horizon_days == pa.HORIZON
 
 
 def test_confirmatory_results_are_reproducible_and_null_data_meet_no_criterion(runs):

@@ -14,7 +14,11 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from vigil_ml.baselines import BaseSurveillanceModel, _prepare_classifier_training_data
+from vigil_ml.baselines import (
+    BaseSurveillanceModel,
+    TrainingTargetContract,
+    _prepare_classifier_training_data,
+)
 
 
 class BayesianJointModelK3(BaseSurveillanceModel):
@@ -83,6 +87,7 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
             C=C, max_iter=2000, random_state=random_state, solver="lbfgs"
         )
         self.is_fitted = False
+        self.target_contract_: TrainingTargetContract | None = None
         self.feature_names_: List[str] = [
             *_LANDMARK_FEATURE_COLUMNS,
             *(f"{column}_missing" for column in _LANDMARK_FEATURE_COLUMNS),
@@ -111,6 +116,7 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         if kwargs:
             raise TypeError(f"Unsupported fit options: {sorted(kwargs)}")
 
+        target_contract = self._validate_target_contract(y)
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         X_fit = X.loc[feat_df.index]
         feat_mat = self._extract_landmark_features(X_fit)
@@ -120,6 +126,7 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         self.classifier.fit(scaled_feat, labels, sample_weight=weights)
         self.fitted_coef_ = self.classifier.coef_[0]
         self.fitted_intercept_ = float(self.classifier.intercept_[0])
+        self.target_contract_ = target_contract
         self.is_fitted = True
 
         return self

@@ -47,11 +47,15 @@ def test_historical_bayesian_k3_alias_fails_closed(longitudinal_survival_data):
 
 def test_fast_landmark_logistic_research_baseline(longitudinal_survival_data):
     X, y, _, _ = longitudinal_survival_data
+    y = y.copy()
+    y.attrs.update(target_estimand="observed_diagnosis", horizon_days=365.0)
     with pytest.raises(TypeError):
         LandmarkLogisticResearchBaseline(horizon_days=365.0)
     model = LandmarkLogisticResearchBaseline()
     model.fit(X, y)
     preds = model.predict_risk(X)
+    assert model.target_contract_.estimand == "observed_diagnosis"
+    assert model.target_contract_.horizon_days == 365.0
 
     assert isinstance(FastLandmarkJointModel(), LandmarkLogisticResearchBaseline)
     with pytest.raises(TypeError, match="horizon_days"):

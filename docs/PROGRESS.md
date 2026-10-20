@@ -245,6 +245,10 @@ Call-site tracing found `FastLandmarkJointModel(horizon_days=...)` accepted valu
 
 The PR #79 CI run for this source update confirms the unchanged K3 shuffled-outcome canary still fails: 76 evaluator tests passed and `test_k3_joint_model_canaries` produced AUC 0.6136378551 against the fixed 0.60 ceiling. The coverage job stopped at that test failure before evaluating its ratchet; the seeded-failure check passed. This matches the existing proposal-bound failure and was not addressed by weakening the test. Other workflows were still running at the last poll.
 
+### Q-7 follow-up — retain target contract on fitted baselines (2026-10-20)
+
+The label producer tagged each Series with `target_estimand` and `horizon_days`, but B0–B4 discarded those attrs during numeric conversion, and the partner path first converted labels to bare arrays. Fitted baselines now expose validated `target_contract_` metadata when explicitly supplied; partial or boolean horizon metadata fails, and untagged inputs remain explicitly unknown (`None`) instead of being inferred. Partner training attaches its fixed-horizon observed-recurrence-before-competing-death contract. Baseline/joint model tests pass (23/23), the complete partner-analysis module passes (43/43), changed Python files pass Ruff, and claims policy, 515 documentation links, and `git diff --check` pass. This records training intent only, not evidence that model behavior or estimand is valid.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
