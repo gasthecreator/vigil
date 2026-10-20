@@ -153,6 +153,10 @@ Source audit found `BayesianJointModelK3` emitted unsupported posterior-shaped d
 
 Package F source review confirmed `ProductionEnsembleK8` remained callable despite S-016 documenting a fixed handwritten weighted sum that never called the named models. ADR-0050 now preserves the legacy import but makes fit and prediction fail closed; a regression test covers both methods, and STUBS plus the claims inventory reflect the containment. Historical benchmark artifacts remain unchanged. The focused quarantine test passes; full vigil-ml suite: 419 passed, 2 failed on the already recorded B1 and logistic fixed-score floors, with no K8 failures. Ruff and mypy for the changed module, claims policy, all 494 documentation links, and `git diff --check` pass. This closes one callable false-model path only; package F/G and Q-7 remain open.
 
+### Q-7 update — reconcile source audit after model quarantines (2026-10-20)
+
+A source-to-audit consistency check found `CORE-ML-RERUN-2026-10.md` still described `kinetic_k1.py` as a competing implementation even though it is a shim, and described the removed K3 sampler as current. The audit now reflects the K1 shim, K3 fail-closed disposition, canonical logistic baseline API, and K8 ensemble quarantine, while retaining old source behavior only as historical evidence. Claims policy, all 494 docs links and `git diff --check` pass. This corrects audit truthfulness; package A remains open pending the complete prompt/model/result crosswalk.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
