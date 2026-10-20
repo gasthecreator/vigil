@@ -22,6 +22,7 @@ PREREG = """# x
 |---|---|---|---|---|
 | PR-01 | a | 0.80 | r | PROPOSED |
 | PR-04 | budget | **no default** | r | PROPOSED (value required) |
+| PR-10 | dca | **no default** | r | PROPOSED (value required) |
 """
 
 
@@ -42,6 +43,12 @@ def _freeze(prereg_text: str, **over) -> dict:
                 "date": "2027-01-05",
             },
             {"id": "PR-04", "value": "3", "ratifier": "Dr A (clinical lead)", "date": "2027-01-05"},
+            {
+                "id": "PR-10",
+                "value": "[0.05, 0.1, 0.2]",
+                "ratifier": "Dr A (clinical lead)",
+                "date": "2027-01-05",
+            },
         ],
     }
     rec.update(over)
@@ -84,7 +91,7 @@ def test_any_edit_after_freeze_fails_the_hash(tmp_path):
     assert any("sha256" in e.lower() for e in errs)
 
 
-@pytest.mark.parametrize("drop", ["PR-01", "PR-04"])
+@pytest.mark.parametrize("drop", ["PR-01", "PR-04", "PR-10"])
 def test_unratified_parameter_fails(tmp_path, drop):
     rec = _freeze(PREREG)
     rec["ratifications"] = [r for r in rec["ratifications"] if r["id"] != drop]
@@ -115,6 +122,15 @@ def test_unknown_parameter_in_freeze_is_rejected(tmp_path):
         {"id": "PR-99", "value": "1", "ratifier": "x", "date": "2027-01-05"}
     )
     assert any("PR-99" in e for e in _check(tmp_path, rec=rec))
+
+
+@pytest.mark.parametrize(
+    "value", ["no default", "[]", "[0.1, 0.1]", "[0.2, 0.1]", "[0, 0.5]", "[0.5, 1]", '["0.1"]']
+)
+def test_dca_grid_must_be_explicit_and_valid(value, tmp_path):
+    rec = _freeze(PREREG)
+    next(r for r in rec["ratifications"] if r["id"] == "PR-10")["value"] = value
+    assert any("PR-10" in e for e in _check(tmp_path, rec=rec))
 
 
 def test_repository_state_is_not_frozen_and_the_cli_exits_nonzero():

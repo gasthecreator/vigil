@@ -33,7 +33,7 @@ Bootstrap: 2000 resamples, patients as the resampling unit, RNG seed fixed in th
 1. **Verification-bias analysis (mandatory).** Sensitivity and specificity are reported only together with an inverse-probability-of-verification-weighted estimate and a Begg-Greenes-type sensitivity analysis; complete-case estimates are labelled as selection-biased (as in the synthetic study S3, a simulation result, not a real-data one). The propensity model is fitted on development patients and applied to the frozen test patients. Covariate medians are fit on development only and accompanied by missingness indicators; no test-set propensity fitting or literal-value imputation is permitted. This is a proposed analysis rule pending clinical/statistical ratification at freeze.
 2. **Subgroups** (age band, receptor subtype, stage at diagnosis, facility): metrics with intervals, worst-group value, and a statement of power; a subgroup with fewer than PR-05 events is reported as "insufficient data", not estimated.
 3. **Lead time:** distribution (median and interquartile range) between first alert and confirming test, relative to the best comparator, with its definition; length-bias and overdetection caveats stated (`ML_PROGRAM` 4.5).
-4. **Calibration before recalibration**, calibration-in-the-large, reliability plot data, decision-curve data with IPCW net benefit.
+4. **Calibration before recalibration**, calibration-in-the-large, reliability plot data, and decision-curve data with IPCW net benefit at the explicitly ratified PR-10 grid only. If PR-10 is not ratified and frozen, DCA is reported as "not run".
 5. **Missed-Signal Audit (M10), aggregate only:** counts of dismissed significant serial elevations; any cell with fewer than PR-06 patients is suppressed.
 6. **Data quality:** the loader's per-row rejection report (counts by reason) is part of the report; a rejection rate above PR-07 stops the analysis for review.
 
@@ -57,6 +57,7 @@ A breach pauses further evaluation and triggers the review in `docs/clinical/PIL
 | PR-07 | Loader rejection rate that stops the analysis | 0.10 | A tenth of rows failing validation suggests a mapping error, not noise | PROPOSED |
 | PR-08 | Minimum window size for silent-mode drift monitoring (events or predictions) | 30 | Smaller windows give intervals too wide to act on | PROPOSED |
 | PR-09 | Tolerated shortfall of conformal coverage | 0.05 | Absolute shortfall against the nominal level before a breach | PROPOSED |
+| PR-10 | DCA probability threshold grid | **no default** | Decision thresholds determine which clinical trade-offs are displayed; the clinical lead must choose and ratify the strictly increasing list in the freeze record | PROPOSED (value required) |
 
 ## 8. Multiplicity, missing data, deviations
 - Holm-Bonferroni across C1 to C3; secondary analyses are descriptive and not corrected.
@@ -67,7 +68,7 @@ A breach pauses further evaluation and triggers the review in `docs/clinical/PIL
 TRIPOD+AI checklist and PROBAST+AI self-appraisal accompany the report. Results are written only by scripts to `reports/clinical/` with the SHA-256 of this file and of the freeze record embedded.
 
 ## 10. Freeze procedure (owner and clinical lead)
-1. The clinical lead and owner review section 7 and record a named ratification per row (value may differ from the proposal; the ratified value is the one used) in `docs/clinical/PREREG-FREEZE.json` (`ratifications`: id, value, ratifier, date).
+1. The clinical lead and owner review section 7 and record a named ratification per row (value may differ from the proposal; the ratified value is the one used) in `docs/clinical/PREREG-FREEZE.json` (`ratifications`: id, value, ratifier, date). PR-10's value is a JSON array of strictly increasing finite probabilities in `(0, 1)`; no DCA curve is reported before this grid is ratified.
 2. The data steward records the partition key identifier and the bootstrap seed (the key itself is not committed).
 3. The freeze record also carries `analysis_spec_sha256`, the SHA-256 of `docs/clinical/ANALYSIS-SPEC.md` (the operational definitions this document leaves open: landmarks, features, candidate and comparator models, alert definition, recalibration, test statistics). Run `python scripts/check_prereg_freeze.py`; it fails on any unratified row, any placeholder, or a SHA-256 mismatch of either document.
 4. Commit the freeze record alone. Nothing in this document is edited afterwards.

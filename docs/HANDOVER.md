@@ -85,3 +85,4 @@ These owner-only actions satisfy the additions in `docs/audits/PLAN-GAP-ANALYSIS
 | H-304 | First tagged release | After `PROMPT-P16` PR 3 lands: `git tag v1.0.0-rc.2` on a green `main` and let the release workflow build SBOM + provenance; sign with your key (H-209). |
 | H-305 | OpenSSF Best Practices badge and Scorecard | Register the project at bestpractices.dev; record the Scorecard score from the scorecard workflow in `docs/PROGRESS.md` notes; target >= 8. |
 | H-306 | L1 acceptance walkthrough | Run `make demo` with `docs/demo/OWNER-SCRIPT.md`; if satisfied, sign the L1 acceptance line in `docs/PROGRESS.md` (plan section 18.2 item 9). |
+| H-307 | Ratify partner DCA threshold grid (PR-10) | Clinical lead and owner choose a strictly increasing probability list, record it as a JSON array in the preregistration freeze, and approve the analysis specification before any test split is opened. |

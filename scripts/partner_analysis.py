@@ -150,7 +150,9 @@ def to_vigil_frames(
         )
         if r["analyte"] in TRACKED_ANALYTES:
             cell[r["analyte"]] = float(r["value_canonical"])
-    observations_df = pd.DataFrame(sorted(obs.values(), key=lambda d: (d["patient_id"], d["day"])))
+    observation_rows: List[Dict[str, Any]] = list(obs.values())
+    observation_rows.sort(key=lambda row: (row["patient_id"], row["day"]))
+    observations_df = pd.DataFrame(observation_rows)
     return patients_df, observations_df
 
 
@@ -202,7 +204,7 @@ def ipcw_auc(score: np.ndarray, T: np.ndarray, E: np.ndarray, horizon: float = H
 
 def _logit(p: np.ndarray) -> np.ndarray:
     p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
-    return np.log(p / (1 - p))
+    return np.asarray(np.log(p / (1 - p)), dtype=float)
 
 
 def weighted_calibration_fit(
@@ -244,7 +246,10 @@ def alert_burden(
     df = pd.DataFrame(
         {"pid": patient_ids, "day": eval_day, "a": np.asarray(p) >= threshold}
     ).sort_values(["pid", "day"])
-    for pid, g in df.groupby("pid", sort=True):
+    for raw_pid, g in df.groupby("pid", sort=True):
+        if not isinstance(raw_pid, str):
+            raise ValueError("patient_ids must contain strings")
+        pid = raw_pid
         alerts[pid] = int(g["a"].sum())
         months[pid] = max(0.0, (end_day[pid] - float(g["day"].iloc[0])) / DAYS_PER_MONTH)
     return alerts, months
@@ -285,7 +290,7 @@ class FittedPlan:
         return 1.0 / (1.0 + np.exp(-(self.recal_intercept + self.recal_slope * _logit(raw))))
 
     def comparator_risk(self, X: pd.DataFrame) -> np.ndarray:
-        return self.comparator.predict_risk(_model_view(X))
+        return np.asarray(self.comparator.predict_risk(_model_view(X)), dtype=float)
 
 
 VERIFICATION_FEATURE_COLUMNS = ("age", "ca_15_3_curr", "history_length")
@@ -502,7 +507,9 @@ def confirmatory(
     d_auc = ipcw_auc(p_cand, Tf, Ef, horizon) - ipcw_auc(s_comp, Tf, Ef, horizon)
     rate = 100.0 * a_vec.sum() / m_vec.sum() if m_vec.sum() > 0 else float("nan")
     rng = np.random.default_rng(seed)
-    slopes, diffs, rates = [], [], []
+    slopes: list[float] = []
+    diffs: list[float] = []
+    rates: list[float] = []
     for _ in range(n_boot):
         i = _boot_indices(n, rng)
         mm = m_vec[i].sum()
@@ -516,7 +523,10 @@ def confirmatory(
             )
         except InsufficientData:
             continue
-    ci = lambda v: (float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5)))  # noqa: E731
+
+    def ci(values: Sequence[float]) -> Tuple[float, float]:
+        return float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))
+
     sl, dl, rl = ci(slopes), ci(diffs), ci(rates)
     lo, hi, margin, budget = params["PR-01"], params["PR-02"], params["PR-03"], params["PR-04"]
     floor = 1.0 / (len(slopes) + 1)
@@ -604,6 +614,7 @@ def secondary(
     n_boot: int,
     seed: int,
     horizon: float = HORIZON,
+    dca_thresholds: Optional[Sequence[float]] = None,
 ) -> Dict[str, Any]:
     f = test.first
     Xf, Tf, Ef, yf = test.X[f].reset_index(drop=True), test.T[f], test.E[f], test.y[f]
@@ -628,12 +639,18 @@ def secondary(
             "observed_ipcw": float(np.average((Tf <= horizon) & (Ef == 1), weights=w)),
             "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes",
         }
-    dca = survival_decision_curve_analysis(p, Tf, Ef, horizon)
-    out["decision_curve"] = {
-        "thresholds": [float(x) for x in dca.thresholds[::7]],
-        "net_benefit_model": [float(x) for x in dca.net_benefit_model[::7]],
-        "net_benefit_all": [float(x) for x in dca.net_benefit_all[::7]],
-    }
+    if dca_thresholds is None:
+        out["decision_curve"] = {
+            "not_run": "no clinically ratified PR-10 threshold grid is present in the frozen protocol"
+        }
+    else:
+        threshold_array = np.asarray(dca_thresholds, dtype=float)
+        dca = survival_decision_curve_analysis(p, Tf, Ef, horizon, thresholds=threshold_array)
+        out["decision_curve"] = {
+            "thresholds": [float(x) for x in dca.thresholds],
+            "net_benefit_model": [float(x) for x in dca.net_benefit_model],
+            "net_benefit_all": [float(x) for x in dca.net_benefit_all],
+        }
     # Subgroups
     pt = test.patients.set_index("patient_id")
     ids = Xf["patient_id"]

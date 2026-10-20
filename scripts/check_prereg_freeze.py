@@ -92,6 +92,27 @@ def check(
     for pid in rat:
         if pid not in params:
             errs.append(f"{pid} is ratified but is not a parameter of PREREGISTRATION.md section 7")
+    dca = rat.get("PR-10")
+    if dca is not None:
+        try:
+            thresholds = json.loads(str(dca.get("value", "")))
+        except json.JSONDecodeError:
+            thresholds = None
+        valid_grid = (
+            isinstance(thresholds, list)
+            and len(thresholds) > 0
+            and all(
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and 0.0 < value < 1.0
+                for value in thresholds
+            )
+            and thresholds == sorted(set(thresholds))
+        )
+        if not valid_grid:
+            errs.append(
+                "PR-10: value must be a JSON array of strictly increasing probabilities in (0, 1)"
+            )
     return errs
 
 

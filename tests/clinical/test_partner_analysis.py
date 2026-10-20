@@ -431,7 +431,16 @@ def test_secondary_analyses_apply_the_small_cell_and_minimum_event_rules(runs):
     )  # nothing reaches 10 000 events
     assert s["subgroups"]["worst_group"] is None
     assert "verification_bias" in s and "decision_curve" in s and "lead_time" in s
+    assert "not_run" in s["decision_curve"]
     assert s["m10_aggregate"]["small_cell_threshold"] == 5
+
+
+def test_secondary_uses_only_the_explicit_dca_threshold_grid(runs):
+    _, test, plan = runs["signal"]
+    thresholds = np.asarray([0.1, 0.25, 0.4])
+    s = pa.secondary(test, plan, PARAMS, n_boot=5, seed=7, dca_thresholds=thresholds)
+    assert s["decision_curve"]["thresholds"] == thresholds.tolist()
+    assert len(s["decision_curve"]["net_benefit_model"]) == len(thresholds)
 
 
 def test_too_few_development_events_is_an_explicit_not_run(runs):
@@ -449,7 +458,7 @@ def _write_freeze(tmp_path, monkeypatch, budget="3.0"):
     rat = [
         {
             "id": k,
-            "value": (budget if k == "PR-04" else v),
+            "value": (budget if k == "PR-04" else "[0.05, 0.1, 0.2]" if k == "PR-10" else v),
             "ratifier": "test",
             "date": "2026-01-01",
         }
@@ -554,6 +563,9 @@ def test_real_path_runs_with_ratified_values_the_ratified_seed_and_2000_resample
         and rep["bootstrap_seed"] == 4242
         and rep["partition_key_id"] == "KEY-TEST"
     )
+    assert rep["dca_thresholds"] == [0.05, 0.1, 0.2]
+    if rep["status"] == "COMPLETED":
+        assert rep["secondary"]["decision_curve"]["thresholds"] == rep["dca_thresholds"]
     assert rep["bootstrap_resamples"] == 2000
     if rep["status"] == "COMPLETED":
         assert rep["confirmatory"]["seed"] == 4242
@@ -605,7 +617,9 @@ def test_dry_run_tolerance_accepts_float_drift_but_not_changed_facts(tmp_path):
 
     base = '{"slope": 0.374, "n": 49, "met": false, "name": "C1", "ci": [1.0, 2.0]}'
     assert pair(base, base, ".json")
-    assert pair(base, base.replace("0.374", "0.380"), ".json")  # the drift seen between macOS and Linux
+    assert pair(
+        base, base.replace("0.374", "0.380"), ".json"
+    )  # the drift seen between macOS and Linux
     assert not pair(base, base.replace("0.374", "0.600"), ".json")  # a different number
     assert not pair(base, base.replace("49", "50"), ".json")  # an integer count is exact
     assert not pair(base, base.replace("false", "true"), ".json")  # a verdict is exact

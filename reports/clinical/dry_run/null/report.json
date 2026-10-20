@@ -12,6 +12,7 @@
     "PR-04": 5.0
   },
   "parameter_provenance": "PROPOSED values of PREREGISTRATION.md (not ratified); PR-04 supplied on the command line",
+  "dca_thresholds": null,
   "bootstrap_seed": 20261018,
   "bootstrap_resamples": 2000,
   "partition_key_id": "SYNTHETIC-DRYRUN-KEY",
@@ -135,36 +136,7 @@
       "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
     },
     "decision_curve": {
-      "thresholds": [
-        0.01,
-        0.08,
-        0.15000000000000002,
-        0.22,
-        0.29000000000000004,
-        0.36000000000000004,
-        0.43,
-        0.5
-      ],
-      "net_benefit_model": [
-        0.11451460732879767,
-        0.04714071875598881,
-        -0.003106415799945041,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-      ],
-      "net_benefit_all": [
-        0.11451460732879767,
-        0.04714071875598881,
-        -0.0313300455817533,
-        -0.12388530608267982,
-        -0.23469089964012718,
-        -0.36973521678826615,
-        -0.5379483135868248,
-        -0.7532610774889804
-      ]
+      "not_run": "no clinically ratified PR-10 threshold grid is present in the frozen protocol"
     },
     "subgroups": {
       "groups": {

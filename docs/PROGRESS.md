@@ -111,6 +111,7 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | H-117 | Clinician usability of OCR confirm + consented real lab reports | H27 residual risk; EXP-OCR-001 is synthetic | `docs/HANDOVER.md` H-117 | OPEN |
 | H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
 | H-305 | Enable Dependency graph (+ GHAS if private) so dependency-review CI can hard-fail | G-07; action unsupported until graph is on | `docs/ops/GITHUB-SETTINGS.md` §3 | OPEN |
+| H-307 | Ratify partner DCA threshold grid (PR-10) | Current evaluator default is not a clinical protocol; real DCA output stays disabled until explicit thresholds are ratified and frozen | `docs/clinical/PREREGISTRATION.md` §7 and `docs/clinical/ANALYSIS-SPEC.md` §6 | OPEN |
 
 ## Open blockers
 _None recorded. External public datasets bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers._
