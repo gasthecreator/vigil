@@ -63,3 +63,4 @@
 - [ADR-0059: Configure baseline analyte sampling explicitly](../adr/0059-explicit-baseline-analyte-sampling.md)
 - [ADR-0060: Make simulator mechanics and cohort schedules explicit](../adr/0060-explicit-simulator-mechanics-and-schedule.md)
 - [ADR-0061: Preserve undefined evaluation metrics as undefined](../adr/0061-report-undefined-evaluation-metrics.md)
+- [ADR-0062: Replace seed-sensitive ML thresholds with valid software contracts](../adr/0062-redesign-seed-sensitive-ml-gates.md)
