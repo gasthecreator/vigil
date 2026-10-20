@@ -75,3 +75,26 @@ def test_runner_refuses_dirty_tree_before_creating_outputs(monkeypatch, tmp_path
     with pytest.raises(RuntimeError, match="dirty working tree"):
         RUN.main()
     assert not list(tmp_path.iterdir())
+
+
+def test_committed_output_hashes_and_report_parity():
+    root = P.parent
+    access = json.loads((root / "ACCESS_LOG.json").read_text())
+    results = json.loads((root / "results.json").read_text())
+    report = (root / "REPORT-PARITY-VERIFIED.md").read_text()
+    assert access["completed"] is True
+    assert access["source_commit"] == results["source_commit"]
+    assert RUN.sha(root / "results.json") == access["results_sha256"]
+    assert RUN.sha(root / "REPORT.md") == access["report_sha256"]
+    assert report == (root / "REPORT.md").read_text()
+    correction = access["report_correction"]
+    assert (
+        RUN.sha(root / correction["parity_verified_report"])
+        == correction["corrected_report_sha256"]
+    )
+    renderer_spec = importlib.util.spec_from_file_location(
+        "exp010_renderer", root / "render_saved_results.py"
+    )
+    renderer = importlib.util.module_from_spec(renderer_spec)
+    renderer_spec.loader.exec_module(renderer)
+    assert report == renderer.render(results)

@@ -1,0 +1,31 @@
+{
+  "completed": true,
+  "design": {
+    "conditions": {
+      "MAR": 100000,
+      "MCAR": 0,
+      "MNAR": 200000
+    },
+    "n_per_split": 2500,
+    "replicates": 100
+  },
+  "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "estimator_source_sha256": "adb47e455cc1a51ac4e09dccf946eab7f2a129e86eec3845f990f5ad8de57e10",
+  "experiment_id": "EXP-CORE-ML-010",
+  "numpy_version": "2.5.4",
+  "partner_analysis_source_sha256": "3348fe22048bff08182487d59e3dc4538a8470578bf6d55a314b4f9e9271afee",
+  "preregistration_sha256": "8678352f2f30dd7a4d1b0e3eac691128d7a1c187297509a886c0da9ad11e9861",
+  "python_version": "3.12.15",
+  "report_correction": {
+    "corrected_report_sha256": "a518f0fe51cab1c78e9aedfbb87298a97a4e127d8a984c5eb9ee4fb5c1cfebb0",
+    "original_report_sha256": "a518f0fe51cab1c78e9aedfbb87298a97a4e127d8a984c5eb9ee4fb5c1cfebb0",
+    "parity_verified_report": "REPORT-PARITY-VERIFIED.md",
+    "reason": "Post-run audit added a canonical renderer with explicit registered metric order; it renders the saved JSON byte-for-byte to the existing report. The row order differs from JSON key sorting by design; results and original report bytes are unchanged, and no cohort was reopened.",
+    "renderer_sha256": "1adce3a6c4cf552769def7586ff46e117b5ef700e755c43b7e3236bd227f39a9"
+  },
+  "report_sha256": "a518f0fe51cab1c78e9aedfbb87298a97a4e127d8a984c5eb9ee4fb5c1cfebb0",
+  "results_sha256": "2cc0f3c48a8fd8dcfc58ab2816a9c57ea90b1c0a881ea7c632f231db28624ee7",
+  "runner_sha256": "eca3497d970d053ff88956ce5f21a353bc09d5b4ca74d278a58fd36411c30811",
+  "scikit_learn_version": "1.9.1",
+  "source_commit": "a6e00fa873bba13171c4d6f7dffea4a68b58c197"
+}
