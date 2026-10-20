@@ -253,7 +253,7 @@ def evaluate_product_cohort(
         num_patients=n_patients,
         duration_days=float(config["horizon_days"]),
     )
-    observations = cohort.to_observations_dataframe(legacy_leaky=False)
+    observations = cohort.to_observations_dataframe()
     patient_frame = cohort.to_patients_dataframe()
     observations_by_patient = {
         patient_id: rows

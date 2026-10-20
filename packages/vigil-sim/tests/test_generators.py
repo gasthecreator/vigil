@@ -48,6 +48,8 @@ def test_observation_export_excludes_latent_truth_columns():
     observations = cohort.to_observations_dataframe()
 
     assert not any(column.startswith("latent_") for column in observations.columns)
+    with pytest.raises(TypeError, match="legacy_leaky"):
+        cohort.to_observations_dataframe(legacy_leaky=True)
     for analyte in cohort.observations[0].analytes:
         unobserved = ~observations[f"observed_{analyte}"]
         assert observations.loc[unobserved, analyte].isna().all()

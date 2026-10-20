@@ -49,7 +49,7 @@ def test_b1_to_b4_canaries(synthetic_cohort):
 
     latent-column, and shuffled-label canaries.
     """
-    obs_df = synthetic_cohort.to_observations_dataframe(legacy_leaky=False)
+    obs_df = synthetic_cohort.to_observations_dataframe()
     pts_df = synthetic_cohort.to_patients_dataframe()
 
     # 1. Unobserved-value canary on raw observations
@@ -89,7 +89,7 @@ def test_b1_to_b4_canaries(synthetic_cohort):
 
 def test_k1_recurrence_prediction_fails_closed(synthetic_cohort):
     """The synthetic parameter model must not emit an unsupported recurrence score."""
-    obs_df = synthetic_cohort.to_observations_dataframe(legacy_leaky=False)
+    obs_df = synthetic_cohort.to_observations_dataframe()
     pts_df = synthetic_cohort.to_patients_dataframe()
 
     # Extract sequences for test patients
@@ -126,7 +126,7 @@ def test_k2_sequential_canaries():
 
 def test_k3_joint_model_canaries(synthetic_cohort):
     """Verifies K3 inputs have no latent columns and collapses to chance under shuffled survival outcomes."""
-    obs_df = synthetic_cohort.to_observations_dataframe(legacy_leaky=False)
+    obs_df = synthetic_cohort.to_observations_dataframe()
     pts_df = synthetic_cohort.to_patients_dataframe()
 
     extractor = WindowedFeatureExtractor()

@@ -147,11 +147,11 @@ class CohortDataset:
     generator_type: GeneratorType
     seed: int
 
-    def to_observations_dataframe(self, legacy_leaky: bool = False) -> pd.DataFrame:
+    def to_observations_dataframe(self) -> pd.DataFrame:
         """Flattens longitudinal observations into a standard clinical observation dataframe.
 
-        legacy_leaky: test-only flag for Condition P8-A that reproduces pre-fix behavior
-        where unobserved values were written into the analyte column instead of np.nan.
+        Hidden simulator truth is available only through the separate explicit
+        ``to_latent_states_dataframe`` export, never through clinical observations.
         """
         rows = []
         for obs in self.observations:
@@ -172,10 +172,7 @@ class CohortDataset:
             for k, v in obs.analytes.items():
                 is_observed = bool(obs.observed_mask.get(k, True))
                 row[f"observed_{k}"] = is_observed
-                if legacy_leaky:
-                    row[k] = v
-                else:
-                    row[k] = v if is_observed else np.nan
+                row[k] = v if is_observed else np.nan
             # Symptoms
             for s, g in obs.symptoms.items():
                 row[f"symptom_{s}"] = g

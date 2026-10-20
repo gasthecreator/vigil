@@ -30,14 +30,10 @@ def test_retired_aggregate_runner_fails_closed() -> None:
         MODULE.main()
 
 
-def test_historical_leakage_comparison_fails_before_data_access_or_writing(monkeypatch) -> None:
+def test_historical_leakage_comparison_fails_before_data_access_or_writing() -> None:
     artifact = ROOT / "reports" / "ml" / "LEAKAGE_DELTA.json"
     original = artifact.read_bytes()
-    monkeypatch.setattr(
-        LEAKAGE_MODULE,
-        "get_generator",
-        lambda *_args, **_kwargs: pytest.fail("retired runner accessed simulator data"),
-    )
+    assert not hasattr(LEAKAGE_MODULE, "get_generator")
     with pytest.raises(RuntimeError, match="retired"):
         LEAKAGE_MODULE.run_comparison()
     assert artifact.read_bytes() == original
