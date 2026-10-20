@@ -22,9 +22,8 @@ from vigil_ml.features import TRACKED_ANALYTES, WindowedFeatureExtractor
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5, LabHarmonisationProfile
 from vigil_ml.joint_model import (
     BayesianJointModelK3,
-    ConvergenceDiagnostics,
     FastLandmarkJointModel,
-    PosteriorPredictiveResult,
+    LandmarkLogisticResearchBaseline,
 )
 from vigil_ml.k1 import HybridKineticModelK1
 from vigil_ml.k2 import SequentialDetector
@@ -64,8 +63,7 @@ __all__ = [
     # K3 Joint model
     "BayesianJointModelK3",
     "FastLandmarkJointModel",
-    "ConvergenceDiagnostics",
-    "PosteriorPredictiveResult",
+    "LandmarkLogisticResearchBaseline",
     # M1 Organ susceptibility
     "TARGET_ORGANS",
     "BaselineOrganSusceptibilityModelM1",

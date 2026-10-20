@@ -145,6 +145,10 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 | **P7-E** | Raw CSV/Excel & lab_changed | Raw `text/csv` and `.xlsx` body uploads supported with content negotiation; boolean string parsing fixed (`bool("False")` -> False); `lab_changed` persisted in database. | **CLOSED** |
 | **P7-F** | Frozen Attack Script | Attack script frozen at SHA-256 `2e94589e4c1962e7792eb951aa26bc71cbdc4142df62dca5007ce15970705988` committed before run; 6/6 adversarial probes repelled. | **CLOSED** |
 
+### Q-7 update — quarantine invalid K3 sampler (2026-10-20)
+
+Source audit found `BayesianJointModelK3` emitted unsupported posterior-shaped diagnostics and a marker-only score; `FastLandmarkJointModel` was actually logistic, with a dead empirical-Bayes helper, hardcoded trajectory parameters, and an ignored horizon argument. ADR-0049 removes the false sampler, makes fit/posterior-check/prediction fail closed, removes invalid public diagnostic exports and dead helper/constants, and canonically names the logistic baseline `LandmarkLogisticResearchBaseline` while preserving the legacy import alias. Package tests no longer certify fake parameter recovery, posterior coverage, or unsupported latency budgets. Final package suite: 418 passed, 2 failed on existing fixed floors (B1 AUC 0.5488 < 0.65; logistic baseline 0.7108 < 0.72), both matching the open gate proposal and unchanged. Focused K3 tests pass 5/5; Ruff, strict mypy on the changed ML module/API, claims policy and all 494 documentation links pass; `git diff --check` passes. Three ONNX exporter warnings are recorded but non-failing. No K3 experiment or frozen result was rerun. Frozen experiment sources/results were not changed or regenerated. This contains K3 misuse but does not implement the registered model or close packages A/E/Q-7.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
@@ -171,7 +175,8 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 - ADR-0003: Claims policy and truth reset (`scripts/check_claims.py`)
 - ADR-0004: CORS and environment profiles
 - ADR-0005: Proposal process (`docs/proposals/PROP-0000-template.md`)
-- ADR-0006: K3 Bayesian joint model architecture and landmark logistic regression
+- ADR-0006: K3 Bayesian joint model architecture and landmark logistic regression (historical; source quarantine superseded on disposition by ADR-0049)
+- ADR-0049: Fail closed on the invalid historical K3 sampler
 - ADR-0007: Model K1 designated as research inference module; K3/B4 shipped surveillance baselines
 - ADR-0008: Self-Contained JWT Bearer Authentication with Keycloak / OIDC Federation (`docs/adr/0008-auth-provider.md`)
 - ADR-0009: Postgres-Native Transactional Outbox with ARQ Async Worker (`docs/adr/0009-async-queue.md`)
