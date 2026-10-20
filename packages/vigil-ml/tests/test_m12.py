@@ -197,7 +197,9 @@ def test_causality_latent_columns_do_not_change_weights():
     from vigil_sim.generators import GeneratorType, get_generator
 
     def landmarks_from(obs, pts):
-        X, y, times, events = WindowedFeatureExtractor().transform_cohort(pts, obs, 365.0)
+        X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+            pts, obs, 365.0, synthetic_only=True
+        )
         keep = []
         for _pid, grp in X.groupby("patient_id", sort=False):
             ok = grp[(grp["eval_day"] >= 90.0) & (grp["eval_day"] <= 365.0)]

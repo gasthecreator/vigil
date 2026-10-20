@@ -61,7 +61,7 @@ def test_b1_to_b4_canaries(synthetic_cohort):
     # 2. Extract features
     extractor = WindowedFeatureExtractor()
     X, y, t, d = extractor.transform_cohort(
-        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0
+        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0, synthetic_only=True
     )
 
     # 3. Latent-column canary
@@ -131,7 +131,7 @@ def test_k3_joint_model_canaries(synthetic_cohort):
 
     extractor = WindowedFeatureExtractor()
     X, y, t, d = extractor.transform_cohort(
-        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0
+        patients_df=pts_df, observations_df=obs_df, horizon_days=365.0, synthetic_only=True
     )
 
     # Latent-column canary

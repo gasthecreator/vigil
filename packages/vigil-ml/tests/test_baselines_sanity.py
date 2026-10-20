@@ -35,11 +35,13 @@ def g1_cohorts():
         patients_df=train_cohort.to_patients_dataframe(),
         observations_df=train_cohort.to_observations_dataframe(),
         horizon_days=365.0,
+        synthetic_only=True,
     )
     X_te, y_te, t_te, d_te = extractor.transform_cohort(
         patients_df=test_cohort.to_patients_dataframe(),
         observations_df=test_cohort.to_observations_dataframe(),
         horizon_days=365.0,
+        synthetic_only=True,
     )
 
     return (X_tr, y_tr, t_tr, d_tr), (X_te, y_te, t_te, d_te)

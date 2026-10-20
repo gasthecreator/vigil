@@ -278,7 +278,7 @@ def test_recurrence_before_competing_death_remains_the_event_of_interest():
 def test_features_at_a_landmark_do_not_change_when_the_future_changes(tmp_path):
     gen.generate(tmp_path, 60, "signal", 7)
     res = ingest_path(tmp_path)
-    base = pa.build_landmarks(res.tables, res.cohort_ids)
+    base = pa.build_landmarks(res.tables, res.cohort_ids, synthetic_only=True)
     pid = base.X["patient_id"].iloc[0]
     days = sorted(
         r["observation_day"] for r in res.tables["lab_observations"] if r["patient_id"] == pid
@@ -288,7 +288,7 @@ def test_features_at_a_landmark_do_not_change_when_the_future_changes(tmp_path):
     for r in attacked["lab_observations"]:
         if r["patient_id"] == pid and r["observation_day"] > cut:
             r["value_canonical"] *= 1000.0  # an enormous fake future
-    atk = pa.build_landmarks(attacked, res.cohort_ids)
+    atk = pa.build_landmarks(attacked, res.cohort_ids, synthetic_only=True)
     cols = [c for c in base.X.columns if c != "patient_id"]
     b = base.X[(base.X.patient_id == pid) & (base.X.eval_day <= cut)][cols].reset_index(drop=True)
     a = atk.X[(atk.X.patient_id == pid) & (atk.X.eval_day <= cut)][cols].reset_index(drop=True)
@@ -540,7 +540,7 @@ def runs(tmp_path_factory):
         d = tmp_path_factory.mktemp(mode)
         gen.generate(d, 500, mode, 20261018)
         res = ingest_path(d)
-        lm = pa.build_landmarks(res.tables, res.cohort_ids)
+        lm = pa.build_landmarks(res.tables, res.cohort_ids, synthetic_only=True)
         split = {p: pa.assign_split(p, KEY) for p in lm.patients["patient_id"]}
         dev = lm.subset([p for p, s in split.items() if s == "dev"])
         test = lm.subset([p for p, s in split.items() if s == "test"])
@@ -562,6 +562,7 @@ def test_the_operating_point_is_chosen_on_development_to_meet_the_budget(runs):
     assert plan.dev_alert_rate <= PARAMS["PR-04"] + 1e-9 and 0.0 < plan.threshold < 1.0
     assert plan.candidate.target_contract_.estimand == "observed_recurrence_before_competing_death"
     assert plan.candidate.target_contract_.horizon_days == pa.HORIZON
+    assert plan.candidate.target_contract_.synthetic_only is True
 
 
 def test_confirmatory_results_are_reproducible_and_null_data_meet_no_criterion(runs):

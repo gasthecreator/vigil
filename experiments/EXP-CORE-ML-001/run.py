@@ -67,7 +67,8 @@ def make_split(name: str, seed: int, config: dict[str, Any]) -> tuple[pd.DataFra
     )
     namespace_cohort(cohort, name)
     X, y, times, events = WindowedFeatureExtractor().transform_cohort(
-        cohort.to_patients_dataframe(), cohort.to_observations_dataframe(), horizon_days=HORIZON_DAYS
+        cohort.to_patients_dataframe(), cohort.to_observations_dataframe(),
+        horizon_days=HORIZON_DAYS, synthetic_only=True
     )
     return X, y, times, events, cohort.to_observations_dataframe()
 

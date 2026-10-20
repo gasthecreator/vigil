@@ -68,6 +68,7 @@ class Landmarks:
     ]  # per patient: end of surveillance at risk (min(recurrence, death, follow-up))
     patients: pd.DataFrame
     counts: Dict[str, int] = field(default_factory=dict)
+    synthetic_only: bool | None = None
 
     def subset(self, patient_ids: Sequence[str]) -> "Landmarks":
         keep = self.X["patient_id"].isin(set(patient_ids)).to_numpy()
@@ -82,6 +83,7 @@ class Landmarks:
                 drop=True
             ),
             dict(self.counts),
+            self.synthetic_only,
         )
 
 
@@ -182,14 +184,18 @@ def to_vigil_frames(
 
 
 def build_landmarks(
-    tables: Dict[str, List[Dict[str, Any]]], cohort_ids: Sequence[str], horizon: float = HORIZON
+    tables: Dict[str, List[Dict[str, Any]]],
+    cohort_ids: Sequence[str],
+    horizon: float = HORIZON,
+    *,
+    synthetic_only: bool | None = None,
 ) -> Landmarks:
     patients_df, obs_df = to_vigil_frames(tables, cohort_ids)
     counts = {"cohort_complete_case": len(patients_df)}
     if obs_df.empty:
         raise InsufficientData("no post-index laboratory draws in the complete-case cohort")
     X, _y, _T, _E = WindowedFeatureExtractor().transform_cohort(
-        patients_df, obs_df, horizon_days=horizon
+        patients_df, obs_df, horizon_days=horizon, synthetic_only=synthetic_only
     )
     p = patients_df.set_index("patient_id")
     # The extractor censors at the last laboratory day; partner follow-up and
@@ -240,7 +246,7 @@ def build_landmarks(
         - int(first.sum()),
         landmarks=len(X),
     )
-    return Landmarks(X, y, T, E, first, end_day, patients_df, counts)
+    return Landmarks(X, y, T, E, first, end_day, patients_df, counts, synthetic_only)
 
 
 # ----------------------------------------------------------------------------------------------- metrics
@@ -406,7 +412,9 @@ def _model_view(X: pd.DataFrame) -> pd.DataFrame:
     return X.drop(columns=[c for c in ("eval_day",) if c in X.columns])
 
 
-def _target_series(values: np.ndarray, horizon: float) -> pd.Series:
+def _target_series(
+    values: np.ndarray, horizon: float, synthetic_only: bool | None
+) -> pd.Series:
     """Attach the partner fixed-horizon estimand before fitting a surveillance model."""
     horizon_days = float(horizon)
     labels = pd.Series(
@@ -415,6 +423,8 @@ def _target_series(values: np.ndarray, horizon: float) -> pd.Series:
     )
     labels.attrs["target_estimand"] = "observed_recurrence_before_competing_death"
     labels.attrs["horizon_days"] = horizon_days
+    if synthetic_only is not None:
+        labels.attrs["synthetic_only"] = synthetic_only
     return labels
 
 
@@ -442,7 +452,7 @@ def _out_of_fold(
         train_weights_all = compute_ipcw_weights(dev.T[tr], dev.E[tr], horizon)
         det_train = train_weights_all > 0
         trd = tr[det_train]
-        ytr = _target_series(dev.y[trd], horizon)
+        ytr = _target_series(dev.y[trd], horizon, dev.synthetic_only)
         if ytr.nunique() < 2:
             raise InsufficientData(
                 "a cross-fitting fold has a single outcome class in its training part"
@@ -483,7 +493,9 @@ def fit_on_development(
     first = dev.first
     Tf, Ef = dev.T[first], dev.E[first]
     det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
-    Xtr, ytr = _model_view(dev.X[det]), _target_series(dev.y[det], horizon)
+    Xtr, ytr = _model_view(dev.X[det]), _target_series(
+        dev.y[det], horizon, dev.synthetic_only
+    )
     train_weights = compute_ipcw_weights(dev.T, dev.E, horizon)[det]
     b1 = SingleThresholdBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     b2 = VelocityBaseline().fit(Xtr, ytr, sample_weight=train_weights)

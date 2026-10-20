@@ -349,6 +349,36 @@ def test_feature_labels_reject_boolean_horizon(horizon_days):
         )
 
 
+def test_feature_label_source_is_recorded_only_when_explicit():
+    patients = pd.DataFrame([{
+        "patient_id": "SOURCE",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "administrative_censor_day": 730.0,
+    }])
+    observations = pd.DataFrame({"patient_id": ["SOURCE"], "day": [0.0], "ca_15_3": [18.0]})
+    _, synthetic_labels, _, _ = build_landmark_features(
+        observations, patients, horizon_days=365.0, synthetic_only=True
+    )
+    assert synthetic_labels.attrs["synthetic_only"] is True
+
+    _, unknown_labels, _, _ = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+    assert "synthetic_only" not in unknown_labels.attrs
+
+
+@pytest.mark.parametrize("synthetic_only", [0, 1, "true"])
+def test_feature_label_source_rejects_non_boolean_provenance(synthetic_only):
+    with pytest.raises(ValueError, match="synthetic_only must be boolean"):
+        WindowedFeatureExtractor().transform_cohort(
+            pd.DataFrame(),
+            pd.DataFrame(columns=["patient_id", "day"]),
+            365.0,
+            synthetic_only=synthetic_only,
+        )
+
+
 @pytest.mark.parametrize("horizon_days", [90.0, 180.0, 365.0])
 def test_feature_label_contract_records_explicit_target_horizon(horizon_days):
     patients = pd.DataFrame(

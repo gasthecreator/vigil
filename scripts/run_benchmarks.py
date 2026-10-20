@@ -107,7 +107,8 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     test_pts_df = test_cohort.to_patients_dataframe()
 
     X_train_full, y_train_full, t_train_full, d_train_full = extractor.transform_cohort(
-        patients_df=train_pts_df, observations_df=train_obs_df, horizon_days=365.0
+        patients_df=train_pts_df, observations_df=train_obs_df, horizon_days=365.0,
+        synthetic_only=True,
     )
     train_weights = compute_ipcw_weights(t_train_full, d_train_full, 365.0)
 
@@ -122,7 +123,8 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         test_obs_sliced = test_obs_df[pt_counts <= V].copy()
 
         X_test, y_test, t_test, d_test = extractor.transform_cohort(
-            patients_df=test_pts_df, observations_df=test_obs_sliced, horizon_days=365.0
+            patients_df=test_pts_df, observations_df=test_obs_sliced, horizon_days=365.0,
+            synthetic_only=True,
         )
 
         if len(y_test) == 0 or y_test.sum() == 0:
@@ -526,13 +528,16 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     test_g3_pts = c3_test.to_patients_dataframe()
 
     X_train, y_train, t_train, d_train = extractor.transform_cohort(
-        patients_df=train_pts, observations_df=train_obs, horizon_days=365.0
+        patients_df=train_pts, observations_df=train_obs, horizon_days=365.0,
+        synthetic_only=True,
     )
     X_test_in, y_test_in, t_test_in, d_test_in = extractor.transform_cohort(
-        patients_df=test_in_pts, observations_df=test_in_obs, horizon_days=365.0
+        patients_df=test_in_pts, observations_df=test_in_obs, horizon_days=365.0,
+        synthetic_only=True,
     )
     X_test_g3, y_test_g3, t_test_g3, d_test_g3 = extractor.transform_cohort(
-        patients_df=test_g3_pts, observations_df=test_g3_obs, horizon_days=365.0
+        patients_df=test_g3_pts, observations_df=test_g3_obs, horizon_days=365.0,
+        synthetic_only=True,
     )
 
     models = {

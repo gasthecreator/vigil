@@ -150,7 +150,9 @@ def generate_site(
 def landmark_tables(
     obs: pd.DataFrame, pts: pd.DataFrame
 ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, int]:
-    X, y, times, events = WindowedFeatureExtractor().transform_cohort(pts, obs, HORIZON)
+    X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+        pts, obs, HORIZON, synthetic_only=True
+    )
     if X.empty:
         empty = pd.DataFrame()
         z = np.zeros(0, dtype=float)

@@ -238,7 +238,9 @@ class LabelledCohort:
         self.ds = make_sequences(self.ids, days, values, statics)
         obs = cohort.to_observations_dataframe()
         pts = cohort.to_patients_dataframe()
-        self.X, y, self.t, self.d = extractor.transform_cohort(pts, obs, horizon_days=horizon)
+        self.X, y, self.t, self.d = extractor.transform_cohort(
+            pts, obs, horizon_days=horizon, synthetic_only=True
+        )
         self.X = self.X.reset_index(drop=True)
         self.y = pd.Series(np.asarray(y, dtype=float))
         pid_index = {p: i for i, p in enumerate(self.ids)}

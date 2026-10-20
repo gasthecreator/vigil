@@ -191,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
             f"rejection rate {ing.report['rejection_rate']:.3f} exceeds PR-07 = {params['PR-07']}; review the extraction with the partner (PREREGISTRATION section 5.6)",
         )
     try:
-        lm = pa.build_landmarks(ing.tables, ing.cohort_ids)
+        lm = pa.build_landmarks(ing.tables, ing.cohort_ids, synthetic_only=dry)
         split = {pid: pa.assign_split(pid, key) for pid in lm.patients["patient_id"]}
         dev = lm.subset([p for p, s in split.items() if s == "dev"])
         test = lm.subset([p for p, s in split.items() if s == "test"])

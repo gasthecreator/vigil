@@ -352,6 +352,8 @@ class WindowedFeatureExtractor:
         patients_df: pd.DataFrame,
         observations_df: pd.DataFrame,
         horizon_days: float,
+        *,
+        synthetic_only: bool | None = None,
     ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
         """
         Transforms full cohort into feature matrix X, prospective binary label y,
@@ -365,6 +367,8 @@ class WindowedFeatureExtractor:
             raise ValueError("horizon_days must be finite and positive") from exc
         if not np.isfinite(horizon_days) or horizon_days <= 0:
             raise ValueError("horizon_days must be finite and positive")
+        if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
+            raise ValueError("synthetic_only must be boolean when supplied")
         required_observation_columns = {"patient_id", "day"}
         missing_observation_columns = required_observation_columns - set(observations_df.columns)
         if missing_observation_columns:
@@ -617,6 +621,8 @@ class WindowedFeatureExtractor:
         )
         y.attrs["target_estimand"] = "observed_diagnosis"
         y.attrs["horizon_days"] = float(horizon_days)
+        if synthetic_only is not None:
+            y.attrs["synthetic_only"] = bool(synthetic_only)
 
         return X, y, np.array(follow_up_times), np.array(event_indicators)
 
@@ -626,6 +632,7 @@ def build_landmark_features(
     patients_df: Optional[pd.DataFrame] = None,
     *,
     horizon_days: float,
+    synthetic_only: bool | None = None,
 ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
     """Build landmarks for an explicitly selected target horizon."""
     extractor = WindowedFeatureExtractor()
@@ -637,6 +644,7 @@ def build_landmark_features(
         patients_df=patients_df,
         observations_df=observations_df,
         horizon_days=horizon_days,
+        synthetic_only=synthetic_only,
     )
 
 
