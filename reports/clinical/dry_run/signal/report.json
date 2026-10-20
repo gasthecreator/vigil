@@ -33,8 +33,8 @@
         "rows_flagged": 0
       },
       "lab_observations": {
-        "rows_in": 18645,
-        "rows_clean": 18645,
+        "rows_in": 18354,
+        "rows_clean": 18354,
         "rows_rejected": 0,
         "duplicates_dropped": 0,
         "rows_flagged": 0
@@ -60,23 +60,23 @@
     "cohort_complete_case": 600,
     "patients_with_a_landmark": 600,
     "patients_excluded_fewer_than_two_post_index_draws_or_terminal_event_before_second_draw": 0,
-    "landmarks": 5574,
+    "landmarks": 5518,
     "development_patients": 307,
     "test_patients": 293,
-    "development_events_at_first_landmark": 39,
-    "test_events_at_first_landmark": 28
+    "development_events_at_first_landmark": 45,
+    "test_events_at_first_landmark": 36
   },
   "development": {
     "comparator": "B3_REGULARIZED_LOGISTIC_HORIZON",
     "comparator_dev_auc_out_of_fold": {
-      "B1_SINGLE_THRESHOLD": 0.5994318238060079,
-      "B2_VELOCITY_RULE": 0.5718474838052792,
-      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.6350429921008962
+      "B1_SINGLE_THRESHOLD": 0.5818737949036036,
+      "B2_VELOCITY_RULE": 0.6704050937853405,
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.6849325856339024
     },
-    "recalibration_intercept": -0.7666026415468243,
-    "recalibration_slope": 0.5263045663956568,
-    "operating_threshold": 0.16520717701267545,
-    "dev_alert_rate_per_100_patient_months": 4.879723396065194,
+    "recalibration_intercept": -0.7561567438947926,
+    "recalibration_slope": 0.55503751473395,
+    "operating_threshold": 0.19890919665221443,
+    "dev_alert_rate_per_100_patient_months": 4.864665731869481,
     "notes": [
       "candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3"
     ]
@@ -86,53 +86,53 @@
     "n_boot": 2000,
     "seed": 20261018,
     "comparator": "B3_REGULARIZED_LOGISTIC_HORIZON",
-    "operating_threshold": 0.16520717701267545,
+    "operating_threshold": 0.19890919665221443,
     "C1": {
-      "estimate": 1.313284986715707,
+      "estimate": 0.9582544923928155,
       "ci95": [
-        0.8016958475158689,
-        1.9360834225387944
+        0.5948849076438428,
+        1.3280523464797716
       ],
       "criterion": "CI within [0.8, 1.2]",
       "ci_criterion_met": false,
-      "p": 0.6875,
-      "p_holm": 1.0,
+      "p": 0.17,
+      "p_holm": 0.34,
       "reject": false,
       "met": false
     },
     "C2": {
-      "estimate": -0.03744087647912697,
+      "estimate": 0.005604381804751757,
       "ci95": [
-        -0.15921999188607852,
-        0.07850394398669006
+        -0.08248053342123891,
+        0.10180855586714117
       ],
       "criterion": "lower CI bound > 0.0",
       "ci_criterion_met": false,
-      "p": 0.7495,
-      "p_holm": 1.0,
+      "p": 0.436,
+      "p_holm": 0.436,
       "reject": false,
       "met": false
     },
     "C3": {
-      "estimate": 4.454540702908662,
+      "estimate": 3.515824605699907,
       "ci95": [
-        3.6514202301763143,
-        5.332382867455839
+        2.814191371732001,
+        4.278112317765073
       ],
       "criterion": "upper CI bound <= 5.0",
-      "ci_criterion_met": false,
-      "p": 0.1005,
-      "p_holm": 0.3015,
-      "reject": false,
-      "met": false
+      "ci_criterion_met": true,
+      "p": 0.0004997501249375312,
+      "p_holm": 0.0014992503748125937,
+      "reject": true,
+      "met": true
     },
     "decision_rule": "met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap p-value is below 0.05"
   },
   "secondary": {
     "calibration_before_recalibration": {
-      "ece": 0.03927118513738498,
-      "mean_predicted": 0.106497362645587,
-      "observed_ipcw": 0.09734945648924323,
+      "ece": 0.06112648365029434,
+      "mean_predicted": 0.11897231086444977,
+      "observed_ipcw": 0.1250139904656653,
       "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
     },
     "decision_curve": {
@@ -141,94 +141,101 @@
     "subgroups": {
       "groups": {
         "age<50": {
-          "patients": 105,
-          "events": 6,
+          "patients": 114,
+          "events": 15,
           "result": "insufficient data"
         },
         "age50-64": {
-          "patients": 91,
-          "events": 14,
-          "result": "insufficient data"
-        },
-        "age>=65": {
-          "patients": 97,
-          "events": 8,
-          "result": "insufficient data"
-        },
-        "stage I-II": {
-          "patients": 170,
-          "events": 17,
-          "result": "insufficient data"
-        },
-        "stage III": {
-          "patients": 123,
-          "events": 11,
-          "result": "insufficient data"
-        },
-        "subtype HER2+": {
-          "patients": 137,
-          "events": 8,
-          "result": "insufficient data"
-        },
-        "subtype HR+": {
-          "patients": 98,
+          "patients": 79,
           "events": 9,
           "result": "insufficient data"
         },
+        "age>=65": {
+          "patients": 100,
+          "events": 12,
+          "result": "insufficient data"
+        },
+        "stage I-II": {
+          "patients": 183,
+          "events": 22,
+          "ipcw_auc": 0.6179869978511685,
+          "ci95": [
+            0.48214858857021436,
+            0.7450245133514669
+          ]
+        },
+        "stage III": {
+          "patients": 110,
+          "events": 14,
+          "result": "insufficient data"
+        },
+        "subtype HER2+": {
+          "patients": 151,
+          "events": 15,
+          "result": "insufficient data"
+        },
+        "subtype HR+": {
+          "patients": 96,
+          "events": 14,
+          "result": "insufficient data"
+        },
         "subtype TNBC": {
-          "patients": 58,
-          "events": 11,
+          "patients": 46,
+          "events": 7,
           "result": "insufficient data"
         }
       },
-      "worst_group": null,
+      "worst_group": [
+        "stage I-II",
+        0.6179869978511685
+      ],
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "258.1 \u00b1 197.4",
-      "conditional_median_days": 194.0,
-      "unconditional_mean_days": 188.6,
-      "recurrence_detection_rate": 0.7308,
-      "overdetection_rate": 0.544,
-      "alert_burden_per_100_pt_years": 20.68,
+      "conditional_lead_time_days": "199.9 \u00b1 97.2",
+      "conditional_median_days": 196.0,
+      "unconditional_mean_days": 141.0,
+      "recurrence_detection_rate": 0.7051,
+      "overdetection_rate": 0.4811,
+      "alert_burden_per_100_pt_years": 17.66,
       "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
     },
     "m10_aggregate": {
-      "patients_with_dismissed_prior_signal": 6,
+      "patients_with_dismissed_prior_signal": 10,
       "small_cell_threshold": 5
     },
     "verification_bias": {
       "complete_case": {
-        "sensitivity": 0.32142857142857145,
-        "specificity": 0.9550561797752809
+        "sensitivity": 0.2777777777777778,
+        "specificity": 0.9393939393939394
       },
       "ipw": {
-        "sensitivity": 0.2599566409137687,
-        "specificity": 0.9618753517448542,
-        "minimum_verified_propensity": 0.2112012174721741,
-        "maximum_inverse_weight": 4.7348211907526085,
-        "effective_sample_size": 109.7869338609718
+        "sensitivity": 0.20877039335439626,
+        "specificity": 0.950211151152116,
+        "minimum_verified_propensity": 0.26830426937966756,
+        "maximum_inverse_weight": 3.7271117687096385,
+        "effective_sample_size": 96.50427096733927
       },
       "sensitivity_analysis": [
         {
           "assumed_unverified_event_rate": 0.0,
-          "sensitivity": 0.32142857142857145,
-          "specificity": 0.9169811320754717
+          "sensitivity": 0.2777777777777778,
+          "specificity": 0.9610894941634242
         },
         {
           "assumed_unverified_event_rate": 0.05,
-          "sensitivity": 0.2690217391304348,
-          "specificity": 0.9176424668227947
+          "sensitivity": 0.22612513721185512,
+          "specificity": 0.960800161648818
         },
         {
           "assumed_unverified_event_rate": 0.1,
-          "sensitivity": 0.23684210526315794,
-          "specificity": 0.9183508488278093
+          "sensitivity": 0.1923774954627949,
+          "specificity": 0.960487599831862
         },
         {
           "assumed_unverified_event_rate": 0.2,
-          "sensitivity": 0.19936708860759492,
-          "specificity": 0.9199303742384682
+          "sensitivity": 0.1509433962264151,
+          "specificity": 0.959780621572212
         }
       ],
       "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate"

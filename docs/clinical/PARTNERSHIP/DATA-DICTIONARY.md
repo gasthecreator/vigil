@@ -34,6 +34,7 @@ The Vigil data extraction protocol requires four linked relational tables. All c
 | `menopausal_status` | String | `PRE`, `PERI`, `POST`, `UNKNOWN` | Menopausal status at primary presentation. | **Yes** |
 | `vital_status` | String | `ALIVE`, `DEAD_DISEASE`, `DEAD_OTHER`, `LOST_TO_FOLLOWUP` | Vital status at close of study chart review. | **Yes** |
 | `days_to_last_followup`| Integer | $\ge 0$ | Total documented duration of follow-up from primary diagnosis in days. | **Yes** |
+| `days_to_death` | Integer | `index_day` $\le$ day $\le$ `days_to_last_followup` | Explicit relative day of death from diagnosis. Required when `vital_status` is `DEAD_DISEASE` or `DEAD_OTHER`; must be blank otherwise. `days_to_last_followup` is not treated as an inferred death date. | Conditional |
 | `index_day` | Integer | $0 \le \text{index\_day} \le$ `days_to_last_followup` | Relative day of completion of primary treatment (surgery, or last chemotherapy or radiotherapy session, whichever is later). This is the index date of `docs/clinical/PREREGISTRATION.md` section 2; surveillance features and landmarks start here. | **Yes** |
 
 ---
@@ -135,7 +136,7 @@ These rules are what `packages/contracts/contracts/partner/ingest.py` enforces (
 | `CONFLICTING_DUPLICATE` | The same key appears more than once with different content. **All** copies are rejected; the tool does not pick a winner. |
 | `ORPHAN_FK` | `patient_id` is not in `patients`. |
 | `PARENT_REJECTED` | `patient_id` is in `patients` but that row was rejected. |
-| `INCONSISTENT` | `index_day` after `days_to_last_followup`; `recurrence_day` after `days_to_last_followup`; `recurrence_confirmed = false` with a `recurrence_day` or a metastasis site. |
+| `INCONSISTENT` | `index_day` after `days_to_last_followup`; `days_to_death` outside `[index_day, days_to_last_followup]` or supplied for a non-deceased patient; `recurrence_day` after `days_to_last_followup`; `recurrence_confirmed = false` with a `recurrence_day` or a metastasis site. |
 | `UNKNOWN_ANALYTE` | `analyte_code` is not a LOINC code of the Vigil analyte registry. |
 | `NAME_CODE_MISMATCH` | `analyte_name` does not belong to the LOINC code. |
 | `UNKNOWN_UNIT` | Unit string not recognised. |

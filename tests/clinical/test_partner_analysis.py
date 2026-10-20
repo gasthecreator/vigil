@@ -58,6 +58,7 @@ def _tables(patients):
                 "menopausal_status": "POST",
                 "vital_status": p.get("vital", "ALIVE"),
                 "days_to_last_followup": p["follow"],
+                "days_to_death": p.get("death_day"),
                 "index_day": p["index"],
             }
         )
@@ -163,6 +164,7 @@ def test_death_from_another_cause_is_a_competing_event_and_known_control():
                     "index": 90,
                     "rec_day": None,
                     "vital": "DEAD_OTHER",
+                    "death_day": 300,
                     "labs": labs,
                 }
             ]
@@ -173,6 +175,23 @@ def test_death_from_another_cause_is_a_competing_event_and_known_control():
     assert list(lm.y) == [0.0, 0.0]
     assert lm.end_day == {"A": 300.0}
     assert (pa.compute_ipcw_weights(lm.T, lm.E, pa.HORIZON) > 0).all()
+
+
+def test_partner_adapter_refuses_to_infer_death_day_from_last_followup():
+    tables = _tables(
+        [
+            {
+                "pid": "A",
+                "follow": 300,
+                "index": 90,
+                "rec_day": None,
+                "vital": "DEAD_OTHER",
+                "labs": [(100, 20.0), (190, 22.0), (280, 25.0)],
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="explicit days_to_death"):
+        pa.to_vigil_frames(tables, ["A"])
 
 
 def test_administrative_censoring_before_horizon_keeps_outcome_unknown():
@@ -206,6 +225,7 @@ def test_recurrence_before_competing_death_remains_the_event_of_interest():
                     "index": 90,
                     "rec_day": 350,
                     "vital": "DEAD_OTHER",
+                    "death_day": 400,
                     "labs": labs,
                 }
             ]

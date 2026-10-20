@@ -111,6 +111,17 @@ def to_vigil_frames(
     rows = []
     for pid in sorted(pat):
         p, b, o = pat[pid], base[pid], out[pid]
+        deceased = p["vital_status"] in {"DEAD_DISEASE", "DEAD_OTHER"}
+        death_day = p.get("days_to_death")
+        if deceased:
+            if death_day is None or pd.isna(death_day):
+                raise ValueError(f"explicit days_to_death is required for deceased patient {pid}")
+            death_day = float(death_day)
+            if not float(p["index_day"]) <= death_day <= float(p["days_to_last_followup"]):
+                raise ValueError(f"days_to_death is outside follow-up for patient {pid}")
+        elif death_day is not None and not pd.isna(death_day):
+            raise ValueError(f"days_to_death supplied for non-deceased patient {pid}")
+        death_day_value = float(death_day) if deceased and death_day is not None else np.nan
         rec = (
             bool(o["recurrence_confirmed"])
             and o["recurrence_day"] is not None
@@ -127,10 +138,8 @@ def to_vigil_frames(
                 "subtype": _subtype(b["er_status"], b["pr_status"], b["her2_status"]),
                 "observed_recurrence_event": rec,
                 "observed_recurrence_day": float(o["recurrence_day"]) if rec else np.nan,
-                "competing_event": "death_other" if p["vital_status"] == "DEAD_OTHER" else None,
-                "competing_event_day": float(p["days_to_last_followup"])
-                if p["vital_status"] == "DEAD_OTHER"
-                else np.nan,
+                "competing_event": "death" if deceased else None,
+                "competing_event_day": death_day_value,
                 "administrative_censor_day": float(p["days_to_last_followup"]),
                 "days_to_last_followup": float(p["days_to_last_followup"]),
                 "index_day": float(p["index_day"]),

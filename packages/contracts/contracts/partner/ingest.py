@@ -404,12 +404,26 @@ def ingest(
         )
         per_table[table.name] = {"rows_in": len(raw[table.name])}
 
-    # patients: the index day (completion of primary treatment) cannot be after the last follow-up
+    # Patient timing must be explicit; total follow-up is not a substitute for a death date.
     consistent: List[Tuple[int, Dict[str, Any]]] = []
     for row_no, rec in typed["patients"]:
+        deceased = rec["vital_status"] in {"DEAD_DISEASE", "DEAD_OTHER"}
+        death_day = rec["days_to_death"]
         if rec["index_day"] > rec["days_to_last_followup"]:
             rejections.append(
                 Rejection("patients", row_no, "INCONSISTENT", "index_day", rec["patient_id"])
+            )
+        elif deceased and death_day is None:
+            rejections.append(
+                Rejection("patients", row_no, "MISSING_REQUIRED", "days_to_death", rec["patient_id"])
+            )
+        elif not deceased and death_day is not None:
+            rejections.append(
+                Rejection("patients", row_no, "INCONSISTENT", "days_to_death", rec["patient_id"])
+            )
+        elif death_day is not None and not rec["index_day"] <= death_day <= rec["days_to_last_followup"]:
+            rejections.append(
+                Rejection("patients", row_no, "INCONSISTENT", "days_to_death", rec["patient_id"])
             )
         else:
             consistent.append((row_no, rec))

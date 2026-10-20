@@ -6,7 +6,7 @@
       "table": "patients",
       "source": "patients.csv",
       "rows": 61,
-      "sha256": "c2b4a036153c1fd7484c86680e3d7ed0c57a13348a72b1ba5a1d842a9443d20d"
+      "sha256": "52abbd76ec702e66c1d6cede10338885b82ff593c72be3965568e5c24e40a5e1"
     },
     {
       "table": "baseline_profile",
