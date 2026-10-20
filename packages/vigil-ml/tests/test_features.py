@@ -32,6 +32,29 @@ def test_feature_extractor_no_future_leakage():
     assert feat_at_180["symptom_bone_pain"] == 2.0
 
 
+def test_simulator_truth_fields_cannot_change_observed_features_or_labels():
+    from vigil_sim.generators import GeneratorType, get_generator
+
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=302).generate_cohort(
+        num_patients=20, duration_days=365.0
+    )
+    patients = cohort.to_patients_dataframe()
+    observations = cohort.to_observations_dataframe()
+    extractor = WindowedFeatureExtractor()
+    baseline = extractor.transform_cohort(patients, observations, horizon_days=180.0)
+
+    counterfactual = patients.copy()
+    counterfactual["true_recurrence_event"] = ~counterfactual["true_recurrence_event"]
+    counterfactual["true_recurrence_day"] = 0.0
+    counterfactual["true_recurrence_site"] = "adversarially_changed"
+    changed = extractor.transform_cohort(counterfactual, observations, horizon_days=180.0)
+
+    pd.testing.assert_frame_equal(baseline[0], changed[0])
+    pd.testing.assert_series_equal(baseline[1], changed[1])
+    assert np.array_equal(baseline[2], changed[2])
+    assert np.array_equal(baseline[3], changed[3])
+
+
 def test_velocity_and_acceleration_computation():
     """Verifies that 90-day slope and acceleration match analytic mathematical formulas."""
     extractor = WindowedFeatureExtractor()
