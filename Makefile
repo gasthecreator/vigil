@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml reproduce-ml-core reproduce-ml-core-cross-generator reproduce-ml-core-feature-rerun reproduce-ml-core-complete-rerun run-k7-002 verify-k7-002 run-k7-003 verify-k7-003 typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
+.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml reproduce-ml-core reproduce-ml-core-cross-generator reproduce-ml-core-feature-rerun reproduce-ml-core-complete-rerun run-k7-002 verify-k7-002 run-k7-003 verify-k7-003 audit-k7-003 run-k7-004 verify-k7-004 audit-k7-004 typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= uv
@@ -24,6 +24,10 @@ help:
 	@echo "make reproduce-ml-core-complete-rerun  Run full preregistered baseline contrasts"
 	@echo "make run-k7-003        Execute the one-time preregistered K7 synthetic study"
 	@echo "make verify-k7-003     Verify committed K7 replacement artifacts without cohort regeneration"
+	@echo "make audit-k7-003      Recompute saved-result aggregates and E-values without cohort generation"
+	@echo "make run-k7-004        Execute the one-time preregistered grouped-fold K7 synthetic study"
+	@echo "make verify-k7-004     Verify K7-004 artifacts without regenerating cohorts"
+	@echo "make audit-k7-004      Recompute K7-004 saved-result aggregates without cohort generation"
 	@echo "make docs-build         Build MkDocs Material site into site/"
 	@echo "make docs-check         Build docs + check_docs_links + README version claims"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
@@ -129,6 +133,18 @@ run-k7-003:
 
 verify-k7-003:
 	$(UV) run python experiments/EXP-S8-K7-003/verify.py
+
+audit-k7-003:
+	$(UV) run python experiments/EXP-S8-K7-003/audit_saved_results.py
+
+run-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/run.py
+
+verify-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/verify.py
+
+audit-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/audit_saved_results.py
 
 api-dev:
 	$(UV) run uvicorn vigil_api.main:app --host 0.0.0.0 --port 8000 --reload
