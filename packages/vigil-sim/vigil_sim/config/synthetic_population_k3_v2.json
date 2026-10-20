@@ -80,5 +80,159 @@
       "g3_heavy_tailed_noise": 0.06
     },
     "interpretation": "G1 high-cost analytes have cost-dependent missingness; all other profiles use generator-specific MCAR rates"
-  }
+  },
+"generator_mechanics": {
+    "provenance": "Values transcribed from legacy generator code for explicit versioning; no clinical calibration or literature validation is claimed. Register and test sensitivity before using this profile for model selection.",
+    "g1": {
+      "lead_time_normal_days": [
+        126.0,
+        30.0
+      ],
+      "lead_time_clip_days": [
+        55.0,
+        210.0
+      ],
+      "seed_offset_days": 65.0,
+      "growth_rate_by_group": {
+        "indolent": [
+          0.002,
+          0.005
+        ],
+        "tnbc": [
+          0.025,
+          0.035
+        ],
+        "other": [
+          0.02,
+          0.03
+        ]
+      },
+      "burden": {
+        "exponent_cap": 10.0,
+        "mass_scale": 100.0,
+        "saturation_scale": 50.0
+      },
+      "secondary_compartment_fraction": {
+        "bone_to_locoregional": 0.1,
+        "liver_to_bone": 0.15
+      },
+      "marker_coupling": {
+        "ca153_per_burden": 4.2,
+        "cea_per_burden": 0.75,
+        "ca153_site_multiplier": {
+          "liver": 1.25,
+          "bone": 1.1,
+          "other": 0.65
+        }
+      },
+      "organ_damage": {
+        "liver_per_liver_burden": 2.5,
+        "bone_per_bone_burden": 3.2
+      },
+      "chemotherapy": {
+        "eligible_stages": [
+          "Stage II",
+          "Stage III"
+        ],
+        "assignment_probability": 0.85,
+        "active_days": [
+          30.0,
+          180.0
+        ],
+        "liver_stress": [
+          8.0,
+          20.0
+        ],
+        "myelosuppression_multiplier": [
+          0.65,
+          0.85
+        ],
+        "hemoglobin_reduction": [
+          1.0,
+          2.5
+        ]
+      },
+      "enzyme_coupling": {
+        "alt_ast_per_liver_damage": 2.2,
+        "alp_ggt_per_liver_damage": 2.8,
+        "alp_ggt_per_bone_damage": 3.5,
+        "bilirubin_liver_damage_threshold": 30.0,
+        "bilirubin_per_excess_liver_damage": 0.08,
+        "calcium_bone_damage_threshold": 25.0,
+        "calcium_per_excess_bone_damage": 0.04
+      },
+      "marker_kinetics": null
+    },
+    "g2": {
+      "apply_facility_lab_effects": false,
+      "burst_count_exclusive_range": [
+        2,
+        5
+      ],
+      "days_before_recurrence_range": [
+        20.0,
+        150.0
+      ],
+      "recent_burst_window_days": 14.0,
+      "burden_per_burst": 15.0,
+      "ca153_per_burden": 3.5,
+      "ca153_recent_burst_increment": 45.0,
+      "cea_per_burden": 0.6,
+      "cea_recent_burst_increment": 8.0,
+      "liver_damage_per_liver_burden": 2.0,
+      "bone_damage_per_bone_burden": 2.5,
+      "liver_enzyme_per_damage": 2.5,
+      "alp_per_bone_damage": 3.0,
+      "shot_noise": null
+    },
+    "g3": {
+      "apply_facility_lab_effects": false,
+      "saturate_signal": false,
+      "haemolysis_probability": 0.04,
+      "sample_dilution_probability": 0.02,
+      "active_signal_days": 126.0,
+      "burden_at_full_signal": 50.0,
+      "ca153_per_burden": 3.0,
+      "cea_per_burden": 0.5,
+      "liver_damage_per_liver_burden": 2.0,
+      "bone_damage_per_bone_burden": 2.0,
+      "student_t_degrees_freedom": 3.0,
+      "student_t_noise_scale": 0.7,
+      "ca153_signal_increment": 55.0,
+      "alt_liver_signal_increment": 110.0,
+      "alp_bone_signal_increment": 160.0,
+      "haemolysis_ast_multiplier": [
+        2.5,
+        4.5
+      ],
+      "haemolysis_ldh_multiplier": [
+        3.0,
+        5.0
+      ],
+      "sample_dilution_multiplier": [
+        0.6,
+        0.75
+      ]
+    }
+  },
+  "cohort_schedule": {
+    "initial_visit_day_range": [
+      0.0,
+      15.0
+    ],
+    "nominal_interval_days": 90.0,
+    "post_confirmation_followup_days": 90.0,
+    "visit_interval_gamma": {
+      "shape": 4.0,
+      "scale": 0.25
+    },
+    "default_num_patients": 100,
+    "default_duration_days": 730.0,
+    "start_datetime": "2024-01-01T08:00:00+00:00",
+    "provenance": "Historical synthetic scheduling values transcribed from generator defaults; not calibrated."
+  },
+  "out_of_pocket_delay_factor_range": [
+    1.0,
+    2.4
+  ]
 }

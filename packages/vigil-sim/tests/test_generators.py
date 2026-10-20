@@ -106,14 +106,21 @@ def test_profile_requires_explicit_verification_mechanism(invalid_verification):
 
 
 @pytest.mark.parametrize(
-    ("profile_name", "expected_sha256"),
+    ("profile_name", "generator_type", "expected_sha256"),
     [
-        ("legacy-default", "3815b67ca1deeeddfce5b51c8b325817e1364f775d6b87137f8a01ab47c0411c"),
-        ("synthetic_population_v1.json", "4d9f015bec83f9ba8a58c86739452c9b6b02b190fa6d6907d4a47cade6cf0107"),
+        ("legacy-default", "g1_smooth_kinetics", "3815b67ca1deeeddfce5b51c8b325817e1364f775d6b87137f8a01ab47c0411c"),
+        ("legacy-default", "g2_shedding_bursts", "c1c074ccaa3d8806723735d27fe76fb1973d0c41a17757c110bbca5947dc2956"),
+        ("legacy-default", "g3_heavy_tailed_noise", "12f6167e912cbb1da5d45985ea36daa3b14bb23c173d0e5517d1b9f7d6008f5f"),
+        ("synthetic_population_v1.json", "g1_smooth_kinetics", "4d9f015bec83f9ba8a58c86739452c9b6b02b190fa6d6907d4a47cade6cf0107"),
+        ("synthetic_population_v1.json", "g2_shedding_bursts", "8ed14096bb739bf4a8027b1f11e8e431866191ce06f33729eca00a26437a8dc5"),
+        ("synthetic_population_v1.json", "g3_heavy_tailed_noise", "fda4662d9c1a865c362b7b4a25e08e9ab4e384a725b105e0ccedac7ec3177e50"),
+        ("synthetic_population_k3_v2.json", "g1_smooth_kinetics", "3900a700b4e7d4a1eca818d639265b4bd8b158a5e2f39638bf06a7c975414c2c"),
+        ("synthetic_population_k3_v2.json", "g2_shedding_bursts", "f25d797b25aef02698d059141bfa2ec300fce68111a171308f97445458a9a43b"),
+        ("synthetic_population_k3_v2.json", "g3_heavy_tailed_noise", "c05cf785b9cf6422a51423df72f1f638192376d21066a841f8985871e9d15dd2"),
     ],
 )
-def test_legacy_verification_config_preserves_seeded_cohort_fingerprint(
-    profile_name, expected_sha256
+def test_historical_generator_profiles_preserve_seeded_cohort_fingerprint(
+    profile_name, generator_type, expected_sha256
 ):
     if profile_name == "legacy-default":
         population_config = None
@@ -121,7 +128,7 @@ def test_legacy_verification_config_preserves_seeded_cohort_fingerprint(
         config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / profile_name
         population_config = json.loads(config_path.read_text(encoding="utf-8"))
     cohort = get_generator(
-        GeneratorType.G1_SMOOTH,
+        GeneratorType(generator_type),
         seed=654321,
         population_config=population_config,
     ).generate_cohort(num_patients=80, duration_days=730.0)
@@ -161,6 +168,15 @@ def test_profile_requires_explicit_baseline_analyte_sampling(sampling_config):
     profile = json.loads(config_path.read_text(encoding="utf-8"))
     profile["baseline_analyte_sampling"] = sampling_config
     with pytest.raises(ValueError, match="baseline_analyte_sampling"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+
+
+@pytest.mark.parametrize("invalid_schedule", [None, {}, {"provenance": "test"}])
+def test_profile_requires_explicit_cohort_schedule(invalid_schedule):
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_v1.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    profile["cohort_schedule"] = invalid_schedule
+    with pytest.raises(ValueError, match="cohort_schedule"):
         get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
 
 

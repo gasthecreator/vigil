@@ -328,3 +328,7 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 
 ## Verdict history (overseer)
 _None yet._
+
+### Q-7 follow-up — expose simulator mechanism and schedule defaults (2026-10-20)
+
+Moved historical G1/G2/G3 mechanism coefficients, generator-specific missingness, out-of-pocket delay, visit-process settings, post-confirmation follow-up, cohort size/duration defaults, and UTC date origin into the versioned population profiles (ADR-0060). Removed source fallbacks and made profile validation fail closed for missing mechanics/schedule contracts. Added exact seeded output fingerprints for all three generators across default legacy, v1, and K3 profiles; all nine match their pre-change values. Focused simulator generator plus shared-label parity tests pass (112); full simulator package plus parity passes 153 and retains the one unchanged fixed G1 calibration SD failure (113.615 vs 110). Ruff, JSON parsing, and `git diff --check` pass. No model results were regenerated or changed; package B remains open.

@@ -301,5 +301,21 @@
         0.75
       ]
     }
+  },
+  "cohort_schedule": {
+    "initial_visit_day_range": [
+      0.0,
+      15.0
+    ],
+    "nominal_interval_days": 90.0,
+    "post_confirmation_followup_days": 90.0,
+    "visit_interval_gamma": {
+      "shape": 4.0,
+      "scale": 0.25
+    },
+    "default_num_patients": 100,
+    "default_duration_days": 730.0,
+    "start_datetime": "2024-01-01T08:00:00+00:00",
+    "provenance": "Historical synthetic scheduling values transcribed from generator defaults; not calibrated."
   }
 }

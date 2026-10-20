@@ -29,7 +29,7 @@ import json
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -562,7 +562,7 @@ class BaseCohortGenerator(ABC):
                 population_config = json.load(config_file)
         self.population_config = population_config
         self._validate_population_config(population_config)
-        self.generator_mechanics = population_config.get("generator_mechanics", {})
+        self.generator_mechanics = population_config["generator_mechanics"]
         self.facility_lab_effects: dict[str, dict[str, tuple[float, float]]] = {}
         facility_effects = population_config["facility_lab_effects"]
         if facility_effects["mode"] == "shared_by_facility":
@@ -583,13 +583,16 @@ class BaseCohortGenerator(ABC):
         """Reject malformed synthetic assumptions instead of silently normalizing them."""
         if not config.get("profile_id") or not config.get("interpretation"):
             raise ValueError("Population config requires profile_id and interpretation")
+        mechanics = config.get("generator_mechanics")
+        if not isinstance(mechanics, dict) or not mechanics.get("provenance"):
+            raise ValueError("Population config requires documented generator_mechanics")
         if config["profile_id"] in {
+            "legacy_synthetic_v0",
+            "balanced_synthetic_v1",
+            "balanced_synthetic_k3_v2",
             "balanced_synthetic_core_v3",
             "balanced_synthetic_core_v4",
         }:
-            mechanics = config.get("generator_mechanics")
-            if not isinstance(mechanics, dict) or not mechanics.get("provenance"):
-                raise ValueError("balanced_synthetic_core_v3 requires documented generator_mechanics")
             required_paths = (
                 "g1.lead_time_normal_days", "g1.lead_time_clip_days", "g1.seed_offset_days",
                 "g1.growth_rate_by_group.indolent", "g1.growth_rate_by_group.tnbc",
@@ -704,8 +707,8 @@ class BaseCohortGenerator(ABC):
             ):
                 raise ValueError("generator_mechanics scales and Student-t degrees of freedom must be positive")
             if config["profile_id"] == "balanced_synthetic_core_v4":
-                g1_kinetics = mechanics["g1"].get("marker_kinetics", {})
-                g2_shot_noise = mechanics["g2"].get("shot_noise", {})
+                g1_kinetics = mechanics["g1"]["marker_kinetics"]
+                g2_shot_noise = mechanics["g2"]["shot_noise"]
                 required_kinetics = (
                     "integration_step_days", "ca153_secretion_per_burden_day",
                     "ca153_clearance_rate_per_day", "cea_secretion_per_burden_day",
@@ -728,6 +731,45 @@ class BaseCohortGenerator(ABC):
                             raise ValueError(f"{name}.{key} must be positive")
                 if g2_shot_noise["burden_amplitude_mean"] == 0:
                     raise ValueError("g2.shot_noise.burden_amplitude_mean must be positive")
+        schedule = config.get("cohort_schedule")
+        if not isinstance(schedule, dict) or not schedule.get("provenance"):
+            raise ValueError("Population config requires documented cohort_schedule")
+        for key in ("initial_visit_day_range", "visit_interval_gamma"):
+            if key not in schedule:
+                raise ValueError(f"cohort_schedule is missing required setting: {key}")
+        if (
+            len(schedule["initial_visit_day_range"]) != 2
+            or not np.isfinite(schedule["initial_visit_day_range"]).all()
+            or schedule["initial_visit_day_range"][0] < 0
+            or schedule["initial_visit_day_range"][0] >= schedule["initial_visit_day_range"][1]
+        ):
+            raise ValueError("cohort_schedule.initial_visit_day_range must be finite and increasing")
+        if (
+            schedule["visit_interval_gamma"]["shape"] <= 0
+            or schedule["visit_interval_gamma"]["scale"] <= 0
+        ):
+            raise ValueError("cohort_schedule.visit_interval_gamma parameters must be positive")
+        if (
+            not np.isfinite(schedule.get("nominal_interval_days", np.nan))
+            or schedule["nominal_interval_days"] <= 0
+            or not np.isfinite(schedule.get("post_confirmation_followup_days", np.nan))
+            or schedule["post_confirmation_followup_days"] < 0
+        ):
+            raise ValueError("cohort_schedule intervals must be finite and positive/non-negative")
+        if (
+            not isinstance(schedule.get("default_num_patients"), int)
+            or isinstance(schedule["default_num_patients"], bool)
+            or schedule["default_num_patients"] <= 0
+            or not np.isfinite(schedule.get("default_duration_days", np.nan))
+            or schedule["default_duration_days"] <= 0
+        ):
+            raise ValueError("cohort_schedule default cohort size and duration must be positive")
+        try:
+            start_datetime = datetime.fromisoformat(schedule["start_datetime"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("cohort_schedule.start_datetime must be an ISO datetime") from exc
+        if start_datetime.tzinfo is None or start_datetime.utcoffset() is None:
+            raise ValueError("cohort_schedule.start_datetime must include a timezone")
         age = config["age_years"]
         if not (0 < age["minimum"] < age["maximum"]):
             raise ValueError("age_years must define a positive, increasing range")
@@ -936,12 +978,10 @@ class BaseCohortGenerator(ABC):
             raise ValueError("recurrence_day_cap must be positive and finite")
 
     def measurement_skip_probability(
-        self, pt: PatientBaseline, analyte_code: str, legacy_probability: float
+        self, pt: PatientBaseline, analyte_code: str, _legacy_probability: float | None = None
     ) -> float:
-        """Return the registered synthetic missingness probability for one assay."""
-        config = self.population_config.get("measurement_missingness")
-        if config is None:
-            return float(np.clip(legacy_probability, 0.0, 1.0))
+        """Return the profile rate; keep the ignored legacy argument for call compatibility."""
+        config = self.population_config["measurement_missingness"]
         if (self.get_generator_type() == GeneratorType.G1_SMOOTH
                 and analyte_code in config["high_cost_analytes"]):
             probability = (
@@ -1074,7 +1114,7 @@ class BaseCohortGenerator(ABC):
                 ),
             )
 
-        delay_range = cfg.get("out_of_pocket_delay_factor_range", [1.0, 2.4])
+        delay_range = cfg["out_of_pocket_delay_factor_range"]
         delay_factor = float(self.rng.uniform(*delay_range))
 
         return PatientBaseline(
@@ -1235,16 +1275,33 @@ class BaseCohortGenerator(ABC):
 
     def generate_cohort(
         self,
-        num_patients: int = 100,
-        duration_days: float = 730.0,
-        nominal_interval_days: float = 90.0,
+        num_patients: int | None = None,
+        duration_days: float | None = None,
+        nominal_interval_days: float | None = None,
     ) -> CohortDataset:
         """Generates a complete longitudinal cohort dataset."""
+        schedule = self.population_config["cohort_schedule"]
+        num_patients = schedule["default_num_patients"] if num_patients is None else num_patients
+        duration_days = schedule["default_duration_days"] if duration_days is None else duration_days
+        if isinstance(num_patients, bool) or not isinstance(num_patients, int) or num_patients <= 0:
+            raise ValueError("num_patients must be a positive integer")
+        if not np.isfinite(duration_days) or duration_days <= 0:
+            raise ValueError("duration_days must be positive and finite")
+        if nominal_interval_days is not None and (
+            not np.isfinite(nominal_interval_days) or nominal_interval_days <= 0
+        ):
+            raise ValueError("nominal_interval_days must be positive and finite")
+        interval_days = (
+            schedule["nominal_interval_days"]
+            if nominal_interval_days is None
+            else nominal_interval_days
+        )
+        visit_gamma = schedule["visit_interval_gamma"]
         patients: List[PatientBaseline] = []
         observations: List[LongitudinalObservation] = []
         latent_states: List[LatentCompartmentState] = []
 
-        start_date = datetime(2024, 1, 1, 8, 0, 0, tzinfo=timezone.utc)
+        start_date = datetime.fromisoformat(schedule["start_datetime"])
 
         for i in range(1, num_patients + 1):
             pt = self.sample_baseline(i)
@@ -1253,7 +1310,7 @@ class BaseCohortGenerator(ABC):
 
             # Generate irregular visit process with informative missingness and out-of-pocket delays
             visit_days = []
-            curr_day = float(self.rng.uniform(0.0, 15.0))
+            curr_day = float(self.rng.uniform(*schedule["initial_visit_day_range"]))
             while curr_day < duration_days:
                 # Stop follow-up if competing event (death/lost) occurred
                 if pt.competing_event_day is not None and curr_day >= pt.competing_event_day:
@@ -1261,8 +1318,7 @@ class BaseCohortGenerator(ABC):
                 visit_days.append(curr_day)
 
                 # Next scheduled visit: Gamma distribution modified by out-of-pocket friction
-                visit_gamma = self.population_config.get("visit_interval_gamma", {"shape": 4.0, "scale": 0.25})
-                interval = nominal_interval_days * float(
+                interval = interval_days * float(
                     self.rng.gamma(shape=visit_gamma["shape"], scale=visit_gamma["scale"])
                 )
                 interval *= pt.out_of_pocket_delay_factor
@@ -1270,7 +1326,9 @@ class BaseCohortGenerator(ABC):
 
             # If patient is recurrent, visits taper off ~90 days after clinical confirmation as they shift to acute oncology
             if pt.observed_recurrence_event and pt.observed_recurrence_day is not None:
-                visit_days = [d for d in visit_days if d <= (pt.observed_recurrence_day + 90.0)]
+                visit_days = [d for d in visit_days if d <= (
+                    pt.observed_recurrence_day + schedule["post_confirmation_followup_days"]
+                )]
 
             if not visit_days:
                 visit_days = [0.0]
@@ -1286,7 +1344,7 @@ class BaseCohortGenerator(ABC):
                 if (
                     pt.observed_recurrence_event
                     and pt.observed_recurrence_day is not None
-                    and d > pt.observed_recurrence_day + 90.0
+                    and d > pt.observed_recurrence_day + schedule["post_confirmation_followup_days"]
                 ):
                     break
                 obs_id = f"OBS-{pt.patient_id}-{int(d):04d}"
@@ -1358,25 +1416,25 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
         t_rec = (
             pt.true_recurrence_day
             if pt.true_recurrence_event and pt.true_recurrence_day is not None
-            else 1e9
+            else float("inf")
         )
-        mechanics = self.generator_mechanics.get("g1", {})
-        lead_mean, lead_sd = mechanics.get("lead_time_normal_days", (126.0, 30.0))
-        lead_min, lead_max = mechanics.get("lead_time_clip_days", (55.0, 210.0))
+        mechanics = self.generator_mechanics["g1"]
+        lead_mean, lead_sd = mechanics["lead_time_normal_days"]
+        lead_min, lead_max = mechanics["lead_time_clip_days"]
         target_lead = float(self.rng.normal(lead_mean, lead_sd))
         target_lead = max(lead_min, min(lead_max, target_lead))
-        t_seed = t_rec - (target_lead + mechanics.get("seed_offset_days", 65.0))
+        t_seed = t_rec - (target_lead + mechanics["seed_offset_days"])
 
         # Growth rate (indolent cases grow slowly; active cases expand steadily)
-        growth_rates = mechanics.get("growth_rate_by_group", {})
+        growth_rates = mechanics["growth_rate_by_group"]
         if pt.is_indolent:
-            growth_k = float(self.rng.uniform(*growth_rates.get("indolent", (0.002, 0.005))))
+            growth_k = float(self.rng.uniform(*growth_rates["indolent"]))
         elif pt.subtype == BreastCancerSubtype.TNBC:
-            growth_k = float(self.rng.uniform(*growth_rates.get("tnbc", (0.025, 0.035))))
+            growth_k = float(self.rng.uniform(*growth_rates["tnbc"]))
         else:
-            growth_k = float(self.rng.uniform(*growth_rates.get("other", (0.020, 0.030))))
+            growth_k = float(self.rng.uniform(*growth_rates["other"]))
 
-        kinetic_profile = mechanics.get("marker_kinetics")
+        kinetic_profile = mechanics["marker_kinetics"]
         if kinetic_profile is not None:
             burden_cfg = mechanics["burden"]
 
@@ -1410,13 +1468,9 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
             cea_signal = np.zeros(len(visit_days), dtype=float)
 
         # Adjuvant chemotherapy in first 180 days for Stage II/III
-        chemo = mechanics.get("chemotherapy", {})
-        eligible_stages = chemo.get(
-            "eligible_stages", [PresentationStage.STAGE_II.value, PresentationStage.STAGE_III.value]
-        )
-        has_chemo = pt.stage.value in eligible_stages and self.rng.random() < chemo.get(
-            "assignment_probability", 0.85
-        )
+        chemo = mechanics["chemotherapy"]
+        eligible_stages = chemo["eligible_stages"]
+        has_chemo = pt.stage.value in eligible_stages and self.rng.random() < chemo["assignment_probability"]
 
         for visit_index, d in enumerate(visit_days):
             # Latent compartment outgrowth
@@ -1428,26 +1482,22 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
 
             if pt.true_recurrence_event and d >= t_seed:
                 # Exponential growth passed through a saturating burden transform.
-                burden_cfg = mechanics.get("burden", {})
+                burden_cfg = mechanics["burden"]
                 raw_mass = math.exp(
-                    min(burden_cfg.get("exponent_cap", 10.0), growth_k * (d - t_seed))
+                    min(burden_cfg["exponent_cap"], growth_k * (d - t_seed))
                 ) - 1.0
-                mass_scale = burden_cfg.get("mass_scale", 100.0)
+                mass_scale = burden_cfg["mass_scale"]
                 mass = mass_scale * (
-                    1.0 - math.exp(-raw_mass / burden_cfg.get("saturation_scale", 50.0))
+                    1.0 - math.exp(-raw_mass / burden_cfg["saturation_scale"])
                 )
 
                 # Route mass to primary recurrence site
                 if pt.true_recurrence_site == TargetOrgan.BONE.value:
                     b_bone = mass
-                    b_loc = mass * mechanics.get("secondary_compartment_fraction", {}).get(
-                        "bone_to_locoregional", 0.1
-                    )
+                    b_loc = mass * mechanics["secondary_compartment_fraction"]["bone_to_locoregional"]
                 elif pt.true_recurrence_site == TargetOrgan.LIVER.value:
                     b_liver = mass
-                    b_bone = mass * mechanics.get("secondary_compartment_fraction", {}).get(
-                        "liver_to_bone", 0.15
-                    )
+                    b_bone = mass * mechanics["secondary_compartment_fraction"]["liver_to_bone"]
                 elif pt.true_recurrence_site == TargetOrgan.LUNG.value:
                     b_lung = mass
                 elif pt.true_recurrence_site == TargetOrgan.BRAIN.value:
@@ -1458,27 +1508,27 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
             total_burden = b_loc + b_bone + b_liver + b_lung + b_brain
 
             # Legacy profiles keep their direct mapping; v4 uses configured clearance dynamics.
-            marker_cfg = mechanics.get("marker_coupling", {})
+            marker_cfg = mechanics["marker_coupling"]
             if kinetic_profile is None:
-                m_ca153 = total_burden * marker_cfg.get("ca153_per_burden", 4.2)
-                m_cea = total_burden * marker_cfg.get("cea_per_burden", 0.75)
+                m_ca153 = total_burden * marker_cfg["ca153_per_burden"]
+                m_cea = total_burden * marker_cfg["cea_per_burden"]
             else:
                 m_ca153 = float(ca153_signal[visit_index])
                 m_cea = float(cea_signal[visit_index])
 
             # Organ damage states
-            organ_cfg = mechanics.get("organ_damage", {})
-            o_liver = b_liver * organ_cfg.get("liver_per_liver_burden", 2.5)
-            o_bone = b_bone * organ_cfg.get("bone_per_bone_burden", 3.2)
+            organ_cfg = mechanics["organ_damage"]
+            o_liver = b_liver * organ_cfg["liver_per_liver_burden"]
+            o_bone = b_bone * organ_cfg["bone_per_bone_burden"]
             o_renal = 0.0
 
             # Treatment effect: Adjuvant chemotherapy active between day 30 and 180
             treatment_active = None
-            active_days = chemo.get("active_days", (30.0, 180.0))
+            active_days = chemo["active_days"]
             if has_chemo and active_days[0] <= d <= active_days[1]:
                 treatment_active = "chemotherapy"
                 # Drug-induced transient hepatic stress
-                o_liver += float(self.rng.uniform(*chemo.get("liver_stress", (8.0, 20.0))))
+                o_liver += float(self.rng.uniform(*chemo["liver_stress"]))
 
             latent_st = LatentCompartmentState(
                 patient_id=pt.patient_id,
@@ -1515,64 +1565,52 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
                 # Couple markers
                 if code == "ca_15_3":
                     # Sensitivity highest in liver and bone, lower in lung (E1)
-                    site_mult_cfg = marker_cfg.get("ca153_site_multiplier", {})
+                    site_mult_cfg = marker_cfg["ca153_site_multiplier"]
                     site_name = pt.true_recurrence_site
                     if site_name == TargetOrgan.LIVER.value:
-                        site_mult = site_mult_cfg.get("liver", 1.25)
+                        site_mult = site_mult_cfg["liver"]
                     elif site_name == TargetOrgan.BONE.value:
-                        site_mult = site_mult_cfg.get("bone", 1.1)
+                        site_mult = site_mult_cfg["bone"]
                     else:
-                        site_mult = site_mult_cfg.get("other", 0.65)
+                        site_mult = site_mult_cfg["other"]
                     current_val += m_ca153 * site_mult
                 elif code == "cea":
                     current_val += m_cea
 
                 # Couple organ enzymes
-                enzyme_cfg = mechanics.get("enzyme_coupling", {})
+                enzyme_cfg = mechanics["enzyme_coupling"]
                 if code in ["alt", "ast"]:
-                    current_val += o_liver * enzyme_cfg.get("alt_ast_per_liver_damage", 2.2)
+                    current_val += o_liver * enzyme_cfg["alt_ast_per_liver_damage"]
                 elif code in ["alp", "ggt"]:
                     current_val += (
-                        o_liver * enzyme_cfg.get("alp_ggt_per_liver_damage", 2.8)
-                        + o_bone * enzyme_cfg.get("alp_ggt_per_bone_damage", 3.5)
+                        o_liver * enzyme_cfg["alp_ggt_per_liver_damage"]
+                        + o_bone * enzyme_cfg["alp_ggt_per_bone_damage"]
                     )
-                elif code == "total_bilirubin" and o_liver > enzyme_cfg.get(
-                    "bilirubin_liver_damage_threshold", 30.0
-                ):
+                elif code == "total_bilirubin" and o_liver > enzyme_cfg["bilirubin_liver_damage_threshold"]:
                     current_val += (
-                        o_liver - enzyme_cfg.get("bilirubin_liver_damage_threshold", 30.0)
-                    ) * enzyme_cfg.get("bilirubin_per_excess_liver_damage", 0.08)
-                elif code in ["calcium", "corrected_calcium"] and o_bone > enzyme_cfg.get(
-                    "calcium_bone_damage_threshold", 25.0
-                ):
+                        o_liver - enzyme_cfg["bilirubin_liver_damage_threshold"]
+                    ) * enzyme_cfg["bilirubin_per_excess_liver_damage"]
+                elif code in ["calcium", "corrected_calcium"] and o_bone > enzyme_cfg["calcium_bone_damage_threshold"]:
                     current_val += (
-                        o_bone - enzyme_cfg.get("calcium_bone_damage_threshold", 25.0)
-                    ) * enzyme_cfg.get("calcium_per_excess_bone_damage", 0.04)
+                        o_bone - enzyme_cfg["calcium_bone_damage_threshold"]
+                    ) * enzyme_cfg["calcium_per_excess_bone_damage"]
 
                 # Chemotherapy myelosuppression effects
                 if treatment_active == "chemotherapy":
                     if code in ["wbc", "anc", "platelets"]:
                         current_val *= float(
-                            self.rng.uniform(*chemo.get("myelosuppression_multiplier", (0.65, 0.85)))
+                            self.rng.uniform(*chemo["myelosuppression_multiplier"])
                         )
                     elif code == "haemoglobin":
                         current_val -= float(
-                            self.rng.uniform(*chemo.get("hemoglobin_reduction", (1.0, 2.5)))
+                            self.rng.uniform(*chemo["hemoglobin_reduction"])
                         )
 
                 p = analyte.plausibility
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
 
-                # Informative missingness (MNAR): CA 15-3 and CEA skipped occasionally due to out-of-pocket costs
-                # Expensive tests are skipped more often under financial friction.
-                legacy_skip_probability = (
-                    0.12 * pt.out_of_pocket_delay_factor
-                    if code in ["ca_15_3", "ca_27_29", "cea"]
-                    else 0.03
-                )
-                skip_probability = self.measurement_skip_probability(
-                    pt, code, legacy_skip_probability
-                )
+                # Missingness probabilities are explicit in the synthetic profile.
+                skip_probability = self.measurement_skip_probability(pt, code)
                 is_measured = bool(self.rng.random() > skip_probability)
 
                 obs_mask[code] = is_measured
@@ -1606,17 +1644,17 @@ class BurstSheddingGenerator(BaseCohortGenerator):
         trajectories = []
         masks = []
         latents = []
-        mechanics = self.generator_mechanics.get("g2", {})
+        mechanics = self.generator_mechanics["g2"]
 
         t_rec = (
             pt.true_recurrence_day
             if pt.true_recurrence_event and pt.true_recurrence_day is not None
-            else 1e9
+            else float("inf")
         )
 
         # Burst events occur at discrete times before clinical recurrence
         burst_times: List[float] = []
-        shot_noise = mechanics.get("shot_noise")
+        shot_noise = mechanics["shot_noise"]
         if shot_noise is not None:
             end_day = max(visit_days, default=0.0)
             terminal_days = [end_day]
@@ -1663,11 +1701,11 @@ class BurstSheddingGenerator(BaseCohortGenerator):
                 shot_noise["cea_clearance_rate_per_day"],
             )
         elif pt.true_recurrence_event and pt.true_recurrence_day is not None:
-            burst_count = mechanics.get("burst_count_exclusive_range", (2, 5))
+            burst_count = mechanics["burst_count_exclusive_range"]
             num_bursts = int(self.rng.integers(*burst_count))
             for _ in range(num_bursts):
                 b_time = t_rec - float(
-                    self.rng.uniform(*mechanics.get("days_before_recurrence_range", (20.0, 150.0)))
+                    self.rng.uniform(*mechanics["days_before_recurrence_range"])
                 )
                 burst_times.append(b_time)
             burst_times.sort()
@@ -1682,14 +1720,14 @@ class BurstSheddingGenerator(BaseCohortGenerator):
             if shot_noise is None:
                 past_bursts = [bt for bt in burst_times if bt <= d]
                 step_count = len(past_bursts)
-                recent_window = mechanics.get("recent_burst_window_days", 14.0)
+                recent_window = mechanics["recent_burst_window_days"]
                 recent_burst = any(0.0 <= (d - bt) <= recent_window for bt in past_bursts)
-                total_mass = step_count * mechanics.get("burden_per_burst", 15.0)
-                m_ca153 = total_mass * mechanics.get("ca153_per_burden", 3.5) + (
-                    mechanics.get("ca153_recent_burst_increment", 45.0) if recent_burst else 0.0
+                total_mass = step_count * mechanics["burden_per_burst"]
+                m_ca153 = total_mass * mechanics["ca153_per_burden"] + (
+                    mechanics["ca153_recent_burst_increment"] if recent_burst else 0.0
                 )
-                m_cea = total_mass * mechanics.get("cea_per_burden", 0.6) + (
-                    mechanics.get("cea_recent_burst_increment", 8.0) if recent_burst else 0.0
+                m_cea = total_mass * mechanics["cea_per_burden"] + (
+                    mechanics["cea_recent_burst_increment"] if recent_burst else 0.0
                 )
             else:
                 total_mass = float(total_mass_by_visit[visit_index])
@@ -1701,8 +1739,8 @@ class BurstSheddingGenerator(BaseCohortGenerator):
             b_brain = total_mass if pt.true_recurrence_site == TargetOrgan.BRAIN.value else 0.0
             b_loc = total_mass if pt.true_recurrence_site == TargetOrgan.BREAST.value else 0.0
 
-            o_liver = b_liver * mechanics.get("liver_damage_per_liver_burden", 2.0)
-            o_bone = b_bone * mechanics.get("bone_damage_per_bone_burden", 2.5)
+            o_liver = b_liver * mechanics["liver_damage_per_liver_burden"]
+            o_bone = b_bone * mechanics["bone_damage_per_bone_burden"]
 
             latent_st = LatentCompartmentState(
                 patient_id=pt.patient_id,
@@ -1730,7 +1768,7 @@ class BurstSheddingGenerator(BaseCohortGenerator):
                 sigma_i = analyte.biological_variation.cv_i / 100.0
                 bio_noise = self.rng.normal(0.0, sigma_i)
                 current_val = base_val * (1.0 + bio_noise)
-                if mechanics.get("apply_facility_lab_effects", False):
+                if mechanics["apply_facility_lab_effects"]:
                     current_val = (
                         current_val * pt.lab_scales.get(code, 1.0)
                         + base_val * pt.lab_offsets.get(code, 0.0)
@@ -1741,13 +1779,13 @@ class BurstSheddingGenerator(BaseCohortGenerator):
                 elif code == "cea":
                     current_val += m_cea
                 elif code in ["alt", "ast"] and pt.true_recurrence_site == TargetOrgan.LIVER.value:
-                    current_val += o_liver * mechanics.get("liver_enzyme_per_damage", 2.5)
+                    current_val += o_liver * mechanics["liver_enzyme_per_damage"]
                 elif code == "alp" and pt.true_recurrence_site == TargetOrgan.BONE.value:
-                    current_val += o_bone * mechanics.get("alp_per_bone_damage", 3.0)
+                    current_val += o_bone * mechanics["alp_per_bone_damage"]
 
                 p = analyte.plausibility
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
-                skip_probability = self.measurement_skip_probability(pt, code, 0.05)
+                skip_probability = self.measurement_skip_probability(pt, code)
                 obs_mask[code] = bool(self.rng.random() > skip_probability)
 
             trajectories.append(vals)
@@ -1780,31 +1818,31 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
         trajectories = []
         masks = []
         latents = []
-        mechanics = self.generator_mechanics.get("g3", {})
+        mechanics = self.generator_mechanics["g3"]
 
         t_rec = (
             pt.true_recurrence_day
             if pt.true_recurrence_event and pt.true_recurrence_day is not None
-            else 1e9
+            else float("inf")
         )
 
         for d in visit_days:
             # Check for injected pre-analytical error
             preanalytical_error: Optional[str] = None
             roll = self.rng.random()
-            haemolysis_probability = mechanics.get("haemolysis_probability", 0.04)
-            dilution_probability = mechanics.get("sample_dilution_probability", 0.02)
+            haemolysis_probability = mechanics["haemolysis_probability"]
+            dilution_probability = mechanics["sample_dilution_probability"]
             if roll < haemolysis_probability:
                 preanalytical_error = "haemolysis"
             elif roll < haemolysis_probability + dilution_probability:
                 preanalytical_error = "sample_dilution"
 
             days_to_rec = t_rec - d
-            active_signal_days = mechanics.get("active_signal_days", 126.0)
+            active_signal_days = mechanics["active_signal_days"]
             is_active = days_to_rec <= active_signal_days
 
             # Signal strength
-            if mechanics.get("saturate_signal", False):
+            if mechanics["saturate_signal"]:
                 sig = (
                     float(np.clip((active_signal_days - days_to_rec) / active_signal_days, 0.0, 1.0))
                     if is_active
@@ -1813,7 +1851,7 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
             else:
                 # Preserve historical-profile data semantics; core_v3 opts into the corrected bound.
                 sig = max(0.0, (active_signal_days - days_to_rec) / active_signal_days) if is_active else 0.0
-            mass = sig * mechanics.get("burden_at_full_signal", 50.0)
+            mass = sig * mechanics["burden_at_full_signal"]
 
             b_bone = mass if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.0
             b_liver = mass if pt.true_recurrence_site == TargetOrgan.LIVER.value else 0.0
@@ -1829,10 +1867,10 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
                 b_liver=b_liver,
                 b_lung=b_lung,
                 b_brain=b_brain,
-                m_ca153=mass * mechanics.get("ca153_per_burden", 3.0),
-                m_cea=mass * mechanics.get("cea_per_burden", 0.5),
-                o_liver=b_liver * mechanics.get("liver_damage_per_liver_burden", 2.0),
-                o_bone=b_bone * mechanics.get("bone_damage_per_bone_burden", 2.0),
+                m_ca153=mass * mechanics["ca153_per_burden"],
+                m_cea=mass * mechanics["cea_per_burden"],
+                o_liver=b_liver * mechanics["liver_damage_per_liver_burden"],
+                o_bone=b_bone * mechanics["bone_damage_per_bone_burden"],
                 o_renal=0.0,
                 is_indolent=pt.is_indolent,
             )
@@ -1847,11 +1885,11 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
 
                 # Heavy-tailed Student-t noise (df=3)
                 t_noise = float(
-                    self.rng.standard_t(df=mechanics.get("student_t_degrees_freedom", 3.0))
-                    * (sigma_i * mechanics.get("student_t_noise_scale", 0.7))
+                    self.rng.standard_t(df=mechanics["student_t_degrees_freedom"])
+                    * (sigma_i * mechanics["student_t_noise_scale"])
                 )
                 offset = pt.lab_offsets.get(code, 0.0)
-                if mechanics.get("apply_facility_lab_effects", False):
+                if mechanics["apply_facility_lab_effects"]:
                     current_val = (
                         base_val * (1.0 + t_noise) * pt.lab_scales.get(code, 1.0)
                         + base_val * offset
@@ -1862,32 +1900,32 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
                 # True recurrence signal
                 if is_active:
                     if code == "ca_15_3":
-                        current_val += sig * mechanics.get("ca153_signal_increment", 55.0)
+                        current_val += sig * mechanics["ca153_signal_increment"]
                     elif code == "alt" and pt.true_recurrence_site == TargetOrgan.LIVER.value:
-                        current_val += sig * mechanics.get("alt_liver_signal_increment", 110.0)
+                        current_val += sig * mechanics["alt_liver_signal_increment"]
                     elif code == "alp" and pt.true_recurrence_site == TargetOrgan.BONE.value:
-                        current_val += sig * mechanics.get("alp_bone_signal_increment", 160.0)
+                        current_val += sig * mechanics["alp_bone_signal_increment"]
 
                 # Pre-analytical error injection
                 if preanalytical_error == "haemolysis":
                     # Rupture of RBCs spikes AST and LDH
                     if code == "ast":
                         current_val *= float(
-                            self.rng.uniform(*mechanics.get("haemolysis_ast_multiplier", (2.5, 4.5)))
+                            self.rng.uniform(*mechanics["haemolysis_ast_multiplier"])
                         )
                     elif code == "ldh":
                         current_val *= float(
-                            self.rng.uniform(*mechanics.get("haemolysis_ldh_multiplier", (3.0, 5.0)))
+                            self.rng.uniform(*mechanics["haemolysis_ldh_multiplier"])
                         )
                 elif preanalytical_error == "sample_dilution":
                     # IV fluid dilution reduces concentrations by 25-40%
                     current_val *= float(
-                        self.rng.uniform(*mechanics.get("sample_dilution_multiplier", (0.60, 0.75)))
+                        self.rng.uniform(*mechanics["sample_dilution_multiplier"])
                     )
 
                 p = analyte.plausibility
                 vals[code] = float(np.clip(current_val, p.physiological_min, p.physiological_max))
-                skip_probability = self.measurement_skip_probability(pt, code, 0.06)
+                skip_probability = self.measurement_skip_probability(pt, code)
                 obs_mask[code] = bool(self.rng.random() > skip_probability)
 
             if preanalytical_error:
