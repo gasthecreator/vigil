@@ -95,7 +95,6 @@ def generate_cohort(
         cohort.to_patients_dataframe(),
         cohort.to_observations_dataframe(),
         horizon_days=HORIZON_DAYS,
-        synthetic_only=True,
     )
     return Cohort(
         X=X.reset_index(drop=True),
