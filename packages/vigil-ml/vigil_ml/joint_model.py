@@ -52,23 +52,27 @@ class BayesianJointModelK3(BaseSurveillanceModel):
         return "K3_QUARANTINED_INVALID_HISTORICAL_IMPLEMENTATION"
 
 
+_LANDMARK_FEATURE_COLUMNS = (
+    "ca_15_3_curr",
+    "ca_15_3_slope_90d",
+    "cea_curr",
+    "age",
+    "is_stage_3_or_4",
+    "sub_tnbc",
+    "max_symptom_grade",
+)
+
+
 class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
     """
     Fast landmark logistic research baseline (legacy K3-compatible class name).
 
     The fitted prediction path is a regularized logistic classifier over landmark
     features. This is neither a Bayesian joint model nor a production model.
-    ``horizon_days`` remains accepted for historical-call compatibility; the
-    target horizon is defined by the supplied labels and the argument is ignored.
+    The supplied labels define the target horizon.
     """
 
-    def __init__(
-        self,
-        horizon_days: float = 180.0,
-        C: float = 1.0,
-        random_state: int = 42,
-    ):
-        self.horizon_days = horizon_days
+    def __init__(self, C: float = 1.0, random_state: int = 42):
         self.C = C
         self.random_state = random_state
 
@@ -80,20 +84,8 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         )
         self.is_fitted = False
         self.feature_names_: List[str] = [
-            "ca_15_3_curr",
-            "ca_15_3_slope_90d",
-            "cea_curr",
-            "age",
-            "is_stage_3_or_4",
-            "sub_tnbc",
-            "max_symptom_grade",
-            "ca_15_3_curr_missing",
-            "ca_15_3_slope_90d_missing",
-            "cea_curr_missing",
-            "age_missing",
-            "is_stage_3_or_4_missing",
-            "sub_tnbc_missing",
-            "max_symptom_grade_missing",
+            *_LANDMARK_FEATURE_COLUMNS,
+            *(f"{column}_missing" for column in _LANDMARK_FEATURE_COLUMNS),
         ]
         self.fitted_coef_: Optional[np.ndarray] = None
         self.fitted_intercept_: Optional[float] = None
@@ -104,22 +96,7 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         def values(column: str) -> np.ndarray:
             return pd.to_numeric(X[column], errors="coerce").to_numpy(dtype=float) if column in X else np.full(len(X), np.nan)
 
-        marker = values("ca_15_3_curr")
-        slope = values("ca_15_3_slope_90d")
-        cea = values("cea_curr")
-        age = values("age")
-        stage_flag = values("is_stage_3_or_4")
-        tnbc_flag = values("sub_tnbc")
-        symptom_grade = values("max_symptom_grade")
-        raw_features = np.column_stack([
-            marker,
-            slope,
-            cea,
-            age,
-            stage_flag,
-            tnbc_flag,
-            symptom_grade,
-        ])
+        raw_features = np.column_stack([values(column) for column in _LANDMARK_FEATURE_COLUMNS])
         missing_indicators = (~np.isfinite(raw_features)).astype(float)
         return np.column_stack([raw_features, missing_indicators])
 
@@ -131,6 +108,8 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         **kwargs: Any,
     ) -> LandmarkLogisticResearchBaseline:
         """Fit a logistic classifier to the supplied binary horizon labels."""
+        if kwargs:
+            raise TypeError(f"Unsupported fit options: {sorted(kwargs)}")
 
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         X_fit = X.loc[feat_df.index]
@@ -160,5 +139,15 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
         return "FAST_LANDMARK_LOGISTIC_RESEARCH"
 
 
-# Legacy import name retained for frozen experiment source compatibility.
-FastLandmarkJointModel = LandmarkLogisticResearchBaseline
+class FastLandmarkJointModel(LandmarkLogisticResearchBaseline):
+    """Legacy constructor retained for frozen experiment source compatibility."""
+
+    def __init__(
+        self,
+        horizon_days: float = 180.0,
+        C: float = 1.0,
+        random_state: int = 42,
+    ):
+        # The historical argument never changed the label horizon; keep accepting
+        # it for old callers while the canonical API omits this misleading option.
+        super().__init__(C=C, random_state=random_state)

@@ -47,11 +47,15 @@ def test_historical_bayesian_k3_alias_fails_closed(longitudinal_survival_data):
 
 def test_fast_landmark_logistic_research_baseline(longitudinal_survival_data):
     X, y, _, _ = longitudinal_survival_data
-    model = LandmarkLogisticResearchBaseline(horizon_days=180.0)
+    with pytest.raises(TypeError):
+        LandmarkLogisticResearchBaseline(horizon_days=365.0)
+    model = LandmarkLogisticResearchBaseline()
     model.fit(X, y)
     preds = model.predict_risk(X)
 
-    assert isinstance(model, FastLandmarkJointModel)
+    assert isinstance(FastLandmarkJointModel(horizon_days=365.0), LandmarkLogisticResearchBaseline)
     assert len(preds) == len(X)
     assert np.all(np.isfinite(preds))
     assert np.all((preds >= 0.0) & (preds <= 1.0))
+    with pytest.raises(TypeError, match="Unsupported fit options"):
+        model.fit(X, y, invented_horizon=365)
