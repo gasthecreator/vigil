@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from vigil_sim.e1_comparison import evaluate_e1_source_comparison
 from vigil_sim.generators import (
     BreastCancerSubtype,
@@ -145,6 +147,36 @@ def test_e1_empty_cohort_keeps_undefined_metrics_null():
     assert report["observed_ned_specificity"]["specificity"] is None
 
 
+def test_e1_evaluation_is_byte_stable_for_identical_cohorts():
+    cohort = _cohort(
+        [
+            _patient(
+                "case",
+                true_event=True,
+                true_day=60.0,
+                true_site="bone",
+                observed_event=True,
+                observed_day=80.0,
+                observed_site="bone",
+            )
+        ],
+        [_observation("case-elevation", "case", 75.0, 61.0)],
+    )
+
+    first = json.dumps(
+        evaluate_e1_source_comparison(cohort, administrative_followup_days=100.0),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    second = json.dumps(
+        evaluate_e1_source_comparison(cohort, administrative_followup_days=100.0),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert first == second
+
+
 def test_e1_rejects_contradictory_observed_event_fields():
     patient = _patient("bad", observed_event=True, observed_day=50.0, observed_site="bone")
 
@@ -174,6 +206,28 @@ def test_e1_rejects_observed_diagnosis_after_patient_censoring():
         assert "after patient administrative censoring" in str(exc)
     else:
         raise AssertionError("diagnosis after patient censoring was accepted")
+
+
+def test_e1_uses_observed_diagnosis_even_before_nominal_true_recurrence_day():
+    patient = _patient(
+        "observed-before-nominal-event-day",
+        true_event=True,
+        true_day=60.0,
+        true_site="bone",
+        observed_event=True,
+        observed_day=50.0,
+        observed_site="bone",
+    )
+    cohort = _cohort(
+        [patient],
+        [_observation("pre-diagnosis-elevation", patient.patient_id, 45.0, 61.0)],
+    )
+
+    report = evaluate_e1_source_comparison(cohort, administrative_followup_days=100.0)
+
+    assert report["case_detection"]["diagnosed_cases"] == 1
+    assert report["case_detection"]["detected_cases"] == 1
+    assert report["conditional_lead_time"]["mean_days"] == 5.0
 
 
 def test_e1_rejects_unregistered_locoregional_site_instead_of_scoring_it():

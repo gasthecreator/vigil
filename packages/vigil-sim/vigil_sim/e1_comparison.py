@@ -62,9 +62,10 @@ def _observed_event(patient: Any, followup_days: float) -> tuple[bool, float | N
             raise ValueError("observed diagnosis contradicts latent recurrence status")
         if patient.true_recurrence_site != site:
             raise ValueError("observed recurrence site contradicts simulator site")
-        true_day = _finite_nonnegative(patient.true_recurrence_day, "true_recurrence_day")
-        if diagnosis_day < true_day:
-            raise ValueError("observed diagnosis precedes latent recurrence onset")
+        # The source-aligned endpoint is observed diagnosis. In configured G1,
+        # burden seeding precedes true_recurrence_day, so this nominal event
+        # field is not a lower bound on when verification can occur.
+        _finite_nonnegative(patient.true_recurrence_day, "true_recurrence_day")
         return True, diagnosis_day
     if day is not None or site is not None:
         raise ValueError("non-event patient has contradictory observed recurrence fields")
