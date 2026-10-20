@@ -237,7 +237,7 @@ class CohortDataset:
 
     def get_unleaked_training_examples(
         self,
-        horizon_days: float = 180.0,
+        horizon_days: float,
         use_observed_labels: bool | None = None,
     ) -> Tuple[pd.DataFrame, pd.Series]:
         """
@@ -260,7 +260,7 @@ class CohortDataset:
 
     def get_survival_training_examples(
         self,
-        horizon_days: float = 180.0,
+        horizon_days: float,
         use_observed_labels: bool | None = None,
     ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
         """Build current-visit features and censor-aware outcomes.

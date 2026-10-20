@@ -267,6 +267,10 @@ Audit of `experiments/EXP-CORE-ML-008/run.py::fit_calibrator` found weighted Pla
 
 The separate `CohortDataset.get_survival_training_examples` label path assigned recurrence when recurrence and a competing event occurred on the same day, while `WindowedFeatureExtractor.transform_cohort` rejects that unresolved order. The simulator helper now fails closed for the tie in both observed-diagnosis and oracle modes. Generator tests pass (26); the full simulator package is 57 passed and 1 unchanged calibration-gate failure (G1 conditional lead-time SD 113.615 days vs 110); Ruff, docs links, and `git diff --check` pass. Other parity between direct simulator labels and the shared cohort extractor remains open under package B.
 
+### Q-7 follow-up — require explicit horizons in direct simulator training helpers (2026-10-20)
+
+Both `CohortDataset.get_unleaked_training_examples` and `get_survival_training_examples` still defaulted to a 180-day target after the shared extractor's implicit horizon was removed. Their signatures now require `horizon_days`; regression tests verify omission fails and the existing explicit-estimand requirement still holds. The complete generator test module passes (26); Ruff and `git diff --check` pass. This closes the silent-horizon path only; the direct helper and shared extractor still need full contract parity review.
+
 ### Q-7 follow-up — correct a stale model-constructor claim in the inventory (2026-10-20)
 
 Package A's claim inventory said `FastLandmarkJointModel` still accepted an ignored `horizon_days` argument. Source inspection confirmed it inherits the canonical logistic baseline constructor and rejects that argument; the horizon is carried by the fit labels. The inventory now matches the source and its discrepancy list numbering is unique. This is an audit-record correction only; packages A–B remain open.

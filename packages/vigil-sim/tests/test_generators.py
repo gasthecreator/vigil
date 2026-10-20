@@ -426,11 +426,15 @@ def test_unobserved_simulator_value_cannot_change_training_features():
     analyte = next(
         key for key, measured in observation.observed_mask.items() if not measured
     )
-    before_X, before_y = cohort.get_unleaked_training_examples(use_observed_labels=True)
+    before_X, before_y = cohort.get_unleaked_training_examples(
+        horizon_days=180.0, use_observed_labels=True
+    )
     row = before_X.index[before_X["patient_id"] == observation.patient_id]
     row = row[before_X.loc[row, "day"] == observation.day][0]
     observation.analytes[analyte] += 1_000_000.0
-    after_X, after_y = cohort.get_unleaked_training_examples(use_observed_labels=True)
+    after_X, after_y = cohort.get_unleaked_training_examples(
+        horizon_days=180.0, use_observed_labels=True
+    )
     pd.testing.assert_series_equal(before_X.loc[row], after_X.loc[row])
     assert before_y.loc[row] == after_y.loc[row]
 
@@ -521,7 +525,11 @@ def test_training_helper_requires_an_explicit_observed_or_oracle_estimand():
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=84).generate_cohort(
         num_patients=4, duration_days=180.0
     )
+    with pytest.raises(TypeError, match="horizon_days"):
+        cohort.get_unleaked_training_examples(use_observed_labels=True)
+    with pytest.raises(TypeError, match="horizon_days"):
+        cohort.get_survival_training_examples(use_observed_labels=True)
     with pytest.raises(ValueError, match="must be explicitly set"):
-        cohort.get_unleaked_training_examples()
+        cohort.get_unleaked_training_examples(horizon_days=180.0)
     with pytest.raises(ValueError, match="must be explicitly set"):
-        cohort.get_survival_training_examples()
+        cohort.get_survival_training_examples(horizon_days=180.0)
