@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypeGuard
 
 import numpy as np
 import pandas as pd
@@ -80,16 +80,20 @@ SUPPORTED_SYMPTOM_STATES = frozenset(
 )
 
 
-def _is_finite_number(value: object) -> bool:
-    return (
-        isinstance(value, (int, float, np.integer, np.floating))
-        and not isinstance(value, (bool, np.bool_))
-        and bool(np.isfinite(value))
-    )
+def _is_finite_number(
+    value: object,
+) -> TypeGuard[int | float | np.integer[Any] | np.floating[Any]]:
+    if not isinstance(value, (int, float, np.integer, np.floating)):
+        return False
+    if isinstance(value, (bool, np.bool_)):
+        return False
+    return bool(np.isfinite(value))
 
 
 def _is_finite_nonnegative_number(value: object) -> bool:
-    return _is_finite_number(value) and value >= 0
+    if not _is_finite_number(value):
+        return False
+    return bool(value >= 0)
 
 
 @dataclass
@@ -400,6 +404,7 @@ class CohortDataset:
             if (
                 use_observed_labels
                 and recurrence_event
+                and recurrence_day is not None
                 and float(recurrence_day) > float(admin_end)
             ):
                 raise ValueError(
