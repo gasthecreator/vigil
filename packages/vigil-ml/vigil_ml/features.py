@@ -130,8 +130,6 @@ class WindowedFeatureExtractor:
         patient_row: Dict[str, Any],
         historical_observations: List[Dict[str, Any]],
         current_day: float,
-        *,
-        synthetic_only: bool | None = None,
     ) -> Dict[str, float]:
         """
         Extracts feature vector at a specific evaluation day t using ONLY history where day <= current_day.
@@ -645,9 +643,7 @@ class WindowedFeatureExtractor:
                 if rec_event and rec_day is not None and not np.isnan(rec_day) and d >= rec_day:
                     continue
 
-                feat = self.extract_features_at_visit(
-                    pt_row, obs_list, d, synthetic_only=synthetic_only
-                )
+                feat = self.extract_features_at_visit(pt_row, obs_list, d)
                 if not feat:
                     continue
 
