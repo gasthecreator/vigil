@@ -98,6 +98,33 @@ def test_feature_extractor_rejects_nonfinite_demographics_and_nonbinary_receptor
         )
 
 
+def test_direct_feature_api_rejects_boolean_days_demographics_and_analytes():
+    extractor = WindowedFeatureExtractor()
+    clean_history = [{"day": 0.0, "analytes": {"ca_15_3": 20.0}}]
+    with pytest.raises(ValueError, match="current_day must be numeric"):
+        extractor.extract_features_at_visit({}, clean_history, current_day=True)
+    with pytest.raises(ValueError, match="observation days must be numeric"):
+        extractor.extract_features_at_visit(
+            {}, [{"day": True, "analytes": {"ca_15_3": 20.0}}], current_day=1.0
+        )
+    with pytest.raises(ValueError, match="patient features must not be boolean"):
+        extractor.extract_features_at_visit(
+            {"age": True}, clean_history, current_day=0.0
+        )
+    with pytest.raises(ValueError, match="ca_15_3 measurements must be numeric"):
+        extractor.extract_features_at_visit(
+            {}, [{"day": 0.0, "analytes": {"ca_15_3": True}}], current_day=0.0
+        )
+    patients = pd.DataFrame(
+        [{"patient_id": "BOOL-DAY", "observed_recurrence_event": False}]
+    )
+    observations = pd.DataFrame(
+        {"patient_id": ["BOOL-DAY"], "day": [True], "ca_15_3": [20.0]}
+    )
+    with pytest.raises(ValueError, match="observation day must be numeric, not boolean"):
+        extractor.transform_cohort(patients, observations, horizon_days=365.0)
+
+
 def test_symptom_features_distinguish_absent_assessment_from_reported_zero():
     extractor = WindowedFeatureExtractor()
     history = [{"day": 0.0, "symptoms": None}]

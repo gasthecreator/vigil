@@ -231,6 +231,10 @@ IPCW review found negative/infinite horizons and multidimensional event-code arr
 
 Caller-supplied `(n, 1)` weights could broadcast across `(n,)` Brier residuals and return a wrong scalar without an error. A shared validator now requires finite, non-negative, one-dimensional weights of exact length for AUC, Brier, and IPCW calibration. Metric tests pass (19); the full evaluator suite is 49 passed, 1 unchanged K3 shuffled-outcome canary failure (AUC 0.6136 > 0.60). `make typecheck` (15 source files and 2 import contracts) and Ruff pass. This is input-contract hardening only.
 
+### Q-7 follow-up — align direct feature input validation (2026-10-20)
+
+The direct feature API had accepted boolean days, ages, and analyte values as numeric `1.0`, unlike the cohort lab path. Both direct and cohort feature extraction now reject those boolean values. Feature tests pass (40); Ruff and `git diff --check` pass. This does not validate analyte units or physiological plausibility; those remain part of the larger data contract audit.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|

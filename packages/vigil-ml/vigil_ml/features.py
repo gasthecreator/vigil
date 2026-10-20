@@ -129,8 +129,12 @@ class WindowedFeatureExtractor:
         Extracts feature vector at a specific evaluation day t using ONLY history where day <= current_day.
         """
         # Validate the complete input before applying the anti-leakage time filter.
+        if isinstance(current_day, (bool, np.bool_)):
+            raise ValueError("current_day must be numeric, not boolean")
         if not np.isfinite(float(current_day)):
             raise ValueError("current_day must be finite")
+        if any(isinstance(obs.get("day"), (bool, np.bool_)) for obs in historical_observations):
+            raise ValueError("observation days must be numeric, not boolean")
         try:
             all_days = np.asarray([float(obs["day"]) for obs in historical_observations], dtype=float)
         except (KeyError, TypeError, ValueError) as exc:
@@ -150,6 +154,8 @@ class WindowedFeatureExtractor:
         def numeric_value(value: Any) -> float:
             if value is None or pd.isna(value):
                 return float("nan")
+            if isinstance(value, (bool, np.bool_)):
+                raise ValueError("present numeric patient features must not be boolean")
             result = float(value)
             if not np.isfinite(result):
                 raise ValueError("present numeric patient features must be finite")
@@ -276,6 +282,8 @@ class WindowedFeatureExtractor:
                 features[f"{code}_cv_available"] = 0.0
                 continue
 
+            if isinstance(curr_val, (bool, np.bool_)):
+                raise ValueError(f"{code} measurements must be numeric, not boolean")
             curr_val = float(curr_val)
             if not np.isfinite(curr_val):
                 raise ValueError(f"{code} measurements must be finite when present")
@@ -288,6 +296,8 @@ class WindowedFeatureExtractor:
                 value = obs.get("analytes", {}).get(code)
                 if value is None or pd.isna(value):
                     continue
+                if isinstance(value, (bool, np.bool_)):
+                    raise ValueError(f"{code} measurements must be numeric, not boolean")
                 value = float(value)
                 if not np.isfinite(value):
                     raise ValueError(f"{code} measurements must be finite when present")
@@ -376,6 +386,8 @@ class WindowedFeatureExtractor:
         grouped_obs: Dict[str, List[Dict[str, Any]]] = {}
         for _, row in observations_df.iterrows():
             pt_id = row["patient_id"]
+            if isinstance(row["day"], (bool, np.bool_)):
+                raise ValueError(f"observation day must be numeric, not boolean for patient {pt_id}")
             analytes: Dict[str, float] = {}
             for code in self.tracked_analytes:
                 mask_column = f"observed_{code}"
