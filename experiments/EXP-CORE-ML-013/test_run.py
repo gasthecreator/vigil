@@ -37,6 +37,18 @@ def test_holm_adjustment_is_monotone_and_keeps_family_size():
     assert adjusted == pytest.approx({"first": 0.003, "second": 0.04, "third": 0.04})
 
 
+def test_report_is_rendered_from_and_matches_saved_json(tmp_path):
+    result = {
+        "source_commit": "test-sha",
+        "replicates": [],
+    }
+    result_path = tmp_path / "results.json"
+    report_path = tmp_path / "REPORT.md"
+    RUN.write_saved_result_and_report(result_path, report_path, result)
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert report_path.read_text(encoding="utf-8") == RUN.render(saved)
+
+
 def test_runner_refuses_existing_output_before_git_or_simulation(monkeypatch, tmp_path):
     (tmp_path / "results.json").write_text("existing", encoding="utf-8")
     monkeypatch.setattr(RUN, "EXP", tmp_path)

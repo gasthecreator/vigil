@@ -298,6 +298,19 @@ def _access_record(commit: str) -> dict[str, Any]:
     }
 
 
+def write_saved_result_and_report(
+    result_path: Path, report_path: Path, result: dict[str, Any]
+) -> None:
+    """Write results first, then render and byte-verify the report from saved JSON."""
+    result_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    saved_result = json.loads(result_path.read_text(encoding="utf-8"))
+    rendered = render(saved_result)
+    report_path.write_text(rendered, encoding="utf-8")
+    parity_result = json.loads(result_path.read_text(encoding="utf-8"))
+    if report_path.read_text(encoding="utf-8") != render(parity_result):
+        raise RuntimeError("Saved REPORT.md differs from rendering saved results.json")
+
+
 def main() -> None:
     output_paths = [EXP / name for name in ("ACCESS_LOG.json", "results.json", "REPORT.md")]
     if any(path.exists() for path in output_paths):
@@ -327,8 +340,7 @@ def main() -> None:
             "design": access["design"],
             "replicates": replicates,
         }
-        output_paths[1].write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        output_paths[2].write_text(render(result), encoding="utf-8")
+        write_saved_result_and_report(output_paths[1], output_paths[2], result)
         access.update(
             {
                 "completed": True,
