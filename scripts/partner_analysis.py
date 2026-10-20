@@ -18,7 +18,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
     compute_ipcw_calibration_curve,
     compute_ipcw_weights,
@@ -870,30 +869,16 @@ def secondary(
         "worst_group": min(scored, key=lambda kv: kv[1]) if scored else None,
         "facility": "single-site extraction: not applicable",
     }
-    # Lead time and overdetection at the operating point (all landmarks)
-    p_all = plan.candidate_risk(test.X)
-    pdf = test.patients
-    patient_df = pd.DataFrame(
-        {
-            "patient_id": pdf["patient_id"],
-            "true_recurrence_event": pdf["observed_recurrence_event"],
-            "true_recurrence_day": pdf["observed_recurrence_day"],
-            "is_indolent": False,
-        }
-    )
-    obs_df = pd.DataFrame(
-        {
-            "patient_id": test.X["patient_id"],
-            "day": test.X["eval_day"],
-            "alert_triggered": (p_all >= plan.threshold).astype(int),
-        }
-    )
-    try:
-        out["lead_time"] = evaluate_lead_time_and_overdetection(patient_df, obs_df).to_dict() | {
-            "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
-        }
-    except Exception as exc:  # reported, never hidden
-        out["lead_time"] = {"not_computed": f"{type(exc).__name__}"}
+    # The shared legacy evaluator assumes fully observed recurrence status and
+    # complete patient truth. Partner records are right-censored and include a
+    # competing-death process, so do not reinterpret “no confirmed recurrence”
+    # as disease-free or emit an unadjusted lead-time/over-detection estimate.
+    out["lead_time"] = {
+        "not_computed": (
+            "No censoring- and competing-risk-aware lead-time/over-detection estimand "
+            "is registered for partner follow-up."
+        )
+    }
     # Missed-signal audit, aggregate only
     dismissed = int(pt.loc[ids, "dismissed_prior_signal"].sum())
     out["m10_aggregate"] = {

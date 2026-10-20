@@ -653,6 +653,8 @@ def test_secondary_analyses_apply_the_small_cell_and_minimum_event_rules(runs):
     assert s["subgroups"]["worst_group"] is None
     assert "verification_bias" in s and "decision_curve" in s and "lead_time" in s
     assert "not_run" in s["decision_curve"]
+    assert "not_computed" in s["lead_time"]
+    assert "censoring" in s["lead_time"]["not_computed"]
     assert s["m10_aggregate"]["small_cell_threshold"] == 5
 
 

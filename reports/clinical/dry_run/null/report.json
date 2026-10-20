@@ -71,7 +71,7 @@
     "comparator_dev_auc_out_of_fold": {
       "B1_SINGLE_THRESHOLD": 0.505475581441474,
       "B2_VELOCITY_RULE": 0.5136512043141306,
-      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.4916223659496037
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.49152813869633055
     },
     "recalibration_intercept": -1.3451259651578074,
     "recalibration_slope": 0.22993502112940972,
@@ -200,13 +200,7 @@
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "441.6 \u00b1 353.4",
-      "conditional_median_days": 327.0,
-      "unconditional_mean_days": 120.9,
-      "recurrence_detection_rate": 0.2737,
-      "overdetection_rate": 0.7292,
-      "alert_burden_per_100_pt_years": 16.01,
-      "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
+      "not_computed": "No censoring- and competing-risk-aware lead-time/over-detection estimand is registered for partner follow-up."
     },
     "m10_aggregate": {
       "patients_with_dismissed_prior_signal": 11,

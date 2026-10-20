@@ -71,7 +71,7 @@
     "comparator_dev_auc_out_of_fold": {
       "B1_SINGLE_THRESHOLD": 0.5818737949036036,
       "B2_VELOCITY_RULE": 0.6514283794550285,
-      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.6846607114120559
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.6846602836765586
     },
     "recalibration_intercept": -0.7391730272708815,
     "recalibration_slope": 0.563757454272301,
@@ -101,15 +101,15 @@
       "met": false
     },
     "C2": {
-      "estimate": 0.005604381804751757,
+      "estimate": 0.0063046139902570575,
       "ci95": [
-        -0.08248053342123891,
-        0.10180855586714117
+        -0.08207996012586243,
+        0.10228358394651607
       ],
       "criterion": "lower CI bound > 0.0",
       "ci_criterion_met": false,
-      "p": 0.436,
-      "p_holm": 0.436,
+      "p": 0.4295,
+      "p_holm": 0.4295,
       "reject": false,
       "met": false
     },
@@ -192,13 +192,7 @@
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "199.9 \u00b1 97.2",
-      "conditional_median_days": 196.0,
-      "unconditional_mean_days": 141.0,
-      "recurrence_detection_rate": 0.7051,
-      "overdetection_rate": 0.4811,
-      "alert_burden_per_100_pt_years": 17.66,
-      "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
+      "not_computed": "No censoring- and competing-risk-aware lead-time/over-detection estimand is registered for partner follow-up."
     },
     "m10_aggregate": {
       "patients_with_dismissed_prior_signal": 10,

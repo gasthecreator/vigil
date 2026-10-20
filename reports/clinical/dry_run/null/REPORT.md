@@ -138,13 +138,7 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 
 ```json
 {
-  "conditional_lead_time_days": "441.6 \u00b1 353.4",
-  "conditional_median_days": 327.0,
-  "unconditional_mean_days": 120.9,
-  "recurrence_detection_rate": 0.2737,
-  "overdetection_rate": 0.7292,
-  "alert_burden_per_100_pt_years": 16.01,
-  "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
+  "not_computed": "No censoring- and competing-risk-aware lead-time/over-detection estimand is registered for partner follow-up."
 }
 ```
 

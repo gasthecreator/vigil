@@ -42,7 +42,7 @@ met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap
 | id | estimate | 95% CI | criterion | CI criterion | p (one-sided) | p Holm | met |
 |---|---:|---|---|---|---:|---:|---|
 | C1 | 0.943 | [0.586, 1.308] | CI within [0.8, 1.2] | no | 0.187 | 0.374 | **no** |
-| C2 | 0.006 | [-0.082, 0.102] | lower CI bound > 0.0 | no | 0.436 | 0.436 | **no** |
+| C2 | 0.006 | [-0.082, 0.102] | lower CI bound > 0.0 | no | 0.429 | 0.429 | **no** |
 | C3 | 3.516 | [2.814, 4.278] | upper CI bound <= 5.0 | yes | 0.000 | 0.001 | **YES** |
 
 A criterion not met is reported as not met. C3 measures workload only; meeting it says nothing about whether alerts are correct.
@@ -130,13 +130,7 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 
 ```json
 {
-  "conditional_lead_time_days": "199.9 \u00b1 97.2",
-  "conditional_median_days": 196.0,
-  "unconditional_mean_days": 141.0,
-  "recurrence_detection_rate": 0.7051,
-  "overdetection_rate": 0.4811,
-  "alert_burden_per_100_pt_years": 17.66,
-  "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
+  "not_computed": "No censoring- and competing-risk-aware lead-time/over-detection estimand is registered for partner follow-up."
 }
 ```
 

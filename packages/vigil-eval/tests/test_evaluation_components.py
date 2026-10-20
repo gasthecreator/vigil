@@ -274,6 +274,34 @@ def test_lead_time_reports_undefined_denominators_and_uses_observed_person_time(
     assert not report.details["metrics_defined"]
 
 
+@pytest.mark.parametrize("event", [None, np.nan, pd.NA, "unknown"])
+def test_lead_time_rejects_unknown_recurrence_status(event):
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": event, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="true_recurrence_event"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
+def test_lead_time_rejects_recurrence_without_event_day():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "p1",
+            "true_recurrence_event": True,
+            "true_recurrence_day": np.nan,
+            "is_indolent": False,
+        }]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="recurrence day"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
 def test_frozen_test_access_logger(tmp_path):
     """Verifies append-only frozen test set audit log."""
     log_file = tmp_path / "test_access.jsonl"
