@@ -180,6 +180,33 @@ def test_verification_ipw_accepts_propensities_fitted_on_an_independent_split():
     assert report.details["maximum_verified_inverse_weight"] == pytest.approx(2.5)
 
 
+def test_verification_ipw_accepts_probability_one_for_verified_rows():
+    report = evaluate_ipw_verification(
+        risk_scores=np.array([0.1, 0.8, 0.4, 0.9]),
+        observed_verified_labels=np.array([0.0, 1.0, np.nan, 1.0]),
+        verification_mask=np.array([True, True, False, True]),
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=np.array([1.0, 0.5, 0.25, 1.0]),
+    )
+    assert report.details["metrics_defined"]
+    assert report.details["minimum_verified_propensity"] == pytest.approx(0.5)
+    assert report.details["maximum_verified_inverse_weight"] == pytest.approx(2.0)
+
+
+def test_verification_ipw_rejects_probability_one_for_unverified_rows():
+    report = evaluate_ipw_verification(
+        risk_scores=np.array([0.1, 0.8, 0.4]),
+        observed_verified_labels=np.array([0.0, 1.0, np.nan]),
+        verification_mask=np.array([True, True, False]),
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=np.array([1.0, 0.5, 1.0]),
+    )
+    assert not report.details["metrics_defined"]
+    assert "conflicts with observed verification" in report.details["reason"]
+
+
 def test_verification_ipw_rejects_misaligned_or_invalid_supplied_propensities():
     scores = np.array([0.1, 0.9])
     labels = np.array([0.0, 1.0])

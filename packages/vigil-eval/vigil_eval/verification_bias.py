@@ -202,15 +202,18 @@ def evaluate_ipw_verification(
         prop_model.fit(features, v_mask.astype(int))
         prop_scores = prop_model.predict_proba(features)[:, 1]
     fully_verified = bool(np.all(v_mask))
+    propensity_support_invalid = np.any(prop_scores <= 0.0) or np.any(
+        (~v_mask) & (prop_scores >= 1.0)
+    )
     if not np.all(np.isfinite(prop_scores)) or (
-        not fully_verified and np.any((prop_scores <= 0.0) | (prop_scores >= 1.0))
+        not fully_verified and propensity_support_invalid
     ):
         return _undefined_report(
             "ipw",
             {
                 "n_total": n,
                 "n_verified": n_verified,
-                "reason": "estimated propensity violates strict positivity",
+                "reason": "verification propensity violates positivity or conflicts with observed verification",
             },
         )
     ipw = np.zeros(n, dtype=float)
