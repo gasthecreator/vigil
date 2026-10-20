@@ -302,6 +302,7 @@ The direct `CohortDataset.get_survival_training_examples` path now rejects boole
 | H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
 | H-119 | Clinician review of revised M5 synthetic illustration labels and explanation wording before patient-facing reuse | ADR-0055; renderer verification does not establish medical correctness | `docs/models/MODEL-CARD-M5.md`; `reports/ml/M5_JOURNEYS.md` | OPEN |
 | H-120 | Disposition of Q-7 fixed acceptance gates | Owner approved statistically valid redesigns for K1, baseline score floors, K3 row-wise shuffle, and G1 single-seed SD ceiling; P11 disclosure fixture currently passes. Historical results remain preserved. | ADR-0062 and the four linked gate proposals | CLOSED |
+| H-121 | Reconcile P5 audit acceptance fixture with synthetic-only model path | Owner approved explicit `synthetic=true` for the test patient; focused test passes locally; full final-head CI pending | `docs/proposals/PROP-P5-ACK-AUDIT-TEST-FIXTURE.md`; `tests/acceptance_p5/test_api_security.py` | OPEN |
 | H-305 | Enable Dependency graph (+ GHAS if private) so dependency-review CI can hard-fail | G-07; action unsupported until graph is on | `docs/ops/GITHUB-SETTINGS.md` §3 | OPEN |
 | H-307 | Ratify partner DCA threshold grid (PR-10) | Current evaluator default is not a clinical protocol; real DCA output stays disabled until explicit thresholds are ratified and frozen | `docs/clinical/PREREGISTRATION.md` §7 and `docs/clinical/ANALYSIS-SPEC.md` §6 | OPEN |
 
