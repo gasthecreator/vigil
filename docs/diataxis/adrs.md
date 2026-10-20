@@ -45,3 +45,4 @@
 - [ADR-0041: Quarantine unsupported API risk outputs](../adr/0041-quarantine-unsupported-api-risk-outputs.md)
 - [ADR-0042: Preserve the estimated censoring survival in IPCW](../adr/0042-ipcw-preserves-estimated-censoring-support.md)
 - [ADR-0043: Reject invalid evaluation probabilities](../adr/0043-reject-invalid-evaluation-probabilities.md)
+- [ADR-0044: Disable invalid prototype trainers](../adr/0044-disable-invalid-prototype-trainers.md)
