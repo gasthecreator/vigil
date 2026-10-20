@@ -6,4 +6,4 @@ The canonical `data/audit/frozen_test_access.jsonl` has no EXP-K4-001 entry. The
 
 The historical runner's `--smoke` mode also used the frozen base-seed namespace. Whether that mode was invoked before the guard was added is not established by the committed evidence. The current runner assigns smoke replications after the configured development seed range and uses a separate derived bootstrap seed. No smoke or frozen cohort was run while applying this correction.
 
-Current K4 input-contract validation and runner safeguards differ from the frozen source hash: the stored hash is `8af5136e5e3339ea`, while the current `k4.py` + runner hash is `914dfcf30c455b70`. The historical result remains attached to its recorded hash and is not represented as regenerated from the current source.
+Current K4 input-contract validation, target-contract propagation, and runner safeguards differ from the frozen source hash: the stored hash is `8af5136e5e3339ea`, while the current concatenated `k4.py` + runner SHA-256 is `b5f56e9580c653af` (first 16 hex characters). The historical result remains attached to its recorded hash and is not represented as regenerated from the current source.

@@ -13,6 +13,7 @@ from vigil_ml import k4
 ROOT = Path(__file__).resolve().parents[3]
 FAMILIES = list(k4.FAMILIES)
 A, S = k4.N_CHANNELS, k4.N_STATIC
+SYNTHETIC_TARGET = k4.TrainingTargetContract("synthetic_planted_signal", 365.0, True)
 
 
 @pytest.fixture(autouse=True)
@@ -98,7 +99,7 @@ def planted(n, seed, shuffle=0):
         y = y.ravel()[np.random.default_rng(10_000 + shuffle).permutation(y.size)].reshape(y.shape)
     ds = k4.SequenceSet(
         [f"p{i}" for i in range(n)], x * m, m, t, g.normal(0, 1, (n, S)).astype(np.float32),
-        np.ones((n, T), dtype=bool), y, np.ones((n, T), dtype=bool),
+        np.ones((n, T), dtype=bool), y, np.ones((n, T), dtype=bool), SYNTHETIC_TARGET,
     )
     return ds
 
@@ -116,6 +117,8 @@ def test_each_family_learns_a_planted_signal_and_not_shuffled_labels(family):
     train, test = planted(1000, 1), planted(300, 2)
     cfg = k4.FitConfig(lr=3e-3, max_epochs=40, patience=8)
     res = k4.fit_risk_model(family, "small", train, cfg, seed=0)
+    assert res.target_contract == train.target_contract
+    assert res.network.target_contract_ == train.target_contract
     p = k4.predict_probabilities(res.network, test)
     assert auc(test.y.ravel(), p.ravel()) > 0.9
     # A network fitted to shuffled labels is a near-arbitrary function of the inputs: one fit scatters by about 0.1 AUC
@@ -152,10 +155,14 @@ def test_pretraining_lowers_the_heldout_masked_loss(family):
 def test_safetensors_round_trip_and_onnx_parity(family, tmp_path):
     ort = pytest.importorskip("onnxruntime")
     net = net_for(family, "small", seed=4)
+    net.target_contract_ = SYNTHETIC_TARGET
     path = tmp_path / "k4.safetensors"
     k4.save_safetensors(net, path, extra={"study": "test"})
     back = k4.load_safetensors(path)
     assert back.family == family
+    assert back.target_contract_ == SYNTHETIC_TARGET
+    with pytest.raises(ValueError, match="reserved model metadata"):
+        k4.save_safetensors(net, path, extra={"family": "overridden"})
     T = k4.MAX_STEPS
     for B, n_real in ((3, 9), (1, 4)):
         x, m, t, s, v = random_batch(B=B, T=T, seed=B)
@@ -168,6 +175,11 @@ def test_safetensors_round_trip_and_onnx_parity(family, tmp_path):
         onnx_path = tmp_path / "k4.onnx"
         if not onnx_path.exists():
             k4.export_onnx(net, onnx_path)
+        import onnx
+
+        onnx_model = onnx.load(str(onnx_path))
+        onnx_metadata = {prop.key: prop.value for prop in onnx_model.metadata_props}
+        assert onnx_metadata["vigil.target_contract"]
         sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
         out = sess.run(["risk"], {"x": x.numpy(), "m": m.numpy(), "t": t.numpy(), "s": s.numpy(), "valid": v.numpy()})[0]
         assert np.max(np.abs(out[:, :n_real] - ref[:, :n_real])) < 1e-4
@@ -251,13 +263,38 @@ def test_sequence_set_rejects_nonbinary_masks_and_hidden_values():
         k4.SequenceSet(["a"], x, m, t, s, valid)
 
 
+def test_labelled_sequence_sets_require_explicit_target_contract():
+    with pytest.raises(ValueError, match="target contract"):
+        k4.SequenceSet(
+            ["a"],
+            np.zeros((1, 1, A)),
+            np.ones((1, 1, A)),
+            np.zeros((1, 1)),
+            np.zeros((1, S)),
+            np.ones((1, 1), dtype=bool),
+            np.zeros((1, 1)),
+            np.ones((1, 1), dtype=bool),
+        )
+
+
 def test_attach_labels_marks_only_rows_that_exist():
     ds = k4.build_sequences(["a", "b"], [[0.0, 5.0], [0.0]], [np.ones((2, A)), np.ones((1, A))], np.zeros((2, S)), np.ones(k4.N_LAB))
-    lab = k4.attach_labels(ds, {("a", 5.0): 1.0, ("b", 0.0): 0.0})
+    target = k4.TrainingTargetContract("observed_diagnosis", 365.0, True)
+    lab = k4.attach_labels(ds, {("a", 5.0): 1.0, ("b", 0.0): 0.0}, target_contract=target)
     assert lab.row_mask[0].tolist()[:2] == [False, True] and lab.row_mask[1, 0] and lab.y[0, 1] == 1.0
+    assert lab.target_contract == target
+    assert lab.subset([0]).target_contract == target
     for invalid in ({("unknown", 0.0): 1.0}, {("a", 1.0): 0.0}, {("a", 5.0): 0.5}, {("a", 5.0): True}):
         with pytest.raises(ValueError):
-            k4.attach_labels(ds, invalid)
+            k4.attach_labels(ds, invalid, target_contract=target)
+
+
+def test_prediction_rejects_a_different_estimand_or_horizon():
+    ds = planted(2, 20)
+    net = net_for("grud", seed=21)
+    net.target_contract_ = k4.TrainingTargetContract("observed_diagnosis", 180.0, True)
+    with pytest.raises(ValueError, match="contracts do not match"):
+        k4.predict_probabilities(net, ds)
 
 
 def test_symptom_channels_are_used_as_given_and_never_masked_for_pretraining():

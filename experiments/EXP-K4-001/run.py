@@ -46,6 +46,7 @@ from vigil_ml.baselines import (  # noqa: E402
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
     SingleThresholdBaseline,
+    TrainingTargetContract,
     VelocityBaseline,
 )
 from vigil_ml.features import WindowedFeatureExtractor  # noqa: E402
@@ -243,9 +244,17 @@ class LabelledCohort:
         self.ds = make_sequences(self.ids, days, values, statics)
         obs = cohort.to_observations_dataframe()
         pts = cohort.to_patients_dataframe()
-        self.X, y, self.t, self.d = extractor.transform_cohort(pts, obs, horizon_days=horizon)
+        self.X, y, self.t, self.d = extractor.transform_cohort(
+            pts, obs, horizon_days=horizon, synthetic_only=True
+        )
+        self.target_contract = TrainingTargetContract(
+            estimand=y.attrs["target_estimand"],
+            horizon_days=y.attrs["horizon_days"],
+            synthetic_only=y.attrs["synthetic_only"],
+        )
         self.X = self.X.reset_index(drop=True)
         self.y = pd.Series(np.asarray(y, dtype=float))
+        self.y.attrs.update(y.attrs)
         pid_index = {p: i for i, p in enumerate(self.ids)}
         visit_index: Dict[Tuple[str, float], int] = {}
         for i, pid in enumerate(self.ids):
@@ -260,7 +269,7 @@ class LabelledCohort:
                 raise ValueError(f"duplicate landmark row {key}")
             rows[key] = float(self.y.iloc[k])
             self.pos_i[k], self.pos_j[k] = pid_index[pid], visit_index[key]
-        self.ds = k4.attach_labels(self.ds, rows)
+        self.ds = k4.attach_labels(self.ds, rows, target_contract=self.target_contract)
         self.t = np.asarray(self.t, dtype=float)
         self.d = np.asarray(self.d, dtype=float)
 
@@ -372,7 +381,17 @@ def train_set(rep: Replication, n: int, permute_seed: Optional[int] = None) -> k
         rows = ds.row_mask
         vals = y[rows]
         y[rows] = vals[np.random.default_rng(permute_seed).permutation(len(vals))]
-        ds = k4.SequenceSet(ds.patient_ids, ds.x, ds.m, ds.t, ds.s, ds.valid, y, rows)
+        ds = k4.SequenceSet(
+            ds.patient_ids,
+            ds.x,
+            ds.m,
+            ds.t,
+            ds.s,
+            ds.valid,
+            y,
+            rows,
+            ds.target_contract,
+        )
     return ds
 
 
