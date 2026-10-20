@@ -433,6 +433,69 @@ def test_verification_propensity_fails_closed_without_complete_development_label
     assert issue == "development verification status is incomplete or non-binary"
 
 
+def test_out_of_fold_censoring_weights_are_fit_inside_patient_folds(monkeypatch):
+    n = 10
+    patients = np.array([f"P{i:02d}" for i in range(n)])
+    events = np.tile([1, 2], n // 2)
+    times = np.tile([100.0, 200.0], n // 2)
+    labels = (events == 1).astype(float)
+    dev = pa.Landmarks(
+        X=pd.DataFrame(
+            {
+                "patient_id": patients,
+                "eval_day": np.zeros(n),
+                "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            }
+        ),
+        y=labels,
+        T=times,
+        E=events,
+        first=np.ones(n, dtype=bool),
+        end_day={patient: 365.0 for patient in patients},
+        patients=pd.DataFrame({"patient_id": patients}),
+    )
+    original = pa.compute_ipcw_weights
+    input_sizes = []
+    b1_training_ids = []
+    b2_training_ids = []
+    base_b1, base_b2 = pa.SingleThresholdBaseline, pa.VelocityBaseline
+
+    class SpyB1(base_b1):
+        def fit(self, X, y, sample_weight=None, **kwargs):
+            b1_training_ids.append(set(X["patient_id"]))
+            return super().fit(X, y, sample_weight=sample_weight, **kwargs)
+
+    class SpyB2(base_b2):
+        def fit(self, X, y, sample_weight=None, **kwargs):
+            b2_training_ids.append(set(X["patient_id"]))
+            return super().fit(X, y, sample_weight=sample_weight, **kwargs)
+
+    def record_fold_only_weights(follow_up_times, event_indicators, horizon_time):
+        input_sizes.append(len(follow_up_times))
+        return original(follow_up_times, event_indicators, horizon_time)
+
+    monkeypatch.setattr(pa, "compute_ipcw_weights", record_fold_only_weights)
+    monkeypatch.setattr(pa, "SingleThresholdBaseline", SpyB1)
+    monkeypatch.setattr(pa, "VelocityBaseline", SpyB2)
+    predictions = pa._out_of_fold(dev, horizon=365.0, folds=5)
+
+    assert input_sizes == [8] * 5
+    from sklearn.model_selection import GroupKFold
+
+    expected_training_ids = [
+        set(patients[train])
+        for train, _test in GroupKFold(n_splits=5).split(dev.X, groups=patients)
+    ]
+    assert b1_training_ids == b2_training_ids == expected_training_ids
+    assert set(predictions) == {
+        "B1_SINGLE_THRESHOLD",
+        "B2_VELOCITY_RULE",
+        "B3_REGULARIZED_LOGISTIC_HORIZON",
+        "B4_GRADIENT_BOOSTING_HORIZON",
+    }
+    assert all(np.isfinite(scores).all() for scores in predictions.values())
+
+
 # ------------------------------------------------------------------------------------------------ whole pipeline on synthetic cohorts
 @pytest.fixture(scope="module")
 def runs(tmp_path_factory):

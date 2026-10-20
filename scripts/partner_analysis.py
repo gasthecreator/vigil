@@ -390,17 +390,30 @@ def _model_view(X: pd.DataFrame) -> pd.DataFrame:
     return X.drop(columns=[c for c in ("eval_day",) if c in X.columns])
 
 
-def _out_of_fold(dev: Landmarks, horizon: float, folds: int = 5) -> Tuple[np.ndarray, np.ndarray]:
-    """Out-of-fold raw predictions (candidate, B3) for every development landmark, cross-fitted by patient."""
+def _out_of_fold(
+    dev: Landmarks, horizon: float, folds: int = 5
+) -> Dict[str, np.ndarray]:
+    """Patient-cross-fitted raw predictions for every model used in development selection."""
     from sklearn.model_selection import GroupKFold
 
-    w = compute_ipcw_weights(dev.T, dev.E, horizon)
-    det = w > 0
     n = len(dev.X)
-    cand, cox = np.full(n, np.nan), np.full(n, np.nan)
+    predictions = {
+        name: np.full(n, np.nan)
+        for name in (
+            "B1_SINGLE_THRESHOLD",
+            "B2_VELOCITY_RULE",
+            "B3_REGULARIZED_LOGISTIC_HORIZON",
+            "B4_GRADIENT_BOOSTING_HORIZON",
+        )
+    }
     groups = dev.X["patient_id"].to_numpy()
     for tr, te in GroupKFold(n_splits=folds).split(dev.X, groups=groups):
-        trd = tr[det[tr]]
+        # The censoring distribution is a fitted nuisance component. Estimate
+        # it inside each training fold so held-out patient outcomes cannot
+        # influence training weights or the corresponding out-of-fold score.
+        train_weights_all = compute_ipcw_weights(dev.T[tr], dev.E[tr], horizon)
+        det_train = train_weights_all > 0
+        trd = tr[det_train]
         ytr = pd.Series(dev.y[trd])
         if ytr.nunique() < 2:
             raise InsufficientData(
@@ -408,16 +421,21 @@ def _out_of_fold(dev: Landmarks, horizon: float, folds: int = 5) -> Tuple[np.nda
             )
         Xtr = _model_view(dev.X.iloc[trd])
         Xte = _model_view(dev.X.iloc[te])
-        train_weights = w[trd]
-        cand[te] = (
-            GradientBoostingBaseline().fit(Xtr, ytr, sample_weight=train_weights).predict_risk(Xte)
+        train_weights = train_weights_all[det_train]
+        fold_models = {
+            "B1_SINGLE_THRESHOLD": SingleThresholdBaseline(),
+            "B2_VELOCITY_RULE": VelocityBaseline(),
+            "B3_REGULARIZED_LOGISTIC_HORIZON": RegularizedCoxHazardBaseline(),
+            "B4_GRADIENT_BOOSTING_HORIZON": GradientBoostingBaseline(),
+        }
+        for name, model in fold_models.items():
+            model.fit(Xtr, ytr, sample_weight=train_weights)
+            predictions[name][te] = model.predict_risk(Xte)
+    if any(not np.isfinite(scores).all() for scores in predictions.values()):
+        raise RuntimeError(
+            "patient-grouped cross-fitting did not produce finite scores for every landmark"
         )
-        cox[te] = (
-            RegularizedCoxHazardBaseline()
-            .fit(Xtr, ytr, sample_weight=train_weights)
-            .predict_risk(Xte)
-        )
-    return cand, cox
+    return predictions
 
 
 def fit_on_development(
@@ -433,22 +451,26 @@ def fit_on_development(
         raise InsufficientData(
             f"{n_events} development-split events at the first landmark; at least {min_events} are needed to fit and select"
         )
-    oof_cand, oof_cox = _out_of_fold(dev, horizon)
+    oof = _out_of_fold(dev, horizon)
     first = dev.first
-    Xf, Tf, Ef = dev.X[first], dev.T[first], dev.E[first]
+    Tf, Ef = dev.T[first], dev.E[first]
     det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
     Xtr, ytr = _model_view(dev.X[det]), pd.Series(dev.y[det])
     train_weights = compute_ipcw_weights(dev.T, dev.E, horizon)[det]
     b1 = SingleThresholdBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     b2 = VelocityBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     rule_scores = {
-        "B1_SINGLE_THRESHOLD": b1.predict_risk(_model_view(Xf)),
-        "B2_VELOCITY_RULE": b2.predict_risk(_model_view(Xf)),
-        "B3_REGULARIZED_LOGISTIC_HORIZON": oof_cox[first],
+        "B1_SINGLE_THRESHOLD": oof["B1_SINGLE_THRESHOLD"][first],
+        "B2_VELOCITY_RULE": oof["B2_VELOCITY_RULE"][first],
+        "B3_REGULARIZED_LOGISTIC_HORIZON": oof[
+            "B3_REGULARIZED_LOGISTIC_HORIZON"
+        ][first],
     }
     auc = {k: ipcw_auc(v, Tf, Ef, horizon) for k, v in rule_scores.items()}
     best = max(auc, key=lambda k: (auc[k], -list(auc).index(k)))
-    a, b = weighted_calibration_fit(oof_cand[first], Tf, Ef, horizon)
+    a, b = weighted_calibration_fit(
+        oof["B4_GRADIENT_BOOSTING_HORIZON"][first], Tf, Ef, horizon
+    )
     candidate = GradientBoostingBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     comparator = {
         "B1_SINGLE_THRESHOLD": b1,
@@ -469,7 +491,8 @@ def fit_on_development(
     )
     if verification_issue:
         plan.notes.append(f"verification-bias analysis unavailable: {verification_issue}")
-    p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_cand))))
+    oof_candidate = oof["B4_GRADIENT_BOOSTING_HORIZON"]
+    p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_candidate))))
     grid = np.unique(np.quantile(p_all, np.linspace(0.0, 1.0, 201)))
     pids, days = dev.X["patient_id"].to_numpy(), dev.X["eval_day"].to_numpy()
     chosen, rate = float(grid[-1]) + 1e-9, 0.0
