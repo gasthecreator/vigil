@@ -20,6 +20,7 @@ plan_version_impact: NONE
 - After the correction, `./.venv/bin/pytest -q packages/vigil-sim/tests/test_calibration.py packages/vigil-sim/tests/test_generators.py` reports 17 passed and one failure: G1 conditional lead-time SD `113.61508552541177` days versus the unchanged upper limit of 110 days.
 - For G1, seed 42, 350 patients, 730 days, the mask-aware evaluator reports conditional lead mean `99.64246109751565` days, unconditional lead mean `49.11287182057644`, sensitivity `0.5260663507109005`, observation and patient specificity both `1.0`, 1,334 measured CA 15-3 observations, and 81/211 recurrent patients without a measured CA 15-3 in the detection window. These are one-seed synthetic evaluator outputs, not clinical estimates.
 - The latest PR #79 CI run (`39417463523`, backend-tests (misc) job `118609860513`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reproduces the unchanged G1 conditional lead-time SD failure at `113.6` days versus the `110`-day ceiling. The seeded cohort and threshold were not changed.
+- The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-tests (misc) job `118662193428`) again reports `113.61508552541177` days against the unchanged `110`-day ceiling. The job reports 637 passed and 2 failed (the other failure is the K3 shuffled-outcome canary); no seed, cohort size, evaluator contract, or threshold was changed.
 
 ## 3. Proposed Change
 

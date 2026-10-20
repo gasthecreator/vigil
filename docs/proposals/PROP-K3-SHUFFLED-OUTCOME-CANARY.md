@@ -19,6 +19,8 @@ On the corrected generator source `37de102`, the unchanged `test_k3_joint_model_
 
 The latest PR #79 CI run (`39417463523`, backend-tests (misc) job `118609860513`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reports shuffled IPCW AUC `0.6136` against the unchanged `0.60` ceiling. Source inspection confirms the ungrouped event-only permutation described above. This is a gate result, not a model-performance estimate; it does not establish that the source change caused the failure or authorize modifying the test.
 
+The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-tests (misc) job `118662193428`; quality-gates run `39432790754`, coverage-ratchet job `118661931375`) independently reproduces shuffled IPCW AUC `0.6136378551` against the unchanged `0.60` ceiling. The coverage-ratchet job stops during coverage measurement because this canary fails; it is a propagated failure, not a separate test defect. The separate K1 acceptance failure is reported by the Postgres suite and backend-acceptance job. No seed, threshold, or test was changed.
+
 ## Decision needed
 
 Overseer review is needed to approve a patient-level null design and its finite-sample criterion. Until then, the gate remains unchanged and NOT MET on this branch.

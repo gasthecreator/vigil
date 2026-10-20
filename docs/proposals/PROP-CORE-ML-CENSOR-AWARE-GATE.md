@@ -14,6 +14,8 @@ The focused command `./.venv/bin/pytest packages/vigil-ml/tests/test_features.py
 
 The latest PR #79 CI run (`39417463523`, backend-tests (ml) job `118609860489`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reproduces both unchanged fixed-floor failures: B1 AUC `0.5488445517` versus `> 0.65`, and fast landmark logistic AUC `0.7108199278` versus `> 0.72`. No comparison outcome was tuned and no assertion was changed.
 
+The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-tests (ml) job `118662193275`) independently reproduces both results: B1 AUC `0.5488445517` and fast landmark logistic AUC `0.7108199278`. The job reports 548 passed and 2 failed. No fixed-seed result, score floor, or test was changed.
+
 ## Decision needed
 
 Overseer review should either accept a test redesign based on the censor-aware experiment protocol, or provide a corrected data-generating/estimand contract that supports a valid fixed-score invariant. Until then, do not represent those two assertions as passing.

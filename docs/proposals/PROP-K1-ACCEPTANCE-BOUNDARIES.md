@@ -22,6 +22,8 @@ On PR #79 head `ac53e66`, GitHub acceptance CI reports the amortized 90% interva
 
 The latest PR #79 CI run (`39417463523`, backend-acceptance job `118609860472`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reproduces the same failure: one acceptance test fails with displayed coverage `0.97` outside `[0.75, 0.97]`; the other K1 checks pass or are the registered expected failure. No threshold or seed was changed.
 
+The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-acceptance job `118662192993`; Postgres run `39432790682`, job `118662076287`) reproduces the same `39/40 = 0.975` result. The Postgres job completed its migration, security and deployment steps successfully; only the acceptance suite failed on this K1 boundary. No implementation, seed, or assertion change was made for this result.
+
 ## Decision needed
 
 Overseer review is needed only for the finite-sample coverage criterion. The negative-control defect is fixed in implementation; the K1 acceptance gate remains NOT MET while the unchanged coverage check is unresolved, so this branch is not ready to merge.
