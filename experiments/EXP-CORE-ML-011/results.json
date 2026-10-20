@@ -1,0 +1,115 @@
+{
+  "source_commit": "7bb5533a29df6af8a73d69690065da02d547d992",
+  "runner_sha256": "2a43b038a90669249861b164e8867baeef1ae196c03b1eb2a68e761b198d5b8d",
+  "preregistration_sha256": "9915569769ab91becb2eb9838f44b6b916ee851a705c038a1bc75ad6e0c3a469",
+  "simulator_sha256": "c2c637f13030011d12c99d72791d2881f903cd7943e6e5b072bf8c5defcfefa4",
+  "mechanisms_sha256": "d7d519e146fb720a31051122443d938889529c6c25159d966b1ec700b031ac21",
+  "profile_sha256": "dd38047b067943ee201cfe426e7438df3678442cf9dd46e9defe1ead5df8e143",
+  "lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "profile_id": "balanced_synthetic_core_v4",
+  "status": "PASS",
+  "g1_transition_check": {
+    "cases": 1000,
+    "max_absolute_error": 2.487922756699845e-09,
+    "mean_absolute_error": 6.269596786179221e-11,
+    "passed": true,
+    "no_recurrence_signal_violations": 0
+  },
+  "g2_poisson_check": {
+    "patients": 5000,
+    "observed_events": 21229,
+    "expected_events": 21503.569429740655,
+    "poisson_p_value": 0.06121693274202896,
+    "uniform_ks_statistic": 0.007975019901841573,
+    "uniform_ks_p_value": 0.133607803952708,
+    "uniform_event_positions": 21229,
+    "no_recurrence_violations": 0,
+    "count_mismatches": 0
+  },
+  "replicates": [
+    {
+      "generator": "G1",
+      "replicate": 0,
+      "seed": 20361101,
+      "patients": 1000,
+      "events": 0,
+      "eligible_person_days": 0.0
+    },
+    {
+      "generator": "G1",
+      "replicate": 1,
+      "seed": 20371101,
+      "patients": 1000,
+      "events": 0,
+      "eligible_person_days": 0.0
+    },
+    {
+      "generator": "G1",
+      "replicate": 2,
+      "seed": 20381101,
+      "patients": 1000,
+      "events": 0,
+      "eligible_person_days": 0.0
+    },
+    {
+      "generator": "G1",
+      "replicate": 3,
+      "seed": 20391101,
+      "patients": 1000,
+      "events": 0,
+      "eligible_person_days": 0.0
+    },
+    {
+      "generator": "G1",
+      "replicate": 4,
+      "seed": 20401101,
+      "patients": 1000,
+      "events": 0,
+      "eligible_person_days": 0.0
+    },
+    {
+      "generator": "G2",
+      "replicate": 0,
+      "seed": 20461101,
+      "patients": 1000,
+      "events": 3999,
+      "eligible_person_days": 207152.47489056032
+    },
+    {
+      "generator": "G2",
+      "replicate": 1,
+      "seed": 20471101,
+      "patients": 1000,
+      "events": 4438,
+      "eligible_person_days": 223324.3591984241
+    },
+    {
+      "generator": "G2",
+      "replicate": 2,
+      "seed": 20481101,
+      "patients": 1000,
+      "events": 4153,
+      "eligible_person_days": 205861.52692998224
+    },
+    {
+      "generator": "G2",
+      "replicate": 3,
+      "seed": 20491101,
+      "patients": 1000,
+      "events": 4459,
+      "eligible_person_days": 227049.96457841035
+    },
+    {
+      "generator": "G2",
+      "replicate": 4,
+      "seed": 20501101,
+      "patients": 1000,
+      "events": 4180,
+      "eligible_person_days": 211790.1458896556
+    }
+  ],
+  "limits": "Synthetic mechanism fidelity only; no human parameter calibration, clinical validity, or real-cohort performance is established."
+}
