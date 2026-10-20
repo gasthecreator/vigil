@@ -443,10 +443,10 @@ export interface PlainLanguageExplainerResponse {
   patient_id: string;
   questions_to_ask_your_doctor: string[];
   recommended_action: string;
-  synthetic?: boolean;
+  synthetic: boolean;
   verbal_band: string;
   verdict: string;
-  verified?: boolean;
+  verified: boolean;
   what_this_means: string;
   word_count: number;
 }

@@ -215,7 +215,7 @@ def test_flesch_kincaid_formula_and_floor_and_rounding():
 # ---- explainer + journeys (reviewed golden wording) ----------------------------------------------------------
 @pytest.mark.parametrize("verdict", ["explained", "needs_repeat", "escalate"])
 def test_explainer_matches_reviewed_golden_exactly(verdict):
-    got = render_plain_language_explainer(verdict)
+    got = render_plain_language_explainer(verdict, synthetic=True)
     assert got == GOLDEN["explainer"][verdict]
     assert got["verified"] is True and got["synthetic"] is True
     assert got["flesch_kincaid_grade_level"] <= 8.0
@@ -225,13 +225,13 @@ def test_explainer_matches_reviewed_golden_exactly(verdict):
 
 @pytest.mark.parametrize("raw", [" ESCALATE ", "Escalate", "\tescalate\n"])
 def test_explainer_normalises_verdict(raw):
-    assert render_plain_language_explainer(raw) == GOLDEN["explainer"]["escalate"]
+    assert render_plain_language_explainer(raw, synthetic=True) == GOLDEN["explainer"]["escalate"]
 
 
 @pytest.mark.parametrize("bad", ["", "unknown", "explain", "needs repeat"])
 def test_explainer_rejects_unknown_verdict_with_message(bad):
     with pytest.raises(ValueError) as e:
-        render_plain_language_explainer(bad)
+        render_plain_language_explainer(bad, synthetic=True)
     assert str(e.value) == (
         f"Invalid M3 verdict for explainer: '{bad}'. Must be 'explained', 'needs_repeat', or 'escalate'."
     )
@@ -239,7 +239,7 @@ def test_explainer_rejects_unknown_verdict_with_message(bad):
 
 def test_explainer_text_contains_no_forbidden_phrase_and_is_not_a_diagnosis():
     for v in ("explained", "needs_repeat", "escalate"):
-        e = render_plain_language_explainer(v)
+        e = render_plain_language_explainer(v, synthetic=True)
         blob = " ".join(
             [
                 e["headline"],

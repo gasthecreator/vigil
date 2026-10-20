@@ -2119,7 +2119,6 @@
             "type": "string"
           },
           "synthetic": {
-            "default": true,
             "title": "Synthetic",
             "type": "boolean"
           },
@@ -2132,7 +2131,6 @@
             "type": "string"
           },
           "verified": {
-            "default": true,
             "title": "Verified",
             "type": "boolean"
           },
@@ -2156,7 +2154,9 @@
           "recommended_action",
           "questions_to_ask_your_doctor",
           "flesch_kincaid_grade_level",
-          "word_count"
+          "word_count",
+          "verified",
+          "synthetic"
         ],
         "title": "PlainLanguageExplainerResponse",
         "type": "object"

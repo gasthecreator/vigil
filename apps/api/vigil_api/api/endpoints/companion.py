@@ -388,7 +388,9 @@ def get_caregiver_observation_explainer(
         db.commit()
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=DISCLOSURE_LOCKED_DETAIL)
 
-    explainer = render_plain_language_explainer(verdict=verdict, analyte_code=obs.analyte_code)
+    explainer = render_plain_language_explainer(
+        verdict=verdict, analyte_code=obs.analyte_code, synthetic=patient_row.synthetic
+    )
 
     record_audit_event(
         db=db,
@@ -419,7 +421,7 @@ def get_caregiver_observation_explainer(
         flesch_kincaid_grade_level=explainer["flesch_kincaid_grade_level"],
         word_count=explainer["word_count"],
         verified=explainer["verified"],
-        synthetic=True,
+        synthetic=patient_row.synthetic,
     )
 
 

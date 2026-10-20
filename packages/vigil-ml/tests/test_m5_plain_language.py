@@ -46,7 +46,9 @@ def test_flesch_kincaid_grade_level_calculation():
 @pytest.mark.parametrize("verdict", ["explained", "needs_repeat", "escalate"])
 def test_plain_language_explainer_reading_level_and_length(verdict: str):
     """Verify that all M3 verdicts yield FKGL <= 8.0 and concise word counts."""
-    explainer = render_plain_language_explainer(verdict=verdict, analyte_code="CA 15-3")
+    explainer = render_plain_language_explainer(
+        verdict=verdict, analyte_code="CA 15-3", synthetic=True
+    )
 
     assert explainer["verdict"] == verdict
     assert explainer["verified"] is True
@@ -81,10 +83,16 @@ def test_plain_language_explainer_reading_level_and_length(verdict: str):
 def test_plain_language_explainer_invalid_verdict():
     """Verify rejection of unknown or dismissed verdicts."""
     with pytest.raises(ValueError, match="Invalid M3 verdict"):
-        render_plain_language_explainer(verdict="dismissed")
+        render_plain_language_explainer(verdict="dismissed", synthetic=True)
 
     with pytest.raises(ValueError, match="Invalid M3 verdict"):
-        render_plain_language_explainer(verdict="unknown")
+        render_plain_language_explainer(verdict="unknown", synthetic=True)
+
+
+def test_plain_language_explainer_requires_explicit_source_provenance():
+    with pytest.raises(TypeError):
+        render_plain_language_explainer(verdict="explained")
+    assert render_plain_language_explainer(verdict="explained", synthetic=False)["synthetic"] is False
 
 
 def test_plain_language_explainer_forbidden_claims():

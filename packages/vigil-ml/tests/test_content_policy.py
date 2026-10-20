@@ -19,7 +19,7 @@ def test_plain_language_bands_match_the_policy_and_do_not_expose_numeric_risk():
         "escalate": "Elevated signal (clinical team review recommended)",
     }
     for verdict, band in expected_bands.items():
-        explainer = render_plain_language_explainer(verdict)
+        explainer = render_plain_language_explainer(verdict, synthetic=True)
         assert explainer["verbal_band"] == band
         assert band.lower() in CONTENT_POLICY
         user_copy = " ".join(

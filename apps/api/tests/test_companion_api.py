@@ -299,6 +299,13 @@ def test_caregiver_share_lifecycle_and_scope(companion_env):
     assert resp_cg_symp.status_code == 201
     assert resp_cg_symp.json()["symptom_name"] == "nausea"
 
+    # Provenance for the explainer follows the source patient's data, not a default label.
+    with Session(engine) as s:
+        patient = s.get(Patient, patient_id)
+        assert patient is not None
+        patient.synthetic = False
+        s.commit()
+
     # 4. Caregiver accesses plain-language observation explainer
     resp_cg_exp = client.get(
         f"/api/v1/companion/share/{share_token}/observations/obs-comp-spike/explainer"
@@ -306,6 +313,7 @@ def test_caregiver_share_lifecycle_and_scope(companion_env):
     assert resp_cg_exp.status_code == 200
     exp = resp_cg_exp.json()
     assert exp["verdict"] == "needs_repeat"
+    assert exp["synthetic"] is False
     assert exp["flesch_kincaid_grade_level"] <= 8.0
     assert len(exp["questions_to_ask_your_doctor"]) == 3
 
@@ -486,6 +494,12 @@ def test_patient_observation_explainer_endpoint(companion_env):
     clinician_hdr = get_token_headers("doc-01", UserRole.CLINICIAN)
     patient_id = "pat-comp-01"
 
+    with Session(engine) as s:
+        patient = s.get(Patient, patient_id)
+        assert patient is not None
+        patient.synthetic = False
+        s.commit()
+
     # Explainer for spike observation (adjudicated as needs_repeat)
     resp = client.get(
         f"/api/v1/patients/{patient_id}/observations/obs-comp-spike/explainer",
@@ -503,7 +517,7 @@ def test_patient_observation_explainer_endpoint(companion_env):
     assert data["word_count"] <= 120
     assert len(data["questions_to_ask_your_doctor"]) == 3
     assert data["verified"] is True
-    assert data["synthetic"] is True
+    assert data["synthetic"] is False
 
     # Audit check
     with Session(engine) as s:

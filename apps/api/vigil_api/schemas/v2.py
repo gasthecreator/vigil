@@ -262,8 +262,8 @@ class PlainLanguageExplainerResponse(BaseModel):
     questions_to_ask_your_doctor: List[str]
     flesch_kincaid_grade_level: float
     word_count: int
-    verified: bool = True
-    synthetic: bool = True
+    verified: bool
+    synthetic: bool
 
 
 # ==============================================================================

@@ -295,6 +295,7 @@ def compute_flesch_kincaid_grade_level(text: str) -> float:
 
 def render_plain_language_explainer(
     verdict: str,
+    synthetic: bool,
     facts: Optional[List[Dict[str, Any]]] = None,
     analyte_code: str = "CA 15-3",
 ) -> Dict[str, Any]:
@@ -309,6 +310,8 @@ def render_plain_language_explainer(
     - Safety backstop: strictly rejects forbidden claims ('you have cancer', etc.).
     """
     verdict_clean = verdict.strip().lower()
+    if not isinstance(synthetic, bool):
+        raise ValueError("synthetic provenance must be explicitly true or false")
     if verdict_clean not in {"explained", "needs_repeat", "escalate"}:
         raise ValueError(
             f"Invalid M3 verdict for explainer: '{verdict}'. Must be 'explained', 'needs_repeat', or 'escalate'."
@@ -384,5 +387,5 @@ def render_plain_language_explainer(
         "flesch_kincaid_grade_level": fkgl,
         "word_count": word_count,
         "verified": True,
-        "synthetic": True,
+        "synthetic": synthetic,
     }
