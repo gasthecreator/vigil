@@ -65,6 +65,19 @@ class PresentationStage(str, Enum):
     STAGE_IV = "Stage IV"
 
 
+SUPPORTED_COMPETING_EVENTS = frozenset(
+    {"cardiovascular_event", "death", "lost_to_follow_up"}
+)
+
+
+def _is_finite_nonnegative_number(value: object) -> bool:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(
+        value, (int, float, np.integer, np.floating)
+    ):
+        return False
+    return bool(np.isfinite(value) and value >= 0)
+
+
 @dataclass
 class LatentCompartmentState:
     """Ground-truth latent biological state at time t (exported for recovery/identifiability tests)."""
@@ -287,8 +300,11 @@ class CohortDataset:
         pt_map = {p.patient_id: p for p in self.patients}
         last_observation_day: dict[str, float] = {}
         for item in self.observations:
+            if not _is_finite_nonnegative_number(item.day):
+                raise ValueError("observation days must be finite and non-negative")
+            observation_day = float(item.day)
             last_observation_day[item.patient_id] = max(
-                last_observation_day.get(item.patient_id, -np.inf), float(item.day)
+                last_observation_day.get(item.patient_id, -np.inf), observation_day
             )
         for patient_id, last_day in last_observation_day.items():
             patient = pt_map[patient_id]
@@ -303,6 +319,32 @@ class CohortDataset:
                 else patient.true_recurrence_day
             )
             competing_day = patient.competing_event_day
+            if not isinstance(recurrence_event, (bool, np.bool_)):
+                raise ValueError(
+                    f"recurrence event flag must be boolean for patient {patient_id}"
+                )
+            if recurrence_event:
+                if not _is_finite_nonnegative_number(recurrence_day):
+                    raise ValueError(
+                        f"recurrence event day must be finite and non-negative for patient {patient_id}"
+                    )
+            elif recurrence_day is not None and not pd.isna(recurrence_day):
+                raise ValueError(
+                    f"recurrence day supplied without an event for patient {patient_id}"
+                )
+            if patient.competing_event is None:
+                if competing_day is not None and not pd.isna(competing_day):
+                    raise ValueError(
+                        f"competing event day supplied without an event for patient {patient_id}"
+                    )
+            elif (
+                not isinstance(patient.competing_event, str)
+                or patient.competing_event not in SUPPORTED_COMPETING_EVENTS
+                or not _is_finite_nonnegative_number(competing_day)
+            ):
+                raise ValueError(
+                    f"competing event type/day is invalid for patient {patient_id}"
+                )
             if (
                 recurrence_event
                 and recurrence_day is not None
@@ -315,9 +357,9 @@ class CohortDataset:
                     f"recurrence and competing event share an ambiguous day for patient {patient_id}"
                 )
             admin_end = patient.administrative_censor_day
-            if admin_end is None or not np.isfinite(admin_end):
+            if admin_end is None or pd.isna(admin_end):
                 admin_end = last_day
-            if not np.isfinite(admin_end) or float(admin_end) < last_day:
+            if not _is_finite_nonnegative_number(admin_end) or float(admin_end) < last_day:
                 raise ValueError(
                     f"observations extend beyond administrative follow-up for patient {patient_id}"
                 )

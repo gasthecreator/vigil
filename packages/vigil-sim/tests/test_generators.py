@@ -561,6 +561,99 @@ def test_survival_training_rejects_observations_after_follow_up_boundary(boundar
         )
 
 
+@pytest.mark.parametrize("bad_day", [True, -1.0, np.nan, np.inf, "10"])
+def test_survival_training_rejects_invalid_observation_days(bad_day):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=88).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.observations[0].day = bad_day
+    with pytest.raises(ValueError, match="observation days"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+@pytest.mark.parametrize(
+    "event,day",
+    [(True, None), (True, np.nan), (True, np.inf), (True, -1.0), (True, "10"), (False, 10.0)],
+)
+@pytest.mark.parametrize("use_observed_labels", [True, False])
+def test_survival_training_rejects_inconsistent_recurrence_event_days(
+    event, day, use_observed_labels
+):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=89).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    patient = cohort.patients[0]
+    if use_observed_labels:
+        patient.observed_recurrence_event = event
+        patient.observed_recurrence_day = day
+    else:
+        patient.true_recurrence_event = event
+        patient.true_recurrence_day = day
+    expected = "recurrence event day" if event else "recurrence day supplied"
+    with pytest.raises(ValueError, match=expected):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=use_observed_labels
+        )
+
+
+@pytest.mark.parametrize("bad_flag", [0, 1, None, "true"])
+@pytest.mark.parametrize("use_observed_labels", [True, False])
+def test_survival_training_rejects_nonboolean_recurrence_flags(
+    bad_flag, use_observed_labels
+):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=91).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    patient = cohort.patients[0]
+    if use_observed_labels:
+        patient.observed_recurrence_event = bad_flag
+    else:
+        patient.true_recurrence_event = bad_flag
+    with pytest.raises(ValueError, match="recurrence event flag"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=use_observed_labels
+        )
+
+
+@pytest.mark.parametrize(
+    "event,day",
+    [
+        (None, 10.0),
+        ("unknown", 10.0),
+        ("death", None),
+        ("death", np.nan),
+        ("death", np.inf),
+        ("death", -1.0),
+        ("death", "10"),
+    ],
+)
+def test_survival_training_rejects_invalid_competing_event_contract(event, day):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=90).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    patient = cohort.patients[0]
+    patient.competing_event = event
+    patient.competing_event_day = day
+    with pytest.raises(ValueError, match="competing event"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+@pytest.mark.parametrize("bad_admin_day", [True, -1.0, np.inf, "180"])
+def test_survival_training_rejects_invalid_administrative_censor_day(bad_admin_day):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=92).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.patients[0].administrative_censor_day = bad_admin_day
+    with pytest.raises(ValueError, match="administrative follow-up"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
 def test_training_helper_requires_an_explicit_observed_or_oracle_estimand():
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=84).generate_cohort(
         num_patients=4, duration_days=180.0
