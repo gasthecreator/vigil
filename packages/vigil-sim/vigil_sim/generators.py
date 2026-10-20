@@ -39,9 +39,8 @@ import pandas as pd
 from vigil_core.analytes import ANALYTE_REGISTRY, TargetOrgan
 
 from vigil_sim.mechanisms import (
-    draw_poisson_event_times,
+    draw_patient_shot_noise_trace,
     evaluate_first_order_on_fixed_grid,
-    patient_rng,
     shot_noise_at_times,
 )
 
@@ -1667,19 +1666,13 @@ class BurstSheddingGenerator(BaseCohortGenerator):
             if pt.administrative_censor_day is not None:
                 terminal_days.append(max(0.0, pt.administrative_censor_day))
             exposure_days = min(terminal_days)
-            event_times = draw_poisson_event_times(
+            event_times, event_amplitudes = draw_patient_shot_noise_trace(
+                self.seed,
+                pt.patient_id,
                 exposure_days,
                 shot_noise["event_rate_per_day"],
-                patient_rng(self.seed, pt.patient_id, "g2-event-times"),
-            )
-            amplitude_mean = shot_noise["burden_amplitude_mean"]
-            amplitude_cv = shot_noise["burden_amplitude_coefficient_of_variation"]
-            log_variance = math.log1p(amplitude_cv**2)
-            amplitude_rng = patient_rng(self.seed, pt.patient_id, "g2-event-amplitudes")
-            event_amplitudes = amplitude_rng.lognormal(
-                mean=math.log(amplitude_mean) - log_variance / 2.0,
-                sigma=math.sqrt(log_variance),
-                size=event_times.size,
+                shot_noise["burden_amplitude_mean"],
+                shot_noise["burden_amplitude_coefficient_of_variation"],
             )
             total_mass_by_visit = np.asarray(
                 [event_amplitudes[event_times <= day].sum() for day in visit_days],

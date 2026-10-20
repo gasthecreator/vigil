@@ -114,6 +114,53 @@ def draw_poisson_event_times(
     return np.sort(rng.uniform(0.0, exposure_days, size=count))
 
 
+def draw_lognormal_event_amplitudes(
+    event_count: int,
+    arithmetic_mean: float,
+    coefficient_of_variation: float,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Draw positive lognormal amplitudes from arithmetic mean and CV."""
+    if isinstance(event_count, bool) or not isinstance(event_count, (int, np.integer)) or event_count < 0:
+        raise ValueError("event_count must be a non-negative integer")
+    if not np.isfinite(arithmetic_mean) or arithmetic_mean <= 0.0:
+        raise ValueError("arithmetic_mean must be finite and positive")
+    if not np.isfinite(coefficient_of_variation) or coefficient_of_variation < 0.0:
+        raise ValueError("coefficient_of_variation must be finite and non-negative")
+    if not isinstance(rng, np.random.Generator):
+        raise ValueError("rng must be a NumPy Generator")
+    log_variance = math.log1p(coefficient_of_variation**2)
+    values = rng.lognormal(
+        mean=math.log(arithmetic_mean) - log_variance / 2.0,
+        sigma=math.sqrt(log_variance),
+        size=int(event_count),
+    )
+    return np.asarray(values, dtype=float)
+
+
+def draw_patient_shot_noise_trace(
+    seed: int,
+    patient_id: str,
+    exposure_days: float,
+    event_rate_per_day: float,
+    amplitude_mean: float,
+    amplitude_coefficient_of_variation: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Draw a patient's registered G2 event-time and amplitude traces."""
+    event_times = draw_poisson_event_times(
+        exposure_days,
+        event_rate_per_day,
+        patient_rng(seed, patient_id, "g2-event-times"),
+    )
+    amplitudes = draw_lognormal_event_amplitudes(
+        event_times.size,
+        amplitude_mean,
+        amplitude_coefficient_of_variation,
+        patient_rng(seed, patient_id, "g2-event-amplitudes"),
+    )
+    return event_times, amplitudes
+
+
 def shot_noise_at_times(
     observation_days: Sequence[float],
     event_days: Sequence[float],
