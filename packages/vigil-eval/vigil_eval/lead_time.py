@@ -85,7 +85,7 @@ def evaluate_lead_time_and_overdetection(
 
         # Follow-up duration for patient
         pt_days = float(obs_sorted[day_col].max() - obs_sorted[day_col].min())
-        total_surveillance_days += max(30.0, pt_days)
+        total_surveillance_days += pt_days
 
         is_rec = bool(pt.get("true_recurrence_event", False))
         rec_day = pt.get("true_recurrence_day")
@@ -112,20 +112,26 @@ def evaluate_lead_time_and_overdetection(
                 # Censoring rule: 0 days if not detected prior to clinical recurrence
                 unconditional_leads.append(0.0)
 
-    cond_mean = float(np.mean(conditional_leads)) if conditional_leads else 0.0
-    cond_std = float(np.std(conditional_leads)) if len(conditional_leads) > 1 else 0.0
-    cond_median = float(np.median(conditional_leads)) if conditional_leads else 0.0
-    uncond_mean = float(np.mean(unconditional_leads)) if unconditional_leads else 0.0
+    cond_mean = float(np.mean(conditional_leads)) if conditional_leads else float("nan")
+    cond_std = float(np.std(conditional_leads)) if len(conditional_leads) > 1 else float("nan")
+    cond_median = float(np.median(conditional_leads)) if conditional_leads else float("nan")
+    uncond_mean = float(np.mean(unconditional_leads)) if unconditional_leads else float("nan")
 
-    detection_rate = float(detected_recurrent / total_recurrent) if total_recurrent > 0 else 0.0
+    detection_rate = (
+        float(detected_recurrent / total_recurrent) if total_recurrent > 0 else float("nan")
+    )
     overdetection_rate = (
         float(len(overdetected_patients) / len(total_alerted_patients))
         if total_alerted_patients
-        else 0.0
+        else float("nan")
     )
 
     pt_years = total_surveillance_days / 365.25
-    alert_burden = float(len(total_alerted_patients) / (pt_years / 100.0)) if pt_years > 0 else 0.0
+    alert_burden = (
+        float(len(total_alerted_patients) / (pt_years / 100.0))
+        if pt_years > 0
+        else float("nan")
+    )
 
     return LeadTimeOverdetectionReport(
         conditional_mean_days=cond_mean,
@@ -141,5 +147,13 @@ def evaluate_lead_time_and_overdetection(
             "n_alerted_patients": len(total_alerted_patients),
             "n_overdetected_patients": len(overdetected_patients),
             "total_surveillance_patient_years": round(pt_years, 2),
+            "metrics_defined": bool(
+                np.all(
+                    np.isfinite(
+                        [cond_mean, cond_std, cond_median, uncond_mean, detection_rate,
+                         overdetection_rate, alert_burden]
+                    )
+                )
+            ),
         },
     )

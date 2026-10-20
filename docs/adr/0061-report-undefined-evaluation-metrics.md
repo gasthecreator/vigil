@@ -15,6 +15,7 @@ Several evaluator outputs substituted chance-level values, fixed confidence inte
 - Subgroup bootstrap results with missing/non-finite estimates remain NaN and are excluded from empirical-Bayes fitting; no synthetic point estimate or interval is inserted.
 - Subgroup interval shifting is not clipped to a generic `[0, 1]` range because the API accepts metrics with other domains.
 - Verification-weighted AUC remains undefined when its weighted pair denominator is zero.
+- Lead-time summaries without qualifying recurrence/alert observations remain NaN, and single-case conditional standard deviation is undefined. Surveillance patient-time uses observed follow-up span instead of an artificial 30-day minimum.
 
 ## Consequences
 

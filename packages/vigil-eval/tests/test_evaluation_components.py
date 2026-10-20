@@ -254,6 +254,26 @@ def test_lead_time_and_overdetection():
     assert rep.overdetection_rate > 0.0
 
 
+def test_lead_time_reports_undefined_denominators_and_uses_observed_person_time():
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": False, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [
+            {"patient_id": "p1", "day": 5.0, "alert_triggered": 0},
+            {"patient_id": "p1", "day": 15.0, "alert_triggered": 0},
+        ]
+    )
+    report = evaluate_lead_time_and_overdetection(patients, observations)
+    assert np.isnan(report.conditional_mean_days)
+    assert np.isnan(report.unconditional_mean_days)
+    assert np.isnan(report.recurrence_detection_rate)
+    assert np.isnan(report.overdetection_rate)
+    assert report.alert_burden_per_100_pt_years == 0.0
+    assert report.details["total_surveillance_patient_years"] == round(10.0 / 365.25, 2)
+    assert not report.details["metrics_defined"]
+
+
 def test_frozen_test_access_logger(tmp_path):
     """Verifies append-only frozen test set audit log."""
     log_file = tmp_path / "test_access.jsonl"
