@@ -99,6 +99,8 @@
     "assignment": "one seeded effect per facility and analyte, shared by patients in that facility"
   },
   "verification": {
+    "result_model": "imperfect_test_characteristics",
+    "provenance": "Explicit uncalibrated synthetic stress assumptions; inherited values are transcribed from prior source defaults, not clinical estimates.",
     "visible_burden_threshold": 12.0,
     "sensitivity": 0.9,
     "specificity": 0.99,

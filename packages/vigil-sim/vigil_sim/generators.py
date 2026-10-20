@@ -767,28 +767,49 @@ class BaseCohortGenerator(ABC):
                     or facility_effects["scale_min"] >= facility_effects.get("scale_max", 0)):
                 raise ValueError("facility_lab_effects must define count, offset_sd, and increasing positive scale bounds")
         verification = config.get("verification")
-        if verification is not None:
-            for key in ("sensitivity", "specificity"):
-                if not np.isfinite(verification.get(key, np.nan)) or not 0 <= verification[key] <= 1:
-                    raise ValueError(f"verification.{key} must be in [0, 1]")
-            if (not np.isfinite(verification.get("visible_burden_threshold", np.nan))
-                    or verification["visible_burden_threshold"] < 0):
-                raise ValueError("verification.visible_burden_threshold must be finite and non-negative")
-            if (not 0 <= verification.get("routine_imaging_probability", -1) <= 1
-                    or not 0 <= verification.get("maximum_imaging_probability", -1) <= 1):
-                raise ValueError("verification imaging probabilities must be in [0, 1]")
-            for threshold_key, increment_key in (
-                ("symptom_grade_thresholds", "symptom_probability_increments"),
-                ("marker_thresholds", "marker_probability_increments"),
+        if not isinstance(verification, dict):
+            raise ValueError("Population config requires an explicit verification mechanism")
+        result_model = verification.get("result_model")
+        if result_model not in {
+            "deterministic_visible_recurrence",
+            "imperfect_test_characteristics",
+        }:
+            raise ValueError("verification.result_model is unsupported")
+        if not isinstance(verification.get("provenance"), str) or not verification["provenance"].strip():
+            raise ValueError("verification.provenance is required")
+        visible_threshold = verification.get("visible_burden_threshold")
+        if not _is_finite_nonnegative_number(visible_threshold):
+            raise ValueError("verification.visible_burden_threshold must be finite and non-negative")
+        probability_keys = ("routine_imaging_probability", "maximum_imaging_probability")
+        if any(
+            not _is_finite_number(verification.get(key))
+            or not 0 <= verification[key] <= 1
+            for key in probability_keys
+        ):
+            raise ValueError("verification imaging probabilities must be in [0, 1]")
+        for threshold_key, increment_key in (
+            ("symptom_grade_thresholds", "symptom_probability_increments"),
+            ("marker_thresholds", "marker_probability_increments"),
+        ):
+            thresholds = verification.get(threshold_key, [])
+            increments = verification.get(increment_key, [])
+            if (
+                not isinstance(thresholds, (list, tuple))
+                or len(thresholds) != 2
+                or not all(_is_finite_number(value) for value in thresholds)
+                or thresholds[0] >= thresholds[1]
+                or not isinstance(increments, (list, tuple))
+                or len(increments) != 2
+                or not all(
+                    _is_finite_number(value) and 0 <= value <= 1
+                    for value in increments
+                )
             ):
-                thresholds = verification.get(threshold_key, [])
-                increments = verification.get(increment_key, [])
-                if (len(thresholds) != 2 or len(increments) != 2
-                        or not np.isfinite(thresholds).all()
-                        or not np.isfinite(increments).all()
-                        or thresholds[0] >= thresholds[1]
-                        or np.any(np.asarray(increments) < 0)):
-                    raise ValueError(f"verification.{threshold_key} and {increment_key} are malformed")
+                raise ValueError(f"verification.{threshold_key} and {increment_key} are malformed")
+        if result_model == "imperfect_test_characteristics":
+            for key in ("sensitivity", "specificity"):
+                if not _is_finite_number(verification.get(key)) or not 0 <= verification[key] <= 1:
+                    raise ValueError(f"verification.{key} must be in [0, 1]")
         missingness = config.get("measurement_missingness")
         if missingness is not None:
             for generator_type in GeneratorType:
@@ -1073,26 +1094,18 @@ class BaseCohortGenerator(ABC):
         latent_state: LatentCompartmentState,
     ) -> Tuple[bool, Optional[bool], float]:
         """
-        Partial verification mechanism (ML_PROGRAM §4.2, H-D):
-        Imaging (CT/US/bone scan) is triggered primarily by:
-        1. Moderate/severe symptoms (Grade >= 2)
-        2. Substantial marker elevation (CA 15-3 >= 60 [iU]/mL)
-        3. Scheduled surveillance protocol (occasional baseline verification ~15%)
+        Apply the selected profile's partial-verification mechanism (ML_PROGRAM §4.2, H-D).
+
+        Imaging triggers, visibility, and test-result semantics are explicit in the
+        versioned profile. They remain synthetic assumptions, not a clinical policy.
         """
-        # Baseline probability of routine surveillance imaging
-        verification = self.population_config.get("verification")
-        if verification:
-            p_image = float(verification["routine_imaging_probability"]) / pt.out_of_pocket_delay_factor
-            symptom_thresholds = verification["symptom_grade_thresholds"]
-            symptom_increments = verification["symptom_probability_increments"]
-            marker_thresholds = verification["marker_thresholds"]
-            marker_increments = verification["marker_probability_increments"]
-            max_probability = float(verification["maximum_imaging_probability"])
-        else:
-            p_image = 0.08 / pt.out_of_pocket_delay_factor
-            symptom_thresholds, symptom_increments = [2, 3], [0.40, 0.70]
-            marker_thresholds, marker_increments = [35.0, 75.0], [0.30, 0.65]
-            max_probability = 0.95
+        verification = self.population_config["verification"]
+        p_image = float(verification["routine_imaging_probability"]) / pt.out_of_pocket_delay_factor
+        symptom_thresholds = verification["symptom_grade_thresholds"]
+        symptom_increments = verification["symptom_probability_increments"]
+        marker_thresholds = verification["marker_thresholds"]
+        marker_increments = verification["marker_probability_increments"]
+        max_probability = float(verification["maximum_imaging_probability"])
 
         # Symptoms dramatically raise clinical suspicion
         max_symptom = max(symptoms.values()) if symptoms else 0
@@ -1119,21 +1132,19 @@ class BaseCohortGenerator(ABC):
             + latent_state.b_brain
             + latent_state.b_loc
         )
-        burden_threshold = (
-            float(verification["visible_burden_threshold"]) if verification else 12.0
-        )
+        burden_threshold = float(verification["visible_burden_threshold"])
         visible_recurrence = pt.true_recurrence_event and total_burden >= burden_threshold
         result: Optional[bool] = None
         if performed:
-            if verification:
+            if verification["result_model"] == "deterministic_visible_recurrence":
+                result = bool(visible_recurrence)
+            else:
                 probability_positive = (
                     float(verification["sensitivity"])
                     if visible_recurrence
                     else 1.0 - float(verification["specificity"])
                 )
                 result = bool(self.rng.random() < probability_positive)
-            else:
-                result = bool(visible_recurrence)
             # A positive result alone is a screening finding; only a visible
             # latent recurrence can become the synthetic confirmed-diagnosis label.
             if result and visible_recurrence and not pt.observed_recurrence_event:

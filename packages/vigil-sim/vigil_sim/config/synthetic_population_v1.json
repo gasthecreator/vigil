@@ -28,5 +28,16 @@
   "competing_event_time_days": {
     "cardiovascular_event": [120.0, 1800.0],
     "lost_to_follow_up": [180.0, 1400.0]
+  },
+  "verification": {
+    "result_model": "deterministic_visible_recurrence",
+    "visible_burden_threshold": 12.0,
+    "routine_imaging_probability": 0.08,
+    "symptom_grade_thresholds": [2, 3],
+    "symptom_probability_increments": [0.4, 0.7],
+    "marker_thresholds": [35.0, 75.0],
+    "marker_probability_increments": [0.3, 0.65],
+    "maximum_imaging_probability": 0.95,
+    "provenance": "Transcribed from the legacy evaluate_verification_mechanism source defaults; uncalibrated synthetic assumptions."
   }
 }

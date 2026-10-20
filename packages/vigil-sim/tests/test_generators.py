@@ -2,6 +2,7 @@
 Tests for vigil_sim.generators: Mechanistic cohort generators G1, G2, G3 and anti-leakage invariants.
 """
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -93,6 +94,47 @@ def test_profile_override_is_seeded_and_rejects_invalid_probabilities():
     invalid = {**profile, "recurrence_day_cap": float("nan")}
     with pytest.raises(ValueError, match="recurrence_day_cap"):
         get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=invalid)
+
+
+@pytest.mark.parametrize("invalid_verification", [None, {}, {"result_model": "guess"}])
+def test_profile_requires_explicit_verification_mechanism(invalid_verification):
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_v1.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    profile["verification"] = invalid_verification
+    with pytest.raises(ValueError, match="verification"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+
+
+@pytest.mark.parametrize(
+    ("profile_name", "expected_sha256"),
+    [
+        ("legacy-default", "3815b67ca1deeeddfce5b51c8b325817e1364f775d6b87137f8a01ab47c0411c"),
+        ("synthetic_population_v1.json", "4d9f015bec83f9ba8a58c86739452c9b6b02b190fa6d6907d4a47cade6cf0107"),
+    ],
+)
+def test_legacy_verification_config_preserves_seeded_cohort_fingerprint(
+    profile_name, expected_sha256
+):
+    if profile_name == "legacy-default":
+        population_config = None
+    else:
+        config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / profile_name
+        population_config = json.loads(config_path.read_text(encoding="utf-8"))
+    cohort = get_generator(
+        GeneratorType.G1_SMOOTH,
+        seed=654321,
+        population_config=population_config,
+    ).generate_cohort(num_patients=80, duration_days=730.0)
+    payload = {
+        "patients": cohort.to_patients_dataframe().to_json(
+            orient="records", double_precision=15
+        ),
+        "observations": cohort.to_observations_dataframe().to_json(
+            orient="records", double_precision=15
+        ),
+    }
+    fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    assert fingerprint == expected_sha256
 
 
 def test_k3_profile_shares_lab_effects_within_facility_and_records_verification():
