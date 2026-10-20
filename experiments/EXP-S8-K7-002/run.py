@@ -186,7 +186,7 @@ def _summarize(rows: list[dict[str, Any]], condition: str) -> dict[str, Any]:
     selected = [row for row in rows if row["condition"] == condition]
     estimable = [row for row in selected if row["status"] == "estimable"]
     truth = [row["truth"]["risk_ratio"] for row in selected]
-    estimates = [row["estimates"]["aipw"]["risk_ratio"] for row in estimable]
+    estimates = [row["estimates"]["estimates"]["aipw"]["risk_ratio"] for row in estimable]
     coverage = [row["aipw_interval_covers_truth"] for row in estimable]
     finite_estimates = [float(value) for value in estimates if value is not None]
     finite_truth = [float(row["truth"]["risk_ratio"]) for row in estimable]
