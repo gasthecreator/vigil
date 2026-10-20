@@ -93,3 +93,14 @@ def test_metrics_include_all_registered_learned_vs_baseline_contrasts():
         for baseline in ("B0_prevalence", "B1_single_threshold", "B2_velocity"):
             for metric in ("auc", "brier", "ipcw_ece", "average_precision"):
                 assert f"{learned}.delta_{metric}_vs_{baseline}" in metrics
+
+
+def test_generated_report_matches_saved_sorted_results(tmp_path):
+    import json
+    from pathlib import Path
+
+    experiment_dir = Path(__file__).parent
+    results = json.loads((experiment_dir / "results.json").read_text(encoding="utf-8"))
+    output = tmp_path / "REPORT.md"
+    RUNNER.render_report(results, output)
+    assert output.read_bytes() == (experiment_dir / "REPORT.md").read_bytes()

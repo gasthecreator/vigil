@@ -30,9 +30,9 @@ Rejection rate 0.000 against stop rate 0.1. Rejections by code: none. Complete-c
 
 ## Development split
 
-- comparator chosen (out-of-fold IPCW AUC): **B2_VELOCITY_RULE** from B1_SINGLE_THRESHOLD 0.599, B2_VELOCITY_RULE 0.660, B3_REGULARIZED_LOGISTIC_HORIZON 0.644
-- recalibration on out-of-fold predictions: intercept -0.820, slope 0.511
-- operating threshold 0.160 (development alert rate 4.880 per 100 patient-months)
+- comparator chosen (out-of-fold IPCW AUC): **B3_REGULARIZED_LOGISTIC_HORIZON** from B1_SINGLE_THRESHOLD 0.599, B2_VELOCITY_RULE 0.572, B3_REGULARIZED_LOGISTIC_HORIZON 0.635
+- recalibration on out-of-fold predictions: intercept -0.767, slope 0.526
+- operating threshold 0.165 (development alert rate 4.880 per 100 patient-months)
 - candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3
 
 ## Confirmatory hypotheses (Holm-Bonferroni across three)
@@ -41,9 +41,9 @@ met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap
 
 | id | estimate | 95% CI | criterion | CI criterion | p (one-sided) | p Holm | met |
 |---|---:|---|---|---|---:|---:|---|
-| C1 | 1.159 | [0.731, 1.759] | CI within [0.8, 1.2] | no | 0.468 | 0.468 | **no** |
-| C2 | 0.075 | [-0.029, 0.181] | lower CI bound > 0.0 | no | 0.079 | 0.237 | **no** |
-| C3 | 4.610 | [3.789, 5.481] | upper CI bound <= 5.0 | no | 0.195 | 0.389 | **no** |
+| C1 | 1.313 | [0.802, 1.936] | CI within [0.8, 1.2] | no | 0.688 | 1.000 | **no** |
+| C2 | -0.037 | [-0.159, 0.079] | lower CI bound > 0.0 | no | 0.750 | 1.000 | **no** |
+| C3 | 4.455 | [3.651, 5.332] | upper CI bound <= 5.0 | no | 0.101 | 0.301 | **no** |
 
 A criterion not met is reported as not met. C3 measures workload only; meeting it says nothing about whether alerts are correct.
 
@@ -53,8 +53,8 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 
 ```json
 {
-  "ece": 0.03995886820879746,
-  "mean_predicted": 0.10808186901564004,
+  "ece": 0.03927118513738498,
+  "mean_predicted": 0.106497362645587,
   "observed_ipcw": 0.09734945648924323,
   "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
 }
@@ -76,13 +76,13 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
   ],
   "net_benefit_model": [
     0.08823177423155883,
-    0.022468548612037814,
-    0.021170267934707616,
-    0.02036137597629449,
-    0.014995490802004133,
-    0.01637848656172919,
+    0.016032199507173633,
+    0.024170979962088546,
+    0.017767017290867375,
+    0.019473485743296024,
+    0.018434117860210163,
     0.017732879113164998,
-    0.016835293516947184
+    0.017076779875414685
   ],
   "net_benefit_all": [
     0.08823177423155883,
@@ -152,12 +152,12 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 
 ```json
 {
-  "conditional_lead_time_days": "294.0 \u00b1 253.3",
-  "conditional_median_days": 202.0,
-  "unconditional_mean_days": 226.2,
-  "recurrence_detection_rate": 0.7692,
-  "overdetection_rate": 0.5122,
-  "alert_burden_per_100_pt_years": 20.35,
+  "conditional_lead_time_days": "258.1 \u00b1 197.4",
+  "conditional_median_days": 194.0,
+  "unconditional_mean_days": 188.6,
+  "recurrence_detection_rate": 0.7308,
+  "overdetection_rate": 0.544,
+  "alert_burden_per_100_pt_years": 20.68,
   "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
 }
 ```
@@ -176,33 +176,33 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 ```json
 {
   "complete_case": {
-    "sensitivity": 0.35714285714285715,
-    "specificity": 0.9213483146067416
+    "sensitivity": 0.32142857142857145,
+    "specificity": 0.9550561797752809
   },
   "ipw": {
-    "sensitivity": 0.3166034355095252,
-    "specificity": 0.9190164247603129
+    "sensitivity": 0.29340563335087344,
+    "specificity": 0.9546736374057001
   },
   "sensitivity_analysis": [
     {
       "assumed_unverified_event_rate": 0.0,
-      "sensitivity": 0.35714285714285715,
-      "specificity": 0.9207547169811321
+      "sensitivity": 0.32142857142857145,
+      "specificity": 0.9169811320754717
     },
     {
       "assumed_unverified_event_rate": 0.05,
-      "sensitivity": 0.2907608695652174,
-      "specificity": 0.9207650273224044
+      "sensitivity": 0.2690217391304348,
+      "specificity": 0.9176424668227947
     },
     {
       "assumed_unverified_event_rate": 0.1,
-      "sensitivity": 0.25,
-      "specificity": 0.9207760711398545
+      "sensitivity": 0.23684210526315794,
+      "specificity": 0.9183508488278093
     },
     {
       "assumed_unverified_event_rate": 0.2,
-      "sensitivity": 0.20253164556962025,
-      "specificity": 0.9208006962576153
+      "sensitivity": 0.19936708860759492,
+      "specificity": 0.9199303742384682
     }
   ],
   "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"

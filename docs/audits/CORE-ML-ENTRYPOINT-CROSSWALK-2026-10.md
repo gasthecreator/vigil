@@ -4,7 +4,7 @@
 
 ## Canonical current censor-aware baseline path
 
-`EXP-CORE-ML-003/004` are historical under the feature contract correction recorded in ADR-0039. `EXP-CORE-ML-007` ran once with independent seeds after feature corrections, but its registered paired contrasts against B0 and B2 are missing and its access-log dataset names were mislabeled. Preserve the generated output as exploratory only; EXP-CORE-ML-008 is registered to meet the full contrast protocol.
+`EXP-CORE-ML-003/004` are historical under the feature contract correction recorded in ADR-0039. `EXP-CORE-ML-007` ran once with independent seeds after feature corrections, but its registered paired contrasts against B0 and B2 are missing and its access-log dataset names were mislabeled. Preserve the generated output as exploratory only; EXP-CORE-ML-008 has now executed the registered full contrast protocol, with its scope limits documented in the result and conclusion.
 
 | Entry point | Data / label / fit path | Status |
 |---|---|---|
@@ -13,9 +13,9 @@
 | `packages/vigil-ml/vigil_ml/features.py::WindowedFeatureExtractor.transform_cohort` | Consumes patient and observation tables; excludes post-landmark/terminal-event visits; validates explicit outcome and censoring metadata; creates one landmark row per eligible observation and censor-aware horizon label. | Q-7 local changes fix mislabeled 90-day slope, time-normalized acceleration, zero-mean CV availability, zero follow-up, missing labels, unknown patient references, duplicate days, and observation/event boundary validation. Feature-only tests pass; downstream study outputs are stale. Repeated landmarks still require patient-grouped splitting and inference of dependence. |
 | `packages/vigil-eval/vigil_eval/metrics.py` | Censor-aware metrics with 0=censor, 1=recurrence, 2=competing event. | Metric unit tests pass; independent semantic/live checks and caller parity remain open. |
 
-| `experiments/EXP-CORE-ML-007/run.py` | New seed namespace on G1/G2 training, calibration and validation; G1/G2/G3 test; current shared extractor; same validation grid and patient-cluster bootstrap as registered EXP-004. | Ran once from SHA `7efc7f7`; source generated results but omitted paired contrasts against B0/B2. The access log correction is appended and linked. Treat output as exploratory only; see its conclusion. EXP-CORE-ML-008 is registered to complete the contrast set. |
+| `experiments/EXP-CORE-ML-007/run.py` | New seed namespace on G1/G2 training, calibration and validation; G1/G2/G3 test; current shared extractor; same validation grid and patient-cluster bootstrap as registered EXP-004. | Ran once from SHA `7efc7f7`; source generated results but omitted paired contrasts against B0/B2. The access log correction is appended and linked. Treat output as exploratory only; see its conclusion. EXP-CORE-ML-008 subsequently completed the preregistered contrast set. |
 
-| `experiments/EXP-CORE-ML-008/run.py` | New seed namespace; corrected paired cluster bootstrap contrasts for B3/B4 against B0/B1/B2; same preregistered feature contract and synthetic profile. | Registered; runner and unit checks must be committed before a single held-out evaluation. No test access or results yet. |
+| `experiments/EXP-CORE-ML-008/run.py` | New seed namespace; corrected paired cluster bootstrap contrasts for B3/B4 against B0/B1/B2; same preregistered feature contract and synthetic profile. | Ran once at SHA `7db2ca0`; exact profile/seed/access log verified. All 72 preregistered B3/B4 paired contrasts versus B0/B1/B2 have 1,000 patient-cluster resamples. Report byte-parity is verified from saved JSON. Synthetic-only evidence; package C remains open for fixed gates, decision curves, alert burden, subgroup and runtime checks. |
 
 ## Simulator and training/evaluation sources
 

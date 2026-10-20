@@ -44,9 +44,21 @@ The fixed synthetic AUC floors in `packages/vigil-ml/tests/test_baselines_sanity
 
 ## Verification limits
 
-The final package command `./.venv/bin/pytest packages/vigil-core/tests packages/vigil-eval/tests packages/vigil-ml/tests packages/vigil-sim/tests tests/clinical/test_partner_analysis.py` completed with 477 passed and two failures: `test_gbm_reaches_at_least_single_threshold_auc` and `test_k3_joint_model_distinct_from_single_threshold`. Both are the pre-existing fixed-performance gate failures covered by `PROP-CORE-ML-CENSOR-AWARE-GATE.md`; their thresholds remain unchanged. The synthetic partner dry-run was regenerated with `./.venv/bin/python scripts/run_partner_dry_run.py`, and `test_committed_dry_run_reports_reproduce_byte_for_byte` passes. Ruff, byte-compilation, and `git diff --check` pass. The simulator wheel build could not be verified because the package index was unreachable while resolving the build backend. No claim is made that historical Phase 2, K1, or later model reports have been regenerated under the corrected label/feature contract.
+Historical package verification before the partner adapter correction: 477 passed and two fixed AUC gates failed; the simulator wheel build was blocked by package-index unavailability. These results are superseded by the later full-suite run below. No claim is made that historical Phase 2, K1, or later model reports have been regenerated under the corrected label/feature contract.
 
 
 ## EXP-CORE-ML-007 status
 
 EXP-CORE-ML-007 ran once at SHA `7efc7f7bf716f988a464a2e02a72dd13d44c65a2`; its output is preserved in its generated JSON/report. Post-access audit found the preregistered contrasts against B0/B2 were absent and the dataset-name strings referred to EXP-004. The append-only access log contains three metadata corrections tied to original timestamps and actual EXP-007 seed tuples. The study is exploratory only and cannot support model selection. EXP-CORE-ML-008 preregisters the complete paired contrast set on new seeds. Its runner reports B3/B4 paired deltas against B0, B1, and B2, includes a contract regression for every comparator/metric, and uses exact EXP-008 access names. Its four non-data-access runner tests pass; no EXP-008 test cohort has been generated.
+
+
+## EXP-CORE-ML-008 status
+
+EXP-CORE-ML-008 ran once at SHA `7db2ca0e5e38078d48e78ff3f0255d970a9b4736` on new seeds after preregistration. Its exact G1/G2/G3 access records match the result SHA and caller. All 72 paired contrasts vs B0/B1/B2 have 1,000 valid patient-cluster resamples. The B4 synthetic G3 IPCW AUC is 0.7907 (95% CI 0.7782–0.8036) and Brier is 0.1008 (0.0966–0.1049); its ECE is 0.0478, with B4-minus-B1 ECE +0.0170 (0.0131–0.0254), a calibration-error tradeoff. All values are synthetic, generator-conditional, and not a clinical or real-site optimum. The saved-JSON report regenerates byte-for-byte.
+
+The full registered baseline comparison is now present, but package C remains open: two legacy fixed AUC assertions and the K3 shuffled-outcome canary are red; overseer proposal dispositions are pending; the C closure requirements for decision curves, alert burden, subgroup and runtime evidence have not been met.
+
+
+## Latest verification after downstream adapter repair
+
+The full repository suite completed with 904 passed, 18 skipped, 3 failed, and 0 errors. The three failures are `test_k3_joint_model_canaries` (K3 shuffled-outcome AUC 0.6136 against the unchanged 0.60 ceiling), `test_k3_joint_model_distinct_from_single_threshold`, and `test_gbm_reaches_at_least_single_threshold_auc`. The latter two are fixed-score gates covered by the pending censor-aware-gate proposal; the canary is covered by its separate pending proposal. No acceptance assertion was changed. The partner adapter now passes explicit competing-event type and administrative-censor day to the stricter feature contract; all 23 partner-analysis tests pass and the synthetic dry-run reports were regenerated. EXP-008 runner tests pass, including saved-JSON byte parity. Ruff and `git diff --check` pass. These checks do not close packages A–I: Q-7 remains open for the scientific and historical evidence requirements listed in the repair plan.

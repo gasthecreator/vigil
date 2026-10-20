@@ -580,7 +580,8 @@ def main() -> None:
         json.dumps(json_safe(results), indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    render_report(results, output.with_name("REPORT.md"))
+    persisted_results = json.loads(output.read_text(encoding="utf-8"))
+    render_report(persisted_results, output.with_name("REPORT.md"))
     print(f"Wrote {output.relative_to(ROOT)}")
 
 
@@ -627,8 +628,10 @@ def render_report(results: dict[str, Any], path: Path) -> None:
             "|---|---|---|---:|---:|",
         ])
         for model, comparator_results in results["paired_differences_vs_baselines"][generator].items():
-            for comparator, metrics in comparator_results.items():
-                for metric, item in metrics.items():
+            for comparator in ("B0_prevalence", "B1_single_threshold", "B2_velocity"):
+                metrics = comparator_results[comparator]
+                for metric in ("auc", "brier", "ipcw_ece", "average_precision"):
+                    item = metrics[metric]
                     if item["ci_95"] is None or item["estimate"] is None:
                         summary = "undefined"
                     else:

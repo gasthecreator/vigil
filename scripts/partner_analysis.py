@@ -127,9 +127,11 @@ def to_vigil_frames(
                 "subtype": _subtype(b["er_status"], b["pr_status"], b["her2_status"]),
                 "observed_recurrence_event": rec,
                 "observed_recurrence_day": float(o["recurrence_day"]) if rec else np.nan,
+                "competing_event": "death_other" if p["vital_status"] == "DEAD_OTHER" else None,
                 "competing_event_day": float(p["days_to_last_followup"])
                 if p["vital_status"] == "DEAD_OTHER"
                 else np.nan,
+                "administrative_censor_day": float(p["days_to_last_followup"]),
                 "days_to_last_followup": float(p["days_to_last_followup"]),
                 "index_day": float(p["index_day"]),
                 "restaging_imaging_done": o.get("restaging_imaging_done"),

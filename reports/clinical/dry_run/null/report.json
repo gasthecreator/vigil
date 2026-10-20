@@ -69,12 +69,12 @@
     "comparator": "B1_SINGLE_THRESHOLD",
     "comparator_dev_auc_out_of_fold": {
       "B1_SINGLE_THRESHOLD": 0.5267982399871648,
-      "B2_VELOCITY_RULE": 0.5088540465582301,
-      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.445744116171977
+      "B2_VELOCITY_RULE": 0.5102111507471576,
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.44377665409046135
     },
-    "recalibration_intercept": -1.3351557085917471,
-    "recalibration_slope": 0.3094030403656638,
-    "operating_threshold": 0.17136326278551203,
+    "recalibration_intercept": -1.6529168233454146,
+    "recalibration_slope": 0.16721638573557746,
+    "operating_threshold": 0.1434306030237072,
     "dev_alert_rate_per_100_patient_months": 4.8815530087874635,
     "notes": [
       "candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3"
@@ -85,52 +85,52 @@
     "n_boot": 2000,
     "seed": 20261018,
     "comparator": "B1_SINGLE_THRESHOLD",
-    "operating_threshold": 0.17136326278551203,
+    "operating_threshold": 0.1434306030237072,
     "C1": {
-      "estimate": -0.5279747366118073,
+      "estimate": -1.0628254379986326,
       "ci95": [
-        -1.9415574268416274,
-        0.8479434490237084
+        -3.77862931577071,
+        1.362134309182164
       ],
       "criterion": "CI within [0.8, 1.2]",
       "ci_criterion_met": false,
-      "p": 0.9705,
+      "p": 0.924,
       "p_holm": 1.0,
       "reject": false,
       "met": false
     },
     "C2": {
-      "estimate": -0.037977721982748514,
+      "estimate": -0.029906424698533274,
       "ci95": [
-        -0.13846995845504667,
-        0.06240232872058607
+        -0.1354517967489201,
+        0.07163563778817718
       ],
       "criterion": "lower CI bound > 0.0",
       "ci_criterion_met": false,
-      "p": 0.7735,
+      "p": 0.73,
       "p_holm": 1.0,
       "reject": false,
       "met": false
     },
     "C3": {
-      "estimate": 4.200646943420583,
+      "estimate": 5.273427547432609,
       "ci95": [
-        3.502590544556308,
-        4.909109514998568
+        4.413480669974402,
+        6.169199477103079
       ],
       "criterion": "upper CI bound <= 5.0",
-      "ci_criterion_met": true,
-      "p": 0.013,
-      "p_holm": 0.039,
-      "reject": true,
-      "met": true
+      "ci_criterion_met": false,
+      "p": 0.726,
+      "p_holm": 1.0,
+      "reject": false,
+      "met": false
     },
     "decision_rule": "met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap p-value is below 0.05"
   },
   "secondary": {
     "calibration_before_recalibration": {
-      "ece": 0.09030690825005168,
-      "mean_predicted": 0.13210455896158688,
+      "ece": 0.08859496498658179,
+      "mean_predicted": 0.13134629170176154,
       "observed_ipcw": 0.1233694612555097,
       "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
     },
@@ -147,9 +147,9 @@
       ],
       "net_benefit_model": [
         0.11451460732879767,
-        0.05020211403709407,
-        -0.012348406609478862,
-        -0.000992991033486705,
+        0.04714071875598881,
+        -0.003106415799945041,
+        0.0,
         0.0,
         0.0,
         0.0,
@@ -186,10 +186,10 @@
         "stage I-II": {
           "patients": 184,
           "events": 27,
-          "ipcw_auc": 0.5027904599725759,
+          "ipcw_auc": 0.5136902162047615,
           "ci95": [
-            0.39166468248840725,
-            0.6233485131046153
+            0.38879949638357725,
+            0.6416426866464875
           ]
         },
         "stage III": {
@@ -200,10 +200,10 @@
         "subtype HER2+": {
           "patients": 154,
           "events": 21,
-          "ipcw_auc": 0.3880719331764017,
+          "ipcw_auc": 0.4107182403390819,
           "ci95": [
-            0.2661989644879049,
-            0.5155092841254639
+            0.2788560797043847,
+            0.5495518945473856
           ]
         },
         "subtype HR+": {
@@ -219,17 +219,17 @@
       },
       "worst_group": [
         "subtype HER2+",
-        0.3880719331764017
+        0.4107182403390819
       ],
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "417.8 \u00b1 308.5",
-      "conditional_median_days": 337.0,
-      "unconditional_mean_days": 121.3,
-      "recurrence_detection_rate": 0.2903,
-      "overdetection_rate": 0.7805,
-      "alert_burden_per_100_pt_years": 20.22,
+      "conditional_lead_time_days": "435.0 \u00b1 334.4",
+      "conditional_median_days": 280.0,
+      "unconditional_mean_days": 159.0,
+      "recurrence_detection_rate": 0.3656,
+      "overdetection_rate": 0.7622,
+      "alert_burden_per_100_pt_years": 23.51,
       "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
     },
     "m10_aggregate": {
@@ -239,32 +239,32 @@
     "verification_bias": {
       "complete_case": {
         "sensitivity": 0.05555555555555555,
-        "specificity": 0.967741935483871
+        "specificity": 0.9354838709677419
       },
       "ipw": {
         "sensitivity": 0.05516217543362249,
-        "specificity": 0.9683591291594231
+        "specificity": 0.9366868454866585
       },
       "sensitivity_analysis": [
         {
           "assumed_unverified_event_rate": 0.0,
           "sensitivity": 0.05555555555555555,
-          "specificity": 0.9571984435797666
+          "specificity": 0.933852140077821
         },
         {
           "assumed_unverified_event_rate": 0.05,
-          "sensitivity": 0.05429864253393665,
-          "specificity": 0.957395498392283
+          "sensitivity": 0.057692307692307696,
+          "specificity": 0.9338826366559486
         },
         {
           "assumed_unverified_event_rate": 0.1,
-          "sensitivity": 0.05343511450381679,
-          "specificity": 0.9576059850374066
+          "sensitivity": 0.05916030534351145,
+          "specificity": 0.9339152119700748
         },
         {
           "assumed_unverified_event_rate": 0.2,
-          "sensitivity": 0.05232558139534884,
-          "specificity": 0.9580731489741302
+          "sensitivity": 0.06104651162790698,
+          "specificity": 0.9339875111507582
         }
       ],
       "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"
