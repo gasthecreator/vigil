@@ -116,7 +116,9 @@ def _extract_trajectories_from_db(
     return trajectories
 
 
-def _build_audit_response(report: AuditReport, facility_id: Optional[str]) -> QualityAuditResponse:
+def _build_audit_response(
+    report: AuditReport, facility_id: Optional[str], *, synthetic: bool
+) -> QualityAuditResponse:
     """Transform an AuditReport dataclass into an API response schema with neutral narrative summary."""
 
     def _convert_breakdown(
@@ -168,7 +170,7 @@ def _build_audit_response(report: AuditReport, facility_id: Optional[str]) -> Qu
         suppressed_strata_count=report.suppressed_strata_count,
         register_audit_verified=True,
         narrative_summary=narrative,
-        synthetic=True,
+        synthetic=synthetic,
     )
 
 
@@ -231,7 +233,9 @@ def run_quality_audit(
     )
     db.commit()
 
-    response = _build_audit_response(report, payload.facility_id)
+    response = _build_audit_response(
+        report, payload.facility_id, synthetic=payload.include_synthetic_benchmark
+    )
     if payload.include_synthetic_benchmark:
         response.narrative_summary = (
             "SYNTHETIC BENCHMARK ONLY - this is not facility data. " + response.narrative_summary

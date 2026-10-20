@@ -290,7 +290,20 @@ export default function QualityAuditPage() {
           ))}
         </div>
       ) : auditData ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <>
+          <div
+            role="status"
+            className={`rounded-lg border px-4 py-3 text-sm font-semibold ${
+              auditData.synthetic
+                ? "border-amber-300 bg-amber-50 text-amber-950"
+                : "border-blue-300 bg-blue-50 text-blue-950"
+            }`}
+          >
+            {auditData.synthetic
+              ? "Synthetic benchmark only — these results are not facility data."
+              : `Facility audit${auditData.facility_id ? ` for ${auditData.facility_id}` : ""} — computed from consented facility records.`}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Patients Audited */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
@@ -346,7 +359,8 @@ export default function QualityAuditPage() {
               {(auditData.overall_bootstrap_ci_95[1] * 100).toFixed(1)}%]
             </p>
           </div>
-        </div>
+          </div>
+        </>
       ) : null}
 
       {/* Verified Narrative Card */}

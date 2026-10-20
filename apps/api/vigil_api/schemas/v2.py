@@ -465,7 +465,10 @@ class QualityAuditResponse(BaseModel):
     suppressed_strata_count: int
     register_audit_verified: bool = True
     narrative_summary: str
-    synthetic: bool = True
+    synthetic: bool = Field(
+        ...,
+        description="True only when this response was computed from the built-in synthetic benchmark cohort.",
+    )
 
 
 # ==============================================================================

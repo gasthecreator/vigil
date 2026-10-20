@@ -473,7 +473,8 @@ export interface QualityAuditResponse {
   subgroup_breakdown: Record<string, StratumAuditMetricResponse>;
   subtype_breakdown: Record<string, StratumAuditMetricResponse>;
   suppressed_strata_count: number;
-  synthetic?: boolean;
+  /** True only when this response was computed from the built-in synthetic benchmark cohort. */
+  synthetic: boolean;
   total_action_not_recorded: number;
   total_action_recorded: number;
   total_patients_audited: number;

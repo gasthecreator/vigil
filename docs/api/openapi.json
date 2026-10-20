@@ -2264,7 +2264,7 @@
             "type": "integer"
           },
           "synthetic": {
-            "default": true,
+            "description": "True only when this response was computed from the built-in synthetic benchmark cohort.",
             "title": "Synthetic",
             "type": "boolean"
           },
@@ -2297,7 +2297,8 @@
           "subtype_breakdown",
           "stage_breakdown",
           "suppressed_strata_count",
-          "narrative_summary"
+          "narrative_summary",
+          "synthetic"
         ],
         "title": "QualityAuditResponse",
         "type": "object"

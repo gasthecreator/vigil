@@ -124,6 +124,7 @@ def test_quality_audit_rbac_quality_lead(client):
     assert data["total_signals_detected"] > 0
     assert data["register_audit_verified"] is True
     assert "narrative_summary" in data
+    assert data["synthetic"] is True
 
 
 def test_quality_audit_rbac_admin(client):
@@ -265,6 +266,7 @@ def test_quality_audit_latest_endpoint(client):
     data = response.json()
     assert "audit_id" in data
     assert data["total_patients_audited"] > 0
+    assert data["synthetic"] is True
 
     # Clinician is forbidden
     bad_resp = client.get(
@@ -381,6 +383,7 @@ def test_quality_audit_consent_filtering_and_action_attribution(client):
 
     # Total patients audited must be 2 (p1 and p3). p2 MUST BE EXCLUDED because consent was withdrawn!
     assert data["total_patients_audited"] == 2, f"Expected 2 consented patients, got {data['total_patients_audited']}"
+    assert data["synthetic"] is False
     # Between p1 and p3, p1 has only pending system task (so action NOT recorded), while p3 has completed task (action recorded)
     assert data["total_action_recorded"] == 1, "Completed task should be counted as recorded action"
     assert data["total_action_not_recorded"] == 1, "Pending system task must NOT be counted as recorded action"

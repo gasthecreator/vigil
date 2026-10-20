@@ -15,6 +15,11 @@ test.describe("M10 Missed-Signal Quality Audit E2E Suite (Real Backend)", () => 
     await page.goto("/quality");
     await page.waitForSelector("header");
     await page.waitForSelector("table[aria-label='Subgroup Breakdown']", { timeout: 15000 });
+    await expect(
+      page
+        .getByRole("status")
+        .getByText("Synthetic benchmark only — these results are not facility data.")
+    ).toBeVisible();
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
