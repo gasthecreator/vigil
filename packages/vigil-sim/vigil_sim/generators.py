@@ -17,8 +17,8 @@ Features:
 - True null (disease-free) controls with realistic biological variation, benign liver shifts, and noise
 - Exportable ground-truth latent state trajectories for parameter recovery and identifiability studies
 - >= 3 structurally distinct synthetic stress generators:
-    * G1: Saturating recurrence-burden curve with direct marker coupling (not an ODE or clearance model)
-    * G2: A small sampled set of persistent step changes and short-window burst increments (not a Poisson shot-noise process)
+    * G1 legacy profiles: saturating recurrence burden with direct marker coupling; v4 adds configured secretion/clearance
+    * G2 legacy profiles: sampled persistent steps; v4 adds configured Poisson events and marker-clearance kernels
     * G3: Heavy-tailed noise with inter-laboratory analyzer offsets and pre-analytical errors
 - Anti-leakage guarantee: features never contain future values, outcome labels, or anomaly flags (Defect A1 resolved).
 """
@@ -37,6 +37,13 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from vigil_core.analytes import ANALYTE_REGISTRY, TargetOrgan
+
+from vigil_sim.mechanisms import (
+    draw_poisson_event_times,
+    evaluate_first_order_on_fixed_grid,
+    patient_rng,
+    shot_noise_at_times,
+)
 
 
 class GeneratorType(str, Enum):
@@ -76,6 +83,7 @@ class LatentCompartmentState:
     o_renal: float  # Renal impairment state
     is_indolent: bool = False
     treatment_active: Optional[str] = None
+    mechanism_event_count: int = 0
 
 
 @dataclass
@@ -226,6 +234,7 @@ class CohortDataset:
                     "o_renal": st.o_renal,
                     "is_indolent": st.is_indolent,
                     "treatment_active": st.treatment_active,
+                    "mechanism_event_count": st.mechanism_event_count,
                 }
             )
         return pd.DataFrame(rows)
@@ -420,7 +429,10 @@ class BaseCohortGenerator(ABC):
         """Reject malformed synthetic assumptions instead of silently normalizing them."""
         if not config.get("profile_id") or not config.get("interpretation"):
             raise ValueError("Population config requires profile_id and interpretation")
-        if config["profile_id"] == "balanced_synthetic_core_v3":
+        if config["profile_id"] in {
+            "balanced_synthetic_core_v3",
+            "balanced_synthetic_core_v4",
+        }:
             mechanics = config.get("generator_mechanics")
             if not isinstance(mechanics, dict) or not mechanics.get("provenance"):
                 raise ValueError("balanced_synthetic_core_v3 requires documented generator_mechanics")
@@ -463,7 +475,19 @@ class BaseCohortGenerator(ABC):
                 "g3.apply_facility_lab_effects",
                 "g3.saturate_signal",
             )
+            legacy_only_v4 = {
+                "g1.marker_coupling.ca153_per_burden",
+                "g1.marker_coupling.cea_per_burden",
+                "g2.burst_count_exclusive_range",
+                "g2.days_before_recurrence_range",
+                "g2.recent_burst_window_days",
+                "g2.burden_per_burst",
+                "g2.ca153_recent_burst_increment",
+                "g2.cea_recent_burst_increment",
+            }
             for path in required_paths:
+                if config["profile_id"] == "balanced_synthetic_core_v4" and path in legacy_only_v4:
+                    continue
                 value: Any = mechanics
                 for key in path.split("."):
                     if not isinstance(value, dict) or key not in value:
@@ -490,6 +514,8 @@ class BaseCohortGenerator(ABC):
                 "g2.days_before_recurrence_range", "g3.haemolysis_ast_multiplier",
                 "g3.haemolysis_ldh_multiplier", "g3.sample_dilution_multiplier",
             ):
+                if config["profile_id"] == "balanced_synthetic_core_v4" and path in legacy_only_v4:
+                    continue
                 value = mechanics
                 for key in path.split("."):
                     value = value[key]
@@ -523,6 +549,31 @@ class BaseCohortGenerator(ABC):
                 or mechanics["g3"]["student_t_degrees_freedom"] <= 0
             ):
                 raise ValueError("generator_mechanics scales and Student-t degrees of freedom must be positive")
+            if config["profile_id"] == "balanced_synthetic_core_v4":
+                g1_kinetics = mechanics["g1"].get("marker_kinetics", {})
+                g2_shot_noise = mechanics["g2"].get("shot_noise", {})
+                required_kinetics = (
+                    "integration_step_days", "ca153_secretion_per_burden_day",
+                    "ca153_clearance_rate_per_day", "cea_secretion_per_burden_day",
+                    "cea_clearance_rate_per_day",
+                )
+                required_shot_noise = (
+                    "event_rate_per_day", "burden_amplitude_mean",
+                    "burden_amplitude_coefficient_of_variation",
+                    "ca153_clearance_rate_per_day", "cea_clearance_rate_per_day",
+                )
+                for name, settings, required in (
+                    ("g1.marker_kinetics", g1_kinetics, required_kinetics),
+                    ("g2.shot_noise", g2_shot_noise, required_shot_noise),
+                ):
+                    for key in required:
+                        value = settings.get(key)
+                        if not isinstance(value, (int, float)) or not np.isfinite(value):
+                            raise ValueError(f"{name}.{key} must be finite")
+                        if value < 0 or (("clearance_rate" in key or key == "integration_step_days") and value == 0):
+                            raise ValueError(f"{name}.{key} must be positive")
+                if g2_shot_noise["burden_amplitude_mean"] == 0:
+                    raise ValueError("g2.shot_noise.burden_amplitude_mean must be positive")
         age = config["age_years"]
         if not (0 < age["minimum"] < age["maximum"]):
             raise ValueError("age_years must define a positive, increasing range")
@@ -1051,10 +1102,9 @@ class BaseCohortGenerator(ABC):
 
 class ContinuousSecretionGenerator(BaseCohortGenerator):
     """
-    Historical G1 stress generator. Despite the compatibility class name, this
-    is not a continuous secretion ODE: it evaluates a saturating burden curve at
-    visits and maps burden directly to marker levels without clearance dynamics.
-    It remains unsuitable as a mechanistic tumor-marker simulator.
+    G1 stress generator. Historical profiles map burden directly to markers;
+    `balanced_synthetic_core_v4` adds configured secretion/clearance dynamics.
+    Neither path is calibrated as a mechanistic human tumor-marker simulator.
     """
 
     def get_generator_type(self) -> GeneratorType:
@@ -1092,6 +1142,39 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
         else:
             growth_k = float(self.rng.uniform(*growth_rates.get("other", (0.020, 0.030))))
 
+        kinetic_profile = mechanics.get("marker_kinetics")
+        if kinetic_profile is not None:
+            burden_cfg = mechanics["burden"]
+
+            def burden_at_day(day: float) -> float:
+                if not pt.true_recurrence_event or day < t_seed:
+                    return 0.0
+                raw_mass = math.exp(
+                    min(burden_cfg["exponent_cap"], growth_k * (day - t_seed))
+                ) - 1.0
+                return float(
+                    burden_cfg["mass_scale"]
+                    * (1.0 - math.exp(-raw_mass / burden_cfg["saturation_scale"]))
+                )
+
+            ca153_signal = evaluate_first_order_on_fixed_grid(
+                visit_days,
+                burden_at_day,
+                kinetic_profile["ca153_secretion_per_burden_day"],
+                kinetic_profile["ca153_clearance_rate_per_day"],
+                kinetic_profile["integration_step_days"],
+            )
+            cea_signal = evaluate_first_order_on_fixed_grid(
+                visit_days,
+                burden_at_day,
+                kinetic_profile["cea_secretion_per_burden_day"],
+                kinetic_profile["cea_clearance_rate_per_day"],
+                kinetic_profile["integration_step_days"],
+            )
+        else:
+            ca153_signal = np.zeros(len(visit_days), dtype=float)
+            cea_signal = np.zeros(len(visit_days), dtype=float)
+
         # Adjuvant chemotherapy in first 180 days for Stage II/III
         chemo = mechanics.get("chemotherapy", {})
         eligible_stages = chemo.get(
@@ -1101,7 +1184,7 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
             "assignment_probability", 0.85
         )
 
-        for d in visit_days:
+        for visit_index, d in enumerate(visit_days):
             # Latent compartment outgrowth
             b_loc = 0.0
             b_bone = 0.0
@@ -1140,10 +1223,14 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
 
             total_burden = b_loc + b_bone + b_liver + b_lung + b_brain
 
-            # Direct burden-to-marker scaling; there is no clearance state here.
+            # Legacy profiles keep their direct mapping; v4 uses configured clearance dynamics.
             marker_cfg = mechanics.get("marker_coupling", {})
-            m_ca153 = total_burden * marker_cfg.get("ca153_per_burden", 4.2)
-            m_cea = total_burden * marker_cfg.get("cea_per_burden", 0.75)
+            if kinetic_profile is None:
+                m_ca153 = total_burden * marker_cfg.get("ca153_per_burden", 4.2)
+                m_cea = total_burden * marker_cfg.get("cea_per_burden", 0.75)
+            else:
+                m_ca153 = float(ca153_signal[visit_index])
+                m_cea = float(cea_signal[visit_index])
 
             # Organ damage states
             organ_cfg = mechanics.get("organ_damage", {})
@@ -1269,9 +1356,9 @@ class ContinuousSecretionGenerator(BaseCohortGenerator):
 
 class BurstSheddingGenerator(BaseCohortGenerator):
     """
-    Generator G2: Episodic step-change and necrotic burst kinetics.
-    - Sudden episodic release of markers (shot noise).
-    - Step transitions mimicking sudden vascular invasion.
+    G2 stress generator. Historical profiles use sampled persistent steps;
+    `balanced_synthetic_core_v4` uses configured Poisson events with clearance.
+    Both are synthetic assumptions, not fitted biological mechanisms.
     """
 
     def get_generator_type(self) -> GeneratorType:
@@ -1295,7 +1382,53 @@ class BurstSheddingGenerator(BaseCohortGenerator):
 
         # Burst events occur at discrete times before clinical recurrence
         burst_times: List[float] = []
-        if pt.true_recurrence_event and pt.true_recurrence_day is not None:
+        shot_noise = mechanics.get("shot_noise")
+        if shot_noise is not None:
+            end_day = max(visit_days, default=0.0)
+            terminal_days = [end_day]
+            if pt.true_recurrence_event and pt.true_recurrence_day is not None:
+                terminal_days.append(max(0.0, pt.true_recurrence_day))
+            else:
+                terminal_days.append(0.0)
+            if pt.competing_event_day is not None:
+                terminal_days.append(max(0.0, pt.competing_event_day))
+            if pt.administrative_censor_day is not None:
+                terminal_days.append(max(0.0, pt.administrative_censor_day))
+            exposure_days = min(terminal_days)
+            event_times = draw_poisson_event_times(
+                exposure_days,
+                shot_noise["event_rate_per_day"],
+                patient_rng(self.seed, pt.patient_id, "g2-event-times"),
+            )
+            amplitude_mean = shot_noise["burden_amplitude_mean"]
+            amplitude_cv = shot_noise["burden_amplitude_coefficient_of_variation"]
+            log_variance = math.log1p(amplitude_cv**2)
+            amplitude_rng = patient_rng(self.seed, pt.patient_id, "g2-event-amplitudes")
+            event_amplitudes = amplitude_rng.lognormal(
+                mean=math.log(amplitude_mean) - log_variance / 2.0,
+                sigma=math.sqrt(log_variance),
+                size=event_times.size,
+            )
+            total_mass_by_visit = np.asarray(
+                [event_amplitudes[event_times <= day].sum() for day in visit_days],
+                dtype=float,
+            )
+            event_count_by_visit = np.asarray(
+                [np.count_nonzero(event_times <= day) for day in visit_days], dtype=int
+            )
+            ca153_by_visit = shot_noise_at_times(
+                visit_days,
+                event_times.tolist(),
+                event_amplitudes * mechanics["ca153_per_burden"],
+                shot_noise["ca153_clearance_rate_per_day"],
+            )
+            cea_by_visit = shot_noise_at_times(
+                visit_days,
+                event_times.tolist(),
+                event_amplitudes * mechanics["cea_per_burden"],
+                shot_noise["cea_clearance_rate_per_day"],
+            )
+        elif pt.true_recurrence_event and pt.true_recurrence_day is not None:
             burst_count = mechanics.get("burst_count_exclusive_range", (2, 5))
             num_bursts = int(self.rng.integers(*burst_count))
             for _ in range(num_bursts):
@@ -1304,27 +1437,36 @@ class BurstSheddingGenerator(BaseCohortGenerator):
                 )
                 burst_times.append(b_time)
             burst_times.sort()
+            event_count_by_visit = np.asarray(
+                [sum(burst_day <= day for burst_day in burst_times) for day in visit_days],
+                dtype=int,
+            )
+        else:
+            event_count_by_visit = np.zeros(len(visit_days), dtype=int)
 
-        for d in visit_days:
-            past_bursts = [bt for bt in burst_times if bt <= d]
-            step_count = len(past_bursts)
-            recent_window = mechanics.get("recent_burst_window_days", 14.0)
-            recent_burst = any(0.0 <= (d - bt) <= recent_window for bt in past_bursts)
-
-            # Latent mass scales with step count
-            total_mass = step_count * mechanics.get("burden_per_burst", 15.0)
+        for visit_index, d in enumerate(visit_days):
+            if shot_noise is None:
+                past_bursts = [bt for bt in burst_times if bt <= d]
+                step_count = len(past_bursts)
+                recent_window = mechanics.get("recent_burst_window_days", 14.0)
+                recent_burst = any(0.0 <= (d - bt) <= recent_window for bt in past_bursts)
+                total_mass = step_count * mechanics.get("burden_per_burst", 15.0)
+                m_ca153 = total_mass * mechanics.get("ca153_per_burden", 3.5) + (
+                    mechanics.get("ca153_recent_burst_increment", 45.0) if recent_burst else 0.0
+                )
+                m_cea = total_mass * mechanics.get("cea_per_burden", 0.6) + (
+                    mechanics.get("cea_recent_burst_increment", 8.0) if recent_burst else 0.0
+                )
+            else:
+                total_mass = float(total_mass_by_visit[visit_index])
+                m_ca153 = float(ca153_by_visit[visit_index])
+                m_cea = float(cea_by_visit[visit_index])
             b_bone = total_mass if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.0
             b_liver = total_mass if pt.true_recurrence_site == TargetOrgan.LIVER.value else 0.0
             b_lung = total_mass if pt.true_recurrence_site == TargetOrgan.LUNG.value else 0.0
             b_brain = total_mass if pt.true_recurrence_site == TargetOrgan.BRAIN.value else 0.0
             b_loc = total_mass if pt.true_recurrence_site == TargetOrgan.BREAST.value else 0.0
 
-            m_ca153 = total_mass * mechanics.get("ca153_per_burden", 3.5) + (
-                mechanics.get("ca153_recent_burst_increment", 45.0) if recent_burst else 0.0
-            )
-            m_cea = total_mass * mechanics.get("cea_per_burden", 0.6) + (
-                mechanics.get("cea_recent_burst_increment", 8.0) if recent_burst else 0.0
-            )
             o_liver = b_liver * mechanics.get("liver_damage_per_liver_burden", 2.0)
             o_bone = b_bone * mechanics.get("bone_damage_per_bone_burden", 2.5)
 
@@ -1342,6 +1484,7 @@ class BurstSheddingGenerator(BaseCohortGenerator):
                 o_bone=o_bone,
                 o_renal=0.0,
                 is_indolent=pt.is_indolent,
+                mechanism_event_count=int(event_count_by_visit[visit_index]),
             )
             latents.append(latent_st)
 

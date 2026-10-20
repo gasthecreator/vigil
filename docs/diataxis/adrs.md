@@ -48,3 +48,4 @@
 - [ADR-0044: Disable invalid prototype trainers](../adr/0044-disable-invalid-prototype-trainers.md)
 - [ADR-0045: Fit verification propensity on development data](../adr/0045-development-fit-verification-propensity.md)
 - [ADR-0046: Require a ratified threshold grid for partner DCA](../adr/0046-ratified-partner-dca-thresholds.md)
+- [ADR-0047: Add explicit G1 clearance and G2 shot-noise mechanisms](../adr/0047-explicit-g1-clearance-and-g2-shot-noise.md)

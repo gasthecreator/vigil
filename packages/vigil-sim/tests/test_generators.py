@@ -156,6 +156,83 @@ def test_core_v3_rejects_incomplete_generator_mechanics():
         get_generator(GeneratorType.G2_BURST, seed=42, population_config=profile)
 
 
+def test_core_v4_requires_explicit_clearance_and_shot_noise_parameters():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v4.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    assert profile["profile_id"] == "balanced_synthetic_core_v4"
+    assert "not calibrated for clinical prediction" in profile["interpretation"]
+    assert "ca153_per_burden" not in profile["generator_mechanics"]["g1"]["marker_coupling"]
+    assert "burst_count_exclusive_range" not in profile["generator_mechanics"]["g2"]
+    get_generator(GeneratorType.G1_SMOOTH, seed=42, population_config=profile)
+    del profile["generator_mechanics"]["g2"]["shot_noise"]["event_rate_per_day"]
+    with pytest.raises(ValueError, match="event_rate_per_day"):
+        get_generator(GeneratorType.G2_BURST, seed=42, population_config=profile)
+
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    profile["generator_mechanics"]["g1"]["marker_kinetics"]["ca153_clearance_rate_per_day"] = 0.0
+    with pytest.raises(ValueError, match="ca153_clearance_rate_per_day"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=42, population_config=profile)
+
+
+def test_core_v4_g1_marker_state_is_independent_of_observation_visit_density():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v4.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    first = get_generator(GeneratorType.G1_SMOOTH, seed=9001, population_config=profile)
+    second = get_generator(GeneratorType.G1_SMOOTH, seed=9001, population_config=profile)
+    patient_a = first.sample_baseline(1)
+    patient_b = second.sample_baseline(1)
+    for patient in (patient_a, patient_b):
+        patient.true_recurrence_event = True
+        patient.true_recurrence_day = 500.0
+        patient.true_recurrence_site = "liver"
+    days_sparse = [0.0, 90.0, 180.0, 365.0, 540.0, 730.0]
+    days_dense = sorted(set(days_sparse + [45.0, 135.0, 270.0, 450.0, 650.0]))
+    _values_a, _masks_a, latent_a = first.simulate_longitudinal_trajectory(patient_a, days_sparse)
+    _values_b, _masks_b, latent_b = second.simulate_longitudinal_trajectory(patient_b, days_dense)
+    dense_at = {state.day: state for state in latent_b}
+    for state in latent_a:
+        assert state.m_ca153 == pytest.approx(dense_at[state.day].m_ca153, abs=1e-10)
+        assert state.m_cea == pytest.approx(dense_at[state.day].m_cea, abs=1e-10)
+
+
+def test_core_v4_g2_uses_stable_patient_scoped_shot_noise_and_visit_invariance():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v4.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    first = get_generator(GeneratorType.G2_BURST, seed=9002, population_config=profile)
+    second = get_generator(GeneratorType.G2_BURST, seed=9002, population_config=profile)
+    patient_a = first.sample_baseline(1)
+    patient_b = second.sample_baseline(1)
+    for patient in (patient_a, patient_b):
+        patient.true_recurrence_event = True
+        patient.true_recurrence_day = 700.0
+        patient.true_recurrence_site = "liver"
+    days_sparse = [0.0, 90.0, 180.0, 365.0, 540.0, 730.0]
+    days_dense = sorted(set(days_sparse + [45.0, 135.0, 270.0, 450.0, 650.0]))
+    _values_a, _masks_a, latent_a = first.simulate_longitudinal_trajectory(patient_a, days_sparse)
+    _values_b, _masks_b, latent_b = second.simulate_longitudinal_trajectory(patient_b, days_dense)
+    dense_at = {state.day: state for state in latent_b}
+    for state in latent_a:
+        assert state.m_ca153 == pytest.approx(dense_at[state.day].m_ca153, abs=1e-10)
+        assert state.m_cea == pytest.approx(dense_at[state.day].m_cea, abs=1e-10)
+        assert state.mechanism_event_count == dense_at[state.day].mechanism_event_count
+    assert latent_a[-1].mechanism_event_count > 0
+    assert np.all(np.diff([state.mechanism_event_count for state in latent_a]) >= 0)
+
+
+def test_core_v4_g2_does_not_generate_events_without_recurrence():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v4.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    generator = get_generator(GeneratorType.G2_BURST, seed=9003, population_config=profile)
+    patient = generator.sample_baseline(1)
+    patient.true_recurrence_event = False
+    patient.true_recurrence_day = None
+    _values, _masks, latent = generator.simulate_longitudinal_trajectory(
+        patient, [0.0, 90.0, 365.0, 730.0]
+    )
+    assert all(state.mechanism_event_count == 0 for state in latent)
+    assert all(state.m_ca153 == 0.0 and state.m_cea == 0.0 for state in latent)
+
+
 def test_g3_signal_saturates_after_recurrence_instead_of_exceeding_registered_mass():
     config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
     profile = json.loads(config_path.read_text(encoding="utf-8"))

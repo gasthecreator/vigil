@@ -21,7 +21,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from vigil_sim.generators import CohortDataset, GeneratorType
+from vigil_sim.generators import CohortDataset, GeneratorType, LongitudinalObservation
 
 
 @dataclass
@@ -105,7 +105,7 @@ def evaluate_cohort_calibration(
     measured_ca153_observations = 0
 
     # Group observations by patient
-    pt_obs: Dict[str, List] = {}
+    pt_obs: Dict[str, List[LongitudinalObservation]] = {}
     for obs in cohort.observations:
         pt_obs.setdefault(obs.patient_id, []).append(obs)
 

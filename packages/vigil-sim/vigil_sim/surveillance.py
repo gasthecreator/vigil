@@ -119,7 +119,11 @@ def build_world(generator: GeneratorType | str, seed: int, n_generated: int) -> 
         )
         rec = bool(pt.true_recurrence_event and pt.true_recurrence_day is not None)
         has_rec.append(rec)
-        t_rec.append(float(pt.true_recurrence_day) if rec else float("nan"))
+        t_rec.append(
+            float(pt.true_recurrence_day)
+            if rec and pt.true_recurrence_day is not None
+            else float("nan")
+        )
         comp_day.append(cd)
         ids.append(pt.patient_id)
     burden_a = np.array(burden)
