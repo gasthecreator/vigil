@@ -38,6 +38,7 @@ non-synthetic abstention behavior. Do not weaken or remove the audit assertion.
 ## Owner disposition
 
 Accepted in the PR #79 repair thread on 2026-10-20. The fixture is changed as
-proposed; the default and product behavior remain unchanged. The targeted P5
-acceptance test and full CI are required before closing this finding. This
+proposed; the default and product behavior remain unchanged. The targeted test
+passes locally (1 passed), the full P5 security acceptance file passes locally
+(6 passed), and final-head CI run `39444017090` passes backend acceptance. This
 corrects fixture provenance only; it does not validate M3/K2 clinically.
