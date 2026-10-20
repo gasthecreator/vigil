@@ -271,6 +271,10 @@ The separate `CohortDataset.get_survival_training_examples` label path assigned 
 
 Both `CohortDataset.get_unleaked_training_examples` and `get_survival_training_examples` still defaulted to a 180-day target after the shared extractor's implicit horizon was removed; the survival helper also treated `True` as one day. Their signatures now require `horizon_days`, and both reject boolean, non-finite, and non-positive horizons. Regression tests verify omission fails and the explicit-estimand requirement still holds. The complete generator test module passes (32); Ruff and `git diff --check` pass. This closes the silent/invalid-horizon paths only; the direct helper and shared extractor still need full contract parity review.
 
+### Q-7 follow-up — reject post-boundary observations in direct simulator labels (2026-10-20)
+
+The direct simulator survival-label helper silently ignored observations after the declared administrative end, loss-to-follow-up, or terminal competing event, unlike the shared extractor's contradictory-history rejection. It now rejects those histories; regression cases cover all three boundary types, while the existing loss-to-follow-up tests retain only pre-censor observations. Generator tests pass (35); the full simulator package is 66 passed and 1 unchanged calibration-gate failure (G1 lead-time SD 113.615 days vs 110); Ruff and `git diff --check` pass. Other simulator/direct-helper parity remains open under B.
+
 ### Q-7 follow-up — correct a stale model-constructor claim in the inventory (2026-10-20)
 
 Package A's claim inventory said `FastLandmarkJointModel` still accepted an ignored `horizon_days` argument. Source inspection confirmed it inherits the canonical logistic baseline constructor and rejects that argument; the horizon is carried by the fit labels. The inventory now matches the source and its discrepancy list numbering is unique. This is an audit-record correction only; packages A–B remain open.

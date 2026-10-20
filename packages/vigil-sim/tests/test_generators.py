@@ -453,6 +453,11 @@ def test_training_labels_are_unknown_when_loss_to_follow_up_precedes_horizon():
     patient.competing_event = "lost_to_follow_up"
     patient.competing_event_day = first_observation.day + 10.0
     patient.administrative_censor_day = first_observation.day + 365.0
+    cohort.observations = [
+        obs
+        for obs in cohort.observations
+        if obs.patient_id != patient.patient_id or obs.day < patient.competing_event_day
+    ]
 
     X, y, times, event_codes = cohort.get_survival_training_examples(
         horizon_days=180.0, use_observed_labels=True
@@ -481,6 +486,11 @@ def test_oracle_training_labels_censor_recurrence_after_loss_to_follow_up():
     patient.competing_event = "lost_to_follow_up"
     patient.competing_event_day = first_observation.day + 10.0
     patient.administrative_censor_day = first_observation.day + 365.0
+    cohort.observations = [
+        obs
+        for obs in cohort.observations
+        if obs.patient_id != patient.patient_id or obs.day < patient.competing_event_day
+    ]
 
     X, y, times, event_codes = cohort.get_survival_training_examples(
         horizon_days=180.0, use_observed_labels=False
@@ -514,10 +524,40 @@ def test_survival_training_rejects_same_day_recurrence_and_competing_event(
     patient.true_recurrence_day = tied_event_day
     patient.competing_event = "death"
     patient.competing_event_day = tied_event_day
+    cohort.observations = [
+        obs
+        for obs in cohort.observations
+        if obs.patient_id != patient.patient_id or obs.day <= tied_event_day
+    ]
 
     with pytest.raises(ValueError, match="share an ambiguous day"):
         cohort.get_survival_training_examples(
             horizon_days=180.0, use_observed_labels=use_observed_labels
+        )
+
+
+@pytest.mark.parametrize("boundary", ["administrative", "terminal", "loss"])
+def test_survival_training_rejects_observations_after_follow_up_boundary(boundary):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=87).generate_cohort(
+        num_patients=10, duration_days=365.0
+    )
+    patient = cohort.patients[0]
+    patient_observations = [
+        obs for obs in cohort.observations if obs.patient_id == patient.patient_id
+    ]
+    first_day = min(obs.day for obs in patient_observations)
+    last_day = max(obs.day for obs in patient_observations)
+    boundary_day = first_day + 10.0
+    assert boundary_day < last_day
+    if boundary == "administrative":
+        patient.administrative_censor_day = boundary_day
+    else:
+        patient.competing_event = "lost_to_follow_up" if boundary == "loss" else "death"
+        patient.competing_event_day = boundary_day
+
+    with pytest.raises(ValueError, match="observations extend beyond"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
         )
 
 
