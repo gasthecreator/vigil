@@ -429,6 +429,28 @@ def test_feature_label_source_is_recorded_only_when_explicit():
     assert "synthetic_only" not in unknown_labels.attrs
 
 
+@pytest.mark.parametrize("source_flag", [False, True])
+def test_feature_target_inherits_homogeneous_observation_source_tags(source_flag):
+    patients = pd.DataFrame([{
+        "patient_id": "TAGGED-SOURCE",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "administrative_censor_day": 730.0,
+    }])
+    observations = pd.DataFrame({
+        "patient_id": ["TAGGED-SOURCE"],
+        "day": [0.0],
+        "ca_15_3": [18.0],
+        "is_synthetic": [source_flag],
+    })
+
+    _features, labels, _times, _events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=365.0
+    )
+
+    assert labels.attrs["synthetic_only"] is source_flag
+
+
 @pytest.mark.parametrize(
     ("source_flags", "declared_source", "message"),
     [
