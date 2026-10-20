@@ -36,6 +36,15 @@ TRACKED_ANALYTES = [
     "wbc",
 ]
 
+TRACKED_SYMPTOMS = (
+    "bone_pain",
+    "jaundice",
+    "ruq_pain",
+    "cough_dyspnea",
+    "headache_neuro",
+    "fatigue_weight_loss",
+)
+
 
 @dataclass
 class WindowedFeatureExtractor:
@@ -179,19 +188,58 @@ class WindowedFeatureExtractor:
             features["has_prior_visit"] = 0.0
 
         # Current symptoms
-        syms = current_obs.get("symptoms")
-        symptoms_missing = syms is None or pd.isna(syms)
-        if symptoms_missing:
-            syms = {}
-        features["symptoms_missing"] = float(symptoms_missing)
+        raw_symptoms = current_obs.get("symptoms")
+        if raw_symptoms is None or (
+            pd.api.types.is_scalar(raw_symptoms) and pd.isna(raw_symptoms)
+        ):
+            syms: Dict[str, Any] = {}
+        elif isinstance(raw_symptoms, dict):
+            syms = raw_symptoms
+        else:
+            raise ValueError("symptoms must be a mapping or missing")
+        if any(not isinstance(name, str) for name in syms):
+            raise ValueError("symptom names must be strings")
+        unknown_symptoms = set(syms) - set(TRACKED_SYMPTOMS)
+        if unknown_symptoms:
+            raise ValueError(f"unsupported symptom names: {sorted(unknown_symptoms)}")
+
+        symptom_values: Dict[str, float] = {}
+        for name, value in syms.items():
+            if value is None or (
+                pd.api.types.is_scalar(value) and pd.isna(value)
+            ):
+                continue
+            if isinstance(value, (bool, np.bool_)):
+                raise ValueError(f"symptom {name} must be an integer grade, not boolean")
+            if not pd.api.types.is_scalar(value):
+                raise ValueError(f"symptom {name} must be a scalar grade")
+            grade = float(value)
+            if not np.isfinite(grade) or grade not in (0.0, 1.0, 2.0, 3.0, 4.0):
+                raise ValueError(f"symptom {name} must be a finite grade from 0 to 4")
+            symptom_values[name] = grade
+
+        symptom_missing = {
+            name: name not in symptom_values for name in TRACKED_SYMPTOMS
+        }
+        features["symptoms_missing"] = float(any(symptom_missing.values()))
         features["max_symptom_grade"] = (
-            float("nan") if symptoms_missing else float(max(syms.values(), default=0))
+            float(max(symptom_values[name] for name in TRACKED_SYMPTOMS))
+            if not any(symptom_missing.values())
+            else float("nan")
         )
-        features["symptom_bone_pain"] = float("nan") if symptoms_missing else float(syms.get("bone_pain", 0))
-        features["symptom_ruq_pain"] = float("nan") if symptoms_missing else float(syms.get("ruq_pain", 0))
-        features["symptom_jaundice"] = float("nan") if symptoms_missing else float(syms.get("jaundice", 0))
-        features["symptom_dyspnea"] = float("nan") if symptoms_missing else float(syms.get("cough_dyspnea", 0))
-        features["symptom_neuro"] = float("nan") if symptoms_missing else float(syms.get("headache_neuro", 0))
+        feature_names = {
+            "bone_pain": "symptom_bone_pain",
+            "ruq_pain": "symptom_ruq_pain",
+            "jaundice": "symptom_jaundice",
+            "cough_dyspnea": "symptom_dyspnea",
+            "headache_neuro": "symptom_neuro",
+        }
+        for name, feature_name in feature_names.items():
+            features[feature_name] = symptom_values.get(name, float("nan"))
+            features[f"{feature_name}_missing"] = float(symptom_missing[name])
+        features["symptom_fatigue_weight_loss_missing"] = float(
+            symptom_missing["fatigue_weight_loss"]
+        )
 
         # Analyte levels, velocities, and variability
         for code in self.tracked_analytes:
@@ -314,11 +362,14 @@ class WindowedFeatureExtractor:
                     for col in self.tracked_analytes
                     if col in row and pd.notna(row[col])
                 },
-                "symptoms": {
-                    col.replace("symptom_", ""): int(row[col])
-                    for col in row.index
-                    if col.startswith("symptom_") and pd.notna(row[col])
-                },
+                "symptoms": (
+                    {
+                        col.replace("symptom_", ""): row[col]
+                        for col in row.index
+                        if col.startswith("symptom_")
+                    }
+                    or None
+                ),
             }
             grouped_obs.setdefault(pt_id, []).append(obs_dict)
 

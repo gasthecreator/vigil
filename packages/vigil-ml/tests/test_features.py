@@ -91,6 +91,59 @@ def test_feature_extractor_rejects_nonfinite_demographics_and_nonbinary_receptor
         )
 
 
+def test_symptom_features_distinguish_absent_assessment_from_reported_zero():
+    extractor = WindowedFeatureExtractor()
+    history = [{"day": 0.0, "symptoms": None}]
+    absent = extractor.extract_features_at_visit({}, history, current_day=0.0)
+    assert absent["symptoms_missing"] == 1.0
+    assert np.isnan(absent["symptom_bone_pain"])
+    assert absent["symptom_bone_pain_missing"] == 1.0
+    assert np.isnan(absent["max_symptom_grade"])
+
+    reported = {
+        name: 0
+        for name in (
+            "bone_pain",
+            "jaundice",
+            "ruq_pain",
+            "cough_dyspnea",
+            "headache_neuro",
+            "fatigue_weight_loss",
+        )
+    }
+    present = extractor.extract_features_at_visit(
+        {}, [{"day": 0.0, "symptoms": reported}], current_day=0.0
+    )
+    assert present["symptoms_missing"] == 0.0
+    assert present["symptom_bone_pain"] == 0.0
+    assert present["symptom_bone_pain_missing"] == 0.0
+    assert present["max_symptom_grade"] == 0.0
+
+    partial = extractor.extract_features_at_visit(
+        {}, [{"day": 0.0, "symptoms": {"bone_pain": 2}}], current_day=0.0
+    )
+    assert partial["symptoms_missing"] == 1.0
+    assert partial["symptom_bone_pain"] == 2.0
+    assert partial["symptom_bone_pain_missing"] == 0.0
+    assert np.isnan(partial["symptom_ruq_pain"])
+    assert partial["symptom_ruq_pain_missing"] == 1.0
+    assert np.isnan(partial["max_symptom_grade"])
+    assert partial["symptom_fatigue_weight_loss_missing"] == 1.0
+
+
+@pytest.mark.parametrize(
+    ("symptoms", "message"),
+    [({"unregistered_symptom": 1}, "unsupported symptom names"),
+     ({"bone_pain": 5}, "finite grade from 0 to 4"),
+     ({"bone_pain": True}, "not boolean")],
+)
+def test_symptom_features_reject_unregistered_or_invalid_values(symptoms, message):
+    with pytest.raises(ValueError, match=message):
+        WindowedFeatureExtractor().extract_features_at_visit(
+            {}, [{"day": 0.0, "symptoms": symptoms}], current_day=0.0
+        )
+
+
 def test_simulator_truth_fields_cannot_change_observed_features_or_labels():
     from vigil_sim.generators import GeneratorType, get_generator
 
@@ -148,10 +201,13 @@ def test_horizon_label_is_unknown_when_followup_is_censored_early():
     observations = pd.DataFrame(
         {"patient_id": ["CENSORED", "CENSORED"], "day": [0.0, 100.0], "ca_15_3": [18.0, 20.0]}
     )
-    _X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+    X, y, times, events = WindowedFeatureExtractor().transform_cohort(
         patients, observations, horizon_days=365.0
     )
     assert y.isna().all()
+    assert X["symptoms_missing"].eq(1.0).all()
+    assert X["symptom_bone_pain_missing"].eq(1.0).all()
+    assert X["symptom_bone_pain"].isna().all()
     assert np.array_equal(events, [0, 0])
     assert np.array_equal(times, [200.0, 100.0])
 
