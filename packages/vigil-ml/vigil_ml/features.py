@@ -419,6 +419,19 @@ class WindowedFeatureExtractor:
             raise ValueError("horizon_days must be finite and positive")
         if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
             raise ValueError("synthetic_only must be boolean when supplied")
+        if "is_synthetic" in observations_df.columns:
+            source_flags = observations_df["is_synthetic"]
+            if not source_flags.map(lambda value: isinstance(value, (bool, np.bool_))).all():
+                raise ValueError("is_synthetic observation provenance must contain booleans")
+            distinct_sources = {bool(value) for value in source_flags}
+            if len(distinct_sources) > 1:
+                raise ValueError("mixed synthetic and non-synthetic observations are unsupported")
+            if (
+                synthetic_only is not None
+                and distinct_sources
+                and bool(synthetic_only) != next(iter(distinct_sources))
+            ):
+                raise ValueError("synthetic_only disagrees with observation provenance")
         required_observation_columns = {"patient_id", "day"}
         missing_observation_columns = required_observation_columns - set(observations_df.columns)
         if missing_observation_columns:

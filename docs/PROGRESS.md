@@ -422,3 +422,7 @@ The owner-approved redesigns are implemented in ADR-0062; the P5 audit test now 
 ### Q-7 follow-up — reject unregistered K6 stage fallback (2026-10-20)
 
 The package A source audit confirmed `StageHeuristicPolicy.decide` silently converted missing stage to stage III and clipped unsupported or fractional stages into the registered 1–4 range. The policy now rejects absent/malformed feature matrices and missing, non-finite, fractional, or unsupported stage values; valid stage-to-interval mappings are unchanged. `UV_CACHE_DIR=/tmp/vigil-uv-cache uv run --package vigil-ml pytest -q packages/vigil-ml/tests/test_k6.py` passes (38). No K6 cohort or frozen result was regenerated; the synthetic result, H3 failure, and absence of clinical utility evidence are unchanged. This closes the specific stage-fallback defect only; A–I remain open.
+
+### Q-7 follow-up — bind target provenance to tagged observations (2026-10-20)
+
+Package B review found `transform_cohort(..., synthetic_only=...)` accepted a caller declaration that contradicted the observation frame's `is_synthetic` values and accepted mixed tagged sources. The extractor now rejects non-boolean flags, mixed-source cohorts, and a supplied declaration that disagrees with tagged rows. Untagged external frames retain explicit-or-unknown provenance behavior. Feature tests pass (59); Ruff and `git diff --check` pass. No model result or frozen cohort was accessed.

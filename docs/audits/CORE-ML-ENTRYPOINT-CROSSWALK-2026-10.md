@@ -86,4 +86,8 @@
 
 ## Closure state
 
+### Q-7 provenance correction
+
+When `WindowedFeatureExtractor.transform_cohort` receives an `is_synthetic` observation column, it now rejects non-boolean flags, mixed synthetic/non-synthetic rows, and a supplied `synthetic_only` declaration that contradicts those row flags. Untagged external frames retain explicit-or-unknown provenance semantics. This checks provenance consistency; it does not independently authenticate the source.
+
 This crosswalk is not complete for every prompt/model/test. Immediate open work includes B's audit of every historical training/evaluation and serving path; C's fixed gates and overseer proposal disposition; D/E's K1/K3 validity and registrations; F/G's full model/card/result mapping; H's clean reproduction and safe artifact/runtime contracts; and I's human-dependent data access and readiness boundary. Do not advance the phase based on this document alone.

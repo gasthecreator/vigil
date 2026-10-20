@@ -429,6 +429,47 @@ def test_feature_label_source_is_recorded_only_when_explicit():
     assert "synthetic_only" not in unknown_labels.attrs
 
 
+@pytest.mark.parametrize(
+    ("source_flags", "declared_source", "message"),
+    [
+        ([True], False, "disagrees with observation provenance"),
+        ([False], True, "disagrees with observation provenance"),
+        ([True, False], True, "mixed synthetic and non-synthetic"),
+        ([None], True, "provenance must contain booleans"),
+        (["true"], True, "provenance must contain booleans"),
+    ],
+)
+def test_feature_label_source_rejects_contradictory_observation_provenance(
+    source_flags, declared_source, message
+):
+    patients = pd.DataFrame(
+        [
+            {
+                "patient_id": f"SOURCE-{index}",
+                "observed_recurrence_event": False,
+                "observed_recurrence_day": np.nan,
+                "administrative_censor_day": 730.0,
+            }
+            for index in range(len(source_flags))
+        ]
+    )
+    observations = pd.DataFrame(
+        {
+            "patient_id": patients["patient_id"],
+            "day": np.zeros(len(source_flags)),
+            "ca_15_3": np.full(len(source_flags), 18.0),
+            "is_synthetic": source_flags,
+        }
+    )
+    with pytest.raises(ValueError, match=message):
+        WindowedFeatureExtractor().transform_cohort(
+            patients,
+            observations,
+            horizon_days=365.0,
+            synthetic_only=declared_source,
+        )
+
+
 def test_treatment_features_preserve_time_and_unknown_status():
     patients = pd.DataFrame([{
         "patient_id": "TREATMENT",
