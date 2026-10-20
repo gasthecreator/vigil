@@ -360,3 +360,7 @@ The M12 runner's `--rerender` path bypassed its no-repeat frozen guard and could
 ### Q-7 follow-up — protect EXP-K6-001 stored evidence (2026-10-20)
 
 The K6 `--dev`, `--frozen`, and `--rerender` modes could overwrite committed JSON/report artifacts. Each persistent mode now refuses when its target output already exists; smoke remains isolated in a temporary directory. Parameterized regression tests verify all three modes fail before changing stored bytes (3 passed). Ruff, claims policy, documentation links, and diff checks pass. No study cohort was generated or output rerendered. The new provenance sidecar states this preservation-only scope; K6's existing result remains synthetic research evidence with the limitations in its conclusion. Packages A–B remain open.
+
+### Q-7 follow-up — harden EXP-K5-001 runner paths (2026-10-20)
+
+The K5 runner's persistent `--dev`/`--frozen` modes could overwrite stored results, and `--smoke` supplied a literal calibration record claiming success instead of executing detector calibration. Persistent modes now fail before calibration when outputs exist. Smoke now runs the actual calibration on a small synthetic cohort and uses a separate smoke seed namespace for calibration and evaluation, disjoint from dev/calibration/frozen seeds. Focused runner checks pass (4, including end-to-end smoke); Ruff passes. No model result or historical report was regenerated. Sidecar and crosswalk document the preservation-only scope; packages A–B remain open.
