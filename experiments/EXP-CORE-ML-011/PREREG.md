@@ -46,3 +46,16 @@ All coefficients and distribution parameters are read from a new versioned simul
 ## Limits
 
 This study tests implementation fidelity to equations and synthetic configuration, not whether those equations or parameters are biologically correct. The new parameters are stress assumptions, not sourced patient estimates. It cannot close the MASTER_PLAN simulator calibration targets, establish transport to real cohorts, or validate recurrence prediction. Any model trained on the corrected generators requires a separate preregistration and fresh cohorts. EXP-CORE-ML-003/004/007/008 and prior output files remain untouched and cannot be relabeled as results under this mechanism.
+
+## Protocol amendment before registered output access (2026-10-19)
+
+The implementation review found that the cohort engine uses one deterministic
+replicate-level stream for population, visit, and measurement draws, while the
+new G2 mechanism derives independent patient-scoped event-time and amplitude
+streams. This is sufficient for the registered mechanism question; the original
+text overstated stream separation. For reproducibility, draws other than G2
+event times/amplitudes use the seeded cohort generator stream in its existing
+call order. Event times and amplitudes use the separately derived streams as
+stated above. No registered 10,000-patient mechanism cohort or frozen result was
+accessed before this amendment. The amendment is committed before the runner and
+registered outputs.
