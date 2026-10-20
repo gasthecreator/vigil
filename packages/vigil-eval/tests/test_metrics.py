@@ -132,6 +132,10 @@ def test_patient_landmark_weights_reject_fractional_events_and_non_vector_ids():
         patient_landmark_ipcw_weights(
             times, np.array([0, 1]), 15.0, np.array([["a"], ["b"]])
         )
+    with np.testing.assert_raises_regex(ValueError, "must not contain missing"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0, 1]), 15.0, np.array(["a", None], dtype=object)
+        )
 
 
 def test_ipcw_time_dependent_roc_auc():

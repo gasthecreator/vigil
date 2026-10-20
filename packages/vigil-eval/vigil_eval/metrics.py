@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Optional, cast
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 
@@ -540,12 +541,18 @@ def patient_landmark_ipcw_weights(
     ids = np.asarray(patient_ids)
     if ids.ndim != 1 or not (len(times) == len(ids)):
         raise ValueError("Follow-up, event, and patient arrays must have equal length")
+    try:
+        patient_codes, patient_values = pd.factorize(ids, sort=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("patient_ids must contain hashable scalar identifiers") from exc
+    if np.any(patient_codes < 0):
+        raise ValueError("patient_ids must not contain missing values")
     weights = compute_ipcw_weights(times, events, horizon_time)
     # Preserve within-patient IPCW ratios while normalizing each patient's total
     # training contribution to one. Dividing only by visit count is insufficient:
     # patients with different censoring weights would still dominate by follow-up.
-    for patient_id in np.unique(ids):
-        patient_rows = ids == patient_id
+    for patient_code in range(len(patient_values)):
+        patient_rows = patient_codes == patient_code
         patient_total = float(np.sum(weights[patient_rows]))
         if patient_total > 0:
             weights[patient_rows] /= patient_total
