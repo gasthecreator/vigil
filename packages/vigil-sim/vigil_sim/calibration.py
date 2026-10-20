@@ -5,6 +5,9 @@ Historical calibration-target evaluator for the Vigil Simulation Laboratory.
 It compares synthetic outputs with summaries cited in E1/E12; it does not establish
 clinical calibration or reproduce the source cohorts.
 
+The CA 15-3 comparator uses the analyte registry's population reference upper limit.
+That synthetic comparison point is not an assay-independent diagnostic threshold.
+
 Historical comparison targets from published literature (EVIDENCE E1, E12):
 - Molina et al. 1995 (Breast Cancer Res Treat, n=1,023):
     * Pre-clinical lead time: 4.2 ± 2.3 months (~126 ± 69 days) among elevated recurrent patients
@@ -20,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 import numpy as np
+from vigil_core.analytes import ANALYTE_REGISTRY
 
 from vigil_sim.generators import CohortDataset, GeneratorType, LongitudinalObservation
 
@@ -68,7 +72,7 @@ class CalibrationReport:
 
 def evaluate_cohort_calibration(
     cohort: CohortDataset,
-    ca_15_3_cutoff: float = 30.0,  # Clinical threshold ([iU]/mL)
+    ca_15_3_cutoff: float | None = None,
     target_conditional_lead_days: float = 126.0,  # 4.2 months * 30 days
     lead_tolerance_days: float = 35.0,
     min_sensitivity: float = 0.48,
@@ -79,8 +83,23 @@ def evaluate_cohort_calibration(
     """
     Compare synthetic measurements with historical literature summaries.
     Results are conditional on this simulator, selected profile, and observation
-    process; they are not evidence of clinical calibration.
+    process; they are not evidence of clinical calibration. The default CA 15-3
+    comparison point is the registry reference upper limit, not a diagnostic threshold.
     """
+    analyte = ANALYTE_REGISTRY["ca_15_3"]
+    if ca_15_3_cutoff is None:
+        ca_15_3_cutoff = analyte.plausibility.reference_high
+        cutoff_source = "ANALYTE_REGISTRY.ca_15_3.plausibility.reference_high"
+    elif isinstance(ca_15_3_cutoff, (bool, np.bool_)) or not isinstance(
+        ca_15_3_cutoff, (int, float, np.integer, np.floating)
+    ):
+        raise ValueError("ca_15_3_cutoff must be a finite positive numeric value")
+    else:
+        cutoff_source = "explicit evaluate_cohort_calibration argument"
+    ca_15_3_cutoff = float(ca_15_3_cutoff)
+    if not np.isfinite(ca_15_3_cutoff) or ca_15_3_cutoff <= 0:
+        raise ValueError("ca_15_3_cutoff must be a finite positive numeric value")
+
     pt_map = {p.patient_id: p for p in cohort.patients}
 
     # Lead time tracking
@@ -230,6 +249,13 @@ def evaluate_cohort_calibration(
         "observation_level_specificity": obs_spec,
         "patient_level_specificity": pt_spec,
         "organ_stratified_sensitivity": organ_sens,
+        "ca_15_3_cutoff": ca_15_3_cutoff,
+        "ca_15_3_cutoff_source": cutoff_source,
+        "ca_15_3_canonical_unit": analyte.canonical_unit,
+        "ca_15_3_cutoff_interpretation": (
+            "population reference upper limit used as a synthetic comparison point; "
+            "not an assay-independent diagnostic threshold"
+        ),
         "measurement_contract": "Every cohort patient contributes to recurrence and control coverage counts, including patients with no observation rows. Only finite CA 15-3 values with observed_mask=true are evaluated. Recurrent patients without a measured test in the detection window remain sensitivity misses; they contribute zero to unconditional detected lead time. Non-recurrent patients without any measured CA 15-3 are excluded from patient-level specificity and reported separately.",
         "tuning_reference": "Historical synthetic thresholds reference Molina et al. 1995 and Wu et al. 2017; this evaluator does not establish clinical calibration or reproduce those cohorts.",
     }

@@ -8,8 +8,47 @@ after the evaluator begins respecting the observed-measurement mask.
 """
 
 import numpy as np
+import pytest
+from vigil_core.analytes import ANALYTE_REGISTRY
 from vigil_sim.calibration import evaluate_cohort_calibration, run_full_calibration_check
 from vigil_sim.generators import GeneratorType, get_generator
+
+
+def test_calibration_cutoff_defaults_to_registry_and_records_provenance():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=48108).generate_cohort(
+        num_patients=10, duration_days=90.0
+    )
+
+    report = evaluate_cohort_calibration(cohort)
+
+    assert report.details["ca_15_3_cutoff"] == ANALYTE_REGISTRY[
+        "ca_15_3"
+    ].plausibility.reference_high
+    assert report.details["ca_15_3_cutoff_source"] == (
+        "ANALYTE_REGISTRY.ca_15_3.plausibility.reference_high"
+    )
+    assert report.details["ca_15_3_canonical_unit"] == ANALYTE_REGISTRY[
+        "ca_15_3"
+    ].canonical_unit
+    assert "not an assay-independent diagnostic threshold" in report.details[
+        "ca_15_3_cutoff_interpretation"
+    ]
+
+    explicit_report = evaluate_cohort_calibration(cohort, ca_15_3_cutoff=33.0)
+    assert explicit_report.details["ca_15_3_cutoff"] == 33.0
+    assert explicit_report.details["ca_15_3_cutoff_source"] == (
+        "explicit evaluate_cohort_calibration argument"
+    )
+
+
+@pytest.mark.parametrize("cutoff", [True, 0, -1, np.nan, np.inf, "30"])
+def test_calibration_rejects_invalid_ca153_cutoffs(cutoff):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=48109).generate_cohort(
+        num_patients=10, duration_days=90.0
+    )
+
+    with pytest.raises(ValueError, match="ca_15_3_cutoff must be a finite positive numeric value"):
+        evaluate_cohort_calibration(cohort, ca_15_3_cutoff=cutoff)
 
 
 def test_g1_smooth_calibration_targets():
