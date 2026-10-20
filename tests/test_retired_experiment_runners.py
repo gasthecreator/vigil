@@ -10,10 +10,19 @@ FROZEN_ACCESS_LOG = ROOT / "data/audit/frozen_test_access.jsonl"
 RETIRED_RUNNERS = {
     "001": (ROOT / "experiments/EXP-CORE-ML-001/run.py", "ABORTED.md"),
     "002": (ROOT / "experiments/EXP-CORE-ML-002/run.py", "WITHDRAWN.md"),
+    "003": (ROOT / "experiments/EXP-CORE-ML-003/run.py", "ADR-0039"),
+    "004": (ROOT / "experiments/EXP-CORE-ML-004/run.py", "ADR-0039"),
+    "007": (ROOT / "experiments/EXP-CORE-ML-007/run.py", "already exists"),
 }
 PRESERVED_ARTIFACTS = (
     ROOT / "experiments/EXP-CORE-ML-002/results.json",
     ROOT / "experiments/EXP-CORE-ML-002/REPORT.md",
+    ROOT / "experiments/EXP-CORE-ML-003/results.json",
+    ROOT / "experiments/EXP-CORE-ML-003/REPORT.md",
+    ROOT / "experiments/EXP-CORE-ML-004/results.json",
+    ROOT / "experiments/EXP-CORE-ML-004/REPORT.md",
+    ROOT / "experiments/EXP-CORE-ML-007/results.json",
+    ROOT / "experiments/EXP-CORE-ML-007/REPORT.md",
     FROZEN_ACCESS_LOG,
 )
 
@@ -35,7 +44,10 @@ def test_retired_frozen_test_runners_fail_before_touching_evidence():
         )
         output = result.stdout + result.stderr
         assert result.returncode != 0
-        assert "retired" in output.lower() or "withdrawn" in output.lower()
+        assert any(
+            marker in output.lower()
+            for marker in ("retired", "withdrawn", "stale", "exploratory", "already exists")
+        )
         assert retirement_record in output
         assert f"EXP-CORE-ML-{experiment_id}" in output
 

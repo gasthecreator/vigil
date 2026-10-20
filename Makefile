@@ -100,15 +100,15 @@ reproduce-ml:
 	$(UV) run python scripts/run_benchmarks.py
 
 reproduce-ml-core:
-	@echo "==> Running preregistered synthetic core-model tuning study..."
+	@echo "==> EXP-CORE-ML-003 is historical and stale; its runner fails closed."
 	$(UV) run python experiments/EXP-CORE-ML-003/run.py
 
 reproduce-ml-core-cross-generator:
-	@echo "==> Running preregistered cross-generator synthetic core-model evaluation..."
+	@echo "==> EXP-CORE-ML-004 is historical and stale; its runner fails closed."
 	$(UV) run python experiments/EXP-CORE-ML-004/run.py
 
 reproduce-ml-core-feature-rerun:
-	@echo "==> Running preregistered corrected-feature synthetic core-model evaluation..."
+	@echo "==> EXP-CORE-ML-007 is exploratory and already ran; its runner fails closed on replay."
 	$(UV) run python experiments/EXP-CORE-ML-007/run.py
 
 reproduce-ml-core-complete-rerun:

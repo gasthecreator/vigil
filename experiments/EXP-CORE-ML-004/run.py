@@ -305,6 +305,11 @@ def assert_clean_checkout() -> str:
 
 
 def main() -> None:
+    raise RuntimeError(
+        "EXP-CORE-ML-004 is stale after ADR-0039 and its frozen test seeds are spent. "
+        "Do not overwrite the historical result; a new protocol requires preregistration and fresh seeds."
+    )
+
     with PROFILE_PATH.open(encoding="utf-8") as stream:
         profile = json.load(stream)
     if profile.get("profile_id") != "balanced_synthetic_v1":

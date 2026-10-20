@@ -339,6 +339,8 @@ Evaluator review found missing subgroup estimates were replaced by a 0.5 point e
 
 A second evaluator pass removed additional fabricated lead-time defaults: empty conditional/unconditional estimates and zero-denominator rates are now undefined, single-observation conditional SD is not reported as zero, and alert burden uses measured observation span rather than a fixed 30-day minimum. The targeted evaluator component suite passes (16); the previously recorded full evaluator result still includes the unchanged K3 canary failure.
 
+The entrypoint safeguard now also covers stale EXP-CORE-ML-003/004 and exploratory, already-run EXP-CORE-ML-007. Their direct runner commands fail closed before regeneration/replay; the subprocess regression test hashes retained result/report files and the frozen-test access log before and after all five invocations. Make targets and the crosswalk identify their current status. No historical outputs were changed; packages A–B remain open.
+
 ### Q-7 follow-up — quarantine retired frozen-test runners (2026-10-20)
 
 A/B entrypoint review confirmed the aborted EXP-CORE-ML-001 and provenance-invalid/withdrawn EXP-CORE-ML-002 scripts still ran their retired frozen-test workflows when invoked directly. Their `main()` entrypoints now fail before cohort generation or access; the tests verify the access log, retained EXP-002 JSON/report, and retirement records remain byte-identical. The crosswalk records the safeguard. The focused subprocess test passes (1); no result was regenerated or overwritten, and packages A–B remain open.
