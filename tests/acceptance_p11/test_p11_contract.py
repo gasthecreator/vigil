@@ -29,7 +29,9 @@ import vigil_api.models.v2, vigil_api.models.patient
 Base.metadata.create_all(bind=engine)
 c = TestClient(app, raise_server_exceptions=False)
 H = {"X-Vigil-Role": "clinician"}; N = {"X-Vigil-Role": "nurse_clerk"}
-p = c.post("/api/v1/patients/", json={"age": 55, "status": "active", "mrn": "M1"}, headers=H).json()["id"]
+created = c.post("/api/v1/patients/", json={"age": 55, "status": "active", "mrn": "M1", "synthetic": True}, headers=H).json()
+assert created["synthetic"] is True
+p = created["id"]
 c.post(f"/api/v1/patients/{p}/consent", json={"scope": "full", "granted": True}, headers=H)
 def obs(m, v):
     return c.post(f"/api/v1/patients/{p}/observations", json={"analyte_code": "ca_15_3", "value": v, "unit": "U/mL",

@@ -3,7 +3,7 @@ id: PROP-CORE-ML-P11-DISCLOSURE-FIXTURE
 title: Reconcile P11 disclosure acceptance fixture with explicit synthetic provenance
 author: Q-7 executor
 date: 2026-10-20
-status: UNDER REVIEW
+status: ACCEPTED
 plan_version_impact: MASTER_PLAN §5.3 and §14 P11
 ---
 
@@ -27,3 +27,8 @@ Keep the acceptance test unchanged until overseer review. Revise its fixture and
 ## Boundary
 
 This proposal does not claim P11 disclosure safety is fully verified for real clinical outputs, and does not authorize weakening the disclosure gate, changing provenance defaults, or editing the acceptance test. Until an overseer-owned fixture is corrected, the P11 gate remains unresolved on this branch.
+
+
+## Overseer disposition (2026-10-20)
+
+Accepted for this fixture: explicitly mark the generated acceptance-test patient as synthetic and assert that provenance is returned. The patient-create handler already persists the request's `synthetic` value; the fixture omitted it and therefore correctly exercised the non-synthetic abstention path. Keep the production default non-synthetic, the unvalidated-score suppression, nurse denial, and clinician-only persisted disclosure behavior unchanged.
