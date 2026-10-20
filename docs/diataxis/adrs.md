@@ -68,3 +68,4 @@
 - [ADR-0064: Make K8 runtime assumptions explicit and dimension-aware](../adr/0064-explicit-k8-runtime-research-settings.md)
 - [ADR-0065: Retire the EXP-M12-001 frozen run](../adr/0065-retire-exp-m12-frozen-run.md)
 - [ADR-0066: Match verification IPW support checks to the estimand](../adr/0066-verification-propensity-support.md)
+- [ADR-0067: Validate K6 hazard training inputs before conversion](../adr/0067-validate-k6-hazard-targets.md)

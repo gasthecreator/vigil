@@ -255,7 +255,20 @@ class HazardModel:
     ``HORIZONS``, non-decreasing and in [0, 1]."""
 
     def __init__(self, columns: Optional[Sequence[int]] = None):
-        self.columns: Tuple[int, ...] = tuple(range(N_FEATURES)) if columns is None else tuple(int(c) for c in columns)
+        if columns is None:
+            selected_columns = tuple(range(N_FEATURES))
+        else:
+            raw_columns = tuple(columns)
+            if not raw_columns or any(
+                isinstance(column, (bool, np.bool_))
+                or not isinstance(column, (int, np.integer))
+                for column in raw_columns
+            ):
+                raise ValueError("columns must be a non-empty sequence of integer feature indices")
+            selected_columns = tuple(int(column) for column in raw_columns)
+            if len(set(selected_columns)) != len(selected_columns):
+                raise ValueError("columns must not contain duplicate feature indices")
+        self.columns: Tuple[int, ...] = selected_columns
         self._boosters: List[Optional[xgb.Booster]] = []
         self._raw_json: List[Optional[str]] = []
         self._const: List[Optional[float]] = []
@@ -264,9 +277,31 @@ class HazardModel:
 
     # -- fitting -------------------------------------------------------------------------------
     def fit(self, X: np.ndarray, labels: np.ndarray, groups: np.ndarray, seed: int) -> "HazardModel":
-        X = np.asarray(X, dtype=float)[:, list(self.columns)]
-        labels = np.asarray(labels).astype(int)
+        X = np.asarray(X, dtype=float)
+        if X.ndim != 2:
+            raise ValueError("X must be a two-dimensional feature matrix")
+        if not self.columns or any(c < 0 or c >= X.shape[1] for c in self.columns):
+            raise ValueError("columns must select existing feature indices")
+        X = X[:, list(self.columns)]
+        if np.isinf(X).any():
+            raise ValueError("X may contain NaN for missing features but must not contain infinity")
+        labels = np.asarray(labels)
+        if labels.ndim != 2 or labels.shape != (X.shape[0], len(HORIZONS)):
+            raise ValueError(
+                f"labels must have shape (n_rows, {len(HORIZONS)}) matching X and HORIZONS"
+            )
+        if labels.dtype.kind not in "biuf" or not np.isfinite(labels).all():
+            raise ValueError("labels must contain finite numeric binary targets")
+        if not np.isin(labels, [0, 1]).all():
+            raise ValueError("labels must contain only binary values 0 and 1")
+        labels = labels.astype(np.uint8, copy=False)
         groups = np.asarray(groups)
+        if groups.ndim != 1 or groups.shape[0] != X.shape[0]:
+            raise ValueError("groups must be a one-dimensional vector aligned with X rows")
+        if groups.dtype.kind in "iufc" and not np.isfinite(groups).all():
+            raise ValueError("groups must contain finite patient identifiers")
+        if np.unique(groups).size < 2:
+            raise ValueError("at least two patient groups are required for grouped train/calibration split")
         rng = np.random.default_rng(seed)
         uniq = rng.permutation(np.unique(groups))
         n_cal = max(1, int(round(0.25 * len(uniq))))
