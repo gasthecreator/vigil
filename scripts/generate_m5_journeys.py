@@ -2,10 +2,8 @@
 """
 scripts/generate_m5_journeys.py
 
-Generates and validates the three canonical clinical worked journeys for Module M5:
-  1. Journey J2: Surprising Result (Analytical Error) -> Adjudication -> Needs Repeat.
-  2. Benign Fluctuation: Biological Variation within RCV -> Adjudication -> Explained.
-  3. True Recurrence: Significant Biomarker Surge Exceeding RCV -> Adjudication -> Escalate.
+Generates and validates three illustrative synthetic M3/M5 scenarios. Their names
+describe generated inputs and model outputs, not clinical truth or model validity.
 
 Outputs reports/ml/M5_JOURNEYS.md.
 """
@@ -28,11 +26,11 @@ def main():
     ]
 
     lines = [
-        "# Module M5: Verified Narrative Worked Clinical Journeys",
+        "# Module M5: Synthetic Illustrations of Structured-Fact Narratives",
         "",
         "**Governing Documents:** `docs/MASTER_PLAN.md` §6.5, §14 WP4.2; `docs/ml/M3-M5-CONTRACT.md`; `docs/REALITY_RULES.md` RR7, RR14",
         "",
-        "This document contains three canonical worked clinical journeys generated deterministically by `vigil_ml.m5.generate_worked_journey`. Each journey demonstrates the end-to-end integration of Module M3 (Plausibility Adjudication) with Module M5 (Provenance-Verified Narrative Generation). Every narrative was verified by `vigil_ml.m5.verify_narrative` without violations.",
+        "This document contains three illustrative synthetic scenarios generated deterministically by `vigil_ml.m5.generate_worked_journey`. The values and scenario labels are not clinical observations or ground-truth evidence for model performance. M3 outputs are conditional on unvalidated model assumptions; M5 verification checks that narrative sentences match structured facts, not whether those facts are medically correct. Nothing here establishes recurrence, benignity, analytical error, or clinical utility.",
         "",
         "---",
         "",
@@ -45,9 +43,9 @@ def main():
         lines.append(f"## {j['title']}")
         lines.append("")
         lines.append(f"**Journey Identifier:** `{j['journey_id']}`  ")
-        lines.append(f"**Clinical Context:** {j['clinical_context']}  ")
-        lines.append(f"**Adjudicated Action:** `{j['adjudication']['action']}`  ")
-        lines.append("**Verification Status:** `PASSED` (Zero violations)")
+        lines.append(f"**Synthetic scenario:** {j['clinical_context']}")
+        lines.append(f"**M3 model output:** `{j['adjudication']['action']}`")
+        lines.append("**M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)")
         lines.append("")
         lines.append("### Structured Rationale Facts Table (Module M3)")
         lines.append("")
@@ -60,7 +58,7 @@ def main():
             else:
                 val_str = str(val)
             lines.append(
-                f"| `{f['fact_id']}` | `{f['type']}` | **{val_str}** | Derived by Bayesian generative model |"
+                f"| `{f['fact_id']}` | `{f['type']}` | **{val_str}** | Experimental M3 output under fixed illustrative assumptions |"
             )
         lines.append("")
         lines.append("### Generated Provenance-Verified Narrative (Module M5)")

@@ -15,6 +15,6 @@
 - [Model Card: Module M12 — federated averaging and DP-SGD (research module)](../models/MODEL-CARD-M12.md)
 - [Model card: M3 biomarker plausibility adjudicator](../models/MODEL-CARD-M3.md)
 - [Model Card: M4 — Resource-aware test escalation ladder](../models/MODEL-CARD-M4.md)
-- [Model Card: Model M5 — Provenance-Verified Clinical Narrative Engine](../models/MODEL-CARD-M5.md)
+- [Model Card: Model M5 — Structured-Fact Narrative Renderer (Research)](../models/MODEL-CARD-M5.md)
 - [Model Card: M7 — RT urgency ranking (shipped) and CP-SAT research](../models/MODEL-CARD-M7.md)
 - [Model Card: OCR lab-report draft importer](../models/MODEL-CARD-OCR.md)

@@ -56,3 +56,4 @@
 - [0052. M3 abstains without a prior measurement](../adr/0052-m3-abstains-without-prior-history.md)
 - [0053. Synthetic provenance is explicit and source-bound](../adr/0053-synthetic-provenance-is-explicit.md)
 - [0054. Quarantine facility-derived M10 signal statistics](../adr/0054-quarantine-m10-facility-scoring.md)
+- [0055. Label M3/M5 worked journeys as synthetic illustrations](../adr/0055-label-m3-m5-journeys-as-synthetic-illustrations.md)

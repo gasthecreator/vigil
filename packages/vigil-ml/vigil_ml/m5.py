@@ -197,17 +197,20 @@ def verify_narrative(text: str, facts: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
-    """Generate one of three worked clinical journeys per Phase 4a requirements.
+    """Generate one of three illustrative synthetic M3/M5 scenarios.
 
     Journeys:
-      - 'j2_surprising_repeat': Surprising 10x spike (specimen error) -> adjudicate -> needs_repeat.
-      - 'false_alarm_explained': Minor 1.15x fluctuation within biological RCV -> adjudicate -> explained.
-      - 'real_progression_escalate': Persistent 2.5x surge above RCV -> adjudicate -> escalate.
+      - 'j2_surprising_repeat': Synthetic 10x marker change -> model output needs_repeat.
+      - 'false_alarm_explained': Synthetic 1.15x marker change -> model output explained.
+      - 'real_progression_escalate': Synthetic 2.5x marker change -> model output escalate.
+
+    Scenario labels describe generated inputs only. They are not clinical truth or
+    evidence that M3 can identify analytical error, benign variation, or recurrence.
     """
     from vigil_ml.m3 import adjudicate
 
     if journey_id == "j2_surprising_repeat":
-        # Journey J2: Surprising result (decimal shift x10 transcription error)
+        # Synthetic scenario: 10x change; generated inputs do not establish its cause.
         # Baseline ~18.0 U/mL (4 historical draws)
         history = [(30.0, 17.5), (90.0, 18.2), (180.0, 17.8), (270.0, 18.5)]
         new_day = 360.0
@@ -217,15 +220,15 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "Journey J2: Surprising Marker Spike (Analytical Error) Adjudicated to Repeat",
-            "clinical_context": "Patient on surveillance with stable CA 15-3 (~18 U/mL). Day 360 shows sudden jump to 180 U/mL.",
+            "title": "Synthetic scenario: 10x marker change; model output is needs_repeat",
+            "clinical_context": "Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,
         }
 
     elif journey_id == "false_alarm_explained":
-        # Benign biological fluctuation within RCV (1.15x increase, RCV is ~31%)
+        # Synthetic scenario: 1.15x change; generated inputs do not establish benignity.
         history = [(30.0, 19.5), (90.0, 20.2), (180.0, 19.8), (270.0, 20.5)]
         new_day = 360.0
         new_val = 23.0  # 1.15x ratio
@@ -234,15 +237,15 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "Benign Fluctuation: Biological Noise Within RCV Adjudicated as Explained",
-            "clinical_context": "Patient on surveillance. CA 15-3 increases from 20 to 23 U/mL (1.15x), below RCV threshold.",
+            "title": "Synthetic scenario: 1.15x marker change; model output is explained",
+            "clinical_context": "Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,
         }
 
     elif journey_id == "real_progression_escalate":
-        # True disease recurrence (2.5x increase, well above RCV)
+        # Synthetic scenario: 2.5x change; generated inputs do not establish recurrence.
         history = [(30.0, 14.8), (90.0, 15.2), (180.0, 15.0), (270.0, 15.4)]
         new_day = 360.0
         new_val = 37.8  # 2.5x ratio
@@ -251,8 +254,8 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "True Recurrence: Biomarker Elevation Exceeding RCV Adjudicated to Escalate",
-            "clinical_context": "Patient on surveillance. CA 15-3 surges from 15 to 37.8 U/mL (2.5x), exceeding RCV.",
+            "title": "Synthetic scenario: 2.5x marker change; model output is escalate",
+            "clinical_context": "Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,

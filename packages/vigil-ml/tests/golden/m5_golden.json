@@ -107,10 +107,10 @@
           }
         ]
       },
-      "clinical_context": "Patient on surveillance. CA 15-3 increases from 20 to 23 U/mL (1.15x), below RCV threshold.",
+      "clinical_context": "Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.",
       "journey_id": "false_alarm_explained",
       "narrative": "Under the model assumptions, the real-change probability is 1%. Under the model assumptions, the gross-error probability is 0%. Under the model assumptions, the stable-component probability is 98%. The biological reference change value threshold is 31%. The observed marker ratio is 1.15 relative to baseline. The recommended clinical action is explained.",
-      "title": "Benign Fluctuation: Biological Noise Within RCV Adjudicated as Explained",
+      "title": "Synthetic scenario: 1.15x marker change; model output is explained",
       "verification": {
         "ok": true,
         "violations": []
@@ -157,10 +157,10 @@
           }
         ]
       },
-      "clinical_context": "Patient on surveillance with stable CA 15-3 (~18 U/mL). Day 360 shows sudden jump to 180 U/mL.",
+      "clinical_context": "Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.",
       "journey_id": "j2_surprising_repeat",
       "narrative": "Under the model assumptions, the real-change probability is 0%. Under the model assumptions, the gross-error probability is 100%. Under the model assumptions, the stable-component probability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 10.00 relative to baseline. The recommended clinical action is needs_repeat.",
-      "title": "Journey J2: Surprising Marker Spike (Analytical Error) Adjudicated to Repeat",
+      "title": "Synthetic scenario: 10x marker change; model output is needs_repeat",
       "verification": {
         "ok": true,
         "violations": []
@@ -207,10 +207,10 @@
           }
         ]
       },
-      "clinical_context": "Patient on surveillance. CA 15-3 surges from 15 to 37.8 U/mL (2.5x), exceeding RCV.",
+      "clinical_context": "Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.",
       "journey_id": "real_progression_escalate",
       "narrative": "Under the model assumptions, the real-change probability is 99%. Under the model assumptions, the gross-error probability is 1%. Under the model assumptions, the stable-component probability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 2.50 relative to baseline. The recommended clinical action is escalate.",
-      "title": "True Recurrence: Biomarker Elevation Exceeding RCV Adjudicated to Escalate",
+      "title": "Synthetic scenario: 2.5x marker change; model output is escalate",
       "verification": {
         "ok": true,
         "violations": []
