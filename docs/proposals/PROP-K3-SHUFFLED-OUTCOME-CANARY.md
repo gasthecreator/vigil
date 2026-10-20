@@ -17,7 +17,7 @@ On the corrected generator source `37de102`, the unchanged `test_k3_joint_model_
 
 ## Evidence and boundary
 
-The local test-suite output reported `test_k3_joint_model_canaries` at `packages/vigil-eval/tests/test_model_canaries.py:150`; source inspection identifies the ungrouped event-only permutation. No CI status was checked successfully, and no acceptance assertion was changed. This proposal does not claim the source change caused the failure or authorize modifying the test.
+The latest PR #79 CI run (`39417463523`, backend-tests (misc) job `118609860513`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reports shuffled IPCW AUC `0.6136` against the unchanged `0.60` ceiling. Source inspection confirms the ungrouped event-only permutation described above. This is a gate result, not a model-performance estimate; it does not establish that the source change caused the failure or authorize modifying the test.
 
 ## Decision needed
 

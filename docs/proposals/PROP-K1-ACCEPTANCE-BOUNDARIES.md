@@ -20,6 +20,8 @@ The original one-time command and complete output are recorded in `experiments/E
 
 On PR #79 head `ac53e66`, GitHub acceptance CI reports the amortized 90% interval coverage as `0.97` outside `[0.75, 0.97]`. The displayed value is rounded to two decimals; the earlier local 39/40 result is 0.975 and exceeds the upper bound. The frozen assertion remains unchanged.
 
+The latest PR #79 CI run (`39417463523`, backend-acceptance job `118609860472`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reproduces the same failure: one acceptance test fails with displayed coverage `0.97` outside `[0.75, 0.97]`; the other K1 checks pass or are the registered expected failure. No threshold or seed was changed.
+
 ## Decision needed
 
 Overseer review is needed only for the finite-sample coverage criterion. The negative-control defect is fixed in implementation; the K1 acceptance gate remains NOT MET while the unchanged coverage check is unresolved, so this branch is not ready to merge.

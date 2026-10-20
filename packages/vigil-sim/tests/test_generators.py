@@ -108,15 +108,15 @@ def test_profile_requires_explicit_verification_mechanism(invalid_verification):
 @pytest.mark.parametrize(
     ("profile_name", "generator_type", "expected_sha256"),
     [
-        ("legacy-default", "g1_smooth_kinetics", "3815b67ca1deeeddfce5b51c8b325817e1364f775d6b87137f8a01ab47c0411c"),
-        ("legacy-default", "g2_shedding_bursts", "c1c074ccaa3d8806723735d27fe76fb1973d0c41a17757c110bbca5947dc2956"),
-        ("legacy-default", "g3_heavy_tailed_noise", "12f6167e912cbb1da5d45985ea36daa3b14bb23c173d0e5517d1b9f7d6008f5f"),
-        ("synthetic_population_v1.json", "g1_smooth_kinetics", "4d9f015bec83f9ba8a58c86739452c9b6b02b190fa6d6907d4a47cade6cf0107"),
-        ("synthetic_population_v1.json", "g2_shedding_bursts", "8ed14096bb739bf4a8027b1f11e8e431866191ce06f33729eca00a26437a8dc5"),
-        ("synthetic_population_v1.json", "g3_heavy_tailed_noise", "fda4662d9c1a865c362b7b4a25e08e9ab4e384a725b105e0ccedac7ec3177e50"),
-        ("synthetic_population_k3_v2.json", "g1_smooth_kinetics", "3900a700b4e7d4a1eca818d639265b4bd8b158a5e2f39638bf06a7c975414c2c"),
-        ("synthetic_population_k3_v2.json", "g2_shedding_bursts", "f25d797b25aef02698d059141bfa2ec300fce68111a171308f97445458a9a43b"),
-        ("synthetic_population_k3_v2.json", "g3_heavy_tailed_noise", "c05cf785b9cf6422a51423df72f1f638192376d21066a841f8985871e9d15dd2"),
+        ("legacy-default", "g1_smooth_kinetics", "21d645edef4275391aa9b518972755285cc45f156e7fcbe1c2b9043e9f00ab77"),
+        ("legacy-default", "g2_shedding_bursts", "9d5d3b6c5651826124beabbcba6c6ff440d8c4c0441cfd445e0c30f1f9982976"),
+        ("legacy-default", "g3_heavy_tailed_noise", "45eb22b6479523fdc4e48578a15cba2df705ef11d993fdfd30aad6f55257b6b6"),
+        ("synthetic_population_v1.json", "g1_smooth_kinetics", "8cc6d2876842bfeae2c459fd867a07e200d49a9e36d2bff2a0bbc7d6255c6248"),
+        ("synthetic_population_v1.json", "g2_shedding_bursts", "fd656640974fb74ee9d273938c6f511afa097573718fe937c6890ff91825f0d6"),
+        ("synthetic_population_v1.json", "g3_heavy_tailed_noise", "6eb8fb070dbe749b36fe77d8e2e423e3a2c671c384dde5c9f68b3ca1acc712a0"),
+        ("synthetic_population_k3_v2.json", "g1_smooth_kinetics", "b5a0d6c640daec165b0c17081ca3d94b945f3de4826c253ddc0559630f6830e6"),
+        ("synthetic_population_k3_v2.json", "g2_shedding_bursts", "3a0e8f7d0f3c04fc0bf57c52045ddfd415f48ffbbf8c8aa2209c2a8d17d5a787"),
+        ("synthetic_population_k3_v2.json", "g3_heavy_tailed_noise", "4455c6fb0242eb80a68dcf62d57c446f1d79a304c621b564b62912c71a645acf"),
     ],
 )
 def test_historical_generator_profiles_preserve_seeded_cohort_fingerprint(
@@ -132,16 +132,25 @@ def test_historical_generator_profiles_preserve_seeded_cohort_fingerprint(
         seed=654321,
         population_config=population_config,
     ).generate_cohort(num_patients=80, duration_days=730.0)
+
+    # The original byte-level goldens were serialized with 15 decimal places on
+    # Apple arm64 and differed on Linux x86_64. Define a platform-neutral numeric
+    # precision for this synthetic compatibility check; CI still rejects any
+    # difference that survives canonicalization.
     payload = {
-        "patients": cohort.to_patients_dataframe().to_json(
-            orient="records", double_precision=15
-        ),
-        "observations": cohort.to_observations_dataframe().to_json(
-            orient="records", double_precision=15
-        ),
+        "patients": _canonical_frame_json(cohort.to_patients_dataframe()),
+        "observations": _canonical_frame_json(cohort.to_observations_dataframe()),
     }
     fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     assert fingerprint == expected_sha256
+
+
+def _canonical_frame_json(frame: pd.DataFrame) -> str:
+    """Serialize frame values with a stable precision for cross-platform fingerprints."""
+    canonical = frame.copy()
+    float_columns = canonical.select_dtypes(include=["floating"]).columns
+    canonical[float_columns] = canonical[float_columns].round(8)
+    return canonical.to_json(orient="records", double_precision=8)
 
 
 @pytest.mark.parametrize("invalid_symptoms", [None, {}, {"burden_rules": {}}])

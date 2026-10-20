@@ -301,11 +301,13 @@ The direct `CohortDataset.get_survival_training_examples` path now rejects boole
 | H-117 | Clinician usability of OCR confirm + consented real lab reports | H27 residual risk; EXP-OCR-001 is synthetic | `docs/HANDOVER.md` H-117 | OPEN |
 | H-118 | Native-speaker review of pcm/yo/ha/ig strings and glossary | Machine drafts only until then | `docs/HANDOVER.md` H-118 | OPEN |
 | H-119 | Clinician review of revised M5 synthetic illustration labels and explanation wording before patient-facing reuse | ADR-0055; renderer verification does not establish medical correctness | `docs/models/MODEL-CARD-M5.md`; `reports/ml/M5_JOURNEYS.md` | OPEN |
+| H-120 | Overseer disposition of Q-7 fixed acceptance gates before they can be reconciled | Latest PR #79 CI confirms unchanged K1 interval-coverage, B1/landmark AUC, K3 permutation-canary, G1 mask-aware calibration, and P11 disclosure-fixture failures; executor must not edit these overseer-owned tests or tune against consumed seeds | `docs/proposals/PROP-K1-ACCEPTANCE-BOUNDARIES.md`; `docs/proposals/PROP-CORE-ML-CENSOR-AWARE-GATE.md`; `docs/proposals/PROP-K3-SHUFFLED-OUTCOME-CANARY.md`; `docs/proposals/PROP-CORE-ML-MEASURED-CALIBRATION-GATE.md`; `docs/proposals/PROP-CORE-ML-P11-DISCLOSURE-FIXTURE.md` | OPEN |
 | H-305 | Enable Dependency graph (+ GHAS if private) so dependency-review CI can hard-fail | G-07; action unsupported until graph is on | `docs/ops/GITHUB-SETTINGS.md` §3 | OPEN |
 | H-307 | Ratify partner DCA threshold grid (PR-10) | Current evaluator default is not a clinical protocol; real DCA output stays disabled until explicit thresholds are ratified and frozen | `docs/clinical/PREREGISTRATION.md` §7 and `docs/clinical/ANALYSIS-SPEC.md` §6 | OPEN |
 
 ## Open blockers
-_None recorded. External public datasets bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers._
+- Q-7 cannot have all required PR checks pass until the overseer resolves the fixed-gate conflicts tracked under H-120. The acceptance tests remain unchanged; no threshold, seed, data generator or disclosure behavior was altered to force a pass.
+- External public datasets are bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers.
 
 ## Decisions log (pointers to ADRs)
 - ADR-0030: Typing and import-linter scope (P16 PR2 / G-05) — strict mypy on vigil-core, vigil-eval, m5.py only
@@ -380,3 +382,7 @@ The K8 controller audit found that `ConformalRiskControllerK8.calibrate` accepte
 The shared feature/label audit found event-day fields used `float()` without rejecting booleans, so `True`/`False` could silently become day 1/0 for recurrence, competing events, or administrative censoring. All three fields now reject boolean values before event ordering and label generation. The parametrized regression covers each field. The existing one-seed simulator calibration discrepancy remains governed by `PROP-CORE-ML-MEASURED-CALIBRATION-GATE.md`; no target or study output was changed.
 
 The same pass removed 14 pre-existing strict-mypy errors in the shared feature module by correcting optional analyte typing, patient-row/feature value types, and event-day narrowing; the explicit `tracked_analytes=None` default remains supported. The feature module now passes strict mypy. Feature, simulator-parity, and partner-analysis suites pass again (112), Ruff and 521 documentation links pass. No model results were generated.
+
+### Q-7 CI follow-up — make simulator fingerprints platform-neutral (2026-10-20)
+
+PR #79 CI on Linux x86_64 showed that the nine full-precision cohort JSON hashes added for the simulator configuration migration did not match the local Apple arm64 hashes. The fingerprint test now rounds numeric frame values to an explicit 8-decimal precision before hashing; it still fails if any canonicalized cohort field changes. The focused test passes locally (9/9), Ruff and `git diff --check` pass. Linux verification is pending the next PR run. This change only updates the compatibility test; it does not regenerate or reinterpret model results. Current CI still has separate fixed-score, canary, K1 coverage, disclosure-fixture, and historical-reproduction failures, and packages A–B remain open.

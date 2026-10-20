@@ -18,6 +18,7 @@ The frozen P11 acceptance test creates a patient without a `synthetic` field and
 - Unchanged overseer-owned test: `tests/acceptance_p11/test_p11_contract.py::test_bad_news_is_withheld_by_the_server_until_a_clinician_releases_it`.
 - Reproduction on Q-7: the test fails only at `release did not persist for both routes`; route responses before and after release contain `verdict=abstain`, `synthetic=false`, and an insufficient-history explanation. Nurse is denied (403) and clinician release succeeds (200).
 - Current relevant behavior: `PatientCreate` defaults to non-synthetic; M3/K2 score routes remain research-only for non-synthetic patients. Changing that default or restoring score generation to satisfy this assertion would falsify provenance or expose unvalidated scores.
+- The latest PR #79 CI run (`39417463523`, claims-and-governance job `118609860052`, merged test commit `9bce4ff14d7da866635543010bb1411b32bb5082`) reproduces the same final assertion failure after 67 cited safety tests pass. This confirms that the verifier failure is the frozen P11 fixture mismatch, not a newly failing hazard-link or claims-policy check.
 
 ## Requested disposition
 
