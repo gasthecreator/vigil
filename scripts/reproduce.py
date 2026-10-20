@@ -36,6 +36,17 @@ def _run(cmd: list[str], *, label: str) -> bool:
     return True
 
 
+def _release_manifests_for_head(head_sha: str) -> list[str]:
+    """Return release IDs whose manifest was generated from this exact commit."""
+    manifest_dir = ROOT / "docs" / "release"
+    releases = []
+    for path in sorted(manifest_dir.glob("RELEASE_MANIFEST_*.json")):
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        if manifest.get("git_commit") == head_sha:
+            releases.append(path.stem.removeprefix("RELEASE_MANIFEST_"))
+    return releases
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument(
@@ -102,18 +113,58 @@ def main() -> int:
         print(sbom_diff.stdout[:2000])
         ok = False
 
-    # Verify committed release hashes (does not rewrite the manifest; refuses dirty listed files).
-    verify_cmd = [
-        sys.executable,
-        str(ROOT / "scripts" / "generate_release_manifest.py"),
-        "verify",
-        "--release",
-        "v1.0.0-rc.2",
-    ]
-    verify_ok = _run(verify_cmd, label="Verify release hash manifest (v1.0.0-rc.2)")
-    results.append({"label": "Verify release hash manifest (v1.0.0-rc.2)", "command": verify_cmd, "ok": verify_ok})
-    if not verify_ok:
+    # A release manifest hashes one immutable commit, not every later PR checkout.
+    # The release workflow generates and verifies a fresh manifest for tagged commits.
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    if head.returncode != 0:
+        print(
+            f"❌ Could not determine HEAD for release manifest verification: {head.stderr.strip()}"
+        )
+        results.append(
+            {
+                "label": "Verify release hash manifest",
+                "command": ["git", "rev-parse", "HEAD"],
+                "ok": False,
+            }
+        )
         ok = False
+    else:
+        head_sha = head.stdout.strip()
+        releases = _release_manifests_for_head(head_sha)
+        if releases:
+            for release in releases:
+                verify_cmd = [
+                    sys.executable,
+                    str(ROOT / "scripts" / "generate_release_manifest.py"),
+                    "verify",
+                    "--release",
+                    release,
+                ]
+                verify_ok = _run(verify_cmd, label=f"Verify release hash manifest ({release})")
+                results.append(
+                    {
+                        "label": f"Verify release hash manifest ({release})",
+                        "command": verify_cmd,
+                        "ok": verify_ok,
+                    }
+                )
+                if not verify_ok:
+                    ok = False
+        else:
+            print(
+                "⏭️ Release manifest verification not applicable: no committed release manifest "
+                f"records HEAD {head_sha}. The release workflow generates and verifies a manifest "
+                "for the tagged commit."
+            )
+            results.append(
+                {
+                    "label": "Verify release hash manifest",
+                    "command": [],
+                    "ok": True,
+                    "status": "not_applicable_to_this_commit",
+                    "head_commit": head_sha,
+                }
+            )
 
     payload = {
         "ok": ok,

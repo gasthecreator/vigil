@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 import generate_release_manifest as grm  # noqa: E402
+import reproduce  # noqa: E402
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -19,7 +20,11 @@ def _repo(tmp_path: Path) -> Path:
     (tmp_path / "a.md").write_text("alpha\n")
     (tmp_path / "b.json").write_text('{"x": 1}\n')
     subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
-    subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "chore: seed"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "chore: seed"],
+        cwd=tmp_path,
+        check=True,
+    )
     return tmp_path
 
 
@@ -67,10 +72,26 @@ def test_committed_rc1_manifest_still_verifies_or_reports_drift():
     assert m["artifact_count"] == len(m["artifacts"]) == 23
 
 
+def test_release_manifests_are_scoped_to_their_recorded_commit(tmp_path, monkeypatch):
+    manifest_dir = tmp_path / "docs" / "release"
+    manifest_dir.mkdir(parents=True)
+    (manifest_dir / "RELEASE_MANIFEST_v0.1.0-a.json").write_text(
+        json.dumps({"git_commit": "a" * 40})
+    )
+    (manifest_dir / "RELEASE_MANIFEST_v0.1.0-b.json").write_text(
+        json.dumps({"git_commit": "b" * 40})
+    )
+    monkeypatch.setattr(reproduce, "ROOT", tmp_path)
+    assert reproduce._release_manifests_for_head("a" * 40) == ["v0.1.0-a"]
+    assert reproduce._release_manifests_for_head("c" * 40) == []
+
+
 @pytest.mark.skipif(shutil.which("cosign") is None, reason="cosign not installed")
 def test_sign_and_verify_roundtrip_with_ephemeral_test_key(tmp_path):
     env = {**os.environ, "COSIGN_PASSWORD": ""}
-    subprocess.run(["cosign", "generate-key-pair"], cwd=tmp_path, env=env, check=True, capture_output=True)
+    subprocess.run(
+        ["cosign", "generate-key-pair"], cwd=tmp_path, env=env, check=True, capture_output=True
+    )
     mf = tmp_path / "RELEASE_MANIFEST_test.json"
     mf.write_text(json.dumps({"release": "test"}))
     os.environ["COSIGN_PASSWORD"] = ""

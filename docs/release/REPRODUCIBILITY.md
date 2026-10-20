@@ -23,6 +23,10 @@ Vigil is committed to total mathematical and bit-for-bit computational reproduci
 
 From a clean checkout of `main` or the release candidate tag:
 
+Committed release hash manifests identify one exact source commit. PR reproduction
+checks verify a manifest only when its recorded `git_commit` matches `HEAD`; the
+release workflow generates and verifies a fresh manifest for each tagged commit.
+
 ```bash
 # 1. Install hermetic Python and Node dependencies
 curl -LsSf https://astral.sh/uv/install.sh | sh
