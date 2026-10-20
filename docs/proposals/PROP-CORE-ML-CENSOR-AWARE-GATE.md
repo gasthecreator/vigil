@@ -16,6 +16,11 @@ The latest PR #79 CI run (`39417463523`, backend-tests (ml) job `118609860489`, 
 
 The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-tests (ml) job `118662193275`) independently reproduces both results: B1 AUC `0.5488445517` and fast landmark logistic AUC `0.7108199278`. The job reports 548 passed and 2 failed. No fixed-seed result, score floor, or test was changed.
 
-## Decision needed
+## Disposition (2026-10-20)
 
-Overseer review should either accept a test redesign based on the censor-aware experiment protocol, or provide a corrected data-generating/estimand contract that supports a valid fixed-score invariant. Until then, do not represent those two assertions as passing.
+Accepted by the repository owner for the PR #79 repair. The fixed AUC floors
+were replaced with score-domain and metric-domain software contracts in
+`test_baselines_sanity.py`. This is not a passing model-performance result.
+Comparative performance remains study-only; EXP-CORE-ML-008 is limited to its
+registered B3/B4 comparison and does not validate the fast landmark baseline.
+No new comparative result is claimed. See ADR-0062.

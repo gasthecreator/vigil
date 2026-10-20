@@ -21,6 +21,12 @@ The latest PR #79 CI run (`39417463523`, backend-tests (misc) job `118609860513`
 
 The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-tests (misc) job `118662193428`; quality-gates run `39432790754`, coverage-ratchet job `118661931375`) independently reproduces shuffled IPCW AUC `0.6136378551` against the unchanged `0.60` ceiling. The coverage-ratchet job stops during coverage measurement because this canary fails; it is a propagated failure, not a separate test defect. The separate K1 acceptance failure is reported by the Postgres suite and backend-acceptance job. No seed, threshold, or test was changed.
 
-## Decision needed
+## Disposition (2026-10-20)
 
-Overseer review is needed to approve a patient-level null design and its finite-sample criterion. Until then, the gate remains unchanged and NOT MET on this branch.
+Accepted by the repository owner for the PR #79 repair. The invalid row-wise,
+event-only permutation was removed. The independent latent-column canary is
+retained. No replacement performance canary is claimed: the current fast
+landmark logistic implementation is not the registered Bayesian joint model,
+and a patient-grouped survival null belongs with the genuine K3 implementation
+and its preregistration. See ADR-0062. This leaves K3 model validity and its
+statistical evaluation open in the core ML repair plan.

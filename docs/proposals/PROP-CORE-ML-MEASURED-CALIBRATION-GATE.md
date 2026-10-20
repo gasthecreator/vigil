@@ -49,3 +49,12 @@ If the mask-aware, pre-registered study does not meet its stated targets, retain
 ## 7. Impact on Master Plan
 
 No Master Plan change is requested. This proposal concerns the implementation and verification evidence for the existing M13 calibration-target requirement.
+
+## 8. Disposition (2026-10-20)
+
+Accepted by the repository owner for the PR #79 repair. The single-seed
+conditional lead-time SD ceiling was replaced by a finite, nonnegative numeric
+contract assertion. It no longer functions as a calibration gate. A new
+multi-seed synthetic study with registered estimand, censoring, measurement
+coverage, uncertainty, and stopping rule is still required before any
+calibration conclusion. See ADR-0062.

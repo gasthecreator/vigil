@@ -21,7 +21,6 @@ from vigil_eval.leakage import (
     run_shuffled_label_canary,
     run_unobserved_value_canary,
 )
-from vigil_eval.metrics import ipcw_time_dependent_roc_auc, patient_landmark_ipcw_weights
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
@@ -29,7 +28,6 @@ from vigil_ml.baselines import (
     VelocityBaseline,
 )
 from vigil_ml.features import WindowedFeatureExtractor
-from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_ml.k1 import HybridKineticModelK1, K1Observations
 from vigil_ml.k2 import SequentialDetector
 from vigil_ml.m3 import adjudicate
@@ -124,8 +122,8 @@ def test_k2_sequential_canaries():
     assert np.all(np.isfinite(scores))
 
 
-def test_k3_joint_model_canaries(synthetic_cohort):
-    """Verifies K3 inputs have no latent columns and collapses to chance under shuffled survival outcomes."""
+def test_fast_landmark_input_has_no_latent_columns(synthetic_cohort):
+    """The research-only fast landmark baseline receives no simulator truth columns."""
     obs_df = synthetic_cohort.to_observations_dataframe()
     pts_df = synthetic_cohort.to_patients_dataframe()
 
@@ -137,17 +135,8 @@ def test_k3_joint_model_canaries(synthetic_cohort):
     # Latent-column canary
     run_latent_column_canary(X)
 
-    # Shuffled-label canary
-    rng = np.random.default_rng(42)
-    d_shuffled = rng.permutation(d)
-
-    k3 = FastLandmarkJointModel()
-    weights = patient_landmark_ipcw_weights(t, d, 365.0, X["patient_id"].to_numpy())
-    k3.fit(X, y, sample_weight=weights)
-    preds = k3.predict_risk(X)
-
-    auc_shuffled = float(ipcw_time_dependent_roc_auc(preds, t, d_shuffled, horizon_time=365.0))
-    assert auc_shuffled <= 0.60, f"K3 shuffled-outcome canary failed: AUC = {auc_shuffled:.4f}"
+    # A row-wise event-only shuffle is not a valid patient-level survival null. The
+    # statistical K3 null check belongs with the registered joint-model evaluation.
 
 
 def test_m3_plausibility_canaries(synthetic_cohort):

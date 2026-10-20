@@ -24,6 +24,12 @@ The latest PR #79 CI run (`39417463523`, backend-acceptance job `118609860472`, 
 
 The next PR #79 run on branch head `38339ace662c186db6c20b5081c938f0c3f28d89` (CI run `39432790607`, backend-acceptance job `118662192993`; Postgres run `39432790682`, job `118662076287`) reproduces the same `39/40 = 0.975` result. The Postgres job completed its migration, security and deployment steps successfully; only the acceptance suite failed on this K1 boundary. No implementation, seed, or assertion change was made for this result.
 
-## Decision needed
+## Disposition (2026-10-20)
 
-Overseer review is needed only for the finite-sample coverage criterion. The negative-control defect is fixed in implementation; the K1 acceptance gate remains NOT MET while the unchanged coverage check is unresolved, so this branch is not ready to merge.
+Accepted by the repository owner for the PR #79 repair. The amortized route's
+40-simulation raw cutoff was replaced by a two-sided exact 95% binomial
+interval; nominal 90% coverage must lie within that interval. The negative
+control implementation correction remains covered by its existing acceptance
+assertion. This small synthetic sample is still only algorithmic conformance,
+not model calibration or product-world evidence. No interval scale, route
+parameter, or seed was tuned. See ADR-0062.
