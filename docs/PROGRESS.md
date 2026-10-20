@@ -356,3 +356,7 @@ The K4 adapter converted the shared extractor target Series to NumPy and then pa
 ### Q-7 follow-up — protect EXP-M12-001 historical report (2026-10-20)
 
 The M12 runner's `--rerender` path bypassed its no-repeat frozen guard and could overwrite the committed `REPORT.md` from preserved `results.json`. It now refuses when the report exists; a regression verifies the original report bytes remain unchanged. The M12 focused suite passes (17). No cohort was generated and no result/report was rewritten; M12 remains historical, provenance-incomplete, and unusable for model selection. Packages A–B remain open.
+
+### Q-7 follow-up — protect EXP-K6-001 stored evidence (2026-10-20)
+
+The K6 `--dev`, `--frozen`, and `--rerender` modes could overwrite committed JSON/report artifacts. Each persistent mode now refuses when its target output already exists; smoke remains isolated in a temporary directory. Parameterized regression tests verify all three modes fail before changing stored bytes (3 passed). Ruff, claims policy, documentation links, and diff checks pass. No study cohort was generated or output rerendered. The new provenance sidecar states this preservation-only scope; K6's existing result remains synthetic research evidence with the limitations in its conclusion. Packages A–B remain open.

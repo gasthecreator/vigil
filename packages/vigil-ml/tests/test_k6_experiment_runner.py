@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import xgboost  # noqa: F401  (before anything that may load another OpenMP runtime)
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -48,3 +49,20 @@ def test_w_grid_matches_amendment_3():
     assert len(run.CONFIG["w_grid"]) == 17
     assert min(run.CONFIG["w_grid"]) == 0.1 / 256
     assert max(run.CONFIG["w_grid"]) == 25.6
+
+
+@pytest.mark.parametrize(
+    "mode,paths",
+    [
+        ("--dev", (ROOT / "experiments/EXP-K6-001/dev_results.json",)),
+        ("--frozen", (ROOT / "experiments/EXP-K6-001/results.json", ROOT / "experiments/EXP-K6-001/REPORT.md")),
+        ("--rerender", (ROOT / "experiments/EXP-K6-001/REPORT.md",)),
+    ],
+)
+def test_persistent_modes_refuse_to_overwrite_committed_evidence(mode, paths, monkeypatch):
+    run = load()
+    before = {path: path.read_bytes() for path in paths}
+    monkeypatch.setattr(sys, "argv", [str(RUN), mode])
+    with pytest.raises(RuntimeError, match="refuses to overwrite existing evidence"):
+        run.main()
+    assert {path: path.read_bytes() for path in paths} == before

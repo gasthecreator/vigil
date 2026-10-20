@@ -755,6 +755,20 @@ def render_report(res: Dict[str, Any]) -> str:
 # -------------------------------------------------------------------------------------------------
 # Modes
 # -------------------------------------------------------------------------------------------------
+def refuse_existing_evidence(mode: str) -> None:
+    outputs = {
+        "dev": (OUT / "dev_results.json",),
+        "frozen": (OUT / "results.json", OUT / "REPORT.md"),
+        "rerender": (OUT / "REPORT.md",),
+    }
+    if mode not in outputs:
+        raise ValueError(f"unknown persistent K6 mode: {mode}")
+    existing = [path.name for path in outputs[mode] if path.exists()]
+    if existing:
+        names = ", ".join(existing)
+        raise RuntimeError(f"EXP-K6-001 {mode} mode refuses to overwrite existing evidence: {names}")
+
+
 def build_results(kind: str, reps: List[int], scope: str, workers: int, tag: str) -> Dict[str, Any]:
     t0 = time.time()
     done = execute([(kind, r, scope) for r in reps], tag, workers)
@@ -773,12 +787,14 @@ def build_results(kind: str, reps: List[int], scope: str, workers: int, tag: str
 
 
 def mode_dev(workers: int) -> None:
+    refuse_existing_evidence("dev")
     res = build_results("dev", list(range(CONFIG["seeds"]["dev"]["n"])), "full", workers, "dev")
     (OUT / "dev_results.json").write_text(json.dumps(res, indent=1) + "\n")
     print("[dev] dev_results.json written (development replications; debugging, not evidence)", flush=True)
 
 
 def mode_frozen(workers: int) -> None:
+    refuse_existing_evidence("frozen")
     res = build_results("frozen", list(range(CONFIG["seeds"]["frozen"]["n"])), "full", workers, "frozen")
     (OUT / "results.json").write_text(json.dumps(res, indent=1) + "\n")
     (OUT / "REPORT.md").write_text(render_report(res))
@@ -797,6 +813,7 @@ def mode_smoke(workers: int) -> Dict[str, Any]:
 
 
 def mode_rerender() -> None:
+    refuse_existing_evidence("rerender")
     res = json.loads((OUT / "results.json").read_text())
     res["aggregate"] = json.loads(json.dumps(aggregate(res)))
     (OUT / "REPORT.md").write_text(render_report(res))
