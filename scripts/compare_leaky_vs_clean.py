@@ -49,6 +49,12 @@ from vigil_sim.generators import GeneratorType, get_generator
 
 
 def run_comparison(seed: int = 42, V: int = 10) -> Dict[str, Any]:
+    raise RuntimeError(
+        "The historical leakage comparison is retired and cannot regenerate its report. "
+        "Its output is under Q-7 evidence reconciliation; register a new experiment before "
+        "any rerun. See docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
+    )
+
     print(f"Generating G1 cohorts (seed={seed}, N=1,000 train, N=1,000 test, V={V})...")
     g1_gen = get_generator(GeneratorType.G1_SMOOTH, seed=seed)
     train_cohort = g1_gen.generate_cohort(num_patients=1000, duration_days=730.0)

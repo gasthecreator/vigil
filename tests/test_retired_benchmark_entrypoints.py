@@ -12,6 +12,12 @@ assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
+LEAKAGE_SCRIPT = ROOT / "scripts" / "compare_leaky_vs_clean.py"
+LEAKAGE_SPEC = importlib.util.spec_from_file_location("retired_leakage_comparison", LEAKAGE_SCRIPT)
+assert LEAKAGE_SPEC is not None and LEAKAGE_SPEC.loader is not None
+LEAKAGE_MODULE = importlib.util.module_from_spec(LEAKAGE_SPEC)
+LEAKAGE_SPEC.loader.exec_module(LEAKAGE_MODULE)
+
 
 @pytest.mark.parametrize("entrypoint", [MODULE.run_study_s1, MODULE.run_study_s9])
 def test_retired_studies_fail_before_data_access_or_fitting(entrypoint) -> None:
@@ -22,6 +28,19 @@ def test_retired_studies_fail_before_data_access_or_fitting(entrypoint) -> None:
 def test_retired_aggregate_runner_fails_closed() -> None:
     with pytest.raises(RuntimeError, match="retired"):
         MODULE.main()
+
+
+def test_historical_leakage_comparison_fails_before_data_access_or_writing(monkeypatch) -> None:
+    artifact = ROOT / "reports" / "ml" / "LEAKAGE_DELTA.json"
+    original = artifact.read_bytes()
+    monkeypatch.setattr(
+        LEAKAGE_MODULE,
+        "get_generator",
+        lambda *_args, **_kwargs: pytest.fail("retired runner accessed simulator data"),
+    )
+    with pytest.raises(RuntimeError, match="retired"):
+        LEAKAGE_MODULE.run_comparison()
+    assert artifact.read_bytes() == original
 
 
 @pytest.mark.parametrize(
