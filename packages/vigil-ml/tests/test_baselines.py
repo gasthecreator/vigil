@@ -82,3 +82,25 @@ def test_gradient_boosting_baseline(mock_dataset):
     preds = model.predict_risk(X)
     assert len(preds) == len(X)
     assert np.all((preds >= 0.0) & (preds <= 1.0))
+
+
+@pytest.mark.parametrize(
+    "model_type",
+    [PrevalenceBaseline, SingleThresholdBaseline, VelocityBaseline],
+)
+def test_rule_baselines_reject_misaligned_training_labels(mock_dataset, model_type):
+    X, y = mock_dataset
+    with pytest.raises(ValueError, match="same number of rows"):
+        model_type().fit(X.iloc[:-1], y)
+
+
+def test_rule_baselines_reject_multidimensional_sample_weights(mock_dataset):
+    X, y = mock_dataset
+    with pytest.raises(ValueError, match="one-dimensional"):
+        PrevalenceBaseline().fit(X, y, sample_weight=np.ones((len(y), 1)))
+
+
+def test_classifier_baselines_reject_multidimensional_labels(mock_dataset):
+    X, y = mock_dataset
+    with pytest.raises(ValueError, match="one-dimensional"):
+        RegularizedCoxHazardBaseline().fit(X, pd.DataFrame({"target": y}))

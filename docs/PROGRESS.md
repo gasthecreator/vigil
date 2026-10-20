@@ -215,6 +215,10 @@ The M1 audit found its unsupported subtype priors, age/stage adjustments, normal
 
 Source tracing found M5 always labeled its plain-language explanation synthetic, while both patient and caregiver API routes hard-coded the same value instead of using `Patient.synthetic`. The renderer now requires an explicit source flag, both routes pass the stored patient flag, and the response schema requires provenance and verification fields; OpenAPI and generated TypeScript contracts were regenerated. P4 v1/v2 plus M5 golden/content-policy tests pass (123); all companion API tests pass (9). Web lint/build, API-reference freshness, strict mypy (15 source files), Ruff, claims policy, 498 documentation links, and `git diff --check` pass. M5's exact template-derivation verifier passes P4 v1/v2; this source-label repair does not validate M3 or complete the plain-language content and route-to-verdict audit. Direct `tsc --noEmit` is not a supported check here and reported the pre-existing CSS side-effect import declaration error; the configured Next build type-check passed.
 
+### Q-7 follow-up — enforce baseline fit row alignment (2026-10-20)
+
+Rule-baseline fit review found B0/B1/B2 accepted labels whose row count differed from the feature matrix, allowing fallback prevalence to be learned from a mismatched cohort. Shared helpers also accepted multidimensional labels or weights inconsistently. These inputs now fail explicitly; focused baseline tests pass (10), Ruff passes, and `git diff --check` passes. The full trainer/evaluator/serving and estimand audit remains open; no model performance result was generated or changed.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|

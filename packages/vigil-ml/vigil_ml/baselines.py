@@ -33,9 +33,13 @@ def _prepare_classifier_training_data(
 ) -> tuple[pd.DataFrame, np.ndarray, np.ndarray | None]:
     """Validate horizon labels and keep censored outcomes from becoming negatives."""
     labels = np.asarray(y, dtype=float)
+    if labels.ndim != 1:
+        raise ValueError("y must be a one-dimensional horizon-label vector")
     if len(labels) != len(X):
         raise ValueError("X and y must have the same number of rows")
     weights = None if sample_weight is None else np.asarray(sample_weight, dtype=float)
+    if weights is not None and weights.ndim != 1:
+        raise ValueError("sample_weight must be a one-dimensional vector")
     if weights is not None and len(weights) != len(labels):
         raise ValueError("sample_weight must have the same length as y")
     if np.any(~np.isfinite(labels)) and weights is None:
@@ -62,11 +66,19 @@ def _prepare_classifier_training_data(
     return x_valid, y_valid, weight_valid
 
 
-def _training_prevalence(y: pd.Series, sample_weight: np.ndarray | None) -> float:
+def _training_prevalence(
+    y: pd.Series, sample_weight: np.ndarray | None, *, expected_rows: int
+) -> float:
     labels = np.asarray(y, dtype=float)
+    if labels.ndim != 1:
+        raise ValueError("y must be a one-dimensional horizon-label vector")
+    if len(labels) != expected_rows:
+        raise ValueError("X and y must have the same number of rows")
     if np.isinf(labels).any():
         raise ValueError("Horizon labels must not contain infinite values")
     weights = None if sample_weight is None else np.asarray(sample_weight, dtype=float)
+    if weights is not None and weights.ndim != 1:
+        raise ValueError("sample_weight must be a one-dimensional vector")
     if weights is not None and len(weights) != len(labels):
         raise ValueError("sample_weight must have the same length as y")
     if np.any(~np.isfinite(labels)) and weights is None:
@@ -113,7 +125,7 @@ class PrevalenceBaseline(BaseSurveillanceModel):
         sample_weight: np.ndarray | None = None,
         **kwargs,
     ) -> PrevalenceBaseline:
-        self.prevalence = _training_prevalence(y, sample_weight)
+        self.prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -143,7 +155,7 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> SingleThresholdBaseline:
-        self.fallback_prevalence = _training_prevalence(y, sample_weight)
+        self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
@@ -181,7 +193,7 @@ class VelocityBaseline(BaseSurveillanceModel):
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> VelocityBaseline:
-        self.fallback_prevalence = _training_prevalence(y, sample_weight)
+        self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
     def predict_risk(self, X: pd.DataFrame) -> np.ndarray:
