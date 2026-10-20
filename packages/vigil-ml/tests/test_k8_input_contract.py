@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 from scipy.stats import chi2
@@ -65,6 +67,29 @@ def test_k8_research_configuration_hash_tracks_effective_overrides():
     assert default.config_sha256 != overridden.config_sha256
     assert not default.is_calibrated
     assert default.running_threshold is None
+
+
+def test_k8_contract_defaults_are_loaded_from_the_shared_research_config():
+    settings = ConformalRiskControllerK8().config
+    assert OODGate().alpha == settings["contract_ood_alpha"]
+    assert AdaptiveConformal(0.1).gamma == settings["contract_aci_gamma"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("contract_ood_alpha", 1.0, "contract_ood_alpha"),
+        ("contract_covariance_regularizer", 0.0, "contract_covariance_regularizer"),
+        ("contract_aci_gamma", 0.0, "contract_aci_gamma"),
+    ],
+)
+def test_k8_shared_config_rejects_invalid_contract_settings(tmp_path, field, value, message):
+    config = dict(ConformalRiskControllerK8().config)
+    config[field] = value
+    path = tmp_path / "k8-config.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        ConformalRiskControllerK8(config_path=path)
 
 
 @pytest.mark.parametrize("kwargs", [{"alpha_conf": True}, {"adapt_rate": "0.05"}])

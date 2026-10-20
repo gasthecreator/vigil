@@ -73,6 +73,9 @@ class ConformalRiskControllerK8:
             "provenance",
             "alpha_conf",
             "adapt_rate",
+            "contract_ood_alpha",
+            "contract_covariance_regularizer",
+            "contract_aci_gamma",
             "ood_tail_probability",
             "covariance_regularizer",
             "epistemic_abstention_cutoff",
@@ -119,6 +122,12 @@ class ConformalRiskControllerK8:
             raise ValueError("ood_tail_probability must be between 0 and 1")
         if config["covariance_regularizer"] <= 0.0:
             raise ValueError("covariance_regularizer must be positive")
+        if not 0.0 < config["contract_ood_alpha"] < 1.0:
+            raise ValueError("contract_ood_alpha must be between 0 and 1")
+        if config["contract_covariance_regularizer"] <= 0.0:
+            raise ValueError("contract_covariance_regularizer must be positive")
+        if config["contract_aci_gamma"] <= 0.0:
+            raise ValueError("contract_aci_gamma must be positive")
         bounded = {
             "epistemic_abstention_cutoff": (0.0, None),
             "interval_normal_quantile": (0.0, None),

@@ -9,6 +9,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from vigil_ml.conformal_k8 import ConformalRiskControllerK8
+
+_K8_RESEARCH_DEFAULTS = ConformalRiskControllerK8().config
+
 
 class ConformalRiskController:
     """
@@ -23,7 +27,7 @@ class ConformalRiskController:
         self.alpha = float(alpha)
         if not np.isfinite(self.alpha) or not 0.0 < self.alpha < 1.0:
             raise ValueError("alpha must be finite and between 0 and 1")
-        self.tau_: float = 0.0
+        self.tau_: float | None = None
         self.is_fitted_: bool = False
 
     def fit(self, scores: np.ndarray, labels: np.ndarray) -> "ConformalRiskController":
@@ -56,7 +60,7 @@ class ConformalRiskController:
     def decide(self, scores: np.ndarray) -> np.ndarray:
         """Return boolean alert decision array (True = alert)."""
         s = np.asarray(scores, dtype=float)
-        if not self.is_fitted_:
+        if not self.is_fitted_ or self.tau_ is None:
             raise RuntimeError("fit must be called before decide")
         if s.ndim != 1 or not np.isfinite(s).all():
             raise ValueError("scores must be a finite one-dimensional array")
@@ -69,13 +73,13 @@ class OODGate:
     Flags samples outside training support.
     """
 
-    def __init__(self, alpha: float = 0.05) -> None:
+    def __init__(self, alpha: float = _K8_RESEARCH_DEFAULTS["contract_ood_alpha"]) -> None:
         self.alpha = float(alpha)
         if not np.isfinite(self.alpha) or not 0.0 < self.alpha < 1.0:
             raise ValueError("alpha must be finite and between 0 and 1")
         self.mu_: np.ndarray | None = None
         self.inv_cov_: np.ndarray | None = None
-        self.threshold_: float = 0.0
+        self.threshold_: float | None = None
 
     def fit(self, X: np.ndarray) -> "OODGate":
         """Fit empirical mean, regularized covariance, and threshold on inliers."""
@@ -89,7 +93,7 @@ class OODGate:
         cov = np.cov(diff, rowvar=False)
         cov = np.atleast_2d(cov)
         # Numerical regularization for stability
-        cov += np.eye(cov.shape[0]) * 1e-5
+        cov += np.eye(cov.shape[0]) * _K8_RESEARCH_DEFAULTS["contract_covariance_regularizer"]
         self.inv_cov_ = np.linalg.pinv(cov)
         dists = np.sum((diff @ self.inv_cov_) * diff, axis=1)
         self.threshold_ = float(np.percentile(dists, (1.0 - self.alpha) * 100.0))
@@ -97,7 +101,7 @@ class OODGate:
 
     def is_ood(self, X: np.ndarray) -> np.ndarray:
         """Return boolean mask (True = out-of-distribution)."""
-        if self.mu_ is None or self.inv_cov_ is None:
+        if self.mu_ is None or self.inv_cov_ is None or self.threshold_ is None:
             raise RuntimeError("fit must be called before is_ood")
         x = np.asarray(X, dtype=float)
         if x.ndim != 2 or x.shape[1] != self.mu_.shape[0]:
@@ -118,7 +122,9 @@ class AdaptiveConformal:
     where err_t = 0 if covered else 1.
     """
 
-    def __init__(self, alpha: float, gamma: float = 0.005) -> None:
+    def __init__(
+        self, alpha: float, gamma: float = _K8_RESEARCH_DEFAULTS["contract_aci_gamma"]
+    ) -> None:
         self.alpha = float(alpha)
         self.gamma = float(gamma)
         if not np.isfinite(self.alpha) or not 0.0 < self.alpha < 1.0:
