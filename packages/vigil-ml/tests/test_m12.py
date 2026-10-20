@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.metrics import roc_auc_score
 from vigil_ml import m12
@@ -39,6 +40,22 @@ def test_fedavg_identity_n_weighted_mean():
     from_server = m12.server_aggregate(masked, counts)
     for a, b in zip(unmasked_mean, from_server):
         assert np.max(np.abs(a - b)) < 1e-6
+
+
+def test_m12_site_missingness_keeps_observation_masks_consistent():
+    observations = pd.DataFrame({
+        "ca_15_3": [10.0, np.nan, 15.0],
+        "observed_ca_15_3": [True, False, True],
+        "cea": [2.0, 3.0, np.nan],
+        "observed_cea": [True, True, False],
+    })
+    changed = M12_RUNNER.apply_site(
+        observations, beta=0.0, p_miss=1.0, rng=np.random.default_rng(22)
+    )
+    assert changed["ca_15_3"].isna().all()
+    assert changed["cea"].isna().all()
+    assert not changed["observed_ca_15_3"].any()
+    assert not changed["observed_cea"].any()
 
 
 def test_secure_aggregation_masks_and_server_blindness():

@@ -114,12 +114,24 @@ def apply_site(obs: pd.DataFrame, beta: float, p_miss: float, rng: np.random.Gen
         if col not in o.columns:
             continue
         vals = np.array(o[col].to_numpy(dtype=float), copy=True)
+        if np.isinf(vals).any():
+            raise ValueError(f"{col} values must be finite or missing before site transformation")
         seen = ~np.isnan(vals)
+        mask_column = f"observed_{col}"
+        if mask_column in o.columns:
+            raw_mask = o[mask_column].to_numpy()
+            valid = np.isin(raw_mask, (False, True, 0, 1))
+            if not valid.all() or not np.array_equal(raw_mask.astype(bool), seen):
+                raise ValueError(f"{mask_column} must agree with {col} value presence before site missingness")
+            seen = raw_mask.astype(bool)
         vals[seen] = vals[seen] * scale
         if p_miss > 0.0:
             drop = seen & (rng.random(len(vals)) < p_miss)
             vals[drop] = np.nan
+            seen[drop] = False
         o[col] = vals
+        if mask_column in o.columns:
+            o[mask_column] = seen
     return o
 
 

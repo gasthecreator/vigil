@@ -18,4 +18,6 @@ Current M12 training functions now reject empty, non-finite, non-binary, or shap
 
 These guards do not repair or validate the frozen results. Preserve the generated outputs unchanged and treat the claimed H1–H4 outcomes as historical observations only, not evidence for selecting a model, validating a censor-aware objective, or establishing privacy. A replacement experiment requires a new preregistration, new seeds, canonical access logging before test generation, a training objective that handles censoring, calibration metrics appropriate to censored outcomes, and an accountant whose sampling assumptions match the implemented DP mechanism.
 
+Q-7 clean-clone verification exposed a separate simulator transformation defect: `apply_site` could set a measured CA 15-3/CEA value to missing while leaving its `observed_*` mask true. The runner now validates input value/mask agreement and updates both together when site missingness is applied; regression coverage passes. The old EXP-M12-001 outputs remain unchanged, and the corrected runner has not been used to regenerate or select results.
+
 The pre-registration, original output files, old S10 retraction, and prior conclusions remain preserved. This audit supplements them; it does not rewrite their history or claim real-world privacy, clinical performance, or utility.
