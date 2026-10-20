@@ -70,7 +70,17 @@ from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_sim.generators import GeneratorType, get_generator
 
 
+def _reject_retired_study(name: str) -> None:
+    raise RuntimeError(
+        f"Legacy {name} is retired and cannot be run from the aggregate benchmark module. "
+        "Its historical outputs are under Q-7 evidence reconciliation; use a current, "
+        "preregistered experiment instead. See "
+        "docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
+    )
+
+
 def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    _reject_retired_study("S1")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S1: LONGITUDINAL VISIT SPARSITY ANALYSIS")
     print("------------------------------------------------------------")
@@ -457,6 +467,7 @@ def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    _reject_retired_study("S9")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S9: CROSS-GENERATOR ROBUSTNESS & SIM-TO-REAL STRESS")
     print("------------------------------------------------------------")
