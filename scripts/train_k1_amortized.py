@@ -97,6 +97,16 @@ def train_family(family: str, config: dict) -> dict:
 
 
 def main() -> None:
+    frozen_paths = (
+        EXPERIMENT / "training_results.json",
+        EXPERIMENT / "results.json",
+        EXPERIMENT / "ACCESS_LOG.json",
+    )
+    if any(path.exists() for path in frozen_paths):
+        raise SystemExit(
+            "EXP-K1-004 already has frozen training or access artifacts; refusing to overwrite them. "
+            "Register a new experiment with new seeds before fitting again."
+        )
     dirty = subprocess.run(
         ["git", "status", "--porcelain"], cwd=ROOT, check=True, capture_output=True, text=True
     ).stdout.strip()

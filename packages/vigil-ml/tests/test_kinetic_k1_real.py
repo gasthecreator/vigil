@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -64,6 +67,25 @@ def test_trained_artifact_loader_requires_registered_identity_and_finite_weights
             k1._load_registered_state_dict(path, "amortized")
     finally:
         k1.ARTIFACT_MANIFEST_PATH = old_manifest_path
+
+
+def test_frozen_k1_trainer_refuses_to_overwrite_registered_artifacts():
+    root = Path(__file__).resolve().parents[3]
+    script = root / "scripts" / "train_k1_amortized.py"
+    training = root / "experiments" / "EXP-K1-004" / "training_results.json"
+    protected_artifacts = (
+        training,
+        k1.AMORTIZED_WEIGHTS_PATH,
+        k1.NPE_WEIGHTS_PATH,
+        k1.ARTIFACT_MANIFEST_PATH,
+    )
+    before = tuple(path.read_bytes() for path in protected_artifacts)
+    result = subprocess.run(
+        [sys.executable, str(script)], cwd=root, capture_output=True, text=True, check=False
+    )
+    assert result.returncode != 0
+    assert "refusing to overwrite" in result.stderr
+    assert tuple(path.read_bytes() for path in protected_artifacts) == before
 
 
 def test_forward_simulator_and_inference_share_observation_likelihood():
