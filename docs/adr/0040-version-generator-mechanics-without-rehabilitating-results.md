@@ -16,7 +16,7 @@ G3 also let its linearly increasing recurrence signal exceed its declared full-s
 - Apply the declared facility offset and scale effects in G2/G3 for this profile; their historical profile paths retain prior behavior.
 - Record that these values were transcribed from legacy source and have no claimed clinical calibration or literature validation. New model-selection use requires a preregistered sensitivity study; this profile has not generated new evaluation results.
 - Require the v3 profile to declare the complete mechanism setting set and reject malformed/non-finite inputs. Keep compatibility fallbacks for historical profiles so their prior semantics are not silently changed.
-- Bound G3's signal to `[0, 1]`, so latent burden cannot exceed its declared full-signal mass.
+- In `balanced_synthetic_core_v3`, bound G3's signal to `[0, 1]`, so latent burden cannot exceed its declared full-signal mass. Keep the old post-recurrence extrapolation only for legacy profiles to preserve frozen-replay semantics; it is not endorsed as a valid model behavior.
 - Preserve existing reports/results and their historical status. This decision does not make G1 an ODE/clearance model or G2 a Poisson shot-noise model.
 
 ## Consequences

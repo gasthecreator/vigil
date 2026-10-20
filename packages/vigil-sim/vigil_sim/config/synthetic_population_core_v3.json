@@ -202,6 +202,7 @@
     },
     "g3": {
       "apply_facility_lab_effects": true,
+      "saturate_signal": true,
       "haemolysis_probability": 0.04,
       "sample_dilution_probability": 0.02,
       "active_signal_days": 126.0,

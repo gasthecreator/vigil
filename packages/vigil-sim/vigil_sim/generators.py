@@ -461,6 +461,7 @@ class BaseCohortGenerator(ABC):
                 "g3.alp_bone_signal_increment", "g3.haemolysis_ast_multiplier",
                 "g3.haemolysis_ldh_multiplier", "g3.sample_dilution_multiplier",
                 "g3.apply_facility_lab_effects",
+                "g3.saturate_signal",
             )
             for path in required_paths:
                 value: Any = mechanics
@@ -502,10 +503,13 @@ class BaseCohortGenerator(ABC):
                 for key in ("haemolysis_probability", "sample_dilution_probability")
             ) > 1:
                 raise ValueError("g3 pre-analytical error probabilities may not sum above one")
-            if not isinstance(mechanics["g2"]["apply_facility_lab_effects"], bool) or not isinstance(
-                mechanics["g3"]["apply_facility_lab_effects"], bool
+            for setting in (
+                mechanics["g2"]["apply_facility_lab_effects"],
+                mechanics["g3"]["apply_facility_lab_effects"],
+                mechanics["g3"]["saturate_signal"],
             ):
-                raise ValueError("generator_mechanics facility-effect switches must be boolean")
+                if not isinstance(setting, bool):
+                    raise ValueError("generator_mechanics switches must be boolean")
             probability_values = (
                 mechanics["g1"]["chemotherapy"]["assignment_probability"],
                 mechanics["g3"]["haemolysis_probability"],
@@ -1423,11 +1427,15 @@ class HeavyTailedNoiseGenerator(BaseCohortGenerator):
             is_active = days_to_rec <= active_signal_days
 
             # Signal strength
-            sig = (
-                float(np.clip((active_signal_days - days_to_rec) / active_signal_days, 0.0, 1.0))
-                if is_active
-                else 0.0
-            )
+            if mechanics.get("saturate_signal", False):
+                sig = (
+                    float(np.clip((active_signal_days - days_to_rec) / active_signal_days, 0.0, 1.0))
+                    if is_active
+                    else 0.0
+                )
+            else:
+                # Preserve historical-profile data semantics; core_v3 opts into the corrected bound.
+                sig = max(0.0, (active_signal_days - days_to_rec) / active_signal_days) if is_active else 0.0
             mass = sig * mechanics.get("burden_at_full_signal", 50.0)
 
             b_bone = mass if pt.true_recurrence_site == TargetOrgan.BONE.value else 0.0

@@ -173,6 +173,19 @@ def test_g3_signal_saturates_after_recurrence_instead_of_exceeding_registered_ma
     )
 
 
+def test_legacy_g3_profile_keeps_frozen_replay_signal_semantics():
+    generator = get_generator(GeneratorType.G3_NOISE, seed=48109)
+    patient = generator.sample_baseline(1)
+    patient.true_recurrence_event = True
+    patient.true_recurrence_day = 0.0
+    patient.true_recurrence_site = "liver"
+
+    _observations, _masks, latent = generator.simulate_longitudinal_trajectory(patient, [1000.0])
+
+    # This assertion preserves historical-profile replay only; it does not endorse the extrapolation.
+    assert latent[0].m_ca153 > 50.0 * 3.0
+
+
 @pytest.mark.parametrize("generator_type", [GeneratorType.G2_BURST, GeneratorType.G3_NOISE])
 def test_core_v3_g2_g3_apply_registered_facility_scale(generator_type):
     config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
