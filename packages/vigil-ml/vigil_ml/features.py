@@ -558,6 +558,12 @@ class WindowedFeatureExtractor:
                 raise ValueError(
                     f"competing event type and day must be supplied together for patient {pt_id}"
                 )
+            for field, value in (
+                ("observed_recurrence_day", rec_day),
+                ("competing_event_day", comp_day),
+            ):
+                if isinstance(value, (bool, np.bool_)):
+                    raise ValueError(f"{field} must be numeric, not boolean for patient {pt_id}")
             terminal_days = [
                 float(day)
                 for day in (rec_day if rec_event else None, comp_day if has_comp_day else None)
@@ -578,6 +584,10 @@ class WindowedFeatureExtractor:
             admin_end = pt_row.get("administrative_censor_day")
             if admin_end is None or pd.isna(admin_end):
                 admin_end = last_day
+            elif isinstance(admin_end, (bool, np.bool_)):
+                raise ValueError(
+                    f"administrative_censor_day must be numeric, not boolean for patient {pt_id}"
+                )
             admin_end = float(admin_end)
             if not np.isfinite(admin_end) or admin_end < last_day:
                 raise ValueError(

@@ -370,6 +370,46 @@ def test_feature_labels_reject_boolean_horizon(horizon_days):
         )
 
 
+@pytest.mark.parametrize(
+    ("patient_fields", "field_name"),
+    [
+        (
+            {
+                "observed_recurrence_event": True,
+                "observed_recurrence_day": True,
+                "administrative_censor_day": 365.0,
+            },
+            "observed_recurrence_day",
+        ),
+        (
+            {
+                "observed_recurrence_event": False,
+                "observed_recurrence_day": np.nan,
+                "competing_event": "death",
+                "competing_event_day": True,
+                "administrative_censor_day": 365.0,
+            },
+            "competing_event_day",
+        ),
+        (
+            {
+                "observed_recurrence_event": False,
+                "observed_recurrence_day": np.nan,
+                "administrative_censor_day": True,
+            },
+            "administrative_censor_day",
+        ),
+    ],
+)
+def test_feature_labels_reject_boolean_event_and_censor_days(patient_fields, field_name):
+    patient = {"patient_id": "BOOLEAN-DAY", **patient_fields}
+    observations = pd.DataFrame({"patient_id": ["BOOLEAN-DAY"], "day": [0.0], "ca_15_3": [18.0]})
+    with pytest.raises(ValueError, match=f"{field_name} must be numeric, not boolean"):
+        WindowedFeatureExtractor().transform_cohort(
+            pd.DataFrame([patient]), observations, horizon_days=365.0
+        )
+
+
 def test_feature_label_source_is_recorded_only_when_explicit():
     patients = pd.DataFrame([{
         "patient_id": "SOURCE",
