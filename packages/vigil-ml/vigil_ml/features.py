@@ -53,6 +53,11 @@ SUPPORTED_COMPETING_EVENTS = frozenset(
         "lost_to_follow_up",
     }
 )
+THERAPY_HISTORY_COLUMNS = {
+    "chemotherapy_given": "history_chemotherapy_given",
+    "endocrine_therapy": "history_endocrine_therapy",
+    "radiotherapy_given": "history_radiotherapy_given",
+}
 
 
 @dataclass
@@ -124,6 +129,8 @@ class WindowedFeatureExtractor:
         patient_row: Dict[str, Any],
         historical_observations: List[Dict[str, Any]],
         current_day: float,
+        *,
+        synthetic_only: bool | None = None,
     ) -> Dict[str, float]:
         """
         Extracts feature vector at a specific evaluation day t using ONLY history where day <= current_day.
@@ -194,6 +201,44 @@ class WindowedFeatureExtractor:
             "stage_missing": float(stage_missing),
             "history_length": float(len(history)),
         }
+
+        # Keep pre-index therapy history and current active treatment separate.
+        # A missing partner field must not be interpreted as "no treatment".
+        for source_column, feature_name in THERAPY_HISTORY_COLUMNS.items():
+            value = patient_row.get(source_column)
+            missing = value is None or (pd.api.types.is_scalar(value) and pd.isna(value))
+            if missing:
+                features[feature_name] = float("nan")
+                features[f"{feature_name}_missing"] = 1.0
+            elif isinstance(value, (bool, np.bool_)):
+                features[feature_name] = float(value)
+                features[f"{feature_name}_missing"] = 0.0
+            elif (
+                isinstance(value, (int, np.integer, float, np.floating))
+                and np.isfinite(value)
+                and value in (0, 1)
+            ):
+                features[feature_name] = float(value)
+                features[f"{feature_name}_missing"] = 0.0
+            else:
+                raise ValueError(f"{source_column} must be a non-null boolean or 0/1")
+
+        treatment_available = current_obs.get(
+            "_treatment_status_available", "treatment_active" in current_obs
+        )
+        treatment_value = current_obs.get("treatment_active")
+        if not treatment_available:
+            active_treatment = float("nan")
+        elif treatment_value is None or (
+            pd.api.types.is_scalar(treatment_value) and pd.isna(treatment_value)
+        ):
+            active_treatment = 0.0 if synthetic_only is True else float("nan")
+        elif isinstance(treatment_value, str) and treatment_value.strip():
+            active_treatment = 1.0
+        else:
+            raise ValueError("treatment_active must be a non-empty treatment name or missing")
+        features["active_treatment"] = active_treatment
+        features["active_treatment_missing"] = float(not np.isfinite(active_treatment))
 
         # Subtype one-hot
         subtype_flags = (
@@ -443,6 +488,19 @@ class WindowedFeatureExtractor:
                     or None
                 ),
             }
+            if "treatment_active" in row.index:
+                treatment = row["treatment_active"]
+                treatment_missing = treatment is None or (
+                    pd.api.types.is_scalar(treatment) and pd.isna(treatment)
+                )
+                if not treatment_missing and (
+                    not isinstance(treatment, str) or not treatment.strip()
+                ):
+                    raise ValueError(
+                        "treatment_active must be a non-empty treatment name or missing"
+                    )
+                obs_dict["treatment_active"] = treatment
+                obs_dict["_treatment_status_available"] = True
             grouped_obs.setdefault(pt_id, []).append(obs_dict)
 
         for pt_id, obs_list in grouped_obs.items():
@@ -543,7 +601,9 @@ class WindowedFeatureExtractor:
                 if rec_event and rec_day is not None and not np.isnan(rec_day) and d >= rec_day:
                     continue
 
-                feat = self.extract_features_at_visit(pt_row, obs_list, d)
+                feat = self.extract_features_at_visit(
+                    pt_row, obs_list, d, synthetic_only=synthetic_only
+                )
                 if not feat:
                     continue
 

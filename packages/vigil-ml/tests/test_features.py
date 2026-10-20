@@ -389,6 +389,76 @@ def test_feature_label_source_is_recorded_only_when_explicit():
     assert "synthetic_only" not in unknown_labels.attrs
 
 
+def test_treatment_features_preserve_time_and_unknown_status():
+    patients = pd.DataFrame([{
+        "patient_id": "TREATMENT",
+        "age": 50.0,
+        "stage": "IIA",
+        "subtype": "HR+",
+        "er_status": True,
+        "pr_status": True,
+        "her2_status": False,
+        "chemotherapy_given": True,
+        "endocrine_therapy": False,
+        "radiotherapy_given": True,
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "administrative_censor_day": 500.0,
+    }])
+    observations = pd.DataFrame({
+        "patient_id": ["TREATMENT", "TREATMENT"],
+        "day": [0.0, 100.0],
+        "ca_15_3": [20.0, 22.0],
+        "treatment_active": [None, "chemotherapy"],
+    })
+    extractor = WindowedFeatureExtractor()
+
+    X, _y, _times, _events = extractor.transform_cohort(
+        patients, observations, horizon_days=365.0, synthetic_only=True
+    )
+    first = X.loc[X["eval_day"] == 0.0].iloc[0]
+    second = X.loc[X["eval_day"] == 100.0].iloc[0]
+    assert first["active_treatment"] == 0.0
+    assert first["active_treatment_missing"] == 0.0
+    assert second["active_treatment"] == 1.0
+    assert second["active_treatment_missing"] == 0.0
+    assert first["history_chemotherapy_given"] == 1.0
+    assert first["history_endocrine_therapy"] == 0.0
+    assert first["history_radiotherapy_given"] == 1.0
+
+    unknown_source = extractor.transform_cohort(
+        patients, observations, horizon_days=365.0
+    )[0]
+    unknown_first = unknown_source.loc[unknown_source["eval_day"] == 0.0].iloc[0]
+    assert np.isnan(unknown_first["active_treatment"])
+    assert unknown_first["active_treatment_missing"] == 1.0
+
+    changed_future = observations.copy()
+    changed_future.loc[1, "treatment_active"] = None
+    changed = extractor.transform_cohort(
+        patients, changed_future, horizon_days=365.0, synthetic_only=True
+    )[0]
+    changed_first = changed.loc[changed["eval_day"] == 0.0].iloc[0]
+    assert first["active_treatment"] == changed_first["active_treatment"]
+
+
+@pytest.mark.parametrize("value", [True, 1, " "])
+def test_invalid_active_treatment_values_are_rejected(value):
+    patients = pd.DataFrame([{
+        "patient_id": "BAD-TREATMENT",
+        "observed_recurrence_event": False,
+        "administrative_censor_day": 365.0,
+    }])
+    observations = pd.DataFrame({
+        "patient_id": ["BAD-TREATMENT"], "day": [0.0],
+        "ca_15_3": [18.0], "treatment_active": [value],
+    })
+    with pytest.raises(ValueError, match="treatment_active must be a non-empty treatment name"):
+        WindowedFeatureExtractor().transform_cohort(
+            patients, observations, horizon_days=365.0
+        )
+
+
 @pytest.mark.parametrize("synthetic_only", [0, 1, "true"])
 def test_feature_label_source_rejects_non_boolean_provenance(synthetic_only):
     with pytest.raises(ValueError, match="synthetic_only must be boolean"):

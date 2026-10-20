@@ -63,6 +63,9 @@ def test_partner_receptor_statuses_do_not_become_negative(status):
     assert np.isnan(patient["pr_status"])
     assert np.isnan(patient["her2_status"])
     assert patient["subtype"] == "UNCLASSIFIED"
+    assert bool(patient["chemotherapy_given"])
+    assert bool(patient["endocrine_therapy"])
+    assert bool(patient["radiotherapy_given"])
 
 
 # ------------------------------------------------------------------------------------------------ partition
