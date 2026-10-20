@@ -331,6 +331,15 @@ class CohortDataset:
             )
         for patient_id, last_day in last_observation_day.items():
             patient = pt_map[patient_id]
+            if not _is_finite_number(patient.age):
+                raise ValueError(f"age must be finite numeric data for patient {patient_id}")
+            if any(
+                not isinstance(status, (bool, np.bool_))
+                for status in (patient.er_status, patient.pr_status, patient.her2_status)
+            ):
+                raise ValueError(f"receptor status must be boolean for patient {patient_id}")
+            if not isinstance(patient.stage, PresentationStage):
+                raise ValueError(f"unsupported stage value for patient {patient_id}")
             recurrence_event = (
                 patient.observed_recurrence_event
                 if use_observed_labels

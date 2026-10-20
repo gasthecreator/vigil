@@ -666,6 +666,41 @@ def test_survival_training_rejects_invalid_treatment_feature():
         )
 
 
+@pytest.mark.parametrize("bad_age", [True, np.nan, np.inf, "55"])
+def test_survival_training_rejects_invalid_patient_age_feature(bad_age):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=101).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.patients[0].age = bad_age
+    with pytest.raises(ValueError, match="age must be finite numeric"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+@pytest.mark.parametrize("bad_status", [0, 1, "positive", None])
+def test_survival_training_rejects_nonboolean_receptor_feature(bad_status):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=102).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.patients[0].er_status = bad_status
+    with pytest.raises(ValueError, match="receptor status must be boolean"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+def test_survival_training_rejects_unrecognized_stage_feature():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=103).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.patients[0].stage = "Stage IV"
+    with pytest.raises(ValueError, match="unsupported stage value"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
 def test_survival_training_rejects_observed_event_after_administrative_censor():
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=95).generate_cohort(
         num_patients=4, duration_days=180.0
