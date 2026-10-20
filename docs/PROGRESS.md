@@ -255,6 +255,10 @@ The fitted target contract still had no source provenance where its producer was
 
 On pushed head `bb41047e43ad02c3f0edcc895bb5b2202bcdef03`, PR CI independently reproduced the existing K3 shuffled-outcome canary failure: 76 evaluator tests passed, one failed at AUC 0.6136378551 versus the unchanged 0.60 ceiling, leaving coverage at 86% (ratchet floor 88.70% not reached). The seeded-failure check passed; typing/imports, dependency review, security scanners and CodeQL completed successfully. Clean-clone reproducibility also fails on already documented EXP-K4/EXP-K6 source/result mismatch, an invalid-label path in another reproduced study, alert-burden metric drift, SBOM drift, and release-manifest drift; exact logs are attached to PR #79. This confirms that historical result reconciliation is required under packages A/G/H, not a reason to regenerate artifacts without preregistration. The source-to-entrypoint crosswalk records the frozen-runner limitation and partner metadata propagation.
 
+### Q-7 follow-up — correct a stale model-constructor claim in the inventory (2026-10-20)
+
+Package A's claim inventory said `FastLandmarkJointModel` still accepted an ignored `horizon_days` argument. Source inspection confirmed it inherits the canonical logistic baseline constructor and rejects that argument; the horizon is carried by the fit labels. The inventory now matches the source and its discrepancy list numbering is unique. This is an audit-record correction only; packages A–B remain open.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
