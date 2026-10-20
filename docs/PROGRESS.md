@@ -54,7 +54,7 @@ ADR-0048 repairs the mismatch between partner analysis and the draft clinical pr
 
 ### Q-7 update — retired benchmark direct-call guards (2026-10-19)
 
-The audit found that `scripts/run_benchmarks.py::main` already failed closed, but direct calls to the retired S1 and S9 functions bypassed that guard and could still run stale analyses. Both direct entrypoints now raise before generating data or fitting models; S3 already had its own guard. Regression tests cover S1/S9 direct calls and the aggregate entrypoint (3 passed), Ruff and `git diff --check` pass. This prevents accidental re-execution but does not reconcile the historical reports or close packages A/B/G; Q-7 remains IN PROGRESS.
+The audit found that `scripts/run_benchmarks.py::main` already failed closed, but direct calls to retired S1/S9 functions bypassed that guard and could still run stale analyses; S1/S3/S9/master renderers could also regenerate report files from arbitrary result dictionaries. All direct run and report-render entrypoints now fail before data access, fitting, or writing. Regression tests assert guard behavior and no output-file creation (7 passed), Ruff and `git diff --check` pass. This prevents accidental re-execution/regeneration but does not reconcile historical reports or close packages A/B/G; Q-7 remains IN PROGRESS.
 
 ### Q-7 update — M10 audit-source provenance (2026-10-19)
 

@@ -22,3 +22,25 @@ def test_retired_studies_fail_before_data_access_or_fitting(entrypoint) -> None:
 def test_retired_aggregate_runner_fails_closed() -> None:
     with pytest.raises(RuntimeError, match="retired"):
         MODULE.main()
+
+
+@pytest.mark.parametrize(
+    "renderer,args",
+    [
+        (MODULE.render_s1_markdown, ({},)),
+        (MODULE.render_s3_markdown, ({},)),
+        (MODULE.render_s9_markdown, ({},)),
+    ],
+)
+def test_retired_study_renderers_do_not_write_reports(renderer, args, tmp_path) -> None:
+    target = tmp_path / "historical-report.md"
+    with pytest.raises(RuntimeError, match="retired"):
+        renderer(*args, path=target)
+    assert not target.exists()
+
+
+def test_retired_master_renderer_does_not_overwrite_benchmark_report(tmp_path) -> None:
+    target = tmp_path / "benchmark-report.md"
+    with pytest.raises(RuntimeError, match="retired"):
+        MODULE.render_master_benchmark_report({}, {}, {}, {}, path=target)
+    assert not target.exists()

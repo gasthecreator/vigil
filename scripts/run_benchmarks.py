@@ -70,9 +70,9 @@ from vigil_ml.joint_model import FastLandmarkJointModel
 from vigil_sim.generators import GeneratorType, get_generator
 
 
-def _reject_retired_study(name: str) -> None:
+def _reject_retired_entrypoint(name: str) -> None:
     raise RuntimeError(
-        f"Legacy {name} is retired and cannot be run from the aggregate benchmark module. "
+        f"Legacy {name} is retired and cannot generate or overwrite benchmark artifacts. "
         "Its historical outputs are under Q-7 evidence reconciliation; use a current, "
         "preregistered experiment instead. See "
         "docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
@@ -80,7 +80,7 @@ def _reject_retired_study(name: str) -> None:
 
 
 def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    _reject_retired_study("S1")
+    _reject_retired_entrypoint("S1")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S1: LONGITUDINAL VISIT SPARSITY ANALYSIS")
     print("------------------------------------------------------------")
@@ -234,6 +234,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s1_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S1 renderer")
     lines = [
         "# Study S1 Report: Longitudinal Visit Sparsity Analysis",
         "",
@@ -383,6 +384,7 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S3 renderer")
     lines = [
         "# Study S3 Report: Partial Verification Bias Correction",
         "",
@@ -467,7 +469,7 @@ def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    _reject_retired_study("S9")
+    _reject_retired_entrypoint("S9")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S9: CROSS-GENERATOR ROBUSTNESS & SIM-TO-REAL STRESS")
     print("------------------------------------------------------------")
@@ -600,6 +602,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s9_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S9 renderer")
     lines = [
         "# Study S9 Report: Cross-Generator Robustness & Sim-to-Real Stress Testing",
         "",
@@ -646,6 +649,7 @@ def render_master_benchmark_report(
     s9_res: Dict[str, Any],
     path: Path,
 ) -> None:
+    _reject_retired_entrypoint("master benchmark renderer")
     lines = [
         "# VigilBench Phase 2 & 3: Longitudinal Surveillance & Advanced Modeling Benchmark",
         "",
