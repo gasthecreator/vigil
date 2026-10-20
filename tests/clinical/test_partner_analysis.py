@@ -11,6 +11,7 @@ import json
 import sys
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -426,6 +427,8 @@ def test_verification_propensity_is_fit_on_development_with_explicit_missingness
         first=np.ones(n, dtype=bool),
         end_day={pid: 545.0 for pid in patients["patient_id"]},
         patients=patients,
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
     )
 
     model, medians, issue = pa._fit_verification_propensity(dev)
@@ -466,6 +469,8 @@ def test_verification_propensity_fails_closed_without_complete_development_label
         first=np.ones(n, dtype=bool),
         end_day={pid: 545.0 for pid in patients["patient_id"]},
         patients=patients,
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
     )
     model, medians, issue = pa._fit_verification_propensity(dev)
     assert model is None and medians is None
@@ -484,6 +489,33 @@ def test_partner_target_contract_rejects_invalid_horizons(horizon):
 def test_partner_target_contract_rejects_non_boolean_provenance(synthetic_only):
     with pytest.raises(ValueError, match="synthetic_only"):
         pa._target_series(np.array([0.0, 1.0]), 365.0, synthetic_only=synthetic_only)
+
+
+def test_partner_fit_and_evaluation_reject_horizon_mismatches():
+    landmarks = pa.Landmarks(
+        X=pd.DataFrame(),
+        y=np.array([], dtype=float),
+        T=np.array([], dtype=float),
+        E=np.array([], dtype=int),
+        first=np.array([], dtype=bool),
+        end_day={},
+        patients=pd.DataFrame(),
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
+    )
+    with pytest.raises(ValueError, match="target horizon"):
+        pa.fit_on_development(landmarks, alert_budget=5.0, horizon=180.0)
+    plan = SimpleNamespace(candidate=object(), comparator=object())
+    with pytest.raises(ValueError, match="target horizon"):
+        pa.confirmatory(landmarks, plan, {}, n_boot=0, seed=1, horizon=180.0)
+
+
+def test_partner_evaluation_rejects_models_fitted_to_another_horizon():
+    contract = pa.TrainingTargetContract(pa.TARGET_ESTIMAND, 365.0, True)
+    model = SimpleNamespace(target_contract_=contract)
+    plan = SimpleNamespace(candidate=model, comparator=model)
+    with pytest.raises(ValueError, match="target contract does not match"):
+        pa._require_plan_target_horizon(plan, 180.0)
 
 
 def test_out_of_fold_censoring_weights_are_fit_inside_patient_folds(monkeypatch):
@@ -506,6 +538,8 @@ def test_out_of_fold_censoring_weights_are_fit_inside_patient_folds(monkeypatch)
         first=np.ones(n, dtype=bool),
         end_day={patient: 365.0 for patient in patients},
         patients=pd.DataFrame({"patient_id": patients}),
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
     )
     original = pa.compute_ipcw_weights
     input_sizes = []
@@ -572,6 +606,8 @@ PARAMS = {"PR-01": 0.8, "PR-02": 1.2, "PR-03": 0.0, "PR-04": 5.0, "PR-05": 20.0,
 def test_dev_and_test_share_no_patient(runs):
     dev, test, _ = runs["signal"]
     assert not (set(dev.X["patient_id"]) & set(test.X["patient_id"]))
+    assert dev.horizon_days == test.horizon_days == pa.HORIZON
+    assert dev.target_estimand == test.target_estimand == pa.TARGET_ESTIMAND
 
 
 def test_the_operating_point_is_chosen_on_development_to_meet_the_budget(runs):

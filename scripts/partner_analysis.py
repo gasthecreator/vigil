@@ -30,17 +30,31 @@ from vigil_ml.baselines import (
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
     SingleThresholdBaseline,
+    TrainingTargetContract,
     VelocityBaseline,
 )
 from vigil_ml.features import TRACKED_ANALYTES, WindowedFeatureExtractor
 
 HORIZON = 365.0
+TARGET_ESTIMAND = "observed_recurrence_before_competing_death"
 DAYS_PER_MONTH = 30.4375
 NON_FEATURES = ("patient_id", "eval_day")  # eval_day is bookkeeping, never a model input
 
 
 class InsufficientData(Exception):
     """A step cannot be done honestly with the data at hand; the message says why."""
+
+
+def _validated_horizon(horizon: float) -> float:
+    if isinstance(horizon, (bool, np.bool_)) or not np.isscalar(horizon):
+        raise ValueError("horizon_days must be a finite positive number, not boolean")
+    try:
+        horizon_days = float(horizon)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("horizon_days must be finite and positive") from exc
+    if not np.isfinite(horizon_days) or horizon_days <= 0.0:
+        raise ValueError("horizon_days must be finite and positive")
+    return horizon_days
 
 
 # ----------------------------------------------------------------------------------------------- partition
@@ -67,8 +81,22 @@ class Landmarks:
         str, float
     ]  # per patient: end of surveillance at risk (min(recurrence, death, follow-up))
     patients: pd.DataFrame
+    horizon_days: float
+    target_estimand: str
     counts: Dict[str, int] = field(default_factory=dict)
     synthetic_only: bool | None = None
+
+    def __post_init__(self) -> None:
+        self.horizon_days = _validated_horizon(self.horizon_days)
+        if self.target_estimand != TARGET_ESTIMAND:
+            raise ValueError(f"unsupported landmark target estimand: {self.target_estimand!r}")
+        if self.synthetic_only is not None and not isinstance(
+            self.synthetic_only, (bool, np.bool_)
+        ):
+            raise ValueError("synthetic_only must be boolean when supplied")
+        self.synthetic_only = (
+            None if self.synthetic_only is None else bool(self.synthetic_only)
+        )
 
     def subset(self, patient_ids: Sequence[str]) -> "Landmarks":
         keep = self.X["patient_id"].isin(set(patient_ids)).to_numpy()
@@ -82,6 +110,8 @@ class Landmarks:
             self.patients[self.patients["patient_id"].isin(set(patient_ids))].reset_index(
                 drop=True
             ),
+            self.horizon_days,
+            self.target_estimand,
             dict(self.counts),
             self.synthetic_only,
         )
@@ -193,13 +223,22 @@ def build_landmarks(
     *,
     synthetic_only: bool | None = None,
 ) -> Landmarks:
+    horizon = _validated_horizon(horizon)
     patients_df, obs_df = to_vigil_frames(tables, cohort_ids)
     counts = {"cohort_complete_case": len(patients_df)}
     if obs_df.empty:
         raise InsufficientData("no post-index laboratory draws in the complete-case cohort")
-    X, _y, _T, _E = WindowedFeatureExtractor().transform_cohort(
+    X, y_source, _T, _E = WindowedFeatureExtractor().transform_cohort(
         patients_df, obs_df, horizon_days=horizon, synthetic_only=synthetic_only
     )
+    # The extractor's outcome is observed diagnosis. This adapter intentionally
+    # derives a different recurrence-before-competing-death target below; only
+    # shared horizon and explicit source provenance are inherited here.
+    if y_source.attrs.get("horizon_days") != horizon or (
+        synthetic_only is not None
+        and y_source.attrs.get("synthetic_only") != bool(synthetic_only)
+    ):
+        raise RuntimeError("shared extractor horizon/provenance metadata disagrees with landmark inputs")
     p = patients_df.set_index("patient_id")
     # The extractor censors at the last laboratory day; partner follow-up and
     # vital status define the event/censor time for this fixed-horizon estimand.
@@ -249,7 +288,41 @@ def build_landmarks(
         - int(first.sum()),
         landmarks=len(X),
     )
-    return Landmarks(X, y, T, E, first, end_day, patients_df, counts, synthetic_only)
+    return Landmarks(
+        X,
+        y,
+        T,
+        E,
+        first,
+        end_day,
+        patients_df,
+        horizon,
+        TARGET_ESTIMAND,
+        counts,
+        synthetic_only,
+    )
+
+
+def _require_landmark_horizon(landmarks: Landmarks, horizon: float) -> float:
+    horizon_days = _validated_horizon(horizon)
+    if landmarks.horizon_days != horizon_days:
+        raise ValueError(
+            f"landmark target horizon ({landmarks.horizon_days:g}d) does not match requested horizon ({horizon_days:g}d)"
+        )
+    if landmarks.target_estimand != TARGET_ESTIMAND:
+        raise ValueError("landmark target estimand does not match partner model estimand")
+    return horizon_days
+
+
+def _require_plan_target_horizon(plan: FittedPlan, horizon: float) -> float:
+    horizon_days = _validated_horizon(horizon)
+    for name, model in (("candidate", plan.candidate), ("comparator", plan.comparator)):
+        contract = getattr(model, "target_contract_", None)
+        if not isinstance(contract, TrainingTargetContract):
+            raise ValueError(f"fitted {name} model lacks target-contract metadata")
+        if contract.estimand != TARGET_ESTIMAND or contract.horizon_days != horizon_days:
+            raise ValueError(f"fitted {name} target contract does not match evaluation horizon/estimand")
+    return horizon_days
 
 
 # ----------------------------------------------------------------------------------------------- metrics
@@ -419,21 +492,14 @@ def _target_series(
     values: np.ndarray, horizon: float, synthetic_only: bool | None
 ) -> pd.Series:
     """Attach the partner fixed-horizon estimand before fitting a surveillance model."""
-    if isinstance(horizon, (bool, np.bool_)) or not np.isscalar(horizon):
-        raise ValueError("horizon_days must be a finite positive number, not boolean")
-    try:
-        horizon_days = float(horizon)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("horizon_days must be finite and positive") from exc
-    if not np.isfinite(horizon_days) or horizon_days <= 0.0:
-        raise ValueError("horizon_days must be finite and positive")
+    horizon_days = _validated_horizon(horizon)
     if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
         raise ValueError("synthetic_only must be boolean when supplied")
     labels = pd.Series(
         np.asarray(values, dtype=float),
         name=f"observed_recurrence_before_competing_death_within_{horizon_days:g}d",
     )
-    labels.attrs["target_estimand"] = "observed_recurrence_before_competing_death"
+    labels.attrs["target_estimand"] = TARGET_ESTIMAND
     labels.attrs["horizon_days"] = horizon_days
     if synthetic_only is not None:
         labels.attrs["synthetic_only"] = synthetic_only
@@ -444,6 +510,7 @@ def _out_of_fold(
     dev: Landmarks, horizon: float, folds: int = 5
 ) -> Dict[str, np.ndarray]:
     """Patient-cross-fitted raw predictions for every model used in development selection."""
+    horizon = _require_landmark_horizon(dev, horizon)
     from sklearn.model_selection import GroupKFold
 
     n = len(dev.X)
@@ -496,6 +563,7 @@ def fit_on_development(
     Selection, recalibration and the threshold use out-of-fold predictions (cross-fitted by patient), so none of
     them is tuned on predictions the model made for its own training rows.
     """
+    horizon = _require_landmark_horizon(dev, horizon)
     n_events = int(((dev.E == 1) & (dev.T <= horizon) & dev.first).sum())
     if n_events < min_events:
         raise InsufficientData(
@@ -587,6 +655,8 @@ def confirmatory(
     horizon: float = HORIZON,
 ) -> Dict[str, Any]:
     """C1, C2 and C3 of the pre-registration. ``params`` holds PR-01..PR-04 as floats."""
+    horizon = _require_landmark_horizon(test, horizon)
+    _require_plan_target_horizon(plan, horizon)
     f = test.first
     Xf, Tf, Ef = test.X[f], test.T[f], test.E[f]
     p_cand = plan.candidate_risk(Xf)
@@ -721,6 +791,8 @@ def secondary(
     horizon: float = HORIZON,
     dca_thresholds: Optional[Sequence[float]] = None,
 ) -> Dict[str, Any]:
+    horizon = _require_landmark_horizon(test, horizon)
+    _require_plan_target_horizon(plan, horizon)
     f = test.first
     Xf, Tf, Ef, yf = test.X[f].reset_index(drop=True), test.T[f], test.E[f], test.y[f]
     p = plan.candidate_risk(Xf)
