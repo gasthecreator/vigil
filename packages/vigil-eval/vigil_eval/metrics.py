@@ -57,6 +57,18 @@ def _survival_inputs(
     return times, events_raw.astype(np.int64), horizon
 
 
+def _weight_vector(values: np.ndarray, expected_length: int) -> NDArray[np.float64]:
+    """Validate externally supplied IPCW values before they enter metric arithmetic."""
+    weights = np.asarray(values, dtype=float)
+    if weights.ndim != 1:
+        raise ValueError("weights must be a one-dimensional vector")
+    if len(weights) != expected_length:
+        raise ValueError("weights must have the same length as follow_up_times")
+    if not np.isfinite(weights).all() or np.any(weights < 0):
+        raise ValueError("weights must be finite and non-negative")
+    return weights
+
+
 @dataclass
 class KaplanMeierEstimate:
     """Estimated Kaplan-Meier survival/censoring curve."""
@@ -198,15 +210,12 @@ def ipcw_time_dependent_roc_auc(
     risk_scores = np.asarray(risk_scores, dtype=float)
     if risk_scores.ndim != 1 or not (len(risk_scores) == len(follow_up_times)):
         raise ValueError("risk scores, follow-up times, and event indicators must have equal length")
-    weights = (
+    weights = _weight_vector(
         compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
         if weights is None
-        else np.asarray(weights, dtype=float)
+        else weights,
+        len(follow_up_times),
     )
-    if len(weights) != len(follow_up_times):
-        raise ValueError("weights must have the same length as follow_up_times")
-    if not np.isfinite(weights).all() or np.any(weights < 0):
-        raise ValueError("weights must be finite and non-negative")
     if not np.isfinite(risk_scores).all():
         raise ValueError("risk_scores must be finite")
 
@@ -262,15 +271,12 @@ def ipcw_brier_score(
 
     # Risk of event occurring by horizon: p_i = 1 - S_i(horizon)
     p_hat = _probability_vector(predicted_probabilities, "predicted_probabilities")
-    weights = (
+    weights = _weight_vector(
         compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
         if weights is None
-        else np.asarray(weights, dtype=float)
+        else weights,
+        len(follow_up_times),
     )
-    if len(weights) != len(follow_up_times):
-        raise ValueError("weights must have the same length as follow_up_times")
-    if not np.isfinite(weights).all() or np.any(weights < 0):
-        raise ValueError("weights must be finite and non-negative")
     if not np.any(weights > 0):
         return float("nan")
     if len(p_hat) != n:
@@ -478,15 +484,10 @@ def compute_ipcw_calibration_curve(
     if not np.isin(events, (0, 1, 2)).all():
         raise ValueError("event_indicators must use codes 0=censor, 1=recurrence, 2=competing event")
 
-    weights = (
-        compute_ipcw_weights(times, events, horizon_time)
-        if weights is None
-        else np.asarray(weights, dtype=float)
+    weights = _weight_vector(
+        compute_ipcw_weights(times, events, horizon_time) if weights is None else weights,
+        len(times),
     )
-    if len(weights) != len(times):
-        raise ValueError("weights must have the same length as follow_up_times")
-    if not np.isfinite(weights).all() or np.any(weights < 0):
-        raise ValueError("weights must be finite and non-negative")
     known = weights > 0
     if not np.any(known):
         return CalibrationReport(

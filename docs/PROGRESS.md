@@ -227,6 +227,10 @@ IPCW review found negative/infinite horizons and multidimensional event-code arr
 
 `transform_cohort` defaulted to 180 days while `build_landmark_features` defaulted to 365 days. The Master Plan specifies 3-, 6-, and 12-month outcomes; historical core studies explicitly use 365 days. Both entry points now require a horizon argument, and omitted-horizon plus target-provenance regressions pass. Feature tests: 39 passed; full `vigil-ml` tests: 508 passed, 2 unchanged fixed-score failures (B1 AUC 0.5488 < 0.65; fast logistic 0.7108 < 0.72). `make typecheck`, Ruff, claims policy, 515 documentation links, and `git diff --check` pass. Draft proposal `docs/proposals/PROP-CORE-ML-HORIZON-CONTRACT.md` tracks the still-required preregistered 3/6/12-month evidence; historical 365-day artifacts were not changed or regenerated. Package A–B and Q-7 remain open.
 
+### Q-7 follow-up — reject malformed external IPCW vectors (2026-10-20)
+
+Caller-supplied `(n, 1)` weights could broadcast across `(n,)` Brier residuals and return a wrong scalar without an error. A shared validator now requires finite, non-negative, one-dimensional weights of exact length for AUC, Brier, and IPCW calibration. Metric tests pass (19); the full evaluator suite is 49 passed, 1 unchanged K3 shuffled-outcome canary failure (AUC 0.6136 > 0.60). `make typecheck` (15 source files and 2 import contracts) and Ruff pass. This is input-contract hardening only.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|

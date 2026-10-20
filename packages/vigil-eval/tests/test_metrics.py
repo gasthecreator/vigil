@@ -112,6 +112,26 @@ def test_survival_metrics_validate_inputs_even_when_weights_are_supplied():
         )
 
 
+def test_survival_metrics_reject_multidimensional_supplied_weights():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    invalid_weights = np.ones((2, 1))
+    metric_calls = (
+        lambda: ipcw_time_dependent_roc_auc(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+        lambda: ipcw_brier_score(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+        lambda: compute_ipcw_calibration_curve(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+    )
+    for metric in metric_calls:
+        with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+            metric()
+
+
 def test_patient_landmark_weights_equalize_total_patient_contribution():
     times = np.array([50.0, 200.0, 100.0, 300.0, 80.0])
     events = np.array([1, 0, 2, 0, 2])
