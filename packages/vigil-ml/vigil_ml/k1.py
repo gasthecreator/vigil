@@ -143,6 +143,9 @@ class K1Observations:
     values: dict[str, np.ndarray]
 
     def __post_init__(self) -> None:
+        raw_days = np.asarray(self.days, dtype=object)
+        if any(isinstance(day, (bool, np.bool_)) for day in raw_days.reshape(-1)):
+            raise ValueError("observation days must be numeric, not boolean")
         days = np.asarray(self.days, dtype=np.float64)
         if days.ndim != 1 or not np.all(np.isfinite(days)):
             raise ValueError("observation days must be a finite one-dimensional array")
@@ -150,6 +153,9 @@ class K1Observations:
             raise ValueError("observation days must be strictly increasing")
         normalized: dict[str, np.ndarray] = {}
         for analyte, raw in self.values.items():
+            raw_values = np.asarray(raw, dtype=object)
+            if any(isinstance(value, (bool, np.bool_)) for value in raw_values.reshape(-1)):
+                raise ValueError(f"{analyte} values must be numeric, not boolean")
             values = np.asarray(raw, dtype=np.float64)
             if values.ndim != 1 or len(values) != len(days):
                 raise ValueError(f"{analyte} values must be one-dimensional and align with days")

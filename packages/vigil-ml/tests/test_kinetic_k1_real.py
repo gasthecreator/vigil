@@ -24,6 +24,19 @@ def test_observations_reject_misaligned_or_unsorted_data():
         k1.K1Observations(np.array([0.0]), {"ca153": np.array([np.inf])})
 
 
+@pytest.mark.parametrize(
+    ("days", "values", "match"),
+    [
+        ([True], {"ca153": [18.0]}, "days.*boolean"),
+        ([0.0], {"ca153": [True]}, "ca153.*boolean"),
+        ([0.0, 1.0], {"ca153": [False, 18.0]}, "ca153.*boolean"),
+    ],
+)
+def test_observations_reject_boolean_time_and_mask_values(days, values, match):
+    with pytest.raises(ValueError, match=match):
+        k1.K1Observations(np.asarray(days), values)
+
+
 def test_trained_artifact_loader_requires_registered_identity_and_finite_weights(tmp_path):
     path = tmp_path / "weights.safetensors"
     manifest_path = tmp_path / "manifest.json"
