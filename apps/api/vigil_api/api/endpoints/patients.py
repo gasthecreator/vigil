@@ -20,7 +20,11 @@ from vigil_api.consent import consented_patient_ids, has_active_consent, verify_
 from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
 from vigil_api.disclosure import DISCLOSURE_LOCKED_DETAIL, withheld_for
-from vigil_api.ml.detector_helpers import detector_from_dict, detector_to_dict
+from vigil_api.ml.detector_helpers import (
+    detector_from_dict,
+    detector_states_by_analyte,
+    detector_to_dict,
+)
 from vigil_api.models.patient import BaselineProfile, LabResult, Patient
 from vigil_api.models.v2 import (
     Alert,
@@ -615,7 +619,7 @@ def ingest_single_observation_internal(
     1. Positive non-NaN value bounds.
     2. Registry lookup & unit conversion with zero silent unit coercion.
     3. Longitudinal history gathering & M3 plausibility adjudication.
-    4. K2 sequential e-detector update.
+    4. K2 unvalidated sequential research-score update.
     5. M5 strictly verified narrative rendering.
     6. Input SHA-256 hashing and immutable Observation/RiskAssessment creation.
     7. No-dismissal invariant: creates Alert & FollowUpTask for surprising findings.
@@ -682,6 +686,23 @@ def ingest_single_observation_internal(
 
     current_day = (specimen_date - pt_created).total_seconds() / 86400.0
 
+    # K2 is a univariate, per-analyte research score. Rebuild it from this
+    # analyte's chronological observations so late-arriving specimens cannot
+    # contaminate another analyte's state or make ingestion-order state stale.
+    k2_history_obs = (
+        db.execute(
+            select(Observation)
+            .where(
+                Observation.patient_id == patient.id,
+                Observation.analyte_code == analyte.code,
+                Observation.specimen_collected_at <= specimen_date,
+            )
+            .order_by(Observation.specimen_collected_at.asc(), Observation.id.asc())
+        )
+        .scalars()
+        .all()
+    )
+
     # Research-only model outputs are served only for synthetic records or to
     # the isolated silent shadow store. Real records are recorded, but no
     # unvalidated M3/K2 score or action is shown or persisted.
@@ -703,18 +724,20 @@ def ingest_single_observation_internal(
     else:
         m3_result = abstain("clinical_validation_unavailable")
 
-    # 3. Update & Persist K2 SequentialDetector
-    detector = (
-        detector_from_dict(
-            silent_mode.load_detector_state(patient.id) if silent else patient.detector_state
-        )
-        if research_path_enabled
-        else detector_from_dict(None)
-    )
+    # 3. Rebuild the K2 sequential research score for this analyte.
+    detector = detector_from_dict(None)
     if research_path_enabled:
+        for prior_obs in k2_history_obs:
+            prior_dt = prior_obs.specimen_collected_at
+            if prior_dt.tzinfo is None:
+                prior_dt = prior_dt.replace(tzinfo=timezone.utc)
+            prior_day = (prior_dt - pt_created).total_seconds() / 86400.0
+            detector.update(day=prior_day, value=prior_obs.value)
         detector.update(day=current_day, value=plausibility.canonical_value)
-    if not silent and research_path_enabled:
-        patient.detector_state = detector_to_dict(detector)
+        if not silent:
+            patient.detector_state = detector_states_by_analyte(
+                patient.detector_state, analyte.code, detector
+            )
 
     # 4. Generate & Verify M5 Clinician Note
     clinical_note = render_clinician_note(m3_result["rationale_facts"])
@@ -822,7 +845,12 @@ def ingest_single_observation_internal(
             model_versions=model_versions,
             input_hash=input_hash,
         )
-        silent_mode.save_detector_state(patient.id, detector_to_dict(detector))
+        silent_mode.save_detector_state(
+            patient.id,
+            detector_states_by_analyte(
+                silent_mode.load_detector_state(patient.id), analyte.code, detector
+            ),
+        )
         # The audit record carries no model output (the audit log is readable by auditors).
         record_audit_event(
             db=db,

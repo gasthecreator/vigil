@@ -234,7 +234,9 @@ def test_detector_state_lives_in_the_shadow_store_only(api_env, monkeypatch):
         assert session.get(Patient, pid).detector_state is None
     with shadow_store.get_store(env.shadow_url).session() as session:
         state = session.get(ShadowDetectorState, pid)
-        assert state is not None and len(state.state["history"]) == len(SERIES)
+        assert state is not None
+        assert set(state.state["analytes"]) == {"ca_15_3"}
+        assert len(state.state["analytes"]["ca_15_3"]["history"]) == len(SERIES)
 
 
 # --- 2. forged requests cannot switch it off --------------------------------------------------------------

@@ -46,7 +46,7 @@ def test_k1_identity_does_not_expose_legacy_label_training_api():
 # K2 Tests
 # ---------------------------------------------------------------------------
 
-def test_k2_sequential_eprocess_and_tiers():
+def test_k2_sequential_research_score_and_tiers():
     ep = SequentialDetector(alpha_pt=0.05, sigma_log=0.12)
     # Baseline quiescent sequence -> e-value remains small
     rng = np.random.default_rng(20261019)
@@ -57,6 +57,7 @@ def test_k2_sequential_eprocess_and_tiers():
     assert ep.tier in [AlertTier.NONE, AlertTier.WATCH]
 
     # Escalating sequence -> e-value spikes crossing Ville's threshold
+    ep = SequentialDetector(alpha_pt=0.05, sigma_log=0.12)
     spiking_visits = [
         {"day": 0.0, "ca15_3": 18.0},
         {"day": 90.0, "ca15_3": 28.0},

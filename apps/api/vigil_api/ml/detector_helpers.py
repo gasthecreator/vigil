@@ -45,3 +45,17 @@ def detector_from_dict(data: Optional[Dict[str, Any]]) -> SequentialDetector:
             detector.log_e_components = comps
 
     return detector
+
+
+def detector_states_by_analyte(
+    current: Optional[Dict[str, Any]], analyte_code: str, detector: SequentialDetector
+) -> Dict[str, Any]:
+    """Store isolated K2 snapshots; legacy patient-wide state cannot be migrated safely."""
+    states = (
+        dict(current.get("analytes", {}))
+        if current and current.get("schema_version") == 2
+        and isinstance(current.get("analytes"), dict)
+        else {}
+    )
+    states[analyte_code] = detector_to_dict(detector)
+    return {"schema_version": 2, "analytes": states}

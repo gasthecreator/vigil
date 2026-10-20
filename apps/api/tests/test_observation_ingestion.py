@@ -218,7 +218,31 @@ def test_normal_observation_ingestion_and_k2_update(ingestion_db, clinician_auth
     with Session(engine) as session:
         pat = session.execute(select(Patient).where(Patient.id == "pat-surv-01")).scalar_one()
         assert pat.detector_state is not None
-        assert len(pat.detector_state["history"]) == 2
+        assert set(pat.detector_state["analytes"]) == {"ca_15_3"}
+        assert len(pat.detector_state["analytes"]["ca_15_3"]["history"]) == 2
+
+
+def test_k2_ingestion_keeps_analyte_histories_independent(ingestion_db, clinician_auth_headers):
+    client, engine = ingestion_db
+    for analyte_code, value, unit in (
+        ("ca_15_3", 20.0, "U/mL"),
+        ("cea", 3.0, "ng/mL"),
+    ):
+        response = client.post(
+            "/api/v1/patients/pat-surv-01/observations",
+            json={"analyte_code": analyte_code, "value": value, "unit": unit},
+            headers=clinician_auth_headers,
+        )
+        assert response.status_code == 201
+
+    with Session(engine) as session:
+        patient = session.execute(
+            select(Patient).where(Patient.id == "pat-surv-01")
+        ).scalar_one()
+        analyte_states = patient.detector_state["analytes"]
+        assert set(analyte_states) == {"ca_15_3", "cea"}
+        assert len(analyte_states["ca_15_3"]["history"]) == 1
+        assert len(analyte_states["cea"]["history"]) == 1
 
 
 def test_surprising_observation_enforces_no_dismissal_invariant(

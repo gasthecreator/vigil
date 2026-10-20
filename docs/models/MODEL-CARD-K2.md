@@ -65,7 +65,7 @@ The score is grouped into software tiers at the following numerical thresholds. 
 - Tier 3: Urgent ($\log E_t \ge \ln(100) \approx 4.605$).
 
 ### Landmark Risk Score Integration
-`SequentialDetector.integrate_with_risk_score(score, imaging_threshold)` accepts an explicit threshold. This adapter has no product call sites, and no clinical action threshold has been validated.
+`SequentialDetector.integrate_with_risk_score(score, imaging_threshold)` is disabled and raises for valid-looking inputs. The former implementation could return `RECOMMEND_IMAGING` from unvalidated scores and a caller-provided threshold; no clinical action threshold has been validated. No product call sites were found.
 
 ---
 
@@ -92,3 +92,5 @@ The acceptance suite reports the following empirical rates under its specified s
 2. The supplied $\sigma_{\log}$ estimate is not shown to upper-bound conditional variation.
 3. The acceptance stress scenarios cover a finite set of synthetic distributions only.
 4. The feature is research-only; no clinical decision rule or deployment guarantee is supported.
+5. The API keeps separate histories by analyte and replays same-analyte observations in specimen-time order. This prevents cross-marker scale contamination and handles late-arriving specimens; it does not establish that one fixed `sigma_log` or score configuration is suitable for every analyte.
+6. The legacy clipped prototype and benchmark in `vigil_ml.sequential_k2` are retired; their compatibility imports raise on construction. The S2 evidence remains retracted.
