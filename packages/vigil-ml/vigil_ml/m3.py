@@ -3,27 +3,150 @@
 Compares one tumor-marker observation with a patient's prior results under an explicit
 Bayesian 3-way generative mixture model. It is not a longitudinal recurrence detector.
 
-Safety Policy: Outlier results are NEVER dismissed ("dismissed" is not an allowed action).
+Research action policy: outlier results are never dismissed ("dismissed" is not an allowed action).
 Results are classified as:
   - "abstain": insufficient prior history to form a baseline; no probabilities are emitted
-  - "escalate": high probability of true disease progression (p_real >= 0.60, p_err < 0.30)
-  - "explained": high probability of baseline fluctuation (p_stable >= 0.90, p_err < 0.30)
-  - "needs_repeat": potential analytical/pre-analytical error (p_error >= 0.30) or
+  - "escalate": model-conditional action at the configured real-change boundary
+  - "explained": model-conditional action at the configured stable boundary
+  - "needs_repeat": action at the configured gross-error boundary or
     indeterminate variation requiring confirmation before clinical intervention.
 
-Reference Change Values conform to Evidence E9 (Aarsand et al. 2021, Ricós et al. 1999).
+Numeric assumptions are loaded from `models/m3_assumptions_v1.json` and are synthetic research settings.
+The reference-change formula is conventional; its biological variation inputs are separately sourced in E9.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
-from typing import Any, Dict, List, Literal, Tuple, Union
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Tuple, Union, cast
+
+
+@dataclass(frozen=True)
+class M3Assumptions:
+    """Versioned synthetic M3 assumptions; none are clinical estimates."""
+
+    config_id: str
+    status: str
+    source: str
+    config_sha256: str
+    rcv_z: float
+    illustrative_cv_analytical: float
+    illustrative_cv_within: float
+    p_error_prior: float
+    p_real_prior: float
+    inter_lab_cv: float
+    real_change_ratio_min: float
+    real_change_ratio_max: float
+    gross_error_mode_weights: tuple[float, float, float]
+    population_error_log_median: float
+    population_error_log_sd: float
+    decimal_shift_factor: float
+    error_needs_repeat_threshold: float
+    real_change_escalate_threshold: float
+    stable_explained_threshold: float
+
+    @property
+    def effective_config_sha256(self) -> str:
+        """Hash the exact assumption values used, independent of source-file formatting."""
+        payload = {
+            name: getattr(self, name)
+            for name in self.__dataclass_fields__
+            if name != "config_sha256"
+        }
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        return hashlib.sha256(encoded).hexdigest()
+
+    def __post_init__(self) -> None:
+        numeric = (
+            self.rcv_z,
+            self.illustrative_cv_analytical,
+            self.illustrative_cv_within,
+            self.p_error_prior,
+            self.p_real_prior,
+            self.inter_lab_cv,
+            self.real_change_ratio_min,
+            self.real_change_ratio_max,
+            *self.gross_error_mode_weights,
+            self.population_error_log_median,
+            self.population_error_log_sd,
+            self.decimal_shift_factor,
+            self.error_needs_repeat_threshold,
+            self.real_change_escalate_threshold,
+            self.stable_explained_threshold,
+        )
+        if not self.config_id or not self.source or self.status != "synthetic_research_assumptions":
+            raise ValueError("M3 assumptions must have an id and remain synthetic research settings")
+        if len(self.config_sha256) != 64 or any(char not in "0123456789abcdef" for char in self.config_sha256):
+            raise ValueError("M3 assumptions must carry a lowercase SHA-256 config hash")
+        if not all(math.isfinite(value) for value in numeric):
+            raise ValueError("M3 assumptions must all be finite")
+        if self.rcv_z <= 0 or min(self.illustrative_cv_analytical, self.illustrative_cv_within, self.inter_lab_cv) < 0:
+            raise ValueError("M3 CV and RCV settings must be nonnegative and z must be positive")
+        if self.p_error_prior < 0 or self.p_real_prior < 0 or self.p_error_prior + self.p_real_prior >= 1:
+            raise ValueError("M3 component priors must be nonnegative and sum to less than one")
+        if not 0 < self.real_change_ratio_min < self.real_change_ratio_max:
+            raise ValueError("M3 real-change ratio bounds must be positive and increasing")
+        if len(self.gross_error_mode_weights) != 3 or any(weight < 0 for weight in self.gross_error_mode_weights):
+            raise ValueError("M3 gross-error weights must contain three nonnegative values")
+        if not math.isclose(sum(self.gross_error_mode_weights), 1.0, abs_tol=1e-12):
+            raise ValueError("M3 gross-error mode weights must sum to one")
+        if self.population_error_log_median <= 0 or self.population_error_log_sd <= 0 or self.decimal_shift_factor <= 1:
+            raise ValueError("M3 gross-error scale and decimal-shift settings are invalid")
+        if any(not 0 <= threshold <= 1 for threshold in (
+            self.error_needs_repeat_threshold,
+            self.real_change_escalate_threshold,
+            self.stable_explained_threshold,
+        )):
+            raise ValueError("M3 action thresholds must be probabilities in [0, 1]")
+
+
+def load_m3_assumptions(path: Path | None = None) -> M3Assumptions:
+    """Load the versioned synthetic research configuration."""
+    config_path = path or Path(__file__).resolve().parent / "models" / "m3_assumptions_v1.json"
+    config_bytes = config_path.read_bytes()
+    raw = json.loads(config_bytes)
+    if raw.get("schema_version") != 1:
+        raise ValueError("Unsupported M3 assumptions schema version")
+    expected_modes = ["population_draw", "decimal_shift_up", "decimal_shift_down"]
+    if raw.get("gross_error", {}).get("modes") != expected_modes:
+        raise ValueError("M3 gross-error modes must use the configured supported ordering")
+    mode_weights = tuple(float(value) for value in raw["gross_error"]["mode_weights"])
+    if len(mode_weights) != 3:
+        raise ValueError("M3 gross-error mode weights must contain exactly three values")
+    return M3Assumptions(
+        config_id=raw["config_id"],
+        status=raw["status"],
+        source=raw["source"],
+        config_sha256=hashlib.sha256(config_bytes).hexdigest(),
+        rcv_z=float(raw["rcv_z"]),
+        illustrative_cv_analytical=float(raw["illustrative_marker_cv"]["analytical"]),
+        illustrative_cv_within=float(raw["illustrative_marker_cv"]["within_subject"]),
+        p_error_prior=float(raw["priors"]["error"]),
+        p_real_prior=float(raw["priors"]["real_change"]),
+        inter_lab_cv=float(raw["inter_lab_cv"]),
+        real_change_ratio_min=float(raw["real_change_ratio"]["minimum"]),
+        real_change_ratio_max=float(raw["real_change_ratio"]["maximum"]),
+        gross_error_mode_weights=mode_weights,
+        population_error_log_median=float(raw["gross_error"]["population_log_median"]),
+        population_error_log_sd=float(raw["gross_error"]["population_log_sd"]),
+        decimal_shift_factor=float(raw["gross_error"]["decimal_shift_factor"]),
+        error_needs_repeat_threshold=float(raw["action_thresholds"]["error_needs_repeat"]),
+        real_change_escalate_threshold=float(raw["action_thresholds"]["real_change_escalate"]),
+        stable_explained_threshold=float(raw["action_thresholds"]["stable_explained"]),
+    )
+
+
+DEFAULT_M3_ASSUMPTIONS = load_m3_assumptions()
 
 
 def rcv(
     cv_analytical: float,
     cv_within: float,
-    z: float = 1.96,
+    z: float = DEFAULT_M3_ASSUMPTIONS.rcv_z,
     log_normal: bool = False,
 ) -> Union[float, Tuple[float, float]]:
     """Calculate Reference Change Value (RCV).
@@ -31,7 +154,7 @@ def rcv(
     Args:
         cv_analytical: Analytical coefficient of variation (s_A / mean).
         cv_within: Within-subject biological coefficient of variation (s_I / mean).
-        z: Z-score multiplier for significance level (default 1.96 for 95% two-sided).
+        z: Z-score multiplier; defaults to the versioned M3 research configuration.
         log_normal: If True, computes asymmetrical log-normal RCV (up, down).
                     If False, computes classical symmetrical Gaussian RCV.
 
@@ -93,14 +216,15 @@ def adjudicate(
     cv_analytical: float,
     cv_within: float,
     lab_changed: bool = False,
-    inter_lab_cv: float = 0.10,
-    p_error_prior: float = 0.03,
-    p_real_prior: float = 0.20,
+    inter_lab_cv: float = DEFAULT_M3_ASSUMPTIONS.inter_lab_cv,
+    p_error_prior: float = DEFAULT_M3_ASSUMPTIONS.p_error_prior,
+    p_real_prior: float = DEFAULT_M3_ASSUMPTIONS.p_real_prior,
+    assumptions: M3Assumptions | None = None,
 ) -> Dict[str, Any]:
     """Adjudicate marker plausibility via 3-way Bayesian generative mixture model.
 
     Evaluates whether the newly observed marker measurement represents:
-      1. Real progression: persistent elevation f ~ logUniform(1.4, 3.0)
+      1. Real change: persistent increase over the configured ratio support
       2. Gross error: specimen mixup (population draw) or decimal transcription error (x10, /10)
       3. Stable: physiological baseline fluctuation around personalized geometric mean.
 
@@ -112,8 +236,9 @@ def adjudicate(
         cv_within: Within-subject biological coefficient of variation (CVi).
         lab_changed: Whether specimen was analyzed at a different facility/analyzer.
         inter_lab_cv: Multiplicative inter-laboratory coefficient of variation.
-        p_error_prior: Prior probability of gross error (default 0.03).
-        p_real_prior: Prior probability of real progression (default 0.20).
+        p_error_prior: Synthetic prior override; otherwise the versioned config value is used.
+        p_real_prior: Synthetic prior override; otherwise the versioned config value is used.
+        assumptions: Optional full versioned config; when supplied it takes precedence over scalar overrides.
 
     Returns:
         dict containing:
@@ -123,6 +248,24 @@ def adjudicate(
             "action": "abstain" when history is unavailable, otherwise one of the three adjudications.
             "rationale_facts": Provenance-traceable structured facts for downstream narrative.
     """
+    if assumptions is not None:
+        config = assumptions
+    elif (inter_lab_cv, p_error_prior, p_real_prior) == (
+        DEFAULT_M3_ASSUMPTIONS.inter_lab_cv,
+        DEFAULT_M3_ASSUMPTIONS.p_error_prior,
+        DEFAULT_M3_ASSUMPTIONS.p_real_prior,
+    ):
+        config = DEFAULT_M3_ASSUMPTIONS
+    else:
+        config = replace(
+            DEFAULT_M3_ASSUMPTIONS,
+            inter_lab_cv=inter_lab_cv,
+            p_error_prior=p_error_prior,
+            p_real_prior=p_real_prior,
+        )
+    inter_lab_cv = config.inter_lab_cv
+    p_error_prior = config.p_error_prior
+    p_real_prior = config.p_real_prior
     inputs = {
         "new_day": new_day,
         "new_value": new_value,
@@ -182,25 +325,29 @@ def adjudicate(
     # 1. Likelihood given stable: log(y / L) ~ N(0, sig^2)
     lik_stable = _norm_pdf(log_ratio, 0.0, sig)
 
-    # 2. Likelihood given real change: log(y / L) ~ Uniform(ln 1.4, ln 3.0) convolved with N(0, sig^2)
-    a, b = math.log(1.4), math.log(3.0)
+    # 2. Likelihood given real change: configured log-uniform ratio convolved with N(0, sig^2).
+    a, b = math.log(config.real_change_ratio_min), math.log(config.real_change_ratio_max)
     phi_a = _norm_cdf((log_ratio - a) / sig)
     phi_b = _norm_cdf((log_ratio - b) / sig)
     lik_real = max((phi_a - phi_b) / (b - a), 1e-300)
 
-    # 3. Likelihood given gross error (mixture of 3 equally likely error mechanisms):
-    # Mode 0: Population draw / sample mixup: log(y) ~ N(ln 18.0, 0.6^2 + (inter_lab_cv^2 if lab_changed else 0))
-    sig_pop_sq = 0.6**2 + (inter_lab_cv**2 if lab_changed else 0.0)
+    # 3. Likelihood given gross error (configured mixture of three error mechanisms):
+    # Mode 0: Population draw / sample mixup using the configured log median and standard deviation.
+    sig_pop_sq = config.population_error_log_sd**2 + (inter_lab_cv**2 if lab_changed else 0.0)
     sig_pop = math.sqrt(sig_pop_sq)
-    lik_err_pop = _norm_pdf(log_y, math.log(18.0), sig_pop)
+    lik_err_pop = _norm_pdf(log_y, math.log(config.population_error_log_median), sig_pop)
 
-    # Mode 1: Decimal shift up (x10): log(y / L) ~ N(ln 10, sig^2)
-    lik_err_x10 = _norm_pdf(log_ratio, math.log(10.0), sig)
+    # Mode 1: Configured decimal shift up: log(y / L) ~ N(ln(factor), sig^2)
+    lik_err_x10 = _norm_pdf(log_ratio, math.log(config.decimal_shift_factor), sig)
 
-    # Mode 2: Decimal shift down (/10): log(y / L) ~ N(-ln 10, sig^2)
-    lik_err_div10 = _norm_pdf(log_ratio, -math.log(10.0), sig)
+    # Mode 2: Configured decimal shift down: log(y / L) ~ N(-ln(factor), sig^2)
+    lik_err_div10 = _norm_pdf(log_ratio, -math.log(config.decimal_shift_factor), sig)
 
-    lik_error = (lik_err_pop + lik_err_x10 + lik_err_div10) / 3.0
+    lik_error = (
+        config.gross_error_mode_weights[0] * lik_err_pop
+        + config.gross_error_mode_weights[1] * lik_err_x10
+        + config.gross_error_mode_weights[2] * lik_err_div10
+    )
 
     # Prior probabilities
     p_stable_prior = max(1.0 - p_real_prior - p_error_prior, 0.0)
@@ -236,16 +383,16 @@ def adjudicate(
     # Needs repeat if error probability is high or result is ambiguous;
     # Escalate if real progression probability is high;
     # Explained only if high baseline stability confidence.
-    if p_error >= 0.30:
+    if p_error >= config.error_needs_repeat_threshold:
         action = "needs_repeat"
-    elif p_real >= 0.60:
+    elif p_real >= config.real_change_escalate_threshold:
         action = "escalate"
-    elif p_stable >= 0.90:
+    elif p_stable >= config.stable_explained_threshold:
         action = "explained"
     else:
         action = "needs_repeat"
 
-    rcv_metric = float(rcv(cv_analytical, cv_within, z=1.96, log_normal=False))
+    rcv_metric = cast(float, rcv(cv_analytical, cv_within, z=config.rcv_z, log_normal=False))
 
     rationale_facts = [
         {
@@ -287,5 +434,9 @@ def adjudicate(
         "action": action,
         "abstention": False,
         "abstention_reason": None,
+        "assumption_config_id": config.config_id,
+        "assumption_status": config.status,
+        "assumption_config_sha256": config.effective_config_sha256,
+        "assumption_source_sha256": config.config_sha256,
         "rationale_facts": rationale_facts,
     }

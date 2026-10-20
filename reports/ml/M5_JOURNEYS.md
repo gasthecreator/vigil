@@ -12,6 +12,8 @@ This document contains three illustrative synthetic scenarios generated determin
 **Evidence status:** `synthetic illustration only`
 **Synthetic scenario:** Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.
 **M3 model output:** `needs_repeat`
+**Assumption config:** `m3_synthetic_contract_v1`
+**Assumption config SHA-256:** `34af88445a43cadb25e74c8d9dbeb52ca7121916ef78d363dce272519d25daef`
 **M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)
 
 ### Structured Rationale Facts Table (Module M3)
@@ -37,6 +39,8 @@ This document contains three illustrative synthetic scenarios generated determin
 **Evidence status:** `synthetic illustration only`
 **Synthetic scenario:** Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.
 **M3 model output:** `explained`
+**Assumption config:** `m3_synthetic_contract_v1`
+**Assumption config SHA-256:** `34af88445a43cadb25e74c8d9dbeb52ca7121916ef78d363dce272519d25daef`
 **M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)
 
 ### Structured Rationale Facts Table (Module M3)
@@ -62,6 +66,8 @@ This document contains three illustrative synthetic scenarios generated determin
 **Evidence status:** `synthetic illustration only`
 **Synthetic scenario:** Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.
 **M3 model output:** `escalate`
+**Assumption config:** `m3_synthetic_contract_v1`
+**Assumption config SHA-256:** `34af88445a43cadb25e74c8d9dbeb52ca7121916ef78d363dce272519d25daef`
 **M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)
 
 ### Structured Rationale Facts Table (Module M3)

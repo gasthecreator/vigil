@@ -47,6 +47,8 @@ def main():
         lines.append("**Evidence status:** `synthetic illustration only`")
         lines.append(f"**Synthetic scenario:** {j['clinical_context']}")
         lines.append(f"**M3 model output:** `{j['adjudication']['action']}`")
+        lines.append(f"**Assumption config:** `{j['adjudication']['assumption_config_id']}`")
+        lines.append(f"**Assumption config SHA-256:** `{j['adjudication']['assumption_config_sha256']}`")
         lines.append("**M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)")
         lines.append("")
         lines.append("### Structured Rationale Facts Table (Module M3)")

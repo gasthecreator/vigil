@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from vigil_ml.k2 import AlertTier, SequentialDetector
-from vigil_ml.m3 import adjudicate
+from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, adjudicate
 
 FORBIDDEN_PUNITIVE_TERMS = [
     r"\bnegligen(ce|t)\b",
@@ -136,8 +136,8 @@ class MissedSignalAuditEngine:
                     history=history,
                     new_day=d_float,
                     new_value=val_float,
-                    cv_analytical=0.05,
-                    cv_within=0.10,
+                    cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+                    cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
                 )
                 # Confirmed progression: anytime-valid evidence (alert or review/urgent tier)
                 # AND plausibility adjudicates escalation above biological RCV

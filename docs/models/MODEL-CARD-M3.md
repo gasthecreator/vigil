@@ -17,7 +17,7 @@ Observation, OCR-confirmation, batch, and HL7 ingestion run M3 only for records 
 
 ## Model assumptions
 
-The registered synthetic contract defines a geometric-mean baseline; log-normal stable noise; a single persistent increase drawn from `LogUniform(1.4, 3.0)`; and three equally weighted gross-error modes (a population draw centered at 18, a tenfold increase, or a tenfold decrease). Defaults use `p_error_prior=0.03`, `p_real_prior=0.20`, and `inter_lab_cv=0.10`. These are contract assumptions, not estimates learned from a clinical cohort. The implementation and contract are described in `docs/ml/M3-M5-CONTRACT.md`.
+The current synthetic assumptions are versioned in [`m3_assumptions_v1.json`](../../packages/vigil-ml/vigil_ml/models/m3_assumptions_v1.json), with implementation and loader in `vigil_ml.m3`. They define a geometric-mean baseline; log-normal stable noise; a persistent increase drawn from the configured ratio range; and three weighted gross-error modes. The default priors, thresholds, illustrative CV inputs, and inter-lab variation are contract assumptions, not estimates learned from a clinical cohort. The [`EXP-M3-001 protocol`](../../experiments/EXP-M3-001/PREREG.md) registers a sensitivity audit on new core-v4 simulator seeds; no sensitivity result exists until its single registered run is recorded.
 
 The reference-change calculation uses the conventional formula documented in E9. The CA 15-3 and CEA variation values are retrieved from a Westgard/Ricós secondary compilation; they are therefore labelled `SECONDARY` in the registry. The desirable analytical CV values derive from half the listed within-subject CV and are also marked `SECONDARY`. A desirable CV is not a measurement of the actual analyzer's precision.
 

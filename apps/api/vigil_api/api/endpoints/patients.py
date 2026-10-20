@@ -724,6 +724,13 @@ def ingest_single_observation_internal(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Safety verification failed on clinical narrative: {verification['violations']}",
         )
+    model_versions = {
+        "M3": "1.0" if research_path_enabled else "not_run",
+        "M3-assumptions": m3_result.get("assumption_config_id", "not_applied"),
+        "M3-assumptions-sha256": m3_result.get("assumption_config_sha256", "not_applied"),
+        "K2": "1.0" if research_path_enabled else "not_run",
+        "M5": "1.0",
+    }
 
     # 5. Compute Input Hash (SHA-256)
     input_payload = {
@@ -812,7 +819,7 @@ def ingest_single_observation_internal(
             k2_tier=detector.tier.value,
             k2_alert=detector.alert,
             plausibility_status=plausibility.status.value,
-            model_versions={"M3": "1.0", "K2": "1.0", "M5": "1.0"},
+            model_versions=model_versions,
             input_hash=input_hash,
         )
         silent_mode.save_detector_state(patient.id, detector_to_dict(detector))
@@ -850,7 +857,7 @@ def ingest_single_observation_internal(
         patient_id=patient.id,
         observation_id=obs.id,
         assessment_date=specimen_date,
-        model_versions={"M3": "1.0", "K2": "1.0", "M5": "1.0"},
+        model_versions=model_versions,
         input_hash=input_hash,
         score=m3_result["p_real"],
         risk_tier=risk_tier,

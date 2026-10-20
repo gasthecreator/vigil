@@ -28,7 +28,7 @@ from vigil_ml.joint_model import (
 from vigil_ml.k1 import HybridKineticModelK1
 from vigil_ml.k2 import SequentialDetector
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
-from vigil_ml.m3 import adjudicate, rcv
+from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, M3Assumptions, adjudicate, load_m3_assumptions, rcv
 from vigil_ml.m5 import (
     compute_flesch_kincaid_grade_level,
     generate_worked_journey,
@@ -88,6 +88,9 @@ __all__ = [
     "ProductionEnsembleK8",
     "AbstentionReason",
     # M3 Plausibility Adjudicator
+    "M3Assumptions",
+    "DEFAULT_M3_ASSUMPTIONS",
+    "load_m3_assumptions",
     "rcv",
     "adjudicate",
     # M5 Verified Narrative

@@ -48,6 +48,10 @@ No combined-factor interaction analysis is registered. These brackets are stress
 
 The factory's implicit default is `legacy_synthetic_population_v0.json`, which is not the current mechanism profile. This registered study instead supplies `packages/vigil-sim/vigil_sim/config/synthetic_population_core_v4.json` explicitly to all three generators. Its profile identifier is `balanced_synthetic_core_v4`; it includes the audited G1 clearance and G2 shot-noise mechanisms. The runner must record this exact file's hash and must not use the factory's legacy default. No implementation or cohort output was accessed before this amendment.
 
+## Runner integrity clarification (2026-10-20; before cohort generation)
+
+The runner hashes every Python source file under `packages/vigil-sim/vigil_sim/` as a sorted path/hash manifest, in addition to the selected profile and the analyte registry. Each evaluated configuration records a canonical hash of its effective settings; the loaded JSON file hash is retained separately as source provenance. Invalid-output and abstention counts are reported per stratum, including zero counts. These clarify provenance and reporting only; the cohort, estimands, configurations, and exclusions are unchanged.
+
 ## Limitations
 
 The study measures sensitivity only under the current synthetic generators, their labels, and the chosen stress brackets. It cannot establish that any assumption is clinically plausible, identify a valid prior or cutoff, remedy M3's near-chance recurrence discrimination, or support patient-facing outputs. M3 remains research-only and non-synthetic serving remains abstained.

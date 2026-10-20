@@ -52,5 +52,8 @@ def test_valid_history_returns_finite_normalized_probabilities():
 
     probabilities = [result["p_real"], result["p_error"], result["p_stable"]]
     assert result["abstention"] is False
+    assert result["assumption_config_id"] == "m3_synthetic_contract_v1"
+    assert result["assumption_status"] == "synthetic_research_assumptions"
+    assert len(result["assumption_config_sha256"]) == 64
     assert all(math.isfinite(p) and 0.0 <= p <= 1.0 for p in probabilities)
     assert sum(probabilities) == pytest.approx(1.0)

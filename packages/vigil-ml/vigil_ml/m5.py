@@ -207,7 +207,7 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
     Scenario labels describe generated inputs only. They are not clinical truth or
     evidence that M3 can identify analytical error, benign variation, or recurrence.
     """
-    from vigil_ml.m3 import adjudicate
+    from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, adjudicate
 
     if journey_id == "j2_surprising_repeat":
         # Synthetic scenario: 10x change; generated inputs do not establish its cause.
@@ -215,7 +215,13 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         history = [(30.0, 17.5), (90.0, 18.2), (180.0, 17.8), (270.0, 18.5)]
         new_day = 360.0
         new_val = 180.0  # 10x shift error
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
@@ -234,7 +240,13 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         history = [(30.0, 19.5), (90.0, 20.2), (180.0, 19.8), (270.0, 20.5)]
         new_day = 360.0
         new_val = 23.0  # 1.15x ratio
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
@@ -253,7 +265,13 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         history = [(30.0, 14.8), (90.0, 15.2), (180.0, 15.0), (270.0, 15.4)]
         new_day = 360.0
         new_val = 37.8  # 2.5x ratio
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
