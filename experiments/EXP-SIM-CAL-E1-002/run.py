@@ -176,8 +176,18 @@ def render_report(results: dict[str, Any]) -> str:
         "| Generator | Metric | Defined seeds | Mean | 95% interval |",
         "|---|---|---:|---:|---:|",
     ]
+    # JSON output sorts object keys for canonical hashing. Keep report order explicit
+    # so rendering from the in-memory result and from the persisted JSON is identical.
+    metric_order = (
+        "monitored_case_detection_fraction",
+        "all_diagnosed_case_detection_fraction",
+        "conditional_lead_time_mean_months",
+        "observed_ned_specificity",
+        "oracle_recurrence_free_specificity",
+    )
     for name, summary in results["aggregate"].items():
-        for metric, stats in summary.items():
+        for metric in metric_order:
+            stats = summary[metric]
             mean = "not estimable" if stats["mean"] is None else f"{stats['mean']:.6g}"
             interval = (
                 "not estimable"

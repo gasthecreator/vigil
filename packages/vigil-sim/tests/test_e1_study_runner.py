@@ -83,12 +83,19 @@ def test_renderer_labels_synthetic_limits_and_unestimable_site_endpoint():
         },
         "aggregate": {
             "G1": {
-                "case_detection": {
+                metric: {
                     "defined_replicates": 30,
                     "total_replicates": 30,
                     "mean": 0.41,
                     "ci": [0.3, 0.5],
                 }
+                for metric in (
+                    "monitored_case_detection_fraction",
+                    "all_diagnosed_case_detection_fraction",
+                    "conditional_lead_time_mean_months",
+                    "observed_ned_specificity",
+                    "oracle_recurrence_free_specificity",
+                )
             }
         },
     }
