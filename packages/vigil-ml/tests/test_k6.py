@@ -270,6 +270,30 @@ def test_evaluation_only_arrays_do_not_change_any_decision_or_cost():
         assert np.array_equal(r.screen_idx, b.screen_idx), p.name
 
 
+@pytest.mark.parametrize("stage", [float("nan"), 0.0, 5.0, 2.5])
+def test_stage_heuristic_rejects_missing_or_unsupported_stage(stage):
+    features = np.zeros((1, k6.N_FEATURES), dtype=float)
+    features[0, 0] = stage
+    with pytest.raises(ValueError, match="stage heuristic"):
+        k6.StageHeuristicPolicy().decide(features, 1, 0.0)
+
+
+def test_stage_heuristic_requires_correct_feature_shape():
+    with pytest.raises(ValueError, match="features must have shape"):
+        k6.StageHeuristicPolicy().decide(np.zeros((1, 1)), 1, 0.0)
+
+
+@pytest.mark.parametrize(
+    ("stage", "expected_days"), [(1.0, 364), (2.0, 182), (3.0, 91), (4.0, 91)]
+)
+def test_stage_heuristic_preserves_registered_interval_for_valid_stage(stage, expected_days):
+    features = np.zeros((1, k6.N_FEATURES), dtype=float)
+    features[0, 0] = stage
+    intervals, panels = k6.StageHeuristicPolicy().decide(features, 1, 0.0)
+    assert intervals.tolist() == [expected_days]
+    assert panels.tolist() == [k6.PANELS.index("P2")]
+
+
 def test_policy_code_never_names_a_truth_column():
     forbidden_attr = {"burden", "t_rec", "has_rec", "t_det_idx", "sym3_idx", "comp_day"}
     src = (ROOT / "packages/vigil-ml/vigil_ml/k6.py").read_text(encoding="utf-8")

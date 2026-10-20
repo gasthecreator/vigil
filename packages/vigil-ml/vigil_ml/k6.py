@@ -453,7 +453,17 @@ class StageHeuristicPolicy(Policy):
     INTERVAL = {1: 364, 2: 182, 3: 91, 4: 91}
 
     def decide(self, features, n, day):
-        stage = np.clip(np.nan_to_num(features[:, 0], nan=3.0).astype(int), 1, 4)
+        if features is None:
+            raise ValueError("stage heuristic requires observed stage features")
+        features = np.asarray(features, dtype=float)
+        if features.ndim != 2 or features.shape != (n, N_FEATURES):
+            raise ValueError(f"features must have shape ({n}, {N_FEATURES})")
+        stage_values = features[:, 0]
+        if not np.isfinite(stage_values).all():
+            raise ValueError("stage heuristic requires a recorded stage for every patient")
+        if not np.isin(stage_values, tuple(self.INTERVAL)).all():
+            raise ValueError("stage heuristic requires integer stage values from 1 through 4")
+        stage = stage_values.astype(int)
         delta = np.array([self.INTERVAL[int(s)] for s in stage], dtype=int)
         return delta, np.full(n, PANELS.index("P2"), dtype=int)
 
