@@ -118,10 +118,20 @@ class WindowedFeatureExtractor:
         current_obs = history[-1]
 
         def numeric_value(value: Any) -> float:
-            return float(value) if value is not None and not pd.isna(value) else float("nan")
+            if value is None or pd.isna(value):
+                return float("nan")
+            result = float(value)
+            if not np.isfinite(result):
+                raise ValueError("present numeric patient features must be finite")
+            return result
 
         def binary_value(value: Any) -> float:
-            return float(value) if value is not None and not pd.isna(value) else float("nan")
+            if value is None or pd.isna(value):
+                return float("nan")
+            result = float(value)
+            if result not in (0.0, 1.0):
+                raise ValueError("present receptor status features must be binary")
+            return result
 
         age = numeric_value(patient_row.get("age"))
         receptor_missing = {

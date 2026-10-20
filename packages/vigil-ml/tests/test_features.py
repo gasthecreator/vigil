@@ -78,6 +78,19 @@ def test_feature_extractor_rejects_unrecognized_stage_and_subtype():
         )
 
 
+def test_feature_extractor_rejects_nonfinite_demographics_and_nonbinary_receptors():
+    extractor = WindowedFeatureExtractor()
+    history = [{"day": 0.0}]
+    with pytest.raises(ValueError, match="present numeric patient features must be finite"):
+        extractor.extract_features_at_visit(
+            {"age": np.inf}, history, current_day=0.0
+        )
+    with pytest.raises(ValueError, match="present receptor status features must be binary"):
+        extractor.extract_features_at_visit(
+            {"er_status": 2}, history, current_day=0.0
+        )
+
+
 def test_simulator_truth_fields_cannot_change_observed_features_or_labels():
     from vigil_sim.generators import GeneratorType, get_generator
 
