@@ -239,6 +239,10 @@ The direct feature API had accepted boolean days, ages, and analyte values as nu
 
 The continued A–B boundary audit found Python `bool` values passed numeric checks in both the feature horizon and shared IPCW inputs (`True` became one day; boolean event codes compared equal to integer 0/1). The feature API and evaluator now reject boolean horizons, follow-up times, and event codes; focused regressions pass. Feature tests: 42 passed; evaluator metric tests: 20 passed; Ruff and `git diff --check` pass. `make typecheck` passes (15 strict-mypy source files; 2 import contracts), as do claims policy and all 515 documentation links. `uv` could not resolve a fresh package build because the sandbox has no network, so the feature suite ran through the repository `.venv`; no new experiment or frozen result was accessed. The partner unit trace confirms the real importer canonicalizes values before `to_vigil_frames`; unitless fixtures are synthetic canonical-unit inputs. A–B remain open pending complete producer/result reconciliation and full call-path audit.
 
+### Q-7 follow-up — remove the ignored logistic horizon option (2026-10-20)
+
+Call-site tracing found `FastLandmarkJointModel(horizon_days=...)` accepted values but ignored them; the actual target horizon is carried by the labels. The model alias now inherits the canonical logistic constructor, so `horizon_days` fails clearly, and all repository call sites pass only effective classifier settings. Focused joint-model tests pass (5); changed Python sources pass Ruff and whitespace checks. The historical experiment artifacts and their hashes were not changed or regenerated; source call-site cleanup does not constitute new performance evidence. This source-level contract fix does not implement K3 or close A–B.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|

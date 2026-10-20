@@ -110,9 +110,7 @@ def model_grid() -> dict[str, list[tuple[str, Any]]]:
             for estimators in (50, 150)
         ],
         "K3_fast_landmark_approximation": [
-            (f"C={c}", lambda c=c: FastLandmarkJointModel(
-                horizon_days=HORIZON_DAYS, C=c, random_state=42001
-            ))
+            (f"C={c}", lambda c=c: FastLandmarkJointModel(C=c, random_state=42001))
             for c in (0.1, 1.0, 10.0)
         ],
     }

@@ -53,7 +53,9 @@ def test_fast_landmark_logistic_research_baseline(longitudinal_survival_data):
     model.fit(X, y)
     preds = model.predict_risk(X)
 
-    assert isinstance(FastLandmarkJointModel(horizon_days=365.0), LandmarkLogisticResearchBaseline)
+    assert isinstance(FastLandmarkJointModel(), LandmarkLogisticResearchBaseline)
+    with pytest.raises(TypeError, match="horizon_days"):
+        FastLandmarkJointModel(horizon_days=365.0)
     assert len(preds) == len(X)
     assert np.all(np.isfinite(preds))
     assert np.all((preds >= 0.0) & (preds <= 1.0))

@@ -141,7 +141,7 @@ def test_k3_joint_model_canaries(synthetic_cohort):
     rng = np.random.default_rng(42)
     d_shuffled = rng.permutation(d)
 
-    k3 = FastLandmarkJointModel(horizon_days=365.0)
+    k3 = FastLandmarkJointModel()
     weights = patient_landmark_ipcw_weights(t, d, 365.0, X["patient_id"].to_numpy())
     k3.fit(X, y, sample_weight=weights)
     preds = k3.predict_risk(X)

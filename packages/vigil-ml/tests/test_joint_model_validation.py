@@ -26,7 +26,7 @@ def test_fast_landmark_research_baseline_outputs_finite_scores():
     """
     Checks that the research logistic baseline returns a finite score batch; it makes no latency or clinical SLA claim.
     """
-    model = FastLandmarkJointModel(horizon_days=365.0)
+    model = FastLandmarkJointModel()
     batch = pd.DataFrame({
         "ca_15_3_curr": np.linspace(20.0, 40.0, 50),
         "ca_15_3_slope_90d": np.full(50, 0.05),

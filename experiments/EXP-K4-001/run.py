@@ -507,7 +507,7 @@ def make_baseline(name: str):
         "B2_Velocity": lambda: VelocityBaseline(),
         "B3_RegularizedHazard": lambda: RegularizedCoxHazardBaseline(C=1.0),
         "B4_GradientBoosting": lambda: GradientBoostingBaseline(max_depth=3, n_estimators=100),
-        "K3_JointModel": lambda: FastLandmarkJointModel(horizon_days=365.0),
+        "K3_JointModel": lambda: FastLandmarkJointModel(),
     }[name]()
 
 

@@ -134,7 +134,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "B2_Velocity": VelocityBaseline(),
             "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=0.5),
             "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
-            "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
+            "K3_JointModel": FastLandmarkJointModel(),
         }
 
         stratum_res = {}
@@ -540,7 +540,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         "B2_Velocity": VelocityBaseline(),
         "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=1.0),
         "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
-        "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
+        "K3_JointModel": FastLandmarkJointModel(),
         "K8_ProductionEnsemble": ProductionEnsembleK8(),
     }
 

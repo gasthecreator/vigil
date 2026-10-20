@@ -114,7 +114,7 @@ def test_k3_joint_model_distinct_from_single_threshold(g1_cohorts):
     preds_b1 = b1.predict_risk(X_te)
     auc_b1 = ipcw_time_dependent_roc_auc(preds_b1, t_te, d_te, horizon_time=365.0)
 
-    fast_model = FastLandmarkJointModel(horizon_days=365.0)
+    fast_model = FastLandmarkJointModel()
     fast_model.fit(X_tr, y_tr, sample_weight=w_tr)
     fast_scores = fast_model.predict_risk(X_te)
     auc_fast = ipcw_time_dependent_roc_auc(fast_scores, t_te, d_te, horizon_time=365.0)

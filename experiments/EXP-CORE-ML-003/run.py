@@ -115,9 +115,7 @@ def model_grid() -> dict[str, list[tuple[str, Any]]]:
             for learning_rate in (0.03, 0.05)
         ],
         "fast_landmark_logistic_research": [
-            (f"C={c}", lambda c=c: FastLandmarkJointModel(
-                horizon_days=HORIZON_DAYS, C=c, random_state=43001
-            ))
+            (f"C={c}", lambda c=c: FastLandmarkJointModel(C=c, random_state=43001))
             for c in (0.1, 1.0, 10.0)
         ],
     }
@@ -214,7 +212,7 @@ def main() -> None:
             43010,
         ),
         "fast_landmark_logistic_research": (
-            lambda: FastLandmarkJointModel(horizon_days=HORIZON_DAYS, C=1.0, random_state=43001),
+            lambda: FastLandmarkJointModel(C=1.0, random_state=43001),
             43011,
         ),
     }

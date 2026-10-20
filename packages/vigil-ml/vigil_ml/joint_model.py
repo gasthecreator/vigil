@@ -140,14 +140,9 @@ class LandmarkLogisticResearchBaseline(BaseSurveillanceModel):
 
 
 class FastLandmarkJointModel(LandmarkLogisticResearchBaseline):
-    """Legacy constructor retained for frozen experiment source compatibility."""
+    """Legacy class alias for the logistic landmark research baseline.
 
-    def __init__(
-        self,
-        horizon_days: float = 180.0,
-        C: float = 1.0,
-        random_state: int = 42,
-    ):
-        # The historical argument never changed the label horizon; keep accepting
-        # it for old callers while the canonical API omits this misleading option.
-        super().__init__(C=C, random_state=random_state)
+    The target horizon is defined by the labels supplied to ``fit``; this model
+    has no separate horizon setting. Its inherited constructor therefore accepts
+    only classifier regularization and random-state settings.
+    """
