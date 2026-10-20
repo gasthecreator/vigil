@@ -308,6 +308,7 @@ The direct `CohortDataset.get_survival_training_examples` path now rejects boole
 
 ## Open blockers
 - The four approved gate redesigns repair software-test contracts only. Registered multi-seed calibration, baseline comparison, and genuine K3 null evaluation remain open under the core ML repair plan; no model performance or calibration claim follows from these test changes.
+- The legacy simulator's E1 comparison has a source/estimand mismatch; `PROP-CORE-ML-CALIBRATION-ESTIMAND.md` is awaiting overseer disposition before changing its acceptance contract. No replacement calibration result has been produced.
 - External public datasets are bounded with synthetic contracts, public dictionary schemas, and pre-drafted application dossiers.
 
 ## Decisions log (pointers to ADRs)
@@ -438,3 +439,5 @@ The same source audit found homogeneous boolean `is_synthetic` observation tags 
 ### Q-7 follow-up — source the legacy CA 15-3 comparison limit (2026-10-20)
 
 Package B review found `evaluate_cohort_calibration` duplicated `30.0` as a “clinical threshold” even though the central registry already defines the same value as CA 15-3's population reference upper limit. The default now derives from that registry field; invalid explicit overrides fail, and report details record the actual value, source, unit, and non-diagnostic synthetic interpretation. The focused calibration tests pass (13), the full simulator suite passes (165), Ruff and `git diff --check` pass. No calibration study or frozen result was regenerated. Existing single-seed ranges remain software checks, not evidence of population calibration.
+
+Further source-to-literature review found the legacy E1 comparison also uses latent recurrence time, admits post-onset samples in its preclinical sensitivity window, includes recurrence sites outside the 54% distant-recurrence statistic, and uses the registry reference limit instead of E1's reported assay cutoff. The primary PubMed abstract confirms E1's 37/91 pre-diagnosis CA 15-3 cases and 4.2 ± 2.3 month lead time. Proposal `PROP-CORE-ML-CALIBRATION-ESTIMAND.md` records the exact mismatch and alternatives. No acceptance test or historical output was changed; the replacement evaluator contract and multi-seed study remain pending owner disposition.
