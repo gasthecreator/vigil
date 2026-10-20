@@ -341,6 +341,8 @@ A second evaluator pass removed additional fabricated lead-time defaults: empty 
 
 The entrypoint safeguard now also covers stale EXP-CORE-ML-003/004 and exploratory, already-run EXP-CORE-ML-007. Their direct runner commands fail closed before regeneration/replay; the subprocess regression test hashes retained result/report files and the frozen-test access log before and after all five invocations. Make targets and the crosswalk identify their current status. No historical outputs were changed; packages A–B remain open.
 
+The K4 source-to-preregistration audit found a fixed age encoding `(age - 50) / 10` in `EXP-K4-001/run.py::cohort_arrays`; PREREG identifies age as an input but does not specify this transform. The frozen result remains reproducible from its recorded runner hash and is preserved as-is; the transform is not a clinical threshold and no result was regenerated. Any new K4 evaluation must preregister its complete preprocessing contract before cohort access. This adds a documented source-to-claim discrepancy; package A and the full A–B audit remain open.
+
 ### Q-7 follow-up — quarantine retired frozen-test runners (2026-10-20)
 
 A/B entrypoint review confirmed the aborted EXP-CORE-ML-001 and provenance-invalid/withdrawn EXP-CORE-ML-002 scripts still ran their retired frozen-test workflows when invoked directly. Their `main()` entrypoints now fail before cohort generation or access; the tests verify the access log, retained EXP-002 JSON/report, and retirement records remain byte-identical. The crosswalk records the safeguard. The focused subprocess test passes (1); no result was regenerated or overwritten, and packages A–B remain open.
