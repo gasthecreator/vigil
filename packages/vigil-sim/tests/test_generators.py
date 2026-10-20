@@ -606,6 +606,66 @@ def test_survival_training_rejects_duplicate_patient_ids():
         )
 
 
+@pytest.mark.parametrize("invalid_mask", ["false", 0, 1, None])
+def test_survival_training_rejects_nonboolean_observation_masks(invalid_mask):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=97).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    observation = next(
+        obs for obs in cohort.observations if obs.observed_mask
+    )
+    analyte = next(iter(observation.observed_mask))
+    observation.observed_mask[analyte] = invalid_mask
+    with pytest.raises(ValueError, match="observed_mask.*must be boolean"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+@pytest.mark.parametrize("invalid_value", [True, np.nan, np.inf, "12"])
+def test_survival_training_rejects_invalid_observed_analyte_values(invalid_value):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=98).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    observation = next(
+        obs
+        for obs in cohort.observations
+        if any(obs.observed_mask.values())
+    )
+    analyte = next(
+        key for key, is_observed in observation.observed_mask.items() if is_observed
+    )
+    observation.analytes[analyte] = invalid_value
+    with pytest.raises(ValueError, match="measurement must be finite numeric"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+@pytest.mark.parametrize("symptoms", [{"recurrence": 1}, {"bone_pain": 5}, {"bone_pain": True}])
+def test_survival_training_rejects_invalid_symptom_features(symptoms):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=99).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.observations[0].symptoms = symptoms
+    expected = "unsupported symptom" if "recurrence" in symptoms else "symptom grade"
+    with pytest.raises(ValueError, match=expected):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+def test_survival_training_rejects_invalid_treatment_feature():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=100).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.observations[0].treatment_active = {"treatment": "unknown"}
+    with pytest.raises(ValueError, match="treatment_active"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
 def test_survival_training_rejects_observed_event_after_administrative_censor():
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=95).generate_cohort(
         num_patients=4, duration_days=180.0

@@ -68,14 +68,26 @@ class PresentationStage(str, Enum):
 SUPPORTED_COMPETING_EVENTS = frozenset(
     {"cardiovascular_event", "death", "lost_to_follow_up"}
 )
+TRACKED_SYMPTOMS = (
+    "bone_pain",
+    "jaundice",
+    "ruq_pain",
+    "cough_dyspnea",
+    "headache_neuro",
+    "fatigue_weight_loss",
+)
+
+
+def _is_finite_number(value: object) -> bool:
+    return (
+        isinstance(value, (int, float, np.integer, np.floating))
+        and not isinstance(value, (bool, np.bool_))
+        and bool(np.isfinite(value))
+    )
 
 
 def _is_finite_nonnegative_number(value: object) -> bool:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, float, np.integer, np.floating)
-    ):
-        return False
-    return bool(np.isfinite(value) and value >= 0)
+    return _is_finite_number(value) and value >= 0
 
 
 @dataclass
@@ -387,6 +399,37 @@ class CohortDataset:
                 raise ValueError(
                     f"observations extend beyond a competing event for patient {patient_id}"
                 )
+        for obs in self.observations:
+            if not isinstance(obs.analytes, dict) or not isinstance(obs.observed_mask, dict):
+                raise ValueError("observation analytes and observed_mask must be mappings")
+            analyte_codes = set(obs.analytes)
+            if not analyte_codes.issubset(ANALYTE_REGISTRY):
+                raise ValueError("observation contains an unregistered analyte code")
+            if set(obs.observed_mask) != analyte_codes:
+                raise ValueError("observed_mask keys must match observation analyte keys")
+            for code, is_observed in obs.observed_mask.items():
+                if not isinstance(is_observed, (bool, np.bool_)):
+                    raise ValueError(f"observed_mask for {code} must be boolean")
+                if is_observed and not _is_finite_number(obs.analytes[code]):
+                    raise ValueError(
+                        f"observed {code} measurement must be finite numeric data"
+                    )
+            if not isinstance(obs.symptoms, dict) or not set(obs.symptoms).issubset(
+                TRACKED_SYMPTOMS
+            ):
+                raise ValueError("observation contains an unsupported symptom")
+            for symptom, grade in obs.symptoms.items():
+                if (
+                    not _is_finite_number(grade)
+                    or int(grade) != grade
+                    or not 0 <= grade <= 4
+                ):
+                    raise ValueError(f"symptom grade for {symptom} must be an integer from 0 to 4")
+            if obs.treatment_active is not None and (
+                not isinstance(obs.treatment_active, str)
+                or not obs.treatment_active.strip()
+            ):
+                raise ValueError("treatment_active must be a non-empty string or missing")
         features_list = []
         labels_list = []
         follow_up_times: list[float] = []
@@ -956,14 +999,7 @@ class BaseCohortGenerator(ABC):
         """
         Generates realistic symptom grades (0 to 4) coupled to organ burdens.
         """
-        symptoms = {
-            "bone_pain": 0,
-            "jaundice": 0,
-            "ruq_pain": 0,
-            "cough_dyspnea": 0,
-            "headache_neuro": 0,
-            "fatigue_weight_loss": 0,
-        }
+        symptoms = dict.fromkeys(TRACKED_SYMPTOMS, 0)
 
         # Non-specific baseline symptoms
         baseline_symptoms = self.population_config.get("baseline_symptom_probabilities", {})
