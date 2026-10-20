@@ -291,6 +291,27 @@ def test_loss_to_follow_up_before_later_recurrence_censors_it():
     assert np.array_equal(times, [150.0, 50.0])
 
 
+def test_observations_after_loss_to_follow_up_are_rejected():
+    patients = pd.DataFrame([{
+        "patient_id": "LOST-WITH-LATER-OBSERVATION",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "competing_event": "lost_to_follow_up",
+        "competing_event_day": 150.0,
+        "administrative_censor_day": 365.0,
+    }])
+    observations = pd.DataFrame({
+        "patient_id": ["LOST-WITH-LATER-OBSERVATION"] * 3,
+        "day": [0.0, 100.0, 200.0],
+        "ca_15_3": [18.0, 20.0, 25.0],
+    })
+
+    with pytest.raises(ValueError, match="observations extend beyond loss to follow-up"):
+        WindowedFeatureExtractor().transform_cohort(
+            patients, observations, horizon_days=365.0
+        )
+
+
 def test_velocity_window_matches_its_90_day_feature_name():
     history = [
         {"day": 0.0, "analytes": {"ca_15_3": 10.0}, "symptoms": {}},

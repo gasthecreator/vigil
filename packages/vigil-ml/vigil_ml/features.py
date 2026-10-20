@@ -526,6 +526,8 @@ class WindowedFeatureExtractor:
                 and float(comp_day) < last_day
             ):
                 raise ValueError(f"observations extend beyond a competing event for patient {pt_id}")
+            if has_comp_type and comp_type == "lost_to_follow_up" and float(comp_day) < last_day:
+                raise ValueError(f"observations extend beyond loss to follow-up for patient {pt_id}")
             # A configured event time beyond administrative follow-up is not an
             # observed event in this cohort; administrative censoring wins.
             if rec_event and float(rec_day) > admin_end:

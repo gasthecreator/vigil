@@ -259,6 +259,10 @@ On pushed head `bb41047e43ad02c3f0edcc895bb5b2202bcdef03`, PR CI independently r
 
 Package A's claim inventory said `FastLandmarkJointModel` still accepted an ignored `horizon_days` argument. Source inspection confirmed it inherits the canonical logistic baseline constructor and rejects that argument; the horizon is carried by the fit labels. The inventory now matches the source and its discrepancy list numbering is unique. This is an audit-record correction only; packages A–B remain open.
 
+### Q-7 follow-up — reject observations beyond loss to follow-up (2026-10-20)
+
+The shared feature extractor censored labels at loss to follow-up and excluded observations on/after that time, but it silently accepted later observations in the same patient record. Since its `lost_to_follow_up` field is the declared censor boundary, later observations contradict that data contract and could disguise stale or misaligned histories. The extractor now fails closed when any observation occurs after that boundary while preserving the existing behavior that a latent recurrence after loss is censored. Feature tests pass (47); strict typecheck/import contracts, Ruff, and `git diff --check` pass. No model results were generated. This closes one input-boundary defect only; package B's broader censoring/estimand, simulator calibration and full call-path audit remains open.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
