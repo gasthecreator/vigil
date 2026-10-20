@@ -32,6 +32,13 @@ def test_feature_extractor_no_future_leakage():
     assert feat_at_180["symptom_bone_pain"] == 2.0
 
 
+def test_feature_extractor_rejects_unregistered_analytes_and_duplicates():
+    with pytest.raises(ValueError, match="unregistered analytes"):
+        WindowedFeatureExtractor(tracked_analytes=["true_recurrence_event"])
+    with pytest.raises(ValueError, match="must not contain duplicates"):
+        WindowedFeatureExtractor(tracked_analytes=["ca_15_3", "ca_15_3"])
+
+
 def test_unknown_receptor_statuses_remain_missing_and_unclassified():
     features = WindowedFeatureExtractor().extract_features_at_visit(
         {

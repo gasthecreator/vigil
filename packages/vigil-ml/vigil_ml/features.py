@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from vigil_core.analytes import ANALYTE_REGISTRY
 
 TRACKED_ANALYTES = [
     "ca_15_3",
@@ -63,6 +64,18 @@ class WindowedFeatureExtractor:
     def __post_init__(self):
         if self.tracked_analytes is None:
             self.tracked_analytes = list(TRACKED_ANALYTES)
+        else:
+            values = list(self.tracked_analytes)
+            if any(not isinstance(code, str) for code in values):
+                raise ValueError("tracked_analytes must contain only analyte codes")
+            if len(values) != len(set(values)):
+                raise ValueError("tracked_analytes must not contain duplicates")
+            unsupported = set(values) - set(ANALYTE_REGISTRY)
+            if unsupported:
+                raise ValueError(
+                    f"tracked_analytes contains unregistered analytes: {sorted(unsupported)}"
+                )
+            self.tracked_analytes = values
 
     @staticmethod
     def _advanced_stage(stage_value: Any) -> float:
