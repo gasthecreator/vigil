@@ -564,8 +564,8 @@ class BaseCohortGenerator(ABC):
         self._validate_population_config(population_config)
         self.generator_mechanics = population_config.get("generator_mechanics", {})
         self.facility_lab_effects: dict[str, dict[str, tuple[float, float]]] = {}
-        facility_effects = population_config.get("facility_lab_effects")
-        if facility_effects is not None:
+        facility_effects = population_config["facility_lab_effects"]
+        if facility_effects["mode"] == "shared_by_facility":
             count = int(facility_effects["facility_count"])
             self.facility_lab_effects = {
                 f"FACILITY-NG-{facility_idx:02d}": {
@@ -762,13 +762,25 @@ class BaseCohortGenerator(ABC):
         if set(config["competing_event_probabilities"]) != set(config["competing_event_time_days"]):
             raise ValueError("Every competing event probability needs a matching time range")
         facility_effects = config.get("facility_lab_effects")
-        if facility_effects is not None:
-            if (int(facility_effects.get("facility_count", 0)) < 2
-                    or not np.isfinite(facility_effects.get("offset_sd", np.nan))
-                    or facility_effects["offset_sd"] < 0
-                    or not 0 < facility_effects.get("scale_min", 0)
-                    or facility_effects["scale_min"] >= facility_effects.get("scale_max", 0)):
-                raise ValueError("facility_lab_effects must define count, offset_sd, and increasing positive scale bounds")
+        if not isinstance(facility_effects, dict):
+            raise ValueError("Population config requires facility_lab_effects")
+        if facility_effects.get("mode") not in {"per_patient", "shared_by_facility"}:
+            raise ValueError("facility_lab_effects.mode is unsupported")
+        if (
+            isinstance(facility_effects.get("facility_count"), bool)
+            or not isinstance(facility_effects.get("facility_count"), int)
+            or facility_effects["facility_count"] < 2
+            or not _is_finite_number(facility_effects.get("offset_sd"))
+            or facility_effects["offset_sd"] < 0
+            or not _is_finite_number(facility_effects.get("scale_min"))
+            or not _is_finite_number(facility_effects.get("scale_max"))
+            or not 0 < facility_effects["scale_min"] < facility_effects["scale_max"]
+            or not isinstance(facility_effects.get("assignment"), str)
+            or not facility_effects["assignment"].strip()
+        ):
+            raise ValueError(
+                "facility_lab_effects must define count, offset_sd, increasing positive scale bounds, and assignment"
+            )
         verification = config.get("verification")
         if not isinstance(verification, dict):
             raise ValueError("Population config requires an explicit verification mechanism")
@@ -1002,7 +1014,8 @@ class BaseCohortGenerator(ABC):
                 break
 
         # Facility parameters (inter-lab systematic analyzer bias and scale, Task T8)
-        facility_count = int(cfg.get("facility_lab_effects", {}).get("facility_count", 6))
+        facility_effects = cfg["facility_lab_effects"]
+        facility_count = int(facility_effects["facility_count"])
         facility_idx = int(self.rng.integers(1, facility_count + 1))
         facility_id = f"FACILITY-NG-{facility_idx:02d}"
 
@@ -1011,11 +1024,16 @@ class BaseCohortGenerator(ABC):
         if facility_id in self.facility_lab_effects:
             for code, (offset, scale) in self.facility_lab_effects[facility_id].items():
                 lab_offsets[code], lab_scales[code] = offset, scale
-        else:
-            # Legacy profile behavior, retained for historical experiment compatibility.
+        elif facility_effects["mode"] == "per_patient":
             for code in ANALYTE_REGISTRY:
-                lab_offsets[code] = float(self.rng.normal(0.0, 0.06))
-                lab_scales[code] = float(self.rng.uniform(0.94, 1.06))
+                lab_offsets[code] = float(
+                    self.rng.normal(0.0, facility_effects["offset_sd"])
+                )
+                lab_scales[code] = float(
+                    self.rng.uniform(
+                        facility_effects["scale_min"], facility_effects["scale_max"]
+                    )
+                )
 
         # Baseline analyte levels (inter-individual variation CVg centered at reference midpoint)
         # In adjuvant surveillance, patients entering monitoring have completed primary treatment

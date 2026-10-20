@@ -146,6 +146,15 @@ def test_profile_requires_explicit_symptom_mechanism(invalid_symptoms):
         get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
 
 
+@pytest.mark.parametrize("facility_config", [None, {"mode": "unknown"}])
+def test_profile_requires_explicit_facility_effect_assignment(facility_config):
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_v1.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    profile["facility_lab_effects"] = facility_config
+    with pytest.raises(ValueError, match="facility_lab_effects"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+
+
 def test_k3_profile_shares_lab_effects_within_facility_and_records_verification():
     config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
     profile = json.loads(config_path.read_text(encoding="utf-8"))

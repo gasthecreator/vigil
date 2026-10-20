@@ -92,6 +92,7 @@
     ]
   },
   "facility_lab_effects": {
+    "mode": "shared_by_facility",
     "facility_count": 6,
     "offset_sd": 0.06,
     "scale_min": 0.94,

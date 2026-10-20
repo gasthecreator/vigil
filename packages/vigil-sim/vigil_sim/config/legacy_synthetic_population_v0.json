@@ -29,6 +29,14 @@
     "cardiovascular_event": [120.0, 1800.0],
     "lost_to_follow_up": [180.0, 1400.0]
   },
+  "facility_lab_effects": {
+    "mode": "per_patient",
+    "facility_count": 6,
+    "offset_sd": 0.06,
+    "scale_min": 0.94,
+    "scale_max": 1.06,
+    "assignment": "Independent seeded effect per patient and analyte, preserving legacy compatibility behavior."
+  },
   "verification": {
     "result_model": "deterministic_visible_recurrence",
     "visible_burden_threshold": 12.0,
