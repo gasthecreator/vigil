@@ -31,4 +31,5 @@ packages = ["vigil_ml"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "vigil_ml/models/m3_assumptions_v1.json" = "vigil_ml/models/m3_assumptions_v1.json"
+"vigil_ml/models/k2_research_config_v1.json" = "vigil_ml/models/k2_research_config_v1.json"
 

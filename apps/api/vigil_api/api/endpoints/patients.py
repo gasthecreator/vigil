@@ -751,7 +751,13 @@ def ingest_single_observation_internal(
         "M3": "1.0" if research_path_enabled else "not_run",
         "M3-assumptions": m3_result.get("assumption_config_id", "not_applied"),
         "M3-assumptions-sha256": m3_result.get("assumption_config_sha256", "not_applied"),
-        "K2": "1.0" if research_path_enabled else "not_run",
+        "K2": detector.config_id if research_path_enabled else "not_run",
+        "K2-config-sha256": (
+            detector.effective_config_sha256 if research_path_enabled else "not_applied"
+        ),
+        "K2-config-source-sha256": (
+            detector.config_source_sha256 if research_path_enabled else "not_applied"
+        ),
         "M5": "1.0",
     }
 

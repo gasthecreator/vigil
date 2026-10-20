@@ -54,9 +54,11 @@ $$P_0\left(\exists t \ge 1 : E_t \ge \frac{1}{\alpha_{\text{pt}}}\right) \le \al
 
 When $\log E_t \ge \log(1 / \alpha_{\text{pt}})$, the detector raises a latched software alert. Latching is an implementation behavior, not evidence of clinical validity.
 
+The unchanged historical defaults (`alpha_pt`, `sigma_log`, burn-in, growth grid, and software-tier cutoffs) are stored in [`k2_research_config_v1.json`](../../packages/vigil-ml/vigil_ml/models/k2_research_config_v1.json). The file identifies them as unvalidated research defaults. API provenance records both the source-file hash and hash of effective settings. The fixed scale has no per-analyte calibration evidence.
+
 ---
 
-## 3. Calibrated Alert Tiers & Score Integration
+## 3. Alert Tiers & Score Integration
 
 The score is grouped into software tiers at the following numerical thresholds. These labels do not currently represent calibrated error budgets or clinical action guidance:
 - Tier 0: None ($E_t < 5$).

@@ -1,7 +1,32 @@
+import json
 import math
+from pathlib import Path
 
 import pytest
-from vigil_ml.k2 import SequentialDetector
+from vigil_ml.k2 import DEFAULT_K2_RESEARCH_CONFIG, SequentialDetector, load_k2_research_config
+
+
+def test_default_research_parameters_are_loaded_and_hashed_from_versioned_config():
+    detector = SequentialDetector()
+
+    assert detector.alpha_pt == DEFAULT_K2_RESEARCH_CONFIG.alpha_pt
+    assert detector.sigma_log == DEFAULT_K2_RESEARCH_CONFIG.sigma_log
+    assert detector.burn_in == DEFAULT_K2_RESEARCH_CONFIG.burn_in
+    assert detector.lambdas.tolist() == list(DEFAULT_K2_RESEARCH_CONFIG.growth_grid)
+    assert detector.config_id == DEFAULT_K2_RESEARCH_CONFIG.config_id
+    assert detector.config_source_sha256 == load_k2_research_config().source_sha256
+    assert len(detector.effective_config_sha256) == 64
+
+
+def test_config_loader_refuses_unlabeled_or_malformed_research_parameters(tmp_path):
+    config_path = Path(__file__).parents[1] / "vigil_ml" / "models" / "k2_research_config_v1.json"
+    raw = json.loads(config_path.read_text())
+    raw["status"] = "clinical"
+    malformed = tmp_path / "k2.json"
+    malformed.write_text(json.dumps(raw))
+
+    with pytest.raises(ValueError, match="unvalidated research"):
+        load_k2_research_config(malformed)
 
 
 @pytest.mark.parametrize("alpha_pt", [0.0, 1.0, -0.1, math.nan, math.inf, True])

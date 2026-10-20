@@ -168,13 +168,14 @@ def test_normal_observation_ingestion_and_k2_update(ingestion_db, clinician_auth
 
     # 2. RiskAssessment model versions and input hash
     risk = data["risk_assessment"]
-    assert risk["model_versions"] == {
-        "M3": "1.0",
-        "M3-assumptions": "not_applied",
-        "M3-assumptions-sha256": "not_applied",
-        "K2": "1.0",
-        "M5": "1.0",
-    }
+    versions = risk["model_versions"]
+    assert versions["M3"] == "1.0"
+    assert versions["M3-assumptions"] == "not_applied"
+    assert versions["M3-assumptions-sha256"] == "not_applied"
+    assert versions["K2"] == "k2_historical_research_v1"
+    assert len(versions["K2-config-sha256"]) == 64
+    assert len(versions["K2-config-source-sha256"]) == 64
+    assert versions["M5"] == "1.0"
     assert len(risk["input_hash"]) == 64
     assert risk["adjudicated_action"] == "abstain"
     assert risk["abstention"] is True

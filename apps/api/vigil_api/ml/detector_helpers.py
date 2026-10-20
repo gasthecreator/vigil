@@ -11,6 +11,9 @@ from vigil_ml.k2 import SequentialDetector
 def detector_to_dict(detector: SequentialDetector) -> Dict[str, Any]:
     """Serialize SequentialDetector state to a JSON-compatible dictionary."""
     return {
+        "config_id": detector.config_id,
+        "config_source_sha256": detector.config_source_sha256,
+        "effective_config_sha256": detector.effective_config_sha256,
         "alpha_pt": float(detector.alpha_pt),
         "sigma_log": float(detector.sigma_log),
         "burn_in": int(detector.burn_in),
@@ -21,19 +24,29 @@ def detector_to_dict(detector: SequentialDetector) -> Dict[str, Any]:
         "alert": bool(detector.alert),
         "log_e_components": [float(c) for c in detector.log_e_components],
         "lambdas": [float(lam) for lam in detector.lambdas],
+        "tier_score_thresholds": dict(detector.tier_score_thresholds),
     }
 
 
 def detector_from_dict(data: Optional[Dict[str, Any]]) -> SequentialDetector:
     """Reconstruct SequentialDetector from serialized state."""
     if not data:
-        return SequentialDetector(alpha_pt=0.05, sigma_log=0.12, burn_in=3)
+        return SequentialDetector()
 
     detector = SequentialDetector(
-        alpha_pt=data.get("alpha_pt", 0.05),
-        sigma_log=data.get("sigma_log", 0.12),
-        burn_in=data.get("burn_in", 3),
+        alpha_pt=data.get("alpha_pt"),
+        sigma_log=data.get("sigma_log"),
+        burn_in=data.get("burn_in"),
+        growth_grid=data.get("lambdas"),
     )
+    if data.get("config_id") not in (None, detector.config_id):
+        raise ValueError("Persisted K2 config id does not match its settings")
+    if data.get("config_source_sha256") not in (None, detector.config_source_sha256):
+        raise ValueError("Persisted K2 source config hash does not match the available config")
+    if data.get("effective_config_sha256") not in (None, detector.effective_config_sha256):
+        raise ValueError("Persisted K2 effective config hash does not match its settings")
+    if data.get("tier_score_thresholds") not in (None, detector.tier_score_thresholds):
+        raise ValueError("Persisted K2 tier thresholds do not match the available config")
     detector.history = [float(x) for x in data.get("history", [])]
     detector.days = [float(d) for d in data.get("days", [])]
     detector._log_e = float(data.get("log_e", 0.0))

@@ -14,6 +14,8 @@ def test_detector_state_round_trip_preserves_missing_visit_day_order():
 
     restored = detector_from_dict(detector_to_dict(detector))
 
+    assert restored.config_id == detector.config_id
+    assert restored.effective_config_sha256 == detector.effective_config_sha256
     assert restored.days == [10.0, 20.0]
     assert restored.history == detector.history
     with pytest.raises(ValueError, match="nondecreasing"):
@@ -40,3 +42,11 @@ def test_patient_state_keeps_analyte_snapshots_separate_and_discards_legacy_mixt
 def test_detector_restore_rejects_invalid_persisted_configuration():
     with pytest.raises(ValueError, match="sigma_log"):
         detector_from_dict({"sigma_log": 0.0})
+
+
+def test_detector_restore_rejects_state_with_tampered_config_hash():
+    data = detector_to_dict(SequentialDetector())
+    data["effective_config_sha256"] = "0" * 64
+
+    with pytest.raises(ValueError, match="effective config hash"):
+        detector_from_dict(data)
