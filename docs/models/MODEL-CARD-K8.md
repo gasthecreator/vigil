@@ -8,7 +8,7 @@
 
 ## Intended use and limits
 
-K8 contains a threshold calibrator, a Mahalanobis-distance outlier gate, and an adaptive miscoverage update. These are post-processing utilities; K8 is not a predictive model and does not produce recurrence probabilities. It is research code and is not connected to a clinically validated predictor or a calibrated runtime artifact.
+K8 contains a threshold calibrator, a Mahalanobis-distance outlier gate, and an adaptive miscoverage update. These are post-processing utilities; K8 is not a predictive model and does not produce recurrence probabilities. It is research code and is not connected to a predictor evaluated in prospective clinical data or a calibrated runtime artifact.
 
 The passing behavioral contract is limited to the synthetic distributions and checks encoded in `tests/acceptance_3b/test_k8_contract.py`. It does not establish a patient-level guarantee, clinical utility, robustness to real assay/site shift, or validity under repeated landmarks or clustered observations. Do not present a K8 threshold as a patient-specific risk.
 

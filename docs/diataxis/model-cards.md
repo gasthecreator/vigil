@@ -9,7 +9,7 @@
 - [Model Card: Model K5 — laboratory harmonisation (research module)](../models/MODEL-CARD-K5.md)
 - [Model Card: Model K6 — active sensing planner (research module)](../models/MODEL-CARD-K6.md)
 - [Model Card: K7 — Causal delay / action analysis (Study S8)](../models/MODEL-CARD-K7.md)
-- [Model Card: Model K8 — Conformal Risk Control, OOD Gating & Adaptive Conformal Inference](../models/MODEL-CARD-K8.md)
+- [Model Card: K8 Calibration and OOD Utilities](../models/MODEL-CARD-K8.md)
 - [Model Card: Model M1 — Bayesian Organ Susceptibility Model](../models/MODEL-CARD-M1.md)
 - [Model Card: M10 — Missed-signal quality audit](../models/MODEL-CARD-M10.md)
 - [Model Card: Module M12 — federated averaging and DP-SGD (research module)](../models/MODEL-CARD-M12.md)

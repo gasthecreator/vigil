@@ -527,8 +527,10 @@ def train_amortized(
     X, theta = generate(rng, n_sims)
     X_val_raw, theta_val_raw = generate(val_rng, max(1, n_sims // 4))
     if shuffle_pairs:
+        # Break the simulator's feature/parameter correspondence. Applying the
+        # same permutation to both arrays only reorders intact pairs and leaves
+        # the negative control equivalent to the real training run.
         perm = rng.permutation(n_sims)
-        X = X[perm]
         theta = theta[perm]
     X_train = torch.tensor(X, dtype=torch.float32)
     y_train = torch.tensor(theta, dtype=torch.float32)

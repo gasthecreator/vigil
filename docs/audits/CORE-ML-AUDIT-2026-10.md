@@ -54,12 +54,6 @@ Current K1 uses four explicit routes, but `ukf` is only a compatibility key for 
 
 **Evidence:** `packages/vigil-ml/vigil_ml/k1.py` (`SCHEDULE`, `_summarize_observations`, `train_amortized`, `train_npe`, `_route_ukf`, route registry and `predict_risk`); `kinetic_k1.py` compatibility shim; `docs/prompts/PROMPT-P3A3.md`; `docs/ml/K1-CONTRACT.md`.
 
-### Critical: K1 route and training claims exceed implementation
-
-The current K1 amortized route interpolates irregular observations onto the fixed `SCHEDULE` with endpoint extrapolation (`np.interp`), despite P3A3 requiring direct irregular schedule handling. `train_amortized` trains on the private four-parameter toy simulator and returns an in-memory model, but `_get_or_load_amortized_model` loads committed weights; the reproducible artifact lineage and training configuration must be verified end to end before calling the deployed weights reproducible. The route's posterior spread is built from residual SD constants/calibration JSON, not a learned posterior distribution. NPE retrains at import/use from a fixed toy simulator and fixed training settings. The particle filter is not an unscented Kalman filter despite the `ukf` route name. These distinctions matter; the acceptance tests establish behavior only for their specified toy world and sampled checks, not the broad scientific claims in the card.
-
-**Evidence:** `packages/vigil-ml/vigil_ml/k1.py` (`SCHEDULE`, `_route_amortized`, `train_amortized`, `CALIBRATED_RESIDUAL_SD`, `_get_or_load_npe_posterior`, `_route_ukf`); `docs/prompts/PROMPT-P3A3.md`; `docs/ml/K1-CONTRACT.md`.
-
 ### Critical: K3 is not a Bayesian joint longitudinal-survival model
 
 `BayesianJointModelK3.fit` uses landmark rows as observations, fits a Gaussian marker trend, then samples only trend coefficients and a hand-written scalar association likelihood. It has no patient-specific random effects in the likelihood, uses the binary horizon label as event indicator in the benchmark call, and does not use a valid time-to-event likelihood with censoring. The survival expression omits a fitted baseline hazard process and does not integrate the longitudinal trajectory over time. The “R-hat” is a basic variance ratio with no modern split-chain corrections; the “ESS” uses a clipped lag-1 approximation from only the first chain. `FastLandmarkJointModel` is also a separate approximation and should not inherit the Bayesian claim.

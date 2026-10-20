@@ -38,3 +38,6 @@
 - [ADR-0034: SMART-on-FHIR remains deferred as a stretch item](../adr/0034-smart-on-fhir-deferred.md)
 - [ADR-0035: Explicit synthetic population profiles and censor-aware landmark labels](../adr/0035-synthetic-population-profiles-and-censoring.md)
 - [0036. Reopen K1 for validity repair without promotion](../adr/0036-reopen-k1-validity-repair.md)
+- [ADR-0037: ONNX runtime requires an explicit artifact](../adr/0037-onnx-runtime-requires-explicit-artifact.md)
+- [ADR-0038: K8 utilities validate inputs and narrow claims to evidence](../adr/0038-k8-contract-input-validation-and-claim-boundary.md)
+- [ADR-0039: Landmark features respect observation time and outcome contracts](../adr/0039-landmark-features-respect-observation-time-and-outcome-contract.md)
