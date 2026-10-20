@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.stats import chi2
 from vigil_ml.conformal_k8 import ConformalRiskControllerK8
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
 
@@ -53,3 +54,38 @@ def test_k8_cannot_calibrate_a_false_negative_bound_without_positive_events():
     assert not controller.is_calibrated
     result = controller.predict(raw_risk=0.15, epistemic_std=0.0)
     assert result.risk_score is None
+    assert result.config_id == "k8_unvalidated_research_defaults_v1"
+    assert result.config_sha256 == controller.config_sha256
+
+
+def test_k8_research_configuration_hash_tracks_effective_overrides():
+    default = ConformalRiskControllerK8()
+    overridden = ConformalRiskControllerK8(alpha_conf=0.2)
+    assert default.config_id == overridden.config_id
+    assert default.config_sha256 != overridden.config_sha256
+    assert not default.is_calibrated
+    assert default.running_threshold is None
+
+
+@pytest.mark.parametrize("kwargs", [{"alpha_conf": True}, {"adapt_rate": "0.05"}])
+def test_k8_rejects_non_numeric_research_overrides(kwargs):
+    with pytest.raises(ValueError, match="numeric scalar"):
+        ConformalRiskControllerK8(**kwargs)
+
+
+@pytest.mark.parametrize("dimensions", [1, 3, 15, 40])
+def test_k8_ood_cutoff_uses_feature_dimension(dimensions):
+    controller = ConformalRiskControllerK8()
+    rng = np.random.default_rng(20261020 + dimensions)
+    controller.fit_ood_detector(rng.normal(size=(100, dimensions)))
+    expected = chi2.ppf(1.0 - controller.config["ood_tail_probability"], df=dimensions)
+    assert controller.ood_threshold == pytest.approx(expected)
+
+
+def test_k8_adaptation_requires_fitted_calibration_and_boolean_feedback():
+    controller = ConformalRiskControllerK8()
+    with pytest.raises(RuntimeError, match="requires a calibrated"):
+        controller.adapt_online(pred_alert=False, true_event=True)
+    controller.calibrate(np.array([0.1, 0.2]), np.array([1, 1]))
+    with pytest.raises(ValueError, match="must be boolean"):
+        controller.adapt_online(pred_alert=0, true_event=True)

@@ -30,6 +30,7 @@ from vigil_ml.runtime import VigilProductionRuntime
 # K1 Tests
 # ---------------------------------------------------------------------------
 
+
 def test_k1_legacy_import_resolves_to_canonical_implementation():
     from vigil_ml.kinetic_k1 import HybridKineticModelK1
 
@@ -45,6 +46,7 @@ def test_k1_identity_does_not_expose_legacy_label_training_api():
 # ---------------------------------------------------------------------------
 # K2 Tests
 # ---------------------------------------------------------------------------
+
 
 def test_k2_sequential_research_score_and_tiers():
     ep = SequentialDetector(alpha_pt=0.05, sigma_log=0.12)
@@ -74,6 +76,7 @@ def test_k2_sequential_research_score_and_tiers():
 # K5 Tests
 # ---------------------------------------------------------------------------
 
+
 def test_k5_hierarchical_pooling_and_changepoints():
     k5 = HierarchicalLabHarmoniserK5()
     site_data = {
@@ -87,7 +90,9 @@ def test_k5_hierarchical_pooling_and_changepoints():
     # Test changepoint detector on sudden systemic shift
     shift_detected = False
     for _ in range(15):
-        _, is_shift = k5.ingest_and_check_lab_shift("lab_b_biased", "ca15_3", 35.0, expected_val=24.0)
+        _, is_shift = k5.ingest_and_check_lab_shift(
+            "lab_b_biased", "ca15_3", 35.0, expected_val=24.0
+        )
         if is_shift:
             shift_detected = True
             break
@@ -98,15 +103,17 @@ def test_k5_hierarchical_pooling_and_changepoints():
 # K8 & Production Runtime Tests
 # ---------------------------------------------------------------------------
 
+
 def test_k8_conformal_risk_control_and_ood():
     k8 = ConformalRiskControllerK8(alpha_conf=0.10)
     k8.calibrate(np.array([0.1, 0.2, 0.3, 0.4]), np.array([1, 1, 1, 1]))
     # Fit OOD on standard normal features
-    X_train = np.random.normal(0, 1.0, (100, 15))
+    rng = np.random.default_rng(20261020)
+    X_train = rng.normal(0, 1.0, (100, 15))
     k8.fit_ood_detector(X_train)
 
     # In-distribution sample
-    in_dist_x = np.random.normal(0, 1.0, 15)
+    in_dist_x = rng.normal(0, 1.0, 15)
     res_in = k8.predict(raw_risk=0.35, epistemic_std=0.05, feature_vector=in_dist_x)
     assert res_in.abstention == AbstentionReason.NONE
     assert res_in.alert_tier in ["review", "watch"]

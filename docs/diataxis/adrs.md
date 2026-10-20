@@ -65,3 +65,4 @@
 - [ADR-0061: Preserve undefined evaluation metrics as undefined](../adr/0061-report-undefined-evaluation-metrics.md)
 - [ADR-0062: Replace seed-sensitive ML thresholds with valid software contracts](../adr/0062-redesign-seed-sensitive-ml-gates.md)
 - [ADR-0063: Use source-aligned observed-diagnosis semantics for the E1 simulator comparison](../adr/0063-source-aligned-e1-simulator-comparison.md)
+- [ADR-0064: Make K8 runtime assumptions explicit and dimension-aware](../adr/0064-explicit-k8-runtime-research-settings.md)

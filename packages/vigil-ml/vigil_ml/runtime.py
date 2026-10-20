@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import numpy as np
-import onnxruntime as ort
+import onnxruntime as ort  # type: ignore[import-untyped]
 
 from vigil_ml.conformal_k8 import ConformalPredictionResult, ConformalRiskControllerK8
 
@@ -26,7 +26,9 @@ class VigilProductionRuntime:
 
     def __init__(self, onnx_model_path: Optional[Path] = None):
         if onnx_model_path is None:
-            raise ValueError("An explicit ONNX artifact path is required; no fallback model is available")
+            raise ValueError(
+                "An explicit ONNX artifact path is required; no fallback model is available"
+            )
         if not onnx_model_path.is_file():
             raise FileNotFoundError(f"ONNX artifact does not exist: {onnx_model_path}")
         self.model_path = onnx_model_path
@@ -35,13 +37,15 @@ class VigilProductionRuntime:
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 1
         opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-        self.session = ort.InferenceSession(str(self.model_path), sess_options=opts, providers=["CPUExecutionProvider"])
+        self.session = ort.InferenceSession(
+            str(self.model_path), sess_options=opts, providers=["CPUExecutionProvider"]
+        )
         self.input_name = self.session.get_inputs()[0].name
         input_shape = self.session.get_inputs()[0].shape
         if not input_shape or not isinstance(input_shape[-1], int) or input_shape[-1] <= 0:
             raise ValueError("ONNX artifact must declare a fixed positive feature dimension")
         self.input_dimension = input_shape[-1]
-        self.conformal = ConformalRiskControllerK8(alpha_conf=0.10)
+        self.conformal = ConformalRiskControllerK8()
 
     def predict_single_patient(
         self, features: np.ndarray, *, epistemic_std: float
@@ -80,10 +84,10 @@ class VigilProductionRuntime:
             t1 = time.perf_counter()
             latencies.append((t1 - t0) * 1000.0)  # ms
 
-        latencies = np.array(latencies)
-        p50 = float(np.percentile(latencies, 50))
-        p95 = float(np.percentile(latencies, 95))
-        p99 = float(np.percentile(latencies, 99))
+        latency_samples = np.asarray(latencies, dtype=float)
+        p50 = float(np.percentile(latency_samples, 50))
+        p95 = float(np.percentile(latency_samples, 95))
+        p99 = float(np.percentile(latency_samples, 99))
 
         return {
             "n_calls": n_calls,

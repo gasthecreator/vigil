@@ -3,6 +3,8 @@
 **Identifier:** `MODEL-K8-CONFORMAL-SUITE`
 **Review date:** 2026-10-19
 **Implementation:** `packages/vigil-ml/vigil_ml/k8.py`
+**Runtime wrapper:** `packages/vigil-ml/vigil_ml/conformal_k8.py`
+**Research settings:** [`k8_research_config_v1.json`](../../packages/vigil-ml/vigil_ml/models/k8_research_config_v1.json)
 **Contract:** [`docs/ml/K2-K8-CONTRACT.md`](../ml/K2-K8-CONTRACT.md)
 **Behavioral suite:** `tests/acceptance_3b/test_k8_contract.py` (unchanged overseer-owned tests)
 
@@ -41,7 +43,8 @@ Additional validation tests are in `packages/vigil-ml/tests/test_k8_input_contra
 
 ## Configuration and provenance
 
-- CRC `alpha` is provided to the controller and its threshold is fitted from calibration scores. The caller must identify the calibration unit, cohort, score producer, label horizon and split in a preregistered study.
-- OOD reference rows and distance cutoff are fitted from the supplied inlier dataset. The default alpha is an algorithm setting, not a clinical false-alarm target.
-- ACI `gamma` is a fixed algorithm setting; this repository contains no evidence that the default is optimal or clinically appropriate.
+- The contract utilities in `k8.py` and the ONNX runtime wrapper in `conformal_k8.py` are separate implementations with different APIs; passing one does not validate the other. Neither is a validated patient-level model.
+- The runtime wrapper's legacy thresholds and numerical settings are centralized in a versioned file marked `unvalidated_research_defaults`. Its OOD chi-square cutoff is derived from the declared tail probability and actual feature dimension; it is no longer a fixed 15-feature cutoff. The effective configuration SHA-256 is attached to each runtime result.
+- No clinical source, registered sensitivity study, or model-selection evidence supports the configured uncertainty, interval, urgency, watch, OOD-tail, covariance, or adaptation settings. They remain research-only and must not be treated as optimal or clinically appropriate.
+- CRC alpha is fitted against supplied calibration scores. The caller must identify the calibration unit, cohort, score producer, label horizon and split in a preregistered study.
 - No output from these utilities is eligible for a patient-facing decision until a model-specific score, patient-level calibration design, input provenance, monitoring policy and independent review are established.

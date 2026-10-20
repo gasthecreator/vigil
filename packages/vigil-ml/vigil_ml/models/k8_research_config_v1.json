@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "config_id": "k8_unvalidated_research_defaults_v1",
+  "status": "unvalidated_research_defaults",
+  "provenance": "Legacy phase-3 prototype settings made explicit. No clinical source, sensitivity study, or model-selection evidence supports these values.",
+  "alpha_conf": 0.1,
+  "adapt_rate": 0.05,
+  "ood_tail_probability": 0.0001,
+  "covariance_regularizer": 0.0001,
+  "epistemic_abstention_cutoff": 0.35,
+  "interval_normal_quantile": 1.645,
+  "interval_minimum_half_width": 0.05,
+  "urgent_score_threshold": 0.65,
+  "watch_threshold_fraction": 0.65,
+  "adaptation_threshold_floor": 0.05,
+  "adaptation_threshold_ceiling": 0.85
+}
