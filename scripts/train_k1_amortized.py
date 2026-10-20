@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 
 import torch
+from safetensors import safe_open
 from safetensors.torch import save_file
 from vigil_ml import k1
 
@@ -152,6 +153,23 @@ def main() -> None:
     }
     for family in ("amortized", "npe"):
         results["estimators"][family] = train_family(family, config)
+    artifact_entries = {}
+    for family, result in results["estimators"].items():
+        with safe_open(str(MODEL_DIR / result["artifact"]), framework="pt", device="cpu") as artifact:
+            metadata = artifact.metadata() or {}
+        artifact_entries[result["artifact"]] = {
+            "sha256": result["artifact_sha256"],
+            "estimator": family,
+            "metadata": metadata,
+        }
+    manifest = {
+        "schema_version": 1,
+        "assumptions_sha256": sha256(config_path),
+        "artifacts": artifact_entries,
+    }
+    (MODEL_DIR / "k1_artifact_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     out = EXPERIMENT / "training_results.json"
     out.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Wrote {out.relative_to(ROOT)}", flush=True)

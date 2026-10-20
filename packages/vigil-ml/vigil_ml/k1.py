@@ -13,6 +13,7 @@ Inference routes:
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +28,7 @@ import torch
 import torch.nn as nn
 from numpyro.diagnostics import summary as mcmc_summary
 from numpyro.infer import MCMC, NUTS
+from safetensors import safe_open
 from safetensors.torch import load_file
 from scipy.special import expit, logit
 
@@ -37,6 +39,7 @@ MODELS_DIR = Path(__file__).resolve().parent / "models"
 AMORTIZED_WEIGHTS_PATH = MODELS_DIR / "k1_amortized_weights.safetensors"
 NPE_WEIGHTS_PATH = MODELS_DIR / "k1_npe_weights.safetensors"
 ASSUMPTIONS_PATH = MODELS_DIR / "k1_assumptions.json"
+ARTIFACT_MANIFEST_PATH = MODELS_DIR / "k1_artifact_manifest.json"
 ASSUMPTIONS = json.loads(ASSUMPTIONS_PATH.read_text(encoding="utf-8"))
 if ASSUMPTIONS.get("status") != "synthetic_research_assumptions":
     raise ValueError("K1 assumptions must explicitly remain research-only synthetic assumptions")
@@ -441,7 +444,7 @@ def _get_or_load_amortized_model() -> AmortizedRecognitionNet:
     if not AMORTIZED_WEIGHTS_PATH.exists():
         raise RuntimeError("K1 amortized weights are absent; run the registered training script first")
     model = AmortizedRecognitionNet()
-    state_dict = load_file(str(AMORTIZED_WEIGHTS_PATH), device="cpu")
+    state_dict = _load_registered_state_dict(AMORTIZED_WEIGHTS_PATH, "amortized")
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     _AMORTIZED_MODEL = model
@@ -663,10 +666,31 @@ def _get_or_load_npe_model() -> NeuralPosteriorEstimator:
     if not NPE_WEIGHTS_PATH.exists():
         raise RuntimeError("K1 NPE weights are absent; run the registered training script first")
     model = NeuralPosteriorEstimator()
-    model.load_state_dict(load_file(str(NPE_WEIGHTS_PATH), device="cpu"), strict=True)
+    model.load_state_dict(_load_registered_state_dict(NPE_WEIGHTS_PATH, "npe"), strict=True)
     model.eval()
     _NPE_MODEL = model
     return model
+
+
+def _load_registered_state_dict(path: Path, estimator: str) -> dict[str, torch.Tensor]:
+    """Load only finite weights matching the committed K1 artifact manifest."""
+    manifest = json.loads(ARTIFACT_MANIFEST_PATH.read_text(encoding="utf-8"))
+    entry = manifest.get("artifacts", {}).get(path.name)
+    if not isinstance(entry, dict) or entry.get("estimator") != estimator:
+        raise ValueError(f"K1 {estimator} artifact is absent from its committed manifest")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != entry.get("sha256"):
+        raise ValueError(f"K1 {estimator} artifact does not match its committed manifest digest")
+    with safe_open(str(path), framework="pt", device="cpu") as artifact:
+        metadata = artifact.metadata() or {}
+    if metadata != entry.get("metadata"):
+        raise ValueError(f"K1 {estimator} artifact metadata does not match its committed manifest")
+    if manifest.get("assumptions_sha256") != hashlib.sha256(ASSUMPTIONS_PATH.read_bytes()).hexdigest():
+        raise ValueError("K1 artifact manifest does not match the active synthetic assumptions")
+    state_dict = load_file(str(path), device="cpu")
+    if not state_dict or any(not torch.isfinite(tensor).all() for tensor in state_dict.values()):
+        raise ValueError(f"K1 {estimator} artifact must contain finite model weights")
+    return state_dict
 
 
 def train_npe(

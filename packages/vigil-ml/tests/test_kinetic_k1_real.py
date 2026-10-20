@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 import numpy as np
 import pytest
+import torch
+from safetensors.torch import save_file
 from vigil_ml import k1
 
 
@@ -14,6 +19,51 @@ def test_observations_reject_misaligned_or_unsorted_data():
         k1.K1Observations(np.array([0.0, 30.0]), {"ca153": np.array([18.0])})
     with pytest.raises(ValueError, match="never infinite"):
         k1.K1Observations(np.array([0.0]), {"ca153": np.array([np.inf])})
+
+
+def test_trained_artifact_loader_requires_registered_identity_and_finite_weights(tmp_path):
+    path = tmp_path / "weights.safetensors"
+    manifest_path = tmp_path / "manifest.json"
+    assumptions_path = k1.ASSUMPTIONS_PATH
+    old_manifest_path = k1.ARTIFACT_MANIFEST_PATH
+    registered = {
+        "experiment_id": "EXP-K1-004",
+        "estimator": "amortized",
+        "selection_metric": "validation_negative_log_likelihood",
+        "protocol_version": "1.10",
+        "selected_training_seed": "41002",
+        "validation_seed": "42002",
+    }
+    def write_artifact(weights, metadata):
+        save_file(weights, str(path), metadata=metadata)
+        manifest_path.write_text(json.dumps({
+            "assumptions_sha256": hashlib.sha256(assumptions_path.read_bytes()).hexdigest(),
+            "artifacts": {path.name: {
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "estimator": "amortized",
+                "metadata": registered,
+            }},
+        }), encoding="utf-8")
+
+    k1.ARTIFACT_MANIFEST_PATH = manifest_path
+    try:
+        write_artifact({"weight": torch.tensor([1.0])}, registered)
+        assert torch.equal(k1._load_registered_state_dict(path, "amortized")["weight"], torch.tensor([1.0]))
+
+        write_artifact({"weight": torch.tensor([1.0])}, {**registered, "estimator": "npe"})
+        with pytest.raises(ValueError, match="metadata"):
+            k1._load_registered_state_dict(path, "amortized")
+
+        write_artifact({"weight": torch.tensor([float("nan")])}, registered)
+        with pytest.raises(ValueError, match="finite model weights"):
+            k1._load_registered_state_dict(path, "amortized")
+
+        write_artifact({"weight": torch.tensor([1.0])}, registered)
+        with pytest.raises(ValueError, match="digest"):
+            path.write_bytes(path.read_bytes() + b"tampered")
+            k1._load_registered_state_dict(path, "amortized")
+    finally:
+        k1.ARTIFACT_MANIFEST_PATH = old_manifest_path
 
 
 def test_forward_simulator_and_inference_share_observation_likelihood():
