@@ -3,6 +3,7 @@
 > Q-7 package A working crosswalk. Synthetic results are not clinical evidence. This is an audit inventory, not a promotion or validation record. Owner for source, data, and report discrepancies: executor; acceptance contracts and verdict disposition: overseer.
 
 The data, training, serving, and report entrypoint map is in [`CORE-ML-ENTRYPOINT-CROSSWALK-2026-10.md`](CORE-ML-ENTRYPOINT-CROSSWALK-2026-10.md). Both artifacts remain working inventories; package A is not closed.
+The original phase prompts P0–P16 and their model-facing assignments are indexed in [`CORE-ML-PROMPT-CROSSWALK-2026-10.md`](CORE-ML-PROMPT-CROSSWALK-2026-10.md). That file is a working map; it explicitly does not close package A.
 
 ## Canonical baseline identities
 

@@ -157,6 +157,10 @@ Package F source review confirmed `ProductionEnsembleK8` remained callable despi
 
 A source-to-audit consistency check found `CORE-ML-RERUN-2026-10.md` still described `kinetic_k1.py` as a competing implementation even though it is a shim, and described the removed K3 sampler as current. The audit now reflects the K1 shim, K3 fail-closed disposition, canonical logistic baseline API, and K8 ensemble quarantine, while retaining old source behavior only as historical evidence. Claims policy, all 494 docs links and `git diff --check` pass. This corrects audit truthfulness; package A remains open pending the complete prompt/model/result crosswalk.
 
+### Q-7 update — map prompt-assigned model work (2026-10-20)
+
+Package A review found the existing entrypoint and claim inventories explicitly lacked prompt-by-prompt coverage. Added `CORE-ML-PROMPT-CROSSWALK-2026-10.md`, mapping P0–P16 ML assignments and constraints to current evidence and open status. It records the K1/K2/K3/K8 validity limits, the required baseline/experiment work, model-facing API integrations, and the remaining prompt-linked M7/M10/K7/Phase 9 obligations without treating prior phase reports as proof of current validity. Claims policy and all 495 documentation links pass; `git diff --check` passes. This is an inventory increment; package A still requires exact source/test/result/card links and complete producer reconciliation.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
