@@ -131,7 +131,8 @@ def alert_flags(
     ok = np.isfinite(z) & np.asarray(panel_mask, dtype=bool)
     with np.errstate(invalid="ignore"):
         hit = ok & (np.nan_to_num(z, nan=-np.inf) >= theta[None, :])
-    return hit.any(axis=1) | (np.asarray(max_symptom) >= SYMPTOM_ALERT_GRADE)
+    symptoms = np.asarray(max_symptom, dtype=float)
+    return np.asarray(np.logical_or(hit.any(axis=1), symptoms >= SYMPTOM_ALERT_GRADE), dtype=bool)
 
 
 def panel_mask(panel: str) -> np.ndarray:
@@ -356,8 +357,12 @@ class HazardModel:
                 continue
             if dm is None:
                 dm = xgb.DMatrix(X)
-            raw = self._boosters[h].predict(dm)
-            xs, ys = self._iso[h]
+            booster = self._boosters[h]
+            calibration = self._iso[h]
+            if booster is None or calibration is None:
+                raise RuntimeError(f"hazard horizon {HORIZONS[h]} has incomplete fitted state")
+            raw = booster.predict(dm)
+            xs, ys = calibration
             cols.append(np.interp(raw, xs, ys))
         G = np.column_stack(cols)
         return _enforce(G) if horizons is None else np.clip(G, 0.0, 1.0)
@@ -369,8 +374,12 @@ class HazardModel:
             if self._const[h] is not None:
                 models.append({"kind": "constant", "p": self._const[h]})
             else:
-                xs, ys = self._iso[h]
-                models.append({"kind": "xgboost_json", "model": self._raw_json[h], "iso_x": xs.tolist(), "iso_y": ys.tolist()})
+                calibration = self._iso[h]
+                model_json = self._raw_json[h]
+                if calibration is None or model_json is None:
+                    raise RuntimeError(f"hazard horizon {HORIZONS[h]} has incomplete fitted state")
+                xs, ys = calibration
+                models.append({"kind": "xgboost_json", "model": model_json, "iso_x": xs.tolist(), "iso_y": ys.tolist()})
         return {"schema": "vigil.k6.hazard.v1", "horizons": list(HORIZONS), "columns": list(self.columns), "models": models}
 
     @classmethod
@@ -453,9 +462,14 @@ def plan(
         b = w * D[None, :] * wait[:, None]
         J[:, :, pi] = a + b
     flat = J.reshape(n, -1)
-    k = np.argmin(flat, axis=1)
-    di, pi = np.divmod(k, len(PANELS))
-    return Decision(delta_days=D[di].astype(int), panel_index=pi.astype(int), objective=flat[np.arange(n), k])
+    k = np.asarray(np.argmin(flat, axis=1), dtype=int)
+    di = k // len(PANELS)
+    panel_indices = k % len(PANELS)
+    return Decision(
+        delta_days=D[di].astype(int),
+        panel_index=panel_indices.astype(int),
+        objective=flat[np.arange(n), k],
+    )
 
 
 # ------------------------------------------------------------------------------------------------
@@ -476,7 +490,9 @@ class FixedPolicy(Policy):
         self.delta, self.panel = int(delta), panel
         self.name = f"fixed_{delta}_{panel}"
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
         return np.full(n, self.delta, dtype=int), np.full(n, PANELS.index(self.panel), dtype=int)
 
 
@@ -487,7 +503,9 @@ class StageHeuristicPolicy(Policy):
     name = "heuristic_stage"
     INTERVAL = {1: 364, 2: 182, 3: 91, 4: 91}
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
         if features is None:
             raise ValueError("stage heuristic requires observed stage features")
         features = np.asarray(features, dtype=float)
@@ -512,7 +530,11 @@ class RiskTriggeredPolicy(Policy):
         self.hazard, self.long, self.short, self.theta = hazard, int(long), int(short), float(theta)
         self.name = f"risk_triggered_{long}_{short}_{theta:g}"
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if features is None:
+            raise ValueError("risk-triggered policy requires observed features")
         g182 = self.hazard.predict_cdf(features, horizons=(182,))[:, 0]
         delta = np.where(g182 >= self.theta, self.short, self.long).astype(int)
         return delta, np.full(n, PANELS.index("P2"), dtype=int)
@@ -537,7 +559,11 @@ class K6Policy(Policy):
         self.name = f"{label}_w{w:g}"
         self.trace: Optional[List[np.ndarray]] = [] if trace else None
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if features is None:
+            raise ValueError("K6 policy requires observed features")
         G = self.hazard.predict_cdf(features)
         if self.trace is not None:
             self.trace.append(G.copy())
@@ -562,7 +588,9 @@ class TrainingSchedulePolicy(Policy):
         panel = self.rng.integers(0, len(PANELS), size=rows.size)
         return delta, panel
 
-    def decide(self, features, n, day):  # pragma: no cover - the engine calls decide_rows
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:  # pragma: no cover - the engine calls decide_rows
         raise NotImplementedError
 
 

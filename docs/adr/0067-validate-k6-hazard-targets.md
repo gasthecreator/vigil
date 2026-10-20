@@ -13,4 +13,4 @@ Validate that feature selections are non-empty, unique integer indices (not bool
 
 ## Consequences
 
-Malformed targets and split inputs fail before fitting. This is input-contract validation only; it does not alter the K6 estimand, repair the model's scientific assumptions, or validate the preserved EXP-K6-001 results. No study cohorts or result artifacts were regenerated.
+Malformed targets and split inputs fail before fitting. The module now passes strict mypy, and the repository's configured typing gate includes `k6.py` so this contract remains checked in CI. This does not alter the K6 estimand, repair the model's scientific assumptions, or validate the preserved EXP-K6-001 results. No study cohorts or result artifacts were regenerated.

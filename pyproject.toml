@@ -93,6 +93,7 @@ files = [
     "packages/vigil-core/vigil_core",
     "packages/vigil-eval/vigil_eval",
     "packages/vigil-ml/vigil_ml/m5.py",
+    "packages/vigil-ml/vigil_ml/k6.py",
 ]
 mypy_path = ["packages/vigil-core", "packages/vigil-eval", "packages/vigil-ml"]
 
