@@ -152,14 +152,14 @@ def test_landmark_times_events_and_exclusions_on_a_hand_worked_cohort():
     )
 
 
-def test_death_from_another_cause_censors_and_is_not_a_recurrence():
+def test_death_from_another_cause_is_a_competing_event_and_known_control():
     labs = [(100, 20.0), (190, 22.0), (280, 25.0)]
     lm = pa.build_landmarks(
         _tables(
             [
                 {
                     "pid": "A",
-                    "follow": 700,
+                    "follow": 300,
                     "index": 90,
                     "rec_day": None,
                     "vital": "DEAD_OTHER",
@@ -169,7 +169,53 @@ def test_death_from_another_cause_censors_and_is_not_a_recurrence():
         ),
         ["A"],
     )
-    assert list(lm.E) == [0, 0] and list(lm.T) == [700 - 190, 700 - 280]
+    assert list(lm.E) == [2, 2] and list(lm.T) == [300 - 190, 300 - 280]
+    assert list(lm.y) == [0.0, 0.0]
+    assert lm.end_day == {"A": 300.0}
+    assert (pa.compute_ipcw_weights(lm.T, lm.E, pa.HORIZON) > 0).all()
+
+
+def test_administrative_censoring_before_horizon_keeps_outcome_unknown():
+    lm = pa.build_landmarks(
+        _tables(
+            [
+                {
+                    "pid": "A",
+                    "follow": 300,
+                    "index": 90,
+                    "rec_day": None,
+                    "labs": [(100, 20.0), (190, 22.0), (280, 25.0)],
+                }
+            ]
+        ),
+        ["A"],
+    )
+    assert list(lm.E) == [0, 0]
+    assert np.isnan(lm.y).all()
+    assert (pa.compute_ipcw_weights(lm.T, lm.E, pa.HORIZON) == 0).all()
+
+
+def test_recurrence_before_competing_death_remains_the_event_of_interest():
+    labs = [(100, 20.0), (190, 22.0), (280, 25.0)]
+    lm = pa.build_landmarks(
+        _tables(
+            [
+                {
+                    "pid": "A",
+                    "follow": 400,
+                    "index": 90,
+                    "rec_day": 350,
+                    "vital": "DEAD_OTHER",
+                    "labs": labs,
+                }
+            ]
+        ),
+        ["A"],
+    )
+    assert list(lm.E) == [1, 1]
+    assert list(lm.T) == [350 - 190, 350 - 280]
+    assert list(lm.y) == [1.0, 1.0]
+    assert lm.end_day == {"A": 350.0}
 
 
 # ------------------------------------------------------------------------------------------------ leakage attack

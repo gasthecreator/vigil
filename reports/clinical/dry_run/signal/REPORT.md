@@ -21,7 +21,7 @@ Rejection rate 0.000 against stop rate 0.1. Rejections by code: none. Complete-c
 
 - cohort complete case: 600
 - patients with a landmark: 600
-- patients excluded fewer than two post index draws or recurred first: 0
+- patients excluded fewer than two post index draws or terminal event before second draw: 0
 - landmarks: 5574
 - development patients: 307
 - test patients: 293

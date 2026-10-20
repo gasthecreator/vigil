@@ -59,7 +59,7 @@
   "cohort": {
     "cohort_complete_case": 600,
     "patients_with_a_landmark": 600,
-    "patients_excluded_fewer_than_two_post_index_draws_or_recurred_first": 0,
+    "patients_excluded_fewer_than_two_post_index_draws_or_terminal_event_before_second_draw": 0,
     "landmarks": 5635,
     "development_patients": 307,
     "test_patients": 293,

@@ -49,3 +49,4 @@
 - [ADR-0045: Fit verification propensity on development data](../adr/0045-development-fit-verification-propensity.md)
 - [ADR-0046: Require a ratified threshold grid for partner DCA](../adr/0046-ratified-partner-dca-thresholds.md)
 - [ADR-0047: Add explicit G1 clearance and G2 shot-noise mechanisms](../adr/0047-explicit-g1-clearance-and-g2-shot-noise.md)
+- [ADR-0048: Preserve competing death in partner landmark outcomes](../adr/0048-partner-competing-death-estimand.md)

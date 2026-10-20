@@ -59,13 +59,13 @@ def assign_split(patient_id: str, key: bytes) -> str:
 @dataclass
 class Landmarks:
     X: pd.DataFrame  # one row per landmark; includes patient_id and eval_day
-    y: np.ndarray  # recurrence within HORIZON of the landmark (1) else 0
-    T: np.ndarray  # time from landmark to recurrence or censoring
-    E: np.ndarray  # 1 if recurrence observed at T
+    y: np.ndarray  # recurrence before competing death within HORIZON; NaN if censored before HORIZON
+    T: np.ndarray  # time from landmark to recurrence, competing death, or censoring
+    E: np.ndarray  # 0=censoring, 1=recurrence, 2=competing death
     first: np.ndarray  # True for the first landmark of each patient (used for C1 and C2)
     end_day: Dict[
         str, float
-    ]  # per patient: end of surveillance at risk (min(recurrence, follow-up))
+    ]  # per patient: end of surveillance at risk (min(recurrence, death, follow-up))
     patients: pd.DataFrame
     counts: Dict[str, int] = field(default_factory=dict)
 
@@ -167,30 +167,51 @@ def build_landmarks(
         patients_df, obs_df, horizon_days=horizon
     )
     p = patients_df.set_index("patient_id")
-    # The extractor censors at the last laboratory day; the partner provides follow-up, so recompute time and event.
+    # The extractor censors at the last laboratory day; partner follow-up and
+    # vital status define the event/censor time for this fixed-horizon estimand.
     follow = X["patient_id"].map(p["days_to_last_followup"]).to_numpy()
     rec_day = X["patient_id"].map(p["observed_recurrence_day"]).to_numpy()
     rec = X["patient_id"].map(p["observed_recurrence_event"]).to_numpy().astype(bool)
+    comp_type = X["patient_id"].map(p["competing_event"]).to_numpy()
+    comp_day = X["patient_id"].map(p["competing_event_day"]).to_numpy(dtype=float)
     eval_day = X["eval_day"].to_numpy()
+    competing = np.array(
+        [kind is not None and not pd.isna(kind) and kind != "lost_to_follow_up" for kind in comp_type],
+        dtype=bool,
+    ) & np.isfinite(comp_day) & (comp_day <= follow)
+    # Recurrence is observed only if it occurs before death. Equal-day events
+    # are rejected by WindowedFeatureExtractor as order-ambiguous.
+    recurrence = rec & (~competing | (rec_day < comp_day))
+    death = competing & (~recurrence)
     keep = (
-        (X["history_length"].to_numpy() >= 2) & ~(rec & (eval_day >= rec_day)) & (eval_day < follow)
+        (X["history_length"].to_numpy() >= 2)
+        & ~(recurrence & (eval_day >= rec_day))
+        & ~(death & (eval_day >= comp_day))
+        & (eval_day < follow)
     )
-    X, follow, rec_day, rec, eval_day = (
+    X, follow, rec_day, recurrence, death, comp_day, eval_day = (
         X[keep].reset_index(drop=True),
         follow[keep],
         rec_day[keep],
-        rec[keep],
+        recurrence[keep],
+        death[keep],
+        comp_day[keep],
         eval_day[keep],
     )
-    E = rec.astype(int)
-    end = np.where(rec, rec_day, follow)
+    E = np.where(recurrence, 1, np.where(death, 2, 0)).astype(int)
+    end = np.where(recurrence, rec_day, np.where(death, comp_day, follow))
     T = np.maximum(1.0, end - eval_day)
-    y = ((E == 1) & (T <= horizon)).astype(int)
+    # By the horizon, recurrence and competing death are known non-censored
+    # outcomes; recurrence is the positive class, death the competing control.
+    # A patient censored before the horizon has unknown status (NaN).
+    y = np.full(len(E), np.nan, dtype=float)
+    known = (T <= horizon) & np.isin(E, [1, 2]) | (T >= horizon)
+    y[known] = ((E[known] == 1) & (T[known] <= horizon)).astype(float)
     first = ~X["patient_id"].duplicated().to_numpy()
     end_day = {pid: float(e) for pid, e in zip(X["patient_id"], end)}
     counts.update(
         patients_with_a_landmark=int(first.sum()),
-        patients_excluded_fewer_than_two_post_index_draws_or_recurred_first=len(patients_df)
+        patients_excluded_fewer_than_two_post_index_draws_or_terminal_event_before_second_draw=len(patients_df)
         - int(first.sum()),
         landmarks=len(X),
     )
