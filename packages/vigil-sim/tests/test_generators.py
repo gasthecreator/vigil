@@ -131,9 +131,11 @@ def test_core_v3_versions_generator_assumptions_and_shared_facility_effects():
     for key in (
         "facility_lab_effects", "verification", "measurement_missingness",
         "baseline_symptom_probabilities", "out_of_pocket_delay_factor_range",
-        "visit_interval_gamma",
+        "visit_interval_gamma", "generator_mechanics",
     ):
         assert key in profile
+    assert "legacy generator code" in profile["generator_mechanics"]["provenance"]
+    assert set(profile["generator_mechanics"]) >= {"g1", "g2", "g3", "provenance"}
 
     generator = get_generator(GeneratorType.G1_SMOOTH, seed=48105, population_config=profile)
     patients = [generator.sample_baseline(i) for i in range(1, 100)]
@@ -144,6 +146,47 @@ def test_core_v3_versions_generator_assumptions_and_shared_facility_effects():
         assert profile["out_of_pocket_delay_factor_range"][0] <= patient.out_of_pocket_delay_factor
         assert patient.out_of_pocket_delay_factor <= profile["out_of_pocket_delay_factor_range"][1]
     assert len(effects_by_facility) > 1
+
+
+def test_core_v3_rejects_incomplete_generator_mechanics():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    del profile["generator_mechanics"]["g2"]["ca153_per_burden"]
+    with pytest.raises(ValueError, match="g2.ca153_per_burden"):
+        get_generator(GeneratorType.G2_BURST, seed=42, population_config=profile)
+
+
+def test_g3_signal_saturates_after_recurrence_instead_of_exceeding_registered_mass():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    generator = get_generator(GeneratorType.G3_NOISE, seed=48107, population_config=profile)
+    patient = generator.sample_baseline(1)
+    patient.true_recurrence_event = True
+    patient.true_recurrence_day = 0.0
+    patient.true_recurrence_site = "liver"
+
+    _observations, _masks, latent = generator.simulate_longitudinal_trajectory(patient, [1000.0])
+
+    mechanics = profile["generator_mechanics"]["g3"]
+    assert latent[0].m_ca153 == pytest.approx(
+        mechanics["burden_at_full_signal"] * mechanics["ca153_per_burden"]
+    )
+
+
+@pytest.mark.parametrize("generator_type", [GeneratorType.G2_BURST, GeneratorType.G3_NOISE])
+def test_core_v3_g2_g3_apply_registered_facility_scale(generator_type):
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    first_generator = get_generator(generator_type, seed=48108, population_config=profile)
+    second_generator = get_generator(generator_type, seed=48108, population_config=profile)
+    first_patient = first_generator.sample_baseline(1)
+    second_patient = second_generator.sample_baseline(1)
+    second_patient.lab_scales["alt"] = first_patient.lab_scales["alt"] * 2.0
+
+    first_values, _, _ = first_generator.simulate_longitudinal_trajectory(first_patient, [0.0])
+    second_values, _, _ = second_generator.simulate_longitudinal_trajectory(second_patient, [0.0])
+
+    assert first_values[0]["alt"] != pytest.approx(second_values[0]["alt"])
 
 
 def test_positive_imaging_below_visibility_threshold_is_not_confirmed_recurrence():
