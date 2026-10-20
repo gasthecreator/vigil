@@ -18,7 +18,7 @@ windowed feature vectors containing:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -65,9 +65,9 @@ NO_ACTIVE_TREATMENT = "none"
 class WindowedFeatureExtractor:
     """Extracts summary features from longitudinal observation histories up to evaluation time t."""
 
-    tracked_analytes: List[str] = None
+    tracked_analytes: List[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.tracked_analytes is None:
             self.tracked_analytes = list(TRACKED_ANALYTES)
         else:
@@ -319,7 +319,7 @@ class WindowedFeatureExtractor:
         )
 
         # Analyte levels, velocities, and variability
-        for code in self.tracked_analytes:
+        for code in cast(List[str], self.tracked_analytes):
             curr_val = current_obs.get("analytes", {}).get(code)
             if curr_val is None or pd.isna(curr_val):
                 features[f"{code}_curr"] = float("nan")
@@ -440,16 +440,19 @@ class WindowedFeatureExtractor:
         unknown_patient_ids = set(observations_df["patient_id"]) - set(patients_df["patient_id"])
         if unknown_patient_ids:
             raise ValueError(f"observations reference unknown patient_ids: {sorted(unknown_patient_ids)}")
-        pt_dict = {row["patient_id"]: row.to_dict() for _, row in patients_df.iterrows()}
+        pt_dict = {
+            row["patient_id"]: cast(Dict[str, Any], row.to_dict())
+            for _, row in patients_df.iterrows()
+        }
 
         # Group observations by patient
-        grouped_obs: Dict[str, List[Dict[str, Any]]] = {}
+        grouped_obs: Dict[Any, List[Dict[str, Any]]] = {}
         for _, row in observations_df.iterrows():
             pt_id = row["patient_id"]
             if isinstance(row["day"], (bool, np.bool_)):
                 raise ValueError(f"observation day must be numeric, not boolean for patient {pt_id}")
             analytes: Dict[str, float] = {}
-            for code in self.tracked_analytes:
+            for code in cast(List[str], self.tracked_analytes):
                 mask_column = f"observed_{code}"
                 has_value_column = code in row.index
                 value = row[code] if has_value_column else None
@@ -476,7 +479,7 @@ class WindowedFeatureExtractor:
                 if value_present:
                     if isinstance(value, (bool, np.bool_)):
                         raise ValueError(f"{code} measurements must be numeric, not boolean")
-                    numeric_value = float(value)
+                    numeric_value = float(cast(Any, value))
                     if not np.isfinite(numeric_value):
                         raise ValueError(f"{code} measurements must be finite when present")
                     analytes[code] = numeric_value
@@ -539,9 +542,19 @@ class WindowedFeatureExtractor:
                 )
             rec_event = bool(rec_event_value)
             rec_day = pt_row.get("observed_recurrence_day")
+            if isinstance(rec_day, (bool, np.bool_)):
+                raise ValueError(
+                    f"observed_recurrence_day must be numeric, not boolean for patient {pt_id}"
+                )
             if not rec_event and rec_day is not None and not pd.isna(rec_day):
                 raise ValueError(f"recurrence day supplied without an observed event for patient {pt_id}")
+            rec_day = None if rec_day is None or pd.isna(rec_day) else float(rec_day)
             comp_day = pt_row.get("competing_event_day")
+            if isinstance(comp_day, (bool, np.bool_)):
+                raise ValueError(
+                    f"competing_event_day must be numeric, not boolean for patient {pt_id}"
+                )
+            comp_day = None if comp_day is None or pd.isna(comp_day) else float(comp_day)
             comp_type = pt_row.get("competing_event")
             has_comp_type = comp_type is not None and not pd.isna(comp_type)
             if has_comp_type and (
@@ -558,12 +571,10 @@ class WindowedFeatureExtractor:
                 raise ValueError(
                     f"competing event type and day must be supplied together for patient {pt_id}"
                 )
-            for field, value in (
-                ("observed_recurrence_day", rec_day),
-                ("competing_event_day", comp_day),
-            ):
-                if isinstance(value, (bool, np.bool_)):
-                    raise ValueError(f"{field} must be numeric, not boolean for patient {pt_id}")
+            if rec_event:
+                assert rec_day is not None
+            if has_comp_day:
+                assert comp_day is not None
             terminal_days = [
                 float(day)
                 for day in (rec_day if rec_event else None, comp_day if has_comp_day else None)
@@ -577,18 +588,20 @@ class WindowedFeatureExtractor:
                 rec_event
                 and has_comp_day
                 and comp_type != "lost_to_follow_up"
-                and float(comp_day) < float(rec_day)
+                and cast(float, comp_day) < cast(float, rec_day)
             ):
                 raise ValueError(f"observed recurrence follows a terminal competing event for patient {pt_id}")
             last_day = max(o["day"] for o in obs_list)
-            admin_end = pt_row.get("administrative_censor_day")
-            if admin_end is None or pd.isna(admin_end):
-                admin_end = last_day
-            elif isinstance(admin_end, (bool, np.bool_)):
+            admin_end_value = pt_row.get("administrative_censor_day")
+            if isinstance(admin_end_value, (bool, np.bool_)):
                 raise ValueError(
                     f"administrative_censor_day must be numeric, not boolean for patient {pt_id}"
                 )
-            admin_end = float(admin_end)
+            admin_end = (
+                last_day
+                if admin_end_value is None or pd.isna(admin_end_value)
+                else float(admin_end_value)
+            )
             if not np.isfinite(admin_end) or admin_end < last_day:
                 raise ValueError(
                     f"observations extend beyond administrative follow-up for patient {pt_id}"
@@ -596,14 +609,14 @@ class WindowedFeatureExtractor:
             if (
                 has_comp_type
                 and comp_type != "lost_to_follow_up"
-                and float(comp_day) < last_day
+                and cast(float, comp_day) < last_day
             ):
                 raise ValueError(f"observations extend beyond a competing event for patient {pt_id}")
-            if has_comp_type and comp_type == "lost_to_follow_up" and float(comp_day) < last_day:
+            if has_comp_type and comp_type == "lost_to_follow_up" and cast(float, comp_day) < last_day:
                 raise ValueError(f"observations extend beyond loss to follow-up for patient {pt_id}")
             # A configured event time beyond administrative follow-up is not an
             # observed event in this cohort; administrative censoring wins.
-            if rec_event and float(rec_day) > admin_end:
+            if rec_event and cast(float, rec_day) > admin_end:
                 raise ValueError(f"observed recurrence occurs after administrative follow-up for patient {pt_id}")
 
             for obs in obs_list:
@@ -622,19 +635,13 @@ class WindowedFeatureExtractor:
                 if not feat:
                     continue
 
-                feat["patient_id"] = pt_id
+                landmark_features: Dict[str, Any] = dict(feat)
+                landmark_features["patient_id"] = pt_id
 
                 # Follow-up end is administrative end unless a terminal event or
                 # loss to follow-up occurs first. Older/external cohorts without an
                 # explicit end date use the last observed visit conservatively.
                 last_day = max(o["day"] for o in obs_list)
-                admin_end = pt_row.get("administrative_censor_day")
-                if admin_end is None or pd.isna(admin_end):
-                    admin_end = last_day
-                if not np.isfinite(float(admin_end)) or float(admin_end) < last_day:
-                    raise ValueError(
-                        f"observations extend beyond administrative follow-up for patient {pt_id}"
-                    )
                 terminal_competing = (
                     comp_day is not None
                     and not pd.isna(comp_day)
@@ -658,16 +665,16 @@ class WindowedFeatureExtractor:
                 event_day: float | None = None
                 event_flag = 0  # 0=censored, 1=recurrence, 2=competing event
                 if recurrence_observed:
-                    event_day, event_flag = float(rec_day), 1
-                if terminal_competing and (event_day is None or comp_day < event_day):
-                    event_day, event_flag = float(comp_day), 2
+                    event_day, event_flag = cast(float, rec_day), 1
+                if terminal_competing and (event_day is None or cast(float, comp_day) < event_day):
+                    event_day, event_flag = cast(float, comp_day), 2
 
                 if event_day is not None:
                     time_to_event_or_censor = max(0.0, event_day - d)
                 else:
                     censor_day = min(
                         float(admin_end),
-                        float(comp_day) if lost_to_follow_up else float(admin_end),
+                        cast(float, comp_day) if lost_to_follow_up else float(admin_end),
                     )
                     time_to_event_or_censor = max(0.0, censor_day - d)
 
@@ -685,7 +692,7 @@ class WindowedFeatureExtractor:
                 else:
                     y_label = np.nan
 
-                features_list.append(feat)
+                features_list.append(landmark_features)
                 labels_list.append(y_label)
                 follow_up_times.append(time_to_event_or_censor)
                 event_indicators.append(event_flag)
