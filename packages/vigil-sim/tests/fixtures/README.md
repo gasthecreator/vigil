@@ -15,6 +15,7 @@ uncompressed JSON SHA-256 is
 
 The test compares schema, row order, null masks, categorical values, and integer
 values exactly. Floating point values use absolute tolerance `1e-6` and zero
-relative tolerance to account for host math-library differences. This fixture
-tests synthetic implementation compatibility only; it is not an experiment
-result or evidence of simulator calibration or clinical validity.
+relative tolerance to account for host math-library differences; generated
+timestamps allow at most one microsecond of conversion drift. This fixture tests
+synthetic implementation compatibility only; it is not an experiment result or
+evidence of simulator calibration or clinical validity.

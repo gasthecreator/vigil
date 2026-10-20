@@ -158,6 +158,14 @@ def _assert_historical_frame_compatible(
         assert actual_series.isna().equals(expected_series.isna()), (
             f"{context}/{column}: null mask changed"
         )
+        if column == "date_drawn":
+            actual_dates = pd.to_datetime(actual_series, utc=True)
+            expected_dates = pd.to_datetime(expected_series, utc=True)
+            delta = (actual_dates - expected_dates).abs()
+            assert delta.le(pd.Timedelta(microseconds=1)).all(), (
+                f"{context}/{column}: timestamps differ by more than one microsecond"
+            )
+            continue
         is_float = pd.api.types.is_float_dtype(actual_series.dtype) or pd.api.types.is_float_dtype(
             expected_series.dtype
         )
