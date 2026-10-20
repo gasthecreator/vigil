@@ -29,6 +29,20 @@
     "cardiovascular_event": [120.0, 1800.0],
     "lost_to_follow_up": [180.0, 1400.0]
   },
+  "baseline_symptom_probabilities": {"fatigue_weight_loss": 0.08, "bone_pain": 0.04},
+  "symptom_mechanics": {
+    "provenance": "Explicit synthetic symptom stress mapping transcribed from prior generator logic; not clinically calibrated.",
+    "maximum_grade": 4,
+    "baseline_grade": 1,
+    "burden_rules": {
+      "bone_pain": {"trigger_state": "b_bone", "trigger_threshold": 5.0, "grade_state": "b_bone", "grade_threshold": 5.0, "grade_offset": 1, "grade_scale": 15.0},
+      "jaundice": {"trigger_state": "b_liver", "trigger_threshold": 5.0, "grade_state": "o_liver", "grade_threshold": 25.0, "grade_offset": 0, "grade_scale": 20.0},
+      "ruq_pain": {"trigger_state": "b_liver", "trigger_threshold": 5.0, "grade_state": "b_liver", "grade_threshold": 5.0, "grade_offset": 1, "grade_scale": 15.0},
+      "cough_dyspnea": {"trigger_state": "b_lung", "trigger_threshold": 8.0, "grade_state": "b_lung", "grade_threshold": 8.0, "grade_offset": 1, "grade_scale": 18.0},
+      "headache_neuro": {"trigger_state": "b_brain", "trigger_threshold": 3.0, "grade_state": "b_brain", "grade_threshold": 3.0, "grade_offset": 1, "grade_scale": 10.0},
+      "fatigue_weight_loss": {"trigger_state": "total_burden", "trigger_threshold": 20.0, "grade_state": "total_burden", "grade_threshold": 20.0, "grade_offset": 2, "grade_scale": 30.0}
+    }
+  },
   "verification": {
     "result_model": "deterministic_visible_recurrence",
     "visible_burden_threshold": 12.0,

@@ -76,6 +76,9 @@ TRACKED_SYMPTOMS = (
     "headache_neuro",
     "fatigue_weight_loss",
 )
+SUPPORTED_SYMPTOM_STATES = frozenset(
+    {"b_bone", "b_liver", "b_lung", "b_brain", "o_liver", "total_burden"}
+)
 
 
 def _is_finite_number(value: object) -> bool:
@@ -824,12 +827,50 @@ class BaseCohortGenerator(ABC):
             if not missingness.get("high_cost_analytes"):
                 raise ValueError("measurement_missingness requires high_cost_analytes")
         baseline_symptoms = config.get("baseline_symptom_probabilities")
-        if baseline_symptoms is not None and any(
-            not np.isfinite(baseline_symptoms.get(key, np.nan))
-            or not 0 <= baseline_symptoms[key] <= 1
-            for key in ("fatigue_weight_loss", "bone_pain")
+        if not isinstance(baseline_symptoms, dict) or set(baseline_symptoms) != {
+            "fatigue_weight_loss",
+            "bone_pain",
+        }:
+            raise ValueError("baseline_symptom_probabilities must define fatigue and bone-pain rates")
+        if any(
+            not _is_finite_number(value) or not 0 <= value <= 1
+            for value in baseline_symptoms.values()
         ):
             raise ValueError("baseline_symptom_probabilities must define probabilities in [0, 1]")
+        symptom_mechanics = config.get("symptom_mechanics")
+        if (
+            not isinstance(symptom_mechanics, dict)
+            or not isinstance(symptom_mechanics.get("provenance"), str)
+            or not symptom_mechanics["provenance"].strip()
+        ):
+            raise ValueError("Population config requires symptom_mechanics provenance")
+        maximum_grade = symptom_mechanics.get("maximum_grade")
+        if isinstance(maximum_grade, bool) or not isinstance(maximum_grade, int) or maximum_grade <= 0:
+            raise ValueError("symptom_mechanics.maximum_grade must be a positive integer")
+        baseline_grade = symptom_mechanics.get("baseline_grade")
+        if (
+            isinstance(baseline_grade, bool)
+            or not isinstance(baseline_grade, int)
+            or not 0 <= baseline_grade <= maximum_grade
+        ):
+            raise ValueError("symptom_mechanics.baseline_grade must be within the symptom scale")
+        burden_rules = symptom_mechanics.get("burden_rules")
+        if not isinstance(burden_rules, dict) or set(burden_rules) != set(TRACKED_SYMPTOMS):
+            raise ValueError("symptom_mechanics must define one burden rule per tracked symptom")
+        for symptom, rule in burden_rules.items():
+            if not isinstance(rule, dict):
+                raise ValueError(f"symptom_mechanics.{symptom} must be an object")
+            if (
+                rule.get("trigger_state") not in SUPPORTED_SYMPTOM_STATES
+                or rule.get("grade_state") not in SUPPORTED_SYMPTOM_STATES
+                or not _is_finite_nonnegative_number(rule.get("trigger_threshold"))
+                or not _is_finite_nonnegative_number(rule.get("grade_threshold"))
+                or not _is_finite_nonnegative_number(rule.get("grade_offset"))
+                or int(rule["grade_offset"]) != rule["grade_offset"]
+                or not _is_finite_number(rule.get("grade_scale"))
+                or rule["grade_scale"] <= 0
+            ):
+                raise ValueError(f"symptom_mechanics.{symptom} is malformed")
         delay_range = config.get("out_of_pocket_delay_factor_range")
         if delay_range is not None and (
             len(delay_range) != 2 or not np.isfinite(delay_range).all()
@@ -1027,37 +1068,16 @@ class BaseCohortGenerator(ABC):
         latent_state: LatentCompartmentState,
     ) -> Dict[str, int]:
         """
-        Generates realistic symptom grades (0 to 4) coupled to organ burdens.
+        Generates profile-configured symptom grades coupled to latent burden.
         """
         symptoms = dict.fromkeys(TRACKED_SYMPTOMS, 0)
+        symptom_mechanics = self.population_config["symptom_mechanics"]
+        baseline_symptoms = self.population_config["baseline_symptom_probabilities"]
+        if self.rng.random() < baseline_symptoms["fatigue_weight_loss"]:
+            symptoms["fatigue_weight_loss"] = symptom_mechanics["baseline_grade"]
+        if self.rng.random() < baseline_symptoms["bone_pain"]:
+            symptoms["bone_pain"] = symptom_mechanics["baseline_grade"]
 
-        # Non-specific baseline symptoms
-        baseline_symptoms = self.population_config.get("baseline_symptom_probabilities", {})
-        if self.rng.random() < baseline_symptoms.get("fatigue_weight_loss", 0.08):
-            symptoms["fatigue_weight_loss"] = 1
-        if self.rng.random() < baseline_symptoms.get("bone_pain", 0.04):
-            symptoms["bone_pain"] = 1
-
-        # Couple symptoms directly to latent compartment burdens
-        if latent_state.b_bone > 5.0:
-            grade = int(min(4, 1 + round(latent_state.b_bone / 15.0)))
-            symptoms["bone_pain"] = max(symptoms["bone_pain"], grade)
-
-        if latent_state.b_liver > 5.0:
-            grade = int(min(4, 1 + round(latent_state.b_liver / 15.0)))
-            symptoms["ruq_pain"] = max(symptoms["ruq_pain"], grade)
-            if latent_state.o_liver > 25.0:
-                symptoms["jaundice"] = int(min(4, round(latent_state.o_liver / 20.0)))
-
-        if latent_state.b_lung > 8.0:
-            grade = int(min(4, 1 + round(latent_state.b_lung / 18.0)))
-            symptoms["cough_dyspnea"] = max(symptoms["cough_dyspnea"], grade)
-
-        if latent_state.b_brain > 3.0:
-            grade = int(min(4, 1 + round(latent_state.b_brain / 10.0)))
-            symptoms["headache_neuro"] = max(symptoms["headache_neuro"], grade)
-
-        # High systemic burden causes cancer cachexia / fatigue
         total_burden = (
             latent_state.b_loc
             + latent_state.b_bone
@@ -1065,8 +1085,26 @@ class BaseCohortGenerator(ABC):
             + latent_state.b_lung
             + latent_state.b_brain
         )
-        if total_burden > 20.0:
-            symptoms["fatigue_weight_loss"] = int(min(4, 2 + round(total_burden / 30.0)))
+        state_values = {
+            "b_bone": latent_state.b_bone,
+            "b_liver": latent_state.b_liver,
+            "b_lung": latent_state.b_lung,
+            "b_brain": latent_state.b_brain,
+            "o_liver": latent_state.o_liver,
+            "total_burden": total_burden,
+        }
+        for symptom, rule in symptom_mechanics["burden_rules"].items():
+            if state_values[rule["trigger_state"]] <= rule["trigger_threshold"]:
+                continue
+            grade_value = state_values[rule["grade_state"]]
+            if grade_value > rule["grade_threshold"]:
+                grade = int(
+                    min(
+                        symptom_mechanics["maximum_grade"],
+                        rule["grade_offset"] + round(grade_value / rule["grade_scale"]),
+                    )
+                )
+                symptoms[symptom] = max(symptoms[symptom], grade)
 
         return symptoms
 
@@ -1124,7 +1162,7 @@ class BaseCohortGenerator(ABC):
         p_image = min(max_probability, p_image)
         performed = bool(self.rng.random() < p_image)
 
-        # If imaging is performed and total metastatic burden exceeds radiological resolution threshold (burden >= 12.0)
+        # Imaging results depend on the profile's latent visibility threshold.
         total_burden = (
             latent_state.b_bone
             + latent_state.b_liver

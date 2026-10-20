@@ -137,6 +137,15 @@ def test_legacy_verification_config_preserves_seeded_cohort_fingerprint(
     assert fingerprint == expected_sha256
 
 
+@pytest.mark.parametrize("invalid_symptoms", [None, {}, {"burden_rules": {}}])
+def test_profile_requires_explicit_symptom_mechanism(invalid_symptoms):
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_v1.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    profile["symptom_mechanics"] = invalid_symptoms
+    with pytest.raises(ValueError, match="symptom_mechanics"):
+        get_generator(GeneratorType.G1_SMOOTH, seed=77, population_config=profile)
+
+
 def test_k3_profile_shares_lab_effects_within_facility_and_records_verification():
     config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
     profile = json.loads(config_path.read_text(encoding="utf-8"))
