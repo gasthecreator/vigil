@@ -332,6 +332,71 @@ def test_unknown_competing_event_types_cannot_create_negative_labels(competing_e
         WindowedFeatureExtractor().transform_cohort(patients, observations)
 
 
+@pytest.mark.parametrize(
+    ("value", "mask", "expected"),
+    [(np.nan, False, np.nan), (20.0, True, 20.0)],
+)
+def test_observation_mask_and_numeric_value_are_consistent(value, mask, expected):
+    patients = pd.DataFrame([{
+        "patient_id": "MASKED",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "administrative_censor_day": 365.0,
+    }])
+    observations = pd.DataFrame(
+        {
+            "patient_id": ["MASKED"],
+            "day": [0.0],
+            "ca_15_3": [value],
+            "observed_ca_15_3": [mask],
+        }
+    )
+    features, _labels, _times, _events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations
+    )
+    if np.isnan(expected):
+        assert features["ca_15_3_curr"].isna().all()
+        assert features["ca_15_3_missing"].eq(1.0).all()
+    else:
+        assert features["ca_15_3_curr"].eq(expected).all()
+        assert features["ca_15_3_missing"].eq(0.0).all()
+
+
+def test_finite_unobserved_lab_value_is_rejected():
+    patients = pd.DataFrame([{
+        "patient_id": "MASK-CONFLICT",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+    }])
+    observations = pd.DataFrame(
+        {
+            "patient_id": ["MASK-CONFLICT"],
+            "day": [0.0],
+            "ca_15_3": [99.0],
+            "observed_ca_15_3": [False],
+        }
+    )
+    with pytest.raises(ValueError, match="disagrees with ca_15_3 value presence"):
+        WindowedFeatureExtractor().transform_cohort(patients, observations)
+
+
+def test_observation_mask_rejects_nonbinary_values():
+    patients = pd.DataFrame([{
+        "patient_id": "BAD-MASK",
+        "observed_recurrence_event": False,
+    }])
+    observations = pd.DataFrame(
+        {
+            "patient_id": ["BAD-MASK"],
+            "day": [0.0],
+            "ca_15_3": [20.0],
+            "observed_ca_15_3": [2],
+        }
+    )
+    with pytest.raises(ValueError, match="must be a non-null boolean or 0/1"):
+        WindowedFeatureExtractor().transform_cohort(patients, observations)
+
+
 def test_observation_rows_must_map_to_one_patient_record():
     patients = pd.DataFrame([{
         "patient_id": "KNOWN",

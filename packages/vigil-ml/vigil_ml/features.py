@@ -363,13 +363,42 @@ class WindowedFeatureExtractor:
         grouped_obs: Dict[str, List[Dict[str, Any]]] = {}
         for _, row in observations_df.iterrows():
             pt_id = row["patient_id"]
+            analytes: Dict[str, float] = {}
+            for code in self.tracked_analytes:
+                mask_column = f"observed_{code}"
+                has_value_column = code in row.index
+                value = row[code] if has_value_column else None
+                value_present = has_value_column and pd.notna(value)
+
+                if mask_column in row.index:
+                    mask = row[mask_column]
+                    valid_mask = isinstance(mask, (bool, np.bool_)) or (
+                        isinstance(mask, (int, np.integer, float, np.floating))
+                        and np.isfinite(mask)
+                        and mask in (0, 1)
+                    )
+                    if not valid_mask:
+                        raise ValueError(
+                            f"{mask_column} must be a non-null boolean or 0/1 for patient {pt_id}"
+                        )
+                    if bool(mask) != bool(value_present):
+                        raise ValueError(
+                            f"{mask_column} disagrees with {code} value presence for patient {pt_id}"
+                        )
+                    if not bool(mask):
+                        continue
+
+                if value_present:
+                    if isinstance(value, (bool, np.bool_)):
+                        raise ValueError(f"{code} measurements must be numeric, not boolean")
+                    numeric_value = float(value)
+                    if not np.isfinite(numeric_value):
+                        raise ValueError(f"{code} measurements must be finite when present")
+                    analytes[code] = numeric_value
+
             obs_dict = {
                 "day": float(row["day"]),
-                "analytes": {
-                    col: row[col]
-                    for col in self.tracked_analytes
-                    if col in row and pd.notna(row[col])
-                },
+                "analytes": analytes,
                 "symptoms": (
                     {
                         col.replace("symptom_", ""): row[col]
