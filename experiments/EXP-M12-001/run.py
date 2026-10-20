@@ -498,21 +498,27 @@ def run(kind: str, n_rep: int, workers: int, smoke: bool = False) -> List[Dict[s
     return [replication(j) for j in jobs]
 
 
-def assert_no_prior_frozen_access() -> None:
-    outputs = (OUT / "results.json", OUT / "REPORT.md")
-    if any(path.exists() for path in outputs):
-        raise RuntimeError("EXP-M12-001 output already exists; frozen test access cannot be repeated")
-    access_log = ROOT / "data/audit/frozen_test_access.jsonl"
-    if not access_log.exists():
-        return
-    for line in access_log.read_text(encoding="utf-8").splitlines():
-        if not line:
-            continue
-        record = json.loads(line)
-        if record.get("dataset_name", "").startswith("SYNTHETIC-EXP-M12-001-") or record.get(
-            "caller"
-        ) == "experiments/EXP-M12-001/run.py":
-            raise RuntimeError("EXP-M12-001 frozen test access is already logged")
+def assert_frozen_run_not_retired() -> None:
+    disposition = OUT / "FROZEN-RUN-DISPOSITION.json"
+    if not disposition.is_file():
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: missing disposition record; "
+            "create a new preregistered experiment instead"
+        )
+    try:
+        record = json.loads(disposition.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: invalid disposition record"
+        ) from exc
+    if not isinstance(record, dict) or record.get("status") != "retired":
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: disposition is not retired; "
+            "create a new preregistered experiment instead"
+        )
+    raise RuntimeError(
+        "EXP-M12-001 frozen run is retired; create a new preregistered experiment instead"
+    )
 
 
 def main() -> int:
@@ -549,7 +555,7 @@ def main() -> int:
         (OUT / "dev_results.json").write_text(json.dumps(out, indent=2))
         print(f"wrote dev_results.json in {time.time() - t0:.0f}s")
         return 0
-    assert_no_prior_frozen_access()
+    assert_frozen_run_not_retired()
     reps = run("frozen", CONFIG["n_frozen"], args.workers)
     elapsed = time.time() - t0
     agg = aggregate(reps)

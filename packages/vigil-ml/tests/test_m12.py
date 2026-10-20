@@ -188,8 +188,24 @@ def test_score_pack_fails_closed_on_empty_or_unknown_outcomes():
 
 
 def test_m12_frozen_runner_refuses_to_repeat_existing_access():
-    with pytest.raises(RuntimeError, match="output already exists"):
-        M12_RUNNER.assert_no_prior_frozen_access()
+    with pytest.raises(RuntimeError, match="frozen run is retired"):
+        M12_RUNNER.assert_frozen_run_not_retired()
+
+
+def test_m12_frozen_runner_fails_closed_when_disposition_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(M12_RUNNER, "OUT", tmp_path)
+    with pytest.raises(RuntimeError, match="missing disposition record"):
+        M12_RUNNER.assert_frozen_run_not_retired()
+
+
+@pytest.mark.parametrize("contents", ["not-json", "[]", '{"status":"active"}'])
+def test_m12_frozen_runner_fails_closed_on_invalid_disposition(
+    tmp_path, monkeypatch, contents
+):
+    (tmp_path / "FROZEN-RUN-DISPOSITION.json").write_text(contents, encoding="utf-8")
+    monkeypatch.setattr(M12_RUNNER, "OUT", tmp_path)
+    with pytest.raises(RuntimeError, match="invalid disposition|not retired"):
+        M12_RUNNER.assert_frozen_run_not_retired()
 
 
 def test_m12_rerender_refuses_to_overwrite_historical_report(monkeypatch):

@@ -23,3 +23,5 @@ Q-7 clean-clone verification exposed a separate simulator transformation defect:
 The pre-registration, original output files, old S10 retraction, and prior conclusions remain preserved. This audit supplements them; it does not rewrite their history or claim real-world privacy, clinical performance, or utility.
 
 The `--rerender` entry point previously rewrote the committed `REPORT.md` from historical `results.json` without checking for an existing report. It now refuses that overwrite, and a regression test verifies the report bytes remain unchanged. This is a preservation guard only; it does not improve or validate the historical result.
+
+The `--frozen` path is now permanently disabled for this experiment. Its former guard could be bypassed if both output files were removed and the absent canonical access log remained absent. `FROZEN-RUN-DISPOSITION.json` records the retirement and replacement requirements; the runner fails closed if that record is missing, malformed, or does not say `retired`. This records the known disposition without fabricating the missing historical access event. A new study must use a new experiment ID and preregistration.
