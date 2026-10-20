@@ -86,6 +86,16 @@ def verify() -> dict[str, Any]:
         ["git", "merge-base", "--is-ancestor", completion["run_authorization_commit"], "HEAD"],
         cwd=ROOT,
     )
+    subprocess.check_call(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            k7_entries[0]["registration_commit"],
+            completion["implementation_commit"],
+        ],
+        cwd=ROOT,
+    )
     return {"status": "verified", "checks": checks}
 
 

@@ -111,6 +111,10 @@ def validate_access() -> dict[str, Any]:
     if not isinstance(implementation_commit, str) or not implementation_commit:
         raise RuntimeError("access log does not bind the implementation commit")
     _git("merge-base", "--is-ancestor", implementation_commit, "HEAD")
+    registration_commit = entry.get("registration_commit")
+    if not isinstance(registration_commit, str) or not registration_commit:
+        raise RuntimeError("access log does not bind the preregistration commit")
+    _git("merge-base", "--is-ancestor", registration_commit, implementation_commit)
     if tuple(entry.get("evaluation_seeds", ())) != SEEDS:
         raise RuntimeError("access log seed allocation does not match the preregistration")
     return entry
