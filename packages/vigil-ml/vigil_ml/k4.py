@@ -856,7 +856,7 @@ def save_safetensors(net: K4Network, path: Path, extra: Optional[Dict[str, str]]
             sort_keys=True,
         )
     extra_meta = {str(k): str(v) for k, v in (extra or {}).items()}
-    collisions = meta.keys() & extra_meta.keys()
+    collisions = (meta.keys() | {"target_contract"}) & extra_meta.keys()
     if collisions:
         raise ValueError(f"extra metadata cannot override reserved model metadata: {sorted(collisions)}")
     meta.update(extra_meta)

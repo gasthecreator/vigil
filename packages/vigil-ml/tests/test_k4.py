@@ -277,6 +277,12 @@ def test_labelled_sequence_sets_require_explicit_target_contract():
         )
 
 
+def test_safetensors_extra_cannot_forge_target_contract(tmp_path):
+    net = net_for("grud", seed=22)
+    with pytest.raises(ValueError, match="reserved model metadata"):
+        k4.save_safetensors(net, tmp_path / "k4.safetensors", extra={"target_contract": "fake"})
+
+
 def test_attach_labels_marks_only_rows_that_exist():
     ds = k4.build_sequences(["a", "b"], [[0.0, 5.0], [0.0]], [np.ones((2, A)), np.ones((1, A))], np.zeros((2, S)), np.ones(k4.N_LAB))
     target = k4.TrainingTargetContract("observed_diagnosis", 365.0, True)
