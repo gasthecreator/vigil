@@ -1,9 +1,11 @@
-"""M12 invariants (experiments/EXP-M12-001/PREREG.md section 8), tested before the frozen run."""
+"""M12 training invariants and regression checks for its synthetic runner."""
 
 from __future__ import annotations
 
 import ast
+import importlib.util
 import inspect
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +16,11 @@ from vigil_ml import m12
 ROOT = Path(__file__).resolve().parents[3]
 M12_SRC = ROOT / "packages" / "vigil-ml" / "vigil_ml" / "m12.py"
 RUNNER = ROOT / "experiments" / "EXP-M12-001" / "run.py"
+RUNNER_SPEC = importlib.util.spec_from_file_location("exp_m12_runner", RUNNER)
+assert RUNNER_SPEC is not None and RUNNER_SPEC.loader is not None
+M12_RUNNER = importlib.util.module_from_spec(RUNNER_SPEC)
+sys.modules[RUNNER_SPEC.name] = M12_RUNNER
+RUNNER_SPEC.loader.exec_module(M12_RUNNER)
 
 
 def _norm(tensors) -> float:
@@ -121,6 +128,51 @@ def test_determinism_central_and_masked_fedavg():
     )
     for a, b in zip(f1, f2):
         assert np.array_equal(a, b)
+
+
+@pytest.mark.parametrize("train", [m12.train_sgd, m12.train_dp_sgd])
+def test_trainers_reject_unknown_censoring_labels(train):
+    init = m12.init_mlp(2, np.random.default_rng(20))
+    x = np.ones((3, 2), dtype=np.float32)
+    y = np.array([0.0, 1.0, np.nan], dtype=np.float32)
+    with pytest.raises(ValueError, match="known, finite horizon labels"):
+        if train is m12.train_sgd:
+            train(init, x, y, 1, 2, 0.05, np.random.default_rng(21))
+        else:
+            train(init, x, y, 1, 2, 0.05, 1.0, 1.0, np.random.default_rng(21))
+
+
+def test_fedavg_rejects_empty_or_unknown_label_sites():
+    init = m12.init_mlp(2, np.random.default_rng(22))
+    x = np.ones((2, 2), dtype=np.float32)
+    y = np.array([0.0, 1.0], dtype=np.float32)
+    with pytest.raises(ValueError, match="at least one known training row"):
+        m12.fedavg_train(
+            [x, np.empty((0, 2), dtype=np.float32)], [y, np.empty(0, dtype=np.float32)],
+            init, 1, 1, 2, 0.05, np.random.default_rng(23), np.random.default_rng(24),
+        )
+    with pytest.raises(ValueError, match="known, finite horizon labels"):
+        m12.fedavg_train(
+            [x], [np.array([0.0, np.nan], dtype=np.float32)], init, 1, 1, 2, 0.05,
+            np.random.default_rng(23), np.random.default_rng(24),
+        )
+
+
+def test_score_pack_fails_closed_on_empty_or_unknown_outcomes():
+    with pytest.raises(ValueError, match="empty evaluation cohort"):
+        M12_RUNNER.score_pack(
+            np.array([]), np.array([]), np.array([]), np.array([])
+        )
+    with pytest.raises(ValueError, match="known binary horizon labels"):
+        M12_RUNNER.score_pack(
+            np.array([0.2, 0.8]), np.array([0.0, np.nan]),
+            np.array([365.0, 365.0]), np.array([0, 1]),
+        )
+
+
+def test_m12_frozen_runner_refuses_to_repeat_existing_access():
+    with pytest.raises(RuntimeError, match="output already exists"):
+        M12_RUNNER.assert_no_prior_frozen_access()
 
 
 def test_causality_latent_columns_do_not_change_weights():

@@ -1,5 +1,7 @@
 # EXP-M12-001 conclusion (SYNTHETIC): H3 met on this MLP; M12 is not wired and is not a privacy claim
 
+> **Q-7 audit status:** The generated results below are preserved historical output, but are provenance-incomplete and stale under the corrected censoring contract. The frozen access is missing from `data/audit/frozen_test_access.jsonl`; unknown early-censor labels were not handled by this runner. Do not use H1–H4 or the reported epsilon as current model-selection evidence. See [`PROVENANCE-AND-CONTRACT-AUDIT.md`](PROVENANCE-AND-CONTRACT-AUDIT.md). The original study output is not rewritten.
+
 **Decision.** The pre-registered kill criterion H3 (FedAvg + DP-SGD stays within 3 percentage points of centralised training on pooled IPCW AUC) was **met**. The kill rule therefore does **not** fire. Under `PREREG.md` section 6 that is still only a **simulation claim on this model and this partition**: `vigil_ml/m12.py` stays research code; it is not wired into any pipeline, not a pilot, and not a legal privacy determination (NDPA/GDPR/HIPAA). (ε, δ)-DP is a bound on a mechanism. Flower was not run; Opacus was not added.
 
 All numbers below are copied from `results.json` / `REPORT.md`, which `run.py --frozen` wrote (10 frozen replications, one run). Synthetic data only.

@@ -59,6 +59,25 @@ def _forward(weights: Sequence[np.ndarray], x: np.ndarray) -> tuple[np.ndarray, 
     return z, pre, post
 
 
+def _validate_training_data(x: np.ndarray, y: np.ndarray, input_dim: int) -> tuple[np.ndarray, np.ndarray]:
+    """Reject malformed or outcome-unknown rows before they can poison training."""
+    features = np.asarray(x, dtype=np.float32)
+    labels = np.asarray(y, dtype=np.float32)
+    if features.ndim != 2 or features.shape[1] != input_dim:
+        raise ValueError(f"x must have shape (n, {input_dim})")
+    if labels.ndim != 1 or labels.shape[0] != features.shape[0]:
+        raise ValueError("y must be one-dimensional and have the same row count as x")
+    if features.shape[0] == 0:
+        raise ValueError("training requires at least one known training row")
+    if not np.isfinite(features).all():
+        raise ValueError("x must contain only finite, preprocessed features")
+    if not np.isfinite(labels).all():
+        raise ValueError("y must contain only known, finite horizon labels")
+    if not np.isin(labels, (0.0, 1.0)).all():
+        raise ValueError("y must contain binary horizon labels in {0, 1}")
+    return features, labels
+
+
 def _example_grads(
     weights: Sequence[np.ndarray], x: np.ndarray, y: np.ndarray
 ) -> list[np.ndarray]:
@@ -122,10 +141,9 @@ def train_sgd(
     rng: np.random.Generator,
 ) -> list[np.ndarray]:
     """Non-private SGD. Mutates a clone and returns it."""
+    x, y = _validate_training_data(x, y, int(weights[0].shape[1]))
     w = clone_weights(weights)
     n = int(x.shape[0])
-    if n == 0:
-        return w
     batch = max(1, min(int(batch), n))
     for _ in range(int(epochs)):
         order = rng.permutation(n)
@@ -151,10 +169,9 @@ def train_dp_sgd(
     max_steps: Optional[int] = None,
 ) -> tuple[list[np.ndarray], int]:
     """DP-SGD (Abadi et al. Algorithm 1). Noise std on the average is σ C / L."""
+    x, y = _validate_training_data(x, y, int(weights[0].shape[1]))
     w = clone_weights(weights)
     n = int(x.shape[0])
-    if n == 0:
-        return w, 0
     lot = max(1, min(int(lot), n))
     steps = 0
     n_epochs = 10**9 if max_steps is not None else int(epochs)
@@ -247,6 +264,13 @@ def fedavg_train(
 
     Returns (server weights, per-site DP-SGD step counts). Step counts are 0 when dp is None.
     """
+    if not site_x or len(site_x) != len(site_y):
+        raise ValueError("site_x and site_y must contain the same non-zero number of sites")
+    validated = [
+        _validate_training_data(x, y, int(init[0].shape[1])) for x, y in zip(site_x, site_y)
+    ]
+    site_x = [x for x, _ in validated]
+    site_y = [y for _, y in validated]
     counts = [int(x.shape[0]) for x in site_x]
     server = clone_weights(init)
     dp_steps = [0] * len(site_x)

@@ -21,3 +21,7 @@ The earlier S10 (`scripts/run_benchmarks.py::run_study_s10` / `render_s10_markdo
 - Model card `docs/model_cards/MODEL-CARD-M12.md` (and the copy under `docs/models/`) describes the simulation, not a product.
 - STUBS S-006 records what was built and what remains unbuilt (real data, Flower, Opacus, a pilot, a legal opinion).
 - Old S10 literals must not be cited.
+
+## Q-7 audit addendum (2026-10-19)
+
+The original engineering decision remains a record of what was implemented, not current evidence that the registered study is reproducible. Q-7 found that EXP-M12-001 has no entry in the canonical frozen-access log and that its output predates the corrected early-censor label contract. Its results remain preserved but are historical only; see `experiments/EXP-M12-001/PROVENANCE-AND-CONTRACT-AUDIT.md`. The module remains unwired. A replacement study requires new preregistration and seeds.

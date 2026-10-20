@@ -179,7 +179,13 @@ def score_pack(
     prob: np.ndarray, y: np.ndarray, times: np.ndarray, events: np.ndarray
 ) -> Dict[str, float]:
     if len(prob) == 0:
-        return {"auc": 0.5, "brier": 0.0, "ece": 0.0, "nb": 0.0}
+        raise ValueError("cannot score an empty evaluation cohort")
+    if not (len(prob) == len(y) == len(times) == len(events)):
+        raise ValueError("probabilities, labels, follow-up, and events must have equal lengths")
+    if not np.isfinite(prob).all() or np.any((prob < 0.0) | (prob > 1.0)):
+        raise ValueError("probabilities must be finite and within [0, 1]")
+    if not np.isfinite(y).all() or not np.isin(y, (0.0, 1.0)).all():
+        raise ValueError("calibration requires known binary horizon labels for every row")
     auc = float(ipcw_time_dependent_roc_auc(prob, times, events, HORIZON))
     brier = float(ipcw_brier_score(prob, times, events, HORIZON))
     ece = float(
@@ -480,6 +486,23 @@ def run(kind: str, n_rep: int, workers: int, smoke: bool = False) -> List[Dict[s
     return [replication(j) for j in jobs]
 
 
+def assert_no_prior_frozen_access() -> None:
+    outputs = (OUT / "results.json", OUT / "REPORT.md")
+    if any(path.exists() for path in outputs):
+        raise RuntimeError("EXP-M12-001 output already exists; frozen test access cannot be repeated")
+    access_log = ROOT / "data/audit/frozen_test_access.jsonl"
+    if not access_log.exists():
+        return
+    for line in access_log.read_text(encoding="utf-8").splitlines():
+        if not line:
+            continue
+        record = json.loads(line)
+        if record.get("dataset_name", "").startswith("SYNTHETIC-EXP-M12-001-") or record.get(
+            "caller"
+        ) == "experiments/EXP-M12-001/run.py":
+            raise RuntimeError("EXP-M12-001 frozen test access is already logged")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -503,12 +526,15 @@ def main() -> int:
         print(json.dumps({"ok": "H3" in report and "B4" in report, "void": agg["void"]}))
         return 0
     if args.dev:
+        if (OUT / "dev_results.json").exists():
+            raise RuntimeError("EXP-M12-001 development output already exists; refusing overwrite")
         reps = run("dev", CONFIG["n_dev"], args.workers)
         agg = aggregate(reps)
         out = {"config": CONFIG, "kind": "development", "aggregate": agg, "replications": reps}
         (OUT / "dev_results.json").write_text(json.dumps(out, indent=2))
         print(f"wrote dev_results.json in {time.time() - t0:.0f}s")
         return 0
+    assert_no_prior_frozen_access()
     reps = run("frozen", CONFIG["n_frozen"], args.workers)
     elapsed = time.time() - t0
     agg = aggregate(reps)
