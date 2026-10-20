@@ -357,6 +357,12 @@ class WindowedFeatureExtractor:
         Transforms full cohort into feature matrix X, prospective binary label y,
         follow-up times, and event indicators for survival modeling.
         """
+        if isinstance(horizon_days, (bool, np.bool_)) or not np.isscalar(horizon_days):
+            raise ValueError("horizon_days must be a finite positive number, not boolean")
+        try:
+            horizon_days = float(horizon_days)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("horizon_days must be finite and positive") from exc
         if not np.isfinite(horizon_days) or horizon_days <= 0:
             raise ValueError("horizon_days must be finite and positive")
         required_observation_columns = {"patient_id", "day"}

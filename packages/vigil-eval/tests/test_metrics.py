@@ -100,6 +100,17 @@ def test_ipcw_rejects_invalid_horizons_and_non_vector_event_codes():
         compute_ipcw_weights(times, events[:, None], 30.0)
 
 
+def test_ipcw_rejects_boolean_time_horizon_and_event_codes():
+    with np.testing.assert_raises_regex(ValueError, "horizon_time.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), np.array([0]), True)
+    with np.testing.assert_raises_regex(ValueError, "horizon_time.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), np.array([0]), np.bool_(True))
+    with np.testing.assert_raises_regex(ValueError, "event_indicators.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), [True], 2.0)
+    with np.testing.assert_raises_regex(ValueError, "follow_up_times.*boolean"):
+        compute_ipcw_weights([True], np.array([1]), 2.0)
+
+
 def test_survival_metrics_validate_inputs_even_when_weights_are_supplied():
     times = np.array([10.0, 40.0])
     events = np.array([1, 0])

@@ -41,13 +41,23 @@ def _survival_inputs(
     horizon_time: float,
 ) -> tuple[NDArray[np.float64], NDArray[np.int64], float]:
     """Validate the shared time, event-code, and horizon contract."""
-    times = np.asarray(follow_up_times, dtype=float)
-    events_raw = np.asarray(event_indicators)
-    horizon = float(horizon_time)
+    times_raw = np.asarray(follow_up_times, dtype=object)
+    events_raw = np.asarray(event_indicators, dtype=object)
+    if isinstance(horizon_time, (bool, np.bool_)) or not np.isscalar(horizon_time):
+        raise ValueError("horizon_time must be a finite positive number, not boolean")
+    try:
+        horizon = float(horizon_time)
+        times = np.asarray(follow_up_times, dtype=float)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("horizon_time and follow_up_times must be numeric") from exc
     if times.ndim != 1 or events_raw.ndim != 1:
         raise ValueError("follow_up_times and event_indicators must be one-dimensional")
     if len(events_raw) != len(times):
         raise ValueError("follow_up_times and event_indicators must have equal length")
+    if any(isinstance(value, (bool, np.bool_)) for value in times_raw.flat):
+        raise ValueError("follow_up_times must be numeric, not boolean")
+    if any(isinstance(value, (bool, np.bool_)) for value in events_raw.flat):
+        raise ValueError("event_indicators must use integer codes, not boolean")
     if not np.isfinite(times).all() or np.any(times < 0):
         raise ValueError("follow_up_times must be finite and non-negative")
     if not np.isfinite(horizon) or horizon <= 0:

@@ -341,6 +341,14 @@ def test_feature_labels_require_observed_outcome_metadata():
         build_landmark_features(observations)
 
 
+@pytest.mark.parametrize("horizon_days", [True, np.bool_(False)])
+def test_feature_labels_reject_boolean_horizon(horizon_days):
+    with pytest.raises(ValueError, match="horizon_days.*boolean"):
+        WindowedFeatureExtractor().transform_cohort(
+            pd.DataFrame(), pd.DataFrame(columns=["patient_id", "day"]), horizon_days
+        )
+
+
 @pytest.mark.parametrize("horizon_days", [90.0, 180.0, 365.0])
 def test_feature_label_contract_records_explicit_target_horizon(horizon_days):
     patients = pd.DataFrame(

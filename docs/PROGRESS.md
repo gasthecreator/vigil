@@ -235,6 +235,10 @@ Caller-supplied `(n, 1)` weights could broadcast across `(n,)` Brier residuals a
 
 The direct feature API had accepted boolean days, ages, and analyte values as numeric `1.0`, unlike the cohort lab path. Both direct and cohort feature extraction now reject those boolean values. Feature tests pass (40); Ruff and `git diff --check` pass. This does not validate analyte units or physiological plausibility; those remain part of the larger data contract audit.
 
+### Q-7 follow-up — reject boolean survival horizons and event data (2026-10-20)
+
+The continued A–B boundary audit found Python `bool` values passed numeric checks in both the feature horizon and shared IPCW inputs (`True` became one day; boolean event codes compared equal to integer 0/1). The feature API and evaluator now reject boolean horizons, follow-up times, and event codes; focused regressions pass. Feature tests: 42 passed; evaluator metric tests: 20 passed; Ruff and `git diff --check` pass. `make typecheck` passes (15 strict-mypy source files; 2 import contracts), as do claims policy and all 515 documentation links. `uv` could not resolve a fresh package build because the sandbox has no network, so the feature suite ran through the repository `.venv`; no new experiment or frozen result was accessed. The partner unit trace confirms the real importer canonicalizes values before `to_vigil_frames`; unitless fixtures are synthetic canonical-unit inputs. A–B remain open pending complete producer/result reconciliation and full call-path audit.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
