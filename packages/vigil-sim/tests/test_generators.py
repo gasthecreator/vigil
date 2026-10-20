@@ -533,3 +533,16 @@ def test_training_helper_requires_an_explicit_observed_or_oracle_estimand():
         cohort.get_unleaked_training_examples(horizon_days=180.0)
     with pytest.raises(ValueError, match="must be explicitly set"):
         cohort.get_survival_training_examples(horizon_days=180.0)
+
+
+@pytest.mark.parametrize("horizon_days", [True, np.bool_(False), 0.0, -1.0, np.nan, np.inf])
+def test_training_helper_rejects_invalid_horizons(horizon_days):
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=86).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    for helper in (
+        cohort.get_unleaked_training_examples,
+        cohort.get_survival_training_examples,
+    ):
+        with pytest.raises(ValueError, match="horizon_days"):
+            helper(horizon_days=horizon_days, use_observed_labels=True)

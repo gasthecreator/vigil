@@ -271,6 +271,12 @@ class CohortDataset:
         not observed. `use_observed_labels` is mandatory: True estimates observed
         diagnosis; False selects the synthetic oracle-only recurrence path.
         """
+        if isinstance(horizon_days, (bool, np.bool_)) or not np.isscalar(horizon_days):
+            raise ValueError("horizon_days must be a finite positive number, not boolean")
+        try:
+            horizon_days = float(horizon_days)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("horizon_days must be finite and positive") from exc
         if not np.isfinite(horizon_days) or horizon_days <= 0:
             raise ValueError("horizon_days must be finite and positive")
         if not isinstance(use_observed_labels, (bool, np.bool_)):

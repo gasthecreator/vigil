@@ -269,7 +269,7 @@ The separate `CohortDataset.get_survival_training_examples` label path assigned 
 
 ### Q-7 follow-up — require explicit horizons in direct simulator training helpers (2026-10-20)
 
-Both `CohortDataset.get_unleaked_training_examples` and `get_survival_training_examples` still defaulted to a 180-day target after the shared extractor's implicit horizon was removed. Their signatures now require `horizon_days`; regression tests verify omission fails and the existing explicit-estimand requirement still holds. The complete generator test module passes (26); Ruff and `git diff --check` pass. This closes the silent-horizon path only; the direct helper and shared extractor still need full contract parity review.
+Both `CohortDataset.get_unleaked_training_examples` and `get_survival_training_examples` still defaulted to a 180-day target after the shared extractor's implicit horizon was removed; the survival helper also treated `True` as one day. Their signatures now require `horizon_days`, and both reject boolean, non-finite, and non-positive horizons. Regression tests verify omission fails and the explicit-estimand requirement still holds. The complete generator test module passes (32); Ruff and `git diff --check` pass. This closes the silent/invalid-horizon paths only; the direct helper and shared extractor still need full contract parity review.
 
 ### Q-7 follow-up — correct a stale model-constructor claim in the inventory (2026-10-20)
 
