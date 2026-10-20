@@ -149,6 +149,10 @@ The prototype defects A2, A4–A12, A14, A16–A17 were resolved in Phase 0. Pha
 
 Source audit found `BayesianJointModelK3` emitted unsupported posterior-shaped diagnostics and a marker-only score; `FastLandmarkJointModel` was actually logistic, with a dead empirical-Bayes helper, hardcoded trajectory parameters, and an ignored horizon argument. ADR-0049 removes the false sampler, makes fit/posterior-check/prediction fail closed, removes invalid public diagnostic exports and dead helper/constants, and canonically names the logistic baseline `LandmarkLogisticResearchBaseline` with a real C/random-state API, consolidates its feature schema, rejects unknown fit options, and keeps the inert horizon parameter only on the legacy wrapper. Package tests no longer certify fake parameter recovery, posterior coverage, or unsupported latency budgets. Final package suite: 418 passed, 2 failed on existing fixed floors (B1 AUC 0.5488 < 0.65; logistic baseline 0.7108 < 0.72), both matching the open gate proposal and unchanged. Focused K3 tests pass 5/5; Ruff, strict mypy on the changed ML module/API, claims policy and all 494 documentation links pass; `git diff --check` passes. Three ONNX exporter warnings are recorded but non-failing. No K3 experiment or frozen result was rerun. Frozen experiment sources/results were not changed or regenerated. This contains K3 misuse but does not implement the registered model or close packages A/E/Q-7.
 
+### Q-7 update — quarantine fixed-formula K8 ensemble (2026-10-20)
+
+Package F source review confirmed `ProductionEnsembleK8` remained callable despite S-016 documenting a fixed handwritten weighted sum that never called the named models. ADR-0050 now preserves the legacy import but makes fit and prediction fail closed; a regression test covers both methods, and STUBS plus the claims inventory reflect the containment. Historical benchmark artifacts remain unchanged. The focused quarantine test passes; full vigil-ml suite: 419 passed, 2 failed on the already recorded B1 and logistic fixed-score floors, with no K8 failures. Ruff and mypy for the changed module, claims policy, all 494 documentation links, and `git diff --check` pass. This closes one callable false-model path only; package F/G and Q-7 remain open.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
@@ -177,6 +181,7 @@ _None recorded. External public datasets bounded with synthetic contracts, publi
 - ADR-0005: Proposal process (`docs/proposals/PROP-0000-template.md`)
 - ADR-0006: K3 Bayesian joint model architecture and landmark logistic regression (historical; source quarantine superseded on disposition by ADR-0049)
 - ADR-0049: Fail closed on the invalid historical K3 sampler
+- ADR-0050: Fail closed on the invalid historical K8 ensemble
 - ADR-0007: Model K1 designated as research inference module; K3/B4 shipped surveillance baselines
 - ADR-0008: Self-Contained JWT Bearer Authentication with Keycloak / OIDC Federation (`docs/adr/0008-auth-provider.md`)
 - ADR-0009: Postgres-Native Transactional Outbox with ARQ Async Worker (`docs/adr/0009-async-queue.md`)
