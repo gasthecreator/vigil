@@ -2,7 +2,7 @@
 Tests for vigil_eval evaluation components:
 - Clustered patient-level bootstrap
 - Subgroup analysis with Empirical Bayes shrinkage
-- Verification bias estimators (Complete-case, IPW, Latent-Class EM)
+- Verification bias estimators (Complete-case, IPW; retired pseudo-label routine)
 - Preclinical lead-time and overdetection analysis
 - Frozen test set access audit logger
 - Model regression gate
@@ -97,16 +97,64 @@ def test_verification_bias_corrections():
     obs_y = np.where(v_mask, true_y, 0)
     features = marker.reshape(-1, 1)
 
-    cc_rep = evaluate_complete_case(scores, obs_y, v_mask)
-    ipw_rep = evaluate_ipw_verification(scores, obs_y, v_mask, features)
-    em_rep = evaluate_latent_class_em(scores, obs_y, v_mask, features)
+    cc_rep = evaluate_complete_case(scores, obs_y, v_mask, cutoff=0.5)
+    ipw_rep = evaluate_ipw_verification(scores, obs_y, v_mask, features, cutoff=0.5)
 
     assert cc_rep.empirical_sensitivity > 0.0
     assert ipw_rep.empirical_sensitivity > 0.0
-    assert em_rep.empirical_sensitivity > 0.0
     # Complete case evaluates fewer patients
     assert cc_rep.details["n_verified"] < n
     assert ipw_rep.details["n_total"] == n
+    with pytest.raises(NotImplementedError, match="not latent-class EM"):
+        evaluate_latent_class_em(
+            scores, obs_y, v_mask, features, max_iter=50, tol=1e-4, cutoff=0.5
+        )
+
+
+def test_verification_metrics_are_undefined_when_no_outcomes_are_verified():
+    scores = np.array([0.2, 0.8])
+    labels = np.array([np.nan, np.nan])
+    verified = np.array([False, False])
+    report = evaluate_complete_case(scores, labels, verified, cutoff=0.5)
+    assert not report.details["metrics_defined"]
+    assert np.isnan(report.empirical_sensitivity)
+    assert np.isnan(report.empirical_specificity)
+    assert np.isnan(report.apparent_prevalence)
+    assert np.isnan(report.brier_score)
+    assert np.isnan(report.roc_auc)
+
+
+def test_single_outcome_class_does_not_receive_plausible_sensitivity_or_auc():
+    report = evaluate_complete_case(
+        risk_scores=np.array([0.2, 0.8]),
+        observed_verified_labels=np.array([1, 1]),
+        verification_mask=np.array([True, True]),
+        cutoff=0.5,
+    )
+    assert not report.details["metrics_defined"]
+    assert np.isnan(report.empirical_specificity)
+    assert np.isnan(report.roc_auc)
+
+
+def test_verification_ipw_requires_finite_declared_features():
+    with pytest.raises(ValueError, match="verification_features must be finite"):
+        evaluate_ipw_verification(
+            risk_scores=np.array([0.2, 0.8]),
+            observed_verified_labels=np.array([0, 1]),
+            verification_mask=np.array([True, False]),
+            verification_features=np.array([[0.0], [np.nan]]),
+            cutoff=0.5,
+        )
+
+
+def test_verification_mask_rejects_unknown_values_instead_of_treating_them_as_verified():
+    with pytest.raises(ValueError, match="verification_mask must contain only known 0/1"):
+        evaluate_complete_case(
+            risk_scores=np.array([0.2, 0.8]),
+            observed_verified_labels=np.array([0, 1]),
+            verification_mask=np.array([0.0, np.nan]),
+            cutoff=0.5,
+        )
 
 
 def test_lead_time_and_overdetection():

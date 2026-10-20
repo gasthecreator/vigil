@@ -7,7 +7,7 @@ Conforms strictly to docs/MASTER_PLAN.md §14 (WP2.1-WP2.4) and docs/ML_PROGRAM.
 
 Executes:
 1. Study S1 (Longitudinal Visit Sparsity: V in {3, 4, 6, 10, 20})
-2. Study S3 (Partial Verification Bias: Complete-Case vs IPW vs Latent-Class EM)
+2. Study S3 (Partial Verification Bias: Complete-Case vs IPW; retired pseudo-EM)
 3. Study S9 (Cross-Generator Robustness: G1+G2 Train -> G3 Stress Test)
 4. Master Benchmark Report generation with explicit [SYNTHETIC DATASET] labeling and sim-to-real gap analysis
 5. Model regression gating and frozen test set audit logging
@@ -56,7 +56,6 @@ from vigil_eval.regression_gate import ModelRegressionGate
 from vigil_eval.verification_bias import (
     evaluate_complete_case,
     evaluate_ipw_verification,
-    evaluate_latent_class_em,
 )
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
@@ -338,9 +337,6 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     cc_res = evaluate_complete_case(scores, y_obs, v_verified, cutoff=threshold)
     # 2. IPW
     ipw_res = evaluate_ipw_verification(scores, y_obs, v_verified, covariates, cutoff=threshold)
-    # 3. Latent-Class EM
-    lc_res = evaluate_latent_class_em(scores, y_obs, v_verified, covariates, cutoff=threshold)
-
     results = {
         "oracle_ground_truth": {
             "sensitivity": round(float(sens_oracle), 4),
@@ -361,10 +357,8 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "bias_specificity": round(float(ipw_res.empirical_specificity - spec_oracle), 4),
         },
         "latent_class_em_estimator": {
-            "sensitivity": round(lc_res.empirical_sensitivity, 4),
-            "specificity": round(lc_res.empirical_specificity, 4),
-            "bias_sensitivity": round(float(lc_res.empirical_sensitivity - sens_oracle), 4),
-            "bias_specificity": round(float(lc_res.empirical_specificity - spec_oracle), 4),
+            "status": "not_run",
+            "reason": "The former pseudo-label routine was not an identifiable latent-class EM estimator and has been retired.",
         },
     }
 
@@ -390,8 +384,9 @@ def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
         "",
         "## 1. Executive Summary & Findings",
         f"- **Verification Rate:** In the simulated cohort, {results['oracle_ground_truth']['verification_rate'] * 100:.1f}% of patients underwent confirmatory imaging.",
-        f"- **Complete-Case Distortion:** Naive complete-case evaluation severely distorted specificity (bias: {results['complete_case_estimator']['bias_specificity'] * 100:+.2f} percentage points), because unverified disease-free individuals were omitted.",
-        f"- **IPW Recovery:** Inverse Probability Weighting (IPW) successfully recovered true population specificity with small residual bias ({results['ipw_estimator']['bias_specificity'] * 100:+.2f} pp).",
+        f"- **Complete-case estimate:** Sensitivity bias was {results['complete_case_estimator']['bias_sensitivity'] * 100:+.2f} pp and specificity bias was {results['complete_case_estimator']['bias_specificity'] * 100:+.2f} pp in this synthetic cohort. A single cohort does not establish the general direction or size of selection bias.",
+        f"- **IPW Estimate:** Inverse Probability Weighting (IPW) specificity bias was {results['ipw_estimator']['bias_specificity'] * 100:+.2f} percentage points in this synthetic run. This single run does not establish estimator recovery.",
+        "- **Latent-class EM:** Not run. The former pseudo-label implementation was not a latent-class EM estimator and has been retired pending a registered, identifiable method.",
         "",
         "## 2. Comparative Estimator Benchmark",
         "",
@@ -400,10 +395,10 @@ def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
         f"| **Oracle Ground Truth** | {results['oracle_ground_truth']['sensitivity']:.4f} | 0.0000 | {results['oracle_ground_truth']['specificity']:.4f} | 0.0000 |",
         f"| `Complete-Case (Naive)` | {results['complete_case_estimator']['sensitivity']:.4f} | {results['complete_case_estimator']['bias_sensitivity']:+.4f} | {results['complete_case_estimator']['specificity']:.4f} | {results['complete_case_estimator']['bias_specificity']:+.4f} |",
         f"| `IPW (Propensity Adjusted)` | {results['ipw_estimator']['sensitivity']:.4f} | {results['ipw_estimator']['bias_sensitivity']:+.4f} | {results['ipw_estimator']['specificity']:.4f} | {results['ipw_estimator']['bias_specificity']:+.4f} |",
-        f"| `Latent-Class EM` | {results['latent_class_em_estimator']['sensitivity']:.4f} | {results['latent_class_em_estimator']['bias_sensitivity']:+.4f} | {results['latent_class_em_estimator']['specificity']:.4f} | {results['latent_class_em_estimator']['bias_specificity']:+.4f} |",
+        "| `Latent-Class EM` | Not run | Not run | Not run | Not run |",
         "",
         "## 3. Decision Record",
-        "- **Adopt IPW as Default Evaluation Harness:** `vigil-eval` incorporates IPW adjustment when evaluating retrospective hospital datasets (T-R tier) where imaging is selective.",
+        "- **No estimator adopted:** This run cannot establish the assumptions or external validity needed to select a verification-bias estimator.",
     ]
     path.write_text("\n".join(lines))
 
@@ -692,18 +687,18 @@ def render_master_benchmark_report(
             "",
             "## 2. Integrity and Anti-Degeneracy Audit",
             "Per `docs/ML_PROGRAM.md` §10 (Stop-and-Think Triggers):",
-            "- **Zero AUC ~ 1.0 Claims:** All IPCW AUC values fall in the realistic range [0.50, 0.85]. No model exhibits trivial separability or target leakage.",
-            "- **No Unverified Claims:** All numbers are computed from deterministic simulation pipelines with recorded seeds.",
+            "- **No AUC range is described as realistic or valid without an applicable registered criterion.** AUC values below are synthetic benchmark outputs, not clinical performance evidence.",
+            "- **Synthetic provenance:** Consult each study's committed protocol and run metadata for its seed and data-generating assumptions; this summary alone does not establish reproducibility.",
             "",
             "---",
             "",
             "## 3. Sim-to-Real Gap Analysis (MASTER_PLAN §14 WP2.4)",
             "The primary vulnerability of algorithms developed in simulation is that synthetic mathematical noise underestimates real clinical entropy. Specifically:",
             "1. **Pre-Analytical Errors (Hypothesis):** In vitro haemolysis and IV fluid dilution create spike artifacts that non-mechanistic decision trees misinterpret as disease acceleration.",
-            "2. **Inter-Laboratory Calibration Drifts (Hypothesis):** Facilities using different analyzer platforms (e.g. Roche Cobas vs Abbott Architect) exhibit systematic 5-15% offsets that invalidate unadjusted static cutoffs. Mitigated by Model K5 (Hierarchical Lab Harmonisation).",
-            "3. **Verification Bias (Supported by Study S3 Results):** Confirmatory imaging is ordered selectively for patients with symptoms or rising markers. In Study S3, naive complete-case evaluation severely overestimates sensitivity by +16.8 percentage points (0.880 complete-case vs 0.712 true IPW) because disease-free unverified patients are excluded, while specificity changes by only ~0.2 percentage points (0.912 vs 0.914).",
+            "2. **Inter-Laboratory Calibration Drifts (Hypothesis):** Analyzer platforms and sites may differ. Their magnitude, direction, and consequences require sourced specifications or measured validation data; the historical benchmark does not quantify them.",
+            "3. **Verification Bias (synthetic method demonstration only):** Confirmatory imaging may be selectively ordered. Historical Study S3 numbers are not current evidence: the propensity estimator's identification assumptions were not validated, and the reported latent-class EM was a pseudo-label routine that has been retired. See the S3 audit before interpreting or reusing those results.",
             "",
-            "These gaps will be directly addressed in Phase 3 (conformal risk control), Phase 4 (M3 Plausibility Adjudicator), and Phase 9 (retrospective validation on real hospital cohorts).",
+            "These are validation questions, not demonstrated mitigations or scheduled outcomes of this benchmark.",
             "",
             "---",
             "",
