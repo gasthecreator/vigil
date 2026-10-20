@@ -1,0 +1,4859 @@
+{
+  "bootstrap_replications": 1000,
+  "conditions": [
+    "measured_confounding",
+    "unmeasured_confounding"
+  ],
+  "description": "Cross-fitted recovery of synthetic marginal treatment-delay effects",
+  "estimand": "finite_cohort_marginal_risk_ratio_and_risk_difference",
+  "evaluation_seeds": [
+    620261121,
+    620261122,
+    620261123,
+    620261124,
+    620261125,
+    620261126,
+    620261127,
+    620261128,
+    620261129,
+    620261130,
+    620261131,
+    620261132,
+    620261133,
+    620261134,
+    620261135,
+    620261136,
+    620261137,
+    620261138,
+    620261139,
+    620261140
+  ],
+  "evidence_class": "synthetic_only",
+  "experiment_id": "EXP-S8-K7-003",
+  "hypotheses": {
+    "H1_recovery": {
+      "criteria_met": true,
+      "verdict": "MET"
+    },
+    "H2_balance": {
+      "description": "20/20 measured-confounding replicates have maximum weighted SMD < 0.10; descriptive only."
+    },
+    "H3_unmeasured_confounding": {
+      "description": "mean AIPW bias under hidden U is 0.17760053535563336; E-values are descriptive sensitivity summaries and do not detect U."
+    }
+  },
+  "implementation_commit": "c5a6ded08be00a3dbdc75c6d80bf83aa4e9563e0",
+  "provenance": {
+    "access_log_sha256": "eea4080f3f70c00ceace242a22d9827de43df3310501e43bfc05480ce656be21",
+    "dependency_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+    "implementation_sha256": "071a8e50c036adf42f35bb41ab264469ba72af34b440dd439eba23eaff0a4625",
+    "preregistration_sha256": "c38c1023e3f1731d523f0ede732c7a8295ece847fd6d4303c56f731048134fc5",
+    "project_config_sha256": "5b858df4510503ec92d0b4faa79725a017fd4ca1227be774f71dddeefd597c8b",
+    "run_authorization_commit": "13f5482c0a6d547de31609183a7d5bd60cab75e2",
+    "runner_sha256": "66f63423d31541e9799103aa7c20490cc18eb84e82f6468edfef5ad0c48371b3",
+    "verifier_sha256": "34dc13b52446ae877192310ec83178318c47eed2ea08717cd8eff553fec84829"
+  },
+  "replicates": [
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.138311695961726,
+        "point_estimate": 1.5720071283397468
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.0149849402422324,
+              1.3173514650072482
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0090005855562476,
+              1.3044599636006224
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.015939558827723,
+              1.314190633612077
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.069970653945247,
+              1.3783785202668224
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006189366292600883,
+          "unweighted_smd": {
+            "age_years": 0.12547550797453266,
+            "breakdown_count": 0.13145266003943068,
+            "stage": 0.00785370690589206,
+            "subtype_pmrt": 0.07809087579990522,
+            "subtype_tnbc": 0.12132013159389926,
+            "travel_distance_km": 0.3146484829409574
+          },
+          "weighted_smd": {
+            "age_years": 0.0023966040124762974,
+            "breakdown_count": 0.003906847051309128,
+            "stage": 0.0017999146135145741,
+            "subtype_pmrt": 0.0029406189075354373,
+            "subtype_tnbc": 0.0015794700755323726,
+            "travel_distance_km": 0.006189366292600883
+          }
+        },
+        "delayed_count": 2047,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14913115127106225,
+            "risk_difference": 0.022758497333135175,
+            "risk_ratio": 1.1526072664172564,
+            "risk_treated": 0.17188964860419742,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.14950340227287426,
+            "risk_difference": 0.022751889068544723,
+            "risk_ratio": 1.1521830856198034,
+            "risk_treated": 0.17225529134141898,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.14941225597258181,
+            "risk_difference": 0.022987910112079263,
+            "risk_ratio": 1.1538555854233117,
+            "risk_treated": 0.17240016608466108,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1473078225533356,
+            "risk_difference": 0.03100189899038691,
+            "risk_ratio": 1.210456569468075,
+            "risk_treated": 0.17830972154372252,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2953,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9069158823983289,
+          "maximum_stabilized_weight": 3.9373333333333327,
+          "minimum_raw_propensity": 0.20134912704986602,
+          "minimum_stabilized_weight": 0.48164705882352943,
+          "raw_predictions_outside_registered_bounds": 5
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261121,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15442314248200514,
+        "risk_difference": 0.02219315741204944,
+        "risk_ratio": 1.1437165249673351,
+        "risk_treated": 0.17661629989405458
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.3759754252051628,
+        "point_estimate": 1.768825378952241
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.080685779698155,
+              1.3962108053086668
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0825039103521,
+              1.395813065755985
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.0797683276715504,
+              1.3950388419689304
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1213404712651527,
+              1.4386699402934462
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0027193965501781723,
+          "unweighted_smd": {
+            "age_years": 0.100404255977666,
+            "breakdown_count": 0.17097644553502547,
+            "stage": 0.031860531708667254,
+            "subtype_pmrt": 0.041680879361013105,
+            "subtype_tnbc": 0.12722493107062524,
+            "travel_distance_km": 0.3382878749913011
+          },
+          "weighted_smd": {
+            "age_years": 5.655920194807575e-05,
+            "breakdown_count": 0.0011475784639364236,
+            "stage": 0.0027193965501781723,
+            "subtype_pmrt": 0.0011232762681151385,
+            "subtype_tnbc": 0.0006858482902643585,
+            "travel_distance_km": 0.00036025963397309416
+          }
+        },
+        "delayed_count": 2087,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1494020301078147,
+            "risk_difference": 0.03480006605578739,
+            "risk_ratio": 1.232929003914299,
+            "risk_treated": 0.18420209616360209,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.14957562017159823,
+            "risk_difference": 0.03520817505237325,
+            "risk_ratio": 1.235387123997756,
+            "risk_treated": 0.18478379522397148,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.14943132514124108,
+            "risk_difference": 0.034649960308775485,
+            "risk_ratio": 1.2318788264510447,
+            "risk_treated": 0.18408128545001656,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.14761414349467902,
+            "risk_difference": 0.03973612004149732,
+            "risk_ratio": 1.2691891108857714,
+            "risk_treated": 0.18735026353617634,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2913,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9092424917063935,
+          "maximum_stabilized_weight": 3.8839999999999995,
+          "minimum_raw_propensity": 0.20340891253054955,
+          "minimum_stabilized_weight": 0.49105882352941177,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261122,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1564175094176152,
+        "risk_difference": 0.022432962614528595,
+        "risk_ratio": 1.1434172088409578,
+        "risk_treated": 0.1788504720321438
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0925746048486953,
+        "point_estimate": 1.5240548099070712
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.0072312054826247,
+              1.2896650036330497
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.004668836507818,
+              1.2827403173034457
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.0088403151498453,
+              1.2887793914005428
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0280659622090016,
+              1.3099494051559342
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.005228855331861561,
+          "unweighted_smd": {
+            "age_years": 0.1504755054121575,
+            "breakdown_count": 0.18390968146912928,
+            "stage": 0.012477210686258674,
+            "subtype_pmrt": 0.10600079967709257,
+            "subtype_tnbc": 0.06006395088303942,
+            "travel_distance_km": 0.3120152518889268
+          },
+          "weighted_smd": {
+            "age_years": 0.005228855331861561,
+            "breakdown_count": 0.004681608612163166,
+            "stage": 0.004375232503958121,
+            "subtype_pmrt": 0.0016862324533142544,
+            "subtype_tnbc": 0.0018230515022082455,
+            "travel_distance_km": 0.0024234033466211603
+          }
+        },
+        "delayed_count": 2008,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15909064607392878,
+            "risk_difference": 0.021332653087926395,
+            "risk_ratio": 1.1340911839531609,
+            "risk_treated": 0.18042329916185518,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1596427678110472,
+            "risk_difference": 0.02080168017514561,
+            "risk_ratio": 1.1303014252406751,
+            "risk_treated": 0.1804444479861928,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15925868538928364,
+            "risk_difference": 0.021374759185484038,
+            "risk_ratio": 1.1342140878108888,
+            "risk_treated": 0.18063344457476768,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15641711229946523,
+            "risk_difference": 0.024857788098941153,
+            "risk_ratio": 1.1589198760513504,
+            "risk_treated": 0.18127490039840638,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2992,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9164630876608804,
+          "maximum_stabilized_weight": 3.989333333333333,
+          "minimum_raw_propensity": 0.17918103963701384,
+          "minimum_stabilized_weight": 0.47247058823529414,
+          "raw_predictions_outside_registered_bounds": 8
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261123,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1545211656535401,
+        "risk_difference": 0.022215404491669116,
+        "risk_ratio": 1.143769330225475,
+        "risk_treated": 0.17673657014520922
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.4934268933746644
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9820420510161048,
+              1.2689405448930569
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9790490640795562,
+              1.2615680831384093
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9813196524182426,
+              1.2682288546984286
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0520047457861763,
+              1.3465251842811687
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006546387016401774,
+          "unweighted_smd": {
+            "age_years": 0.1873331484895007,
+            "breakdown_count": 0.11386843003184274,
+            "stage": 0.0009999808391825498,
+            "subtype_pmrt": 0.03555734921757306,
+            "subtype_tnbc": 0.14298675656406168,
+            "travel_distance_km": 0.36119979175721223
+          },
+          "weighted_smd": {
+            "age_years": 0.005952788601953232,
+            "breakdown_count": 0.006546387016401774,
+            "stage": 0.0053321942757940275,
+            "subtype_pmrt": 0.00018877923802650926,
+            "subtype_tnbc": 0.00030845788377328366,
+            "travel_distance_km": 0.003166261971143063
+          }
+        },
+        "delayed_count": 2031,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.16144157825293368,
+            "risk_difference": 0.019783135185442086,
+            "risk_ratio": 1.1225405214662079,
+            "risk_treated": 0.18122471343837576,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1620829016502423,
+            "risk_difference": 0.019057362025944102,
+            "risk_ratio": 1.1175778680657376,
+            "risk_treated": 0.1811402636761864,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.16148508494291894,
+            "risk_difference": 0.019850945614827836,
+            "risk_ratio": 1.122927424671106,
+            "risk_treated": 0.18133603055774677,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15661839003031325,
+            "risk_difference": 0.03146629731582165,
+            "risk_ratio": 1.2009106166251065,
+            "risk_treated": 0.1880846873461349,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2969,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9392333907553053,
+          "maximum_stabilized_weight": 3.958666666666666,
+          "minimum_raw_propensity": 0.17327157474423227,
+          "minimum_stabilized_weight": 0.4778823529411765,
+          "raw_predictions_outside_registered_bounds": 14
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261124,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15546595475427044,
+        "risk_difference": 0.022313044677151173,
+        "risk_ratio": 1.1435236718702766,
+        "risk_treated": 0.1777789994314216
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.3883589464436485
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.953820447614814,
+              1.2250827593772138
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9718777976032557,
+              1.243627652318278
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9526665058522122,
+              1.2214389436889024
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0452149016481622,
+              1.3446962009022714
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006553106325237991,
+          "unweighted_smd": {
+            "age_years": 0.12079069161224144,
+            "breakdown_count": 0.1844723803009971,
+            "stage": 0.025697201050064403,
+            "subtype_pmrt": 0.0652105678677491,
+            "subtype_tnbc": 0.10295669292061106,
+            "travel_distance_km": 0.341612061030808
+          },
+          "weighted_smd": {
+            "age_years": 0.004530862109449011,
+            "breakdown_count": 0.004424162594251205,
+            "stage": 0.002229980968504299,
+            "subtype_pmrt": 0.0027892726506324045,
+            "subtype_tnbc": 0.006553106325237991,
+            "travel_distance_km": 0.0031820956644229453
+          }
+        },
+        "delayed_count": 1957,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15548804117456486,
+            "risk_difference": 0.013199125092600544,
+            "risk_ratio": 1.084888361785856,
+            "risk_treated": 0.1686871662671654,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15510824512033436,
+            "risk_difference": 0.015438583071783224,
+            "risk_ratio": 1.0995342514500492,
+            "risk_treated": 0.17054682819211758,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15588103255116234,
+            "risk_difference": 0.012708137116401369,
+            "risk_ratio": 1.0815245890306147,
+            "risk_treated": 0.1685891696675637,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15149523496549458,
+            "risk_difference": 0.02786092241825605,
+            "risk_ratio": 1.1839062622966445,
+            "risk_treated": 0.17935615738375063,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3043,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8947317009830563,
+          "maximum_stabilized_weight": 4.057333333333333,
+          "minimum_raw_propensity": 0.18175367070302037,
+          "minimum_stabilized_weight": 0.4604705882352942,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261125,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15502116391814222,
+        "risk_difference": 0.022293458402859567,
+        "risk_ratio": 1.1438091279886884,
+        "risk_treated": 0.17731462232100179
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.3870052050261976,
+        "point_estimate": 1.799101355915131
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.084426240042721,
+              1.3883984353042667
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0883590648732688,
+              1.3894572965871461
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.0833375485687817,
+              1.3867394417877268
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1309298376648824,
+              1.4410703686338586
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006127269382707296,
+          "unweighted_smd": {
+            "age_years": 0.11885542443579607,
+            "breakdown_count": 0.15856798368695998,
+            "stage": 0.005046783045805294,
+            "subtype_pmrt": 0.06007059629762517,
+            "subtype_tnbc": 0.14598269771606745,
+            "travel_distance_km": 0.33819920048590857
+          },
+          "weighted_smd": {
+            "age_years": 0.00252750802479439,
+            "breakdown_count": 0.0005225546174016088,
+            "stage": 0.0036086967676034276,
+            "subtype_pmrt": 0.0006795927065068925,
+            "subtype_tnbc": 0.00098351831479277,
+            "travel_distance_km": 0.006127269382707296
+          }
+        },
+        "delayed_count": 2014,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15259866449639045,
+            "risk_difference": 0.03750433214746074,
+            "risk_ratio": 1.2457710378477649,
+            "risk_treated": 0.1901029966438512,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1530468355618359,
+            "risk_difference": 0.03660786459626514,
+            "risk_ratio": 1.2391938680853964,
+            "risk_treated": 0.18965470015810104,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15284811929740955,
+            "risk_difference": 0.03698510976382996,
+            "risk_ratio": 1.2419729463066855,
+            "risk_treated": 0.1898332290612395,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15103817816476892,
+            "risk_difference": 0.04310283474486365,
+            "risk_ratio": 1.28537708325535,
+            "risk_treated": 0.19414101290963257,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2986,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8926084829882887,
+          "maximum_stabilized_weight": 3.9813333333333323,
+          "minimum_raw_propensity": 0.1888439421819443,
+          "minimum_stabilized_weight": 0.4738823529411765,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261126,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1545085093940147,
+        "risk_difference": 0.02222428563374207,
+        "risk_ratio": 1.1438385867607301,
+        "risk_treated": 0.17673279502775677
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.5518299899162489
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.981973860728401,
+              1.3092516029737067
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9885438968258663,
+              1.3119925458010555
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9854271205650044,
+              1.30939248154951
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0561816594860782,
+              1.3830673242153524
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.004012915833602027,
+          "unweighted_smd": {
+            "age_years": 0.07452603326642704,
+            "breakdown_count": 0.1571723502528653,
+            "stage": 0.0343985840266019,
+            "subtype_pmrt": 0.00800600948666882,
+            "subtype_tnbc": 0.17161727550053835,
+            "travel_distance_km": 0.3231455882627573
+          },
+          "weighted_smd": {
+            "age_years": 0.0012865828466038128,
+            "breakdown_count": 0.0036672509160179177,
+            "stage": 0.0012733454035543008,
+            "subtype_pmrt": 0.004012915833602027,
+            "subtype_tnbc": 0.0008377432358479867,
+            "travel_distance_km": 0.0016987376692705787
+          }
+        },
+        "delayed_count": 2033,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14554258448603505,
+            "risk_difference": 0.021068088589553308,
+            "risk_ratio": 1.144755493135927,
+            "risk_treated": 0.16661067307558836,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.14531791456727083,
+            "risk_difference": 0.022195173068558005,
+            "risk_ratio": 1.1527352848040175,
+            "risk_treated": 0.16751308763582884,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.14524706068663562,
+            "risk_difference": 0.02165370988129428,
+            "risk_ratio": 1.1490819144905882,
+            "risk_treated": 0.1669007705679299,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1412200876306033,
+            "risk_difference": 0.031431166673380945,
+            "risk_ratio": 1.222568667111984,
+            "risk_treated": 0.17265125430398426,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2967,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8950138374111606,
+          "maximum_stabilized_weight": 2.8945450549825305,
+          "minimum_raw_propensity": 0.21740972154666105,
+          "minimum_stabilized_weight": 0.47835294117647065,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261127,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15472191064344806,
+        "risk_difference": 0.02225033169505669,
+        "risk_ratio": 1.14380853754018,
+        "risk_treated": 0.17697224233850475
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.5232329018141029
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.997329021284752,
+              1.2996385887515944
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9908317548685808,
+              1.2894915726500376
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9973942951873949,
+              1.3014586003974222
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.025357137711048,
+              1.3273198085728397
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006233377999654934,
+          "unweighted_smd": {
+            "age_years": 0.08038525512417082,
+            "breakdown_count": 0.16464433649535137,
+            "stage": 0.037081195115345605,
+            "subtype_pmrt": 0.04401367146089455,
+            "subtype_tnbc": 0.13830668639392957,
+            "travel_distance_km": 0.315741287482966
+          },
+          "weighted_smd": {
+            "age_years": 0.004033225524287648,
+            "breakdown_count": 0.0034352435270613322,
+            "stage": 0.0047998208305744935,
+            "subtype_pmrt": 0.0026963187840340673,
+            "subtype_tnbc": 0.00022115450960014845,
+            "travel_distance_km": 0.006233377999654934
+          }
+        },
+        "delayed_count": 1939,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15661756921453784,
+            "risk_difference": 0.020952028587449545,
+            "risk_ratio": 1.133778277191552,
+            "risk_treated": 0.1775695978019874,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15674236402762157,
+            "risk_difference": 0.020581037800459973,
+            "risk_ratio": 1.1313048831956696,
+            "risk_treated": 0.17732340182808154,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15625374945764203,
+            "risk_difference": 0.02133576266341672,
+            "risk_ratio": 1.136545604425323,
+            "risk_treated": 0.17758951212105875,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15485135576608952,
+            "risk_difference": 0.025654059396365364,
+            "risk_ratio": 1.1656689363128152,
+            "risk_treated": 0.18050541516245489,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3061,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.888750422503301,
+          "maximum_stabilized_weight": 4.081333333333333,
+          "minimum_raw_propensity": 0.20070010330076504,
+          "minimum_stabilized_weight": 0.45623529411764707,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261128,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15574732861085042,
+        "risk_difference": 0.022357337720697146,
+        "risk_ratio": 1.1435487717196042,
+        "risk_treated": 0.17810466633154756
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.5362867823294133
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9935525331830594,
+              1.293026882458959
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9902796116193242,
+              1.2922584745050854
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9928949378500843,
+              1.2919622212488013
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0333734806615635,
+              1.3513282171589176
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.002677846327025107,
+          "unweighted_smd": {
+            "age_years": 0.07089255872559629,
+            "breakdown_count": 0.13187350190498429,
+            "stage": 0.03552249881570176,
+            "subtype_pmrt": 0.051186096461581294,
+            "subtype_tnbc": 0.12409318081439338,
+            "travel_distance_km": 0.30411649722195017
+          },
+          "weighted_smd": {
+            "age_years": 0.0006234294111793322,
+            "breakdown_count": 0.0009549738245598141,
+            "stage": 0.002677846327025107,
+            "subtype_pmrt": 0.0005582032534257793,
+            "subtype_tnbc": 5.573678793166167e-05,
+            "travel_distance_km": 0.0013281974543153387
+          }
+        },
+        "delayed_count": 1964,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14880990729196497,
+            "risk_difference": 0.020649810854227235,
+            "risk_ratio": 1.13876637133919,
+            "risk_treated": 0.1694597181461922,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.14914535303020135,
+            "risk_difference": 0.020232762958686867,
+            "risk_ratio": 1.1356580178169535,
+            "risk_treated": 0.16937811598888822,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1490602442895863,
+            "risk_difference": 0.0205146620795294,
+            "risk_ratio": 1.1376266500655574,
+            "risk_treated": 0.1695749063691157,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.14591567852437418,
+            "risk_difference": 0.026691246119210338,
+            "risk_ratio": 1.1829224000404572,
+            "risk_treated": 0.17260692464358451,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3036,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8496116660817022,
+          "maximum_stabilized_weight": 2.943958341381413,
+          "minimum_raw_propensity": 0.2041037037743423,
+          "minimum_stabilized_weight": 0.462328868212865,
+          "raw_predictions_outside_registered_bounds": 0
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261129,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15557245528232932,
+        "risk_difference": 0.022321999506064255,
+        "risk_ratio": 1.1434829801043815,
+        "risk_treated": 0.17789445478839358
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.425355083069096
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9716320048171577,
+              1.2610054460447528
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.975872413528501,
+              1.2632661008170487
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9733762076814115,
+              1.2608822078094704
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0116445828802334,
+              1.293425430819987
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.008302308384144155,
+          "unweighted_smd": {
+            "age_years": 0.11294415249213932,
+            "breakdown_count": 0.11371642667450287,
+            "stage": 0.02430828257546839,
+            "subtype_pmrt": 0.07500686054253206,
+            "subtype_tnbc": 0.09061677146590602,
+            "travel_distance_km": 0.35418170905246354
+          },
+          "weighted_smd": {
+            "age_years": 0.0008037324317268654,
+            "breakdown_count": 0.0027529260773810193,
+            "stage": 0.001471594108236145,
+            "subtype_pmrt": 2.3814347656910363e-05,
+            "subtype_tnbc": 0.0009857431580722281,
+            "travel_distance_km": 0.008302308384144155
+          }
+        },
+        "delayed_count": 1936,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14765129980042707,
+            "risk_difference": 0.01443451240333632,
+            "risk_ratio": 1.0977608217661932,
+            "risk_treated": 0.1620858122037634,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.147263828537547,
+            "risk_difference": 0.015896688544190962,
+            "risk_ratio": 1.1079470003059024,
+            "risk_treated": 0.16316051708173795,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1472635215787931,
+            "risk_difference": 0.015130990120644089,
+            "risk_ratio": 1.1027477134759966,
+            "risk_treated": 0.1623945116994372,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.14556135770234988,
+            "risk_difference": 0.020760956347236903,
+            "risk_ratio": 1.142626839120928,
+            "risk_treated": 0.16632231404958678,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3064,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9100143565939064,
+          "maximum_stabilized_weight": 3.5815714253885793,
+          "minimum_raw_propensity": 0.18871895417738735,
+          "minimum_stabilized_weight": 0.4555294117647059,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261130,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15487819993534804,
+        "risk_difference": 0.022268251040447662,
+        "risk_ratio": 1.1437791183636126,
+        "risk_treated": 0.1771464509757957
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.41911635599192
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9617785749994797,
+              1.25082616587561
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9610112070247576,
+              1.2429667534999362
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9638831561300386,
+              1.2478854020703483
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0158216007074647,
+              1.319821973618162
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.01562837328682725,
+          "unweighted_smd": {
+            "age_years": 0.17924504295966026,
+            "breakdown_count": 0.1739009011316901,
+            "stage": 5.9019347260029026e-05,
+            "subtype_pmrt": 0.06094133391257489,
+            "subtype_tnbc": 0.1126221949936744,
+            "travel_distance_km": 0.3189669402344687
+          },
+          "weighted_smd": {
+            "age_years": 0.00791865939852617,
+            "breakdown_count": 0.002307593616611655,
+            "stage": 0.004322545065432068,
+            "subtype_pmrt": 0.005348736200069196,
+            "subtype_tnbc": 0.001178149123169838,
+            "travel_distance_km": 0.01562837328682725
+          }
+        },
+        "delayed_count": 1943,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.16608053968017358,
+            "risk_difference": 0.015870385499927253,
+            "risk_ratio": 1.095558369032816,
+            "risk_treated": 0.18195092518010084,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.16675521841168356,
+            "risk_difference": 0.015160610709843564,
+            "risk_ratio": 1.090915359976413,
+            "risk_treated": 0.18191582912152712,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.16578911892212245,
+            "risk_difference": 0.01584503801618803,
+            "risk_ratio": 1.0955734496884024,
+            "risk_treated": 0.18163415693831048,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.16355904481517827,
+            "risk_difference": 0.025324125539942677,
+            "risk_ratio": 1.1548317035512095,
+            "risk_treated": 0.18888317035512095,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3057,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8488921521112631,
+          "maximum_stabilized_weight": 4.046116787065775,
+          "minimum_raw_propensity": 0.16718383593184008,
+          "minimum_stabilized_weight": 0.46426919603038963,
+          "raw_predictions_outside_registered_bounds": 0
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261131,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1540635341033542,
+        "risk_difference": 0.02215753519463476,
+        "risk_ratio": 1.1438207640996363,
+        "risk_treated": 0.17622106929798895
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.3341824240380187
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.923724994577843,
+              1.2131670789631892
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9256389016177728,
+              1.2086731160449393
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9191727046817973,
+              1.204774625558207
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              0.9850858549208756,
+              1.2869232107330772
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.007592871868513273,
+          "unweighted_smd": {
+            "age_years": 0.08626088934845196,
+            "breakdown_count": 0.14693632786957367,
+            "stage": 0.037331175196185985,
+            "subtype_pmrt": 0.04346700450156616,
+            "subtype_tnbc": 0.14503661461738673,
+            "travel_distance_km": 0.3199965669057613
+          },
+          "weighted_smd": {
+            "age_years": 0.001112951771877165,
+            "breakdown_count": 0.0018495067361647773,
+            "stage": 0.004393485037276567,
+            "subtype_pmrt": 0.007592871868513273,
+            "subtype_tnbc": 0.007129781707215458,
+            "travel_distance_km": 0.004331777298163702
+          }
+        },
+        "delayed_count": 1980,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15434235174705851,
+            "risk_difference": 0.010331450337153436,
+            "risk_ratio": 1.066938531259942,
+            "risk_treated": 0.16467380208421195,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15392219543719898,
+            "risk_difference": 0.009664180618763785,
+            "risk_ratio": 1.0627861406947434,
+            "risk_treated": 0.16358637605596277,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15511405338102097,
+            "risk_difference": 0.008939065087586018,
+            "risk_ratio": 1.0576289826275649,
+            "risk_treated": 0.16405311846860698,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15132450331125827,
+            "risk_difference": 0.019887617900862936,
+            "risk_ratio": 1.1314236456468405,
+            "risk_treated": 0.1712121212121212,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3020,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9455051981242603,
+          "maximum_stabilized_weight": 3.584976309187934,
+          "minimum_raw_propensity": 0.2023098742532709,
+          "minimum_stabilized_weight": 0.4658823529411765,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261132,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15382775627519854,
+        "risk_difference": 0.02215010634778669,
+        "risk_ratio": 1.1439929105392401,
+        "risk_treated": 0.17597786262298523
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4424521514502548,
+        "point_estimate": 1.8102483941068082
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1038588038775845,
+              1.4219508588503538
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1045263583531122,
+              1.4207771121768826
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.106981013496636,
+              1.4256877409006032
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1687715600848456,
+              1.5055255378464734
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.001924231487699268,
+          "unweighted_smd": {
+            "age_years": 0.1007034776777649,
+            "breakdown_count": 0.13605641088538267,
+            "stage": 0.005543019106214274,
+            "subtype_pmrt": 0.06220790333299107,
+            "subtype_tnbc": 0.11357511388618761,
+            "travel_distance_km": 0.30663283168326283
+          },
+          "weighted_smd": {
+            "age_years": 0.001245132075032821,
+            "breakdown_count": 0.00021787722871798173,
+            "stage": 0.0007643077556148456,
+            "subtype_pmrt": 0.001924231487699268,
+            "subtype_tnbc": 0.0007110382362338864,
+            "travel_distance_km": 0.001417174338642338
+          }
+        },
+        "delayed_count": 2004,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14230409034716207,
+            "risk_difference": 0.03565086811893581,
+            "risk_ratio": 1.2505259548897203,
+            "risk_treated": 0.17795495846609788,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1421597791494296,
+            "risk_difference": 0.036145828572533345,
+            "risk_ratio": 1.2542619916041027,
+            "risk_treated": 0.17830560772196294,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.14199243087068006,
+            "risk_difference": 0.036167569650136316,
+            "risk_ratio": 1.2547147719660918,
+            "risk_treated": 0.17816000052081638,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1378504672897196,
+            "risk_difference": 0.045283265245210536,
+            "risk_ratio": 1.328495551270341,
+            "risk_treated": 0.18313373253493015,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2996,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9217632267069407,
+          "maximum_stabilized_weight": 3.994666666666666,
+          "minimum_raw_propensity": 0.21050213045454336,
+          "minimum_stabilized_weight": 0.47152941176470586,
+          "raw_predictions_outside_registered_bounds": 5
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261133,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15582402190147693,
+        "risk_difference": 0.022358383069773002,
+        "risk_ratio": 1.1434848285709733,
+        "risk_treated": 0.17818240497124993
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.5204483101081983
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9949384089799844,
+              1.2736403913873915
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.994720107130538,
+              1.274152891308005
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9952334824928987,
+              1.271826941137421
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0346181525308698,
+              1.3157944118767373
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.007950890434469811,
+          "unweighted_smd": {
+            "age_years": 0.1346929571401853,
+            "breakdown_count": 0.17044302634069078,
+            "stage": 0.022521838790019046,
+            "subtype_pmrt": 0.018511258739934467,
+            "subtype_tnbc": 0.10616947929886773,
+            "travel_distance_km": 0.3070620023225548
+          },
+          "weighted_smd": {
+            "age_years": 0.007950890434469811,
+            "breakdown_count": 0.003256286391446859,
+            "stage": 0.002187278312251177,
+            "subtype_pmrt": 0.0015927247387696498,
+            "subtype_tnbc": 0.0027877153610890615,
+            "travel_distance_km": 0.0052791501820865444
+          }
+        },
+        "delayed_count": 2020,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15317080160440927,
+            "risk_difference": 0.02032872702458871,
+            "risk_ratio": 1.1327193356152254,
+            "risk_treated": 0.17349952862899798,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15359915887746553,
+            "risk_difference": 0.0190121380615782,
+            "risk_ratio": 1.1237776183185042,
+            "risk_treated": 0.17261129693904373,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15317176298409252,
+            "risk_difference": 0.019421054520720377,
+            "risk_ratio": 1.126792655136687,
+            "risk_treated": 0.1725928175048129,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15268456375838926,
+            "risk_difference": 0.02503820851883845,
+            "risk_ratio": 1.163986508540964,
+            "risk_treated": 0.17772277227722771,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2980,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8854336573122609,
+          "maximum_stabilized_weight": 3.690350282748824,
+          "minimum_raw_propensity": 0.19137829927901595,
+          "minimum_stabilized_weight": 0.47529411764705887,
+          "raw_predictions_outside_registered_bounds": 2
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261134,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1549105100280457,
+        "risk_difference": 0.022259281653822877,
+        "risk_ratio": 1.143691229534994,
+        "risk_treated": 0.17716979168186858
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.4966007003008373
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9826564967939788,
+              1.2702022478299928
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9773646900359148,
+              1.2657326293869648
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9852189480752275,
+              1.2729980224228052
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0416955694536403,
+              1.3400451491859602
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0031176239541372236,
+          "unweighted_smd": {
+            "age_years": 0.0781501953821189,
+            "breakdown_count": 0.18814995734847084,
+            "stage": 0.0386317370453176,
+            "subtype_pmrt": 0.05706062732350677,
+            "subtype_tnbc": 0.103912884643472,
+            "travel_distance_km": 0.28402757332687106
+          },
+          "weighted_smd": {
+            "age_years": 0.0031176239541372236,
+            "breakdown_count": 0.0014755330545509384,
+            "stage": 0.000783621314315468,
+            "subtype_pmrt": 0.0010473718410354722,
+            "subtype_tnbc": 0.0024791571547041345,
+            "travel_distance_km": 0.00014962321576867733
+          }
+        },
+        "delayed_count": 1967,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15368238740079357,
+            "risk_difference": 0.01901461647685518,
+            "risk_ratio": 1.1237267119443317,
+            "risk_treated": 0.17269700387764875,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15395009740381033,
+            "risk_difference": 0.0186296112915611,
+            "risk_ratio": 1.1210107145479469,
+            "risk_treated": 0.17257970869537143,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15307156668320687,
+            "risk_difference": 0.0195132596172026,
+            "risk_ratio": 1.1274780159373867,
+            "risk_treated": 0.17258482630040947,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1503461918892186,
+            "risk_difference": 0.02860652798876817,
+            "risk_ratio": 1.1902710512937147,
+            "risk_treated": 0.17895271987798678,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3033,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8428051422707771,
+          "maximum_stabilized_weight": 3.4238972672485493,
+          "minimum_raw_propensity": 0.21788705920205442,
+          "minimum_stabilized_weight": 0.4667745606535564,
+          "raw_predictions_outside_registered_bounds": 0
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261135,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15432133780365803,
+        "risk_difference": 0.022184992891088023,
+        "risk_ratio": 1.1437584277510207,
+        "risk_treated": 0.17650633069474606
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.3174046885817257,
+        "point_estimate": 1.6933976524234364
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.0616253721938307,
+              1.3628132411529987
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0562599146773495,
+              1.3469175629681753
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.060216954807565,
+              1.3596059588856337
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1281208616348333,
+              1.4261509452606946
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.005725346481914616,
+          "unweighted_smd": {
+            "age_years": 0.12380399248376332,
+            "breakdown_count": 0.1501890761743911,
+            "stage": 0.051765386507897394,
+            "subtype_pmrt": 0.09390417580601747,
+            "subtype_tnbc": 0.11911674295603757,
+            "travel_distance_km": 0.3637866761317542
+          },
+          "weighted_smd": {
+            "age_years": 0.005725346481914616,
+            "breakdown_count": 0.001402207576688583,
+            "stage": 0.0029812379600031237,
+            "subtype_pmrt": 9.640424210777272e-05,
+            "subtype_tnbc": 0.004199897640698348,
+            "travel_distance_km": 0.00216011281591449
+          }
+        },
+        "delayed_count": 1944,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.14995994466960352,
+            "risk_difference": 0.030208198791277868,
+            "risk_ratio": 1.201441784056626,
+            "risk_treated": 0.1801681434608814,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15003476502445337,
+            "risk_difference": 0.029153836898732965,
+            "risk_ratio": 1.1943138771469488,
+            "risk_treated": 0.17918860192318634,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1498025376841277,
+            "risk_difference": 0.029672628697524572,
+            "risk_ratio": 1.1980782779534216,
+            "risk_treated": 0.17947516638165228,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.14725130890052357,
+            "risk_difference": 0.03896268286902377,
+            "risk_ratio": 1.2645999085505257,
+            "risk_treated": 0.18621399176954734,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3056,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9356045054292629,
+          "maximum_stabilized_weight": 4.0746666666666655,
+          "minimum_raw_propensity": 0.1651074134377896,
+          "minimum_stabilized_weight": 0.45741176470588235,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261136,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.155723534582283,
+        "risk_difference": 0.022344155879629485,
+        "risk_ratio": 1.143486056488289,
+        "risk_treated": 0.17806769046191248
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.3295334720789147,
+        "point_estimate": 1.6983937136627378
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.0654538441639003,
+              1.3630839435108772
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0620448700061866,
+              1.3566669692558184
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.065640070391045,
+              1.3663497301705525
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1323274653977606,
+              1.443842971502334
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.005529670807316547,
+          "unweighted_smd": {
+            "age_years": 0.06119089718056645,
+            "breakdown_count": 0.17787382149563644,
+            "stage": 0.016793359386478777,
+            "subtype_pmrt": 0.0359370408440982,
+            "subtype_tnbc": 0.12188140053231859,
+            "travel_distance_km": 0.3157767114844046
+          },
+          "weighted_smd": {
+            "age_years": 0.005529670807316547,
+            "breakdown_count": 0.003053121317425851,
+            "stage": 0.0023960299813385578,
+            "subtype_pmrt": 0.0033103643480710643,
+            "subtype_tnbc": 0.0019386778750271067,
+            "travel_distance_km": 0.004687927644677642
+          }
+        },
+        "delayed_count": 2093,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15202255464023468,
+            "risk_difference": 0.030937067975556176,
+            "risk_ratio": 1.2035031449693077,
+            "risk_treated": 0.18295962261579085,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15266923530400067,
+            "risk_difference": 0.031268527423612885,
+            "risk_ratio": 1.204812235820464,
+            "risk_treated": 0.18393776272761356,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1518566775025623,
+            "risk_difference": 0.03116160124614692,
+            "risk_ratio": 1.2052040236796377,
+            "risk_treated": 0.1830182787487092,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15067079463364294,
+            "risk_difference": 0.04235357230376746,
+            "risk_ratio": 1.2811000791941827,
+            "risk_treated": 0.1930243669374104,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2907,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9017419648381789,
+          "maximum_stabilized_weight": 3.1551954779294893,
+          "minimum_raw_propensity": 0.23678821900650898,
+          "minimum_stabilized_weight": 0.49247058823529416,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261137,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.155295405713607,
+        "risk_difference": 0.02229970227603248,
+        "risk_ratio": 1.1435953766536866,
+        "risk_treated": 0.17759510798963948
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.4718896761219629
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9782847003105458,
+              1.2790946948473816
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.975265886190959,
+              1.2705903902988134
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9807940257087483,
+              1.2784261937365282
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0260686336352967,
+              1.3195686376125462
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.005189056872191184,
+          "unweighted_smd": {
+            "age_years": 0.12676048723657782,
+            "breakdown_count": 0.19410217143865932,
+            "stage": 0.00014825214985089464,
+            "subtype_pmrt": 0.01935307621504979,
+            "subtype_tnbc": 0.16569202565799845,
+            "travel_distance_km": 0.366169930420347
+          },
+          "weighted_smd": {
+            "age_years": 0.004324897555572319,
+            "breakdown_count": 0.0003543167446954408,
+            "stage": 0.002743101458110199,
+            "subtype_pmrt": 0.003135715485694296,
+            "subtype_tnbc": 0.0011250924827866896,
+            "travel_distance_km": 0.005189056872191184
+          }
+        },
+        "delayed_count": 1964,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1550810298505589,
+            "risk_difference": 0.017766122977466353,
+            "risk_ratio": 1.1145602592050514,
+            "risk_treated": 0.17284715282802526,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15556301280872073,
+            "risk_difference": 0.01671394190469322,
+            "risk_ratio": 1.1074416186914853,
+            "risk_treated": 0.17227695471341395,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15504893490712646,
+            "risk_difference": 0.01789220043505846,
+            "risk_ratio": 1.115397119275768,
+            "risk_treated": 0.17294113534218492,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15316205533596838,
+            "risk_difference": 0.024027354032667064,
+            "risk_ratio": 1.1568753695552199,
+            "risk_treated": 0.17718940936863545,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3036,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9485740795236856,
+          "maximum_stabilized_weight": 4.047999999999999,
+          "minimum_raw_propensity": 0.1811997358185531,
+          "minimum_stabilized_weight": 0.4621176470588235,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261138,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15539908303279676,
+        "risk_difference": 0.022314563205803217,
+        "risk_ratio": 1.1435952051344715,
+        "risk_treated": 0.17771364623859998
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.2152985056205043,
+        "point_estimate": 1.5953970635142358
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.0324014702660478,
+              1.3233670035239775
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.0285627113849278,
+              1.3146632372238483
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.0320170995429572,
+              1.3191744282991054
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0872026932092016,
+              1.3900409668303784
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.008647074121631786,
+          "unweighted_smd": {
+            "age_years": 0.15514482140945512,
+            "breakdown_count": 0.19007480042041966,
+            "stage": 0.05156259207440419,
+            "subtype_pmrt": 0.11009957552640456,
+            "subtype_tnbc": 0.039663974116455135,
+            "travel_distance_km": 0.31694194525731395
+          },
+          "weighted_smd": {
+            "age_years": 0.0030982384577592234,
+            "breakdown_count": 0.004954121999027548,
+            "stage": 0.00775772469156554,
+            "subtype_pmrt": 0.0018013543412221658,
+            "subtype_tnbc": 0.00016077023457111312,
+            "travel_distance_km": 0.008647074121631786
+          }
+        },
+        "delayed_count": 2000,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15821426620022935,
+            "risk_difference": 0.025601030679913483,
+            "risk_ratio": 1.1618124034877733,
+            "risk_treated": 0.18381529688014284,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15838670504199165,
+            "risk_difference": 0.025137173565156573,
+            "risk_ratio": 1.1587075983334092,
+            "risk_treated": 0.18352387860714822,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.15836377264107337,
+            "risk_difference": 0.025489377727632517,
+            "risk_ratio": 1.1609546003011901,
+            "risk_treated": 0.1838531503687059,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15633333333333332,
+            "risk_difference": 0.03516666666666668,
+            "risk_ratio": 1.224946695095949,
+            "risk_treated": 0.1915,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 3000,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8898187915665028,
+          "maximum_stabilized_weight": 3.999999999999999,
+          "minimum_raw_propensity": 0.18384087616001513,
+          "minimum_stabilized_weight": 0.4705882352941177,
+          "raw_predictions_outside_registered_bounds": 3
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261139,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.15478554643595058,
+        "risk_difference": 0.02225497278723218,
+        "risk_ratio": 1.1437793986561993,
+        "risk_treated": 0.17704051922318276
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.0,
+        "point_estimate": 1.4614696145126018
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              0.9804695706811243,
+              1.2639394233170231
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              0.9874235041324944,
+              1.2640334358003147
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              0.9810078351162975,
+              1.2627879731737395
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.0642777222962525,
+              1.3705903001256194
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "measured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.004129802102746943,
+          "unweighted_smd": {
+            "age_years": 0.10226592410101489,
+            "breakdown_count": 0.1552845543377225,
+            "stage": 0.046255602682118216,
+            "subtype_pmrt": 0.006444440603157283,
+            "subtype_tnbc": 0.16536382934075516,
+            "travel_distance_km": 0.3200154267981302
+          },
+          "weighted_smd": {
+            "age_years": 0.0017844782528062518,
+            "breakdown_count": 0.0005308507336771868,
+            "stage": 0.004129802102746943,
+            "subtype_pmrt": 0.00037217289553959673,
+            "subtype_tnbc": 0.0006747376904364737,
+            "travel_distance_km": 0.00022440176082237772
+          }
+        },
+        "delayed_count": 2012,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.15808919135988575,
+            "risk_difference": 0.017507447752741906,
+            "risk_ratio": 1.1107441160407145,
+            "risk_treated": 0.17559663911262766,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.15744033149805825,
+            "risk_difference": 0.01847225659399379,
+            "risk_ratio": 1.1173286185199731,
+            "risk_treated": 0.17591258809205204,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1579314386150554,
+            "risk_difference": 0.017552039438956918,
+            "risk_ratio": 1.1111370832360905,
+            "risk_treated": 0.17548347805401232,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.15194109772423026,
+            "risk_difference": 0.032452540446743894,
+            "risk_ratio": 1.2135863234688784,
+            "risk_treated": 0.18439363817097415,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2988,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9163653957713458,
+          "maximum_stabilized_weight": 3.353526325437699,
+          "minimum_raw_propensity": 0.18343845659189228,
+          "minimum_stabilized_weight": 0.47341176470588237,
+          "raw_predictions_outside_registered_bounds": 5
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261140,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.1566274118802728,
+        "risk_difference": 0.022457499419685445,
+        "risk_ratio": 1.1433816670408379,
+        "risk_treated": 0.17908491129995824
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.6580252968905445,
+        "point_estimate": 1.9598121669702966
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1869550227056982,
+              1.4700999131636485
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1872753377370018,
+              1.4691707175581585
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.183757240281914,
+              1.4675532009486991
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2193214003579302,
+              1.512263124625258
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.007385389036385685,
+          "unweighted_smd": {
+            "age_years": 0.1175359986294035,
+            "breakdown_count": 0.0971488171586699,
+            "stage": 0.04701983897890637,
+            "subtype_pmrt": 0.12907705166094333,
+            "subtype_tnbc": 0.08423315105605994,
+            "travel_distance_km": 0.31129908687614927
+          },
+          "weighted_smd": {
+            "age_years": 0.0025945753102801566,
+            "breakdown_count": 6.560870856982602e-05,
+            "stage": 0.0017723756030517807,
+            "subtype_pmrt": 0.0016129127164927917,
+            "subtype_tnbc": 0.0015073953979096318,
+            "travel_distance_km": 0.007385389036385685
+          }
+        },
+        "delayed_count": 2282,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1904835490501417,
+            "risk_difference": 0.060103948172051,
+            "risk_ratio": 1.3155335380496802,
+            "risk_treated": 0.2505874972221927,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19086356231835108,
+            "risk_difference": 0.060585036716002266,
+            "risk_ratio": 1.317425893031114,
+            "risk_treated": 0.25144859903435335,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1910903982951846,
+            "risk_difference": 0.06007633004819446,
+            "risk_ratio": 1.3143869633648064,
+            "risk_treated": 0.25116672834337905,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.188373804267844,
+            "risk_difference": 0.06666563482067484,
+            "risk_ratio": 1.3539007723488168,
+            "risk_treated": 0.25503943908851884,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2718,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9074970042873103,
+          "maximum_stabilized_weight": 3.624,
+          "minimum_raw_propensity": 0.22982050788740474,
+          "minimum_stabilized_weight": 0.5369411764705883,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261121,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21008738731062548,
+        "risk_difference": 0.026355572262765525,
+        "risk_ratio": 1.125450521329,
+        "risk_treated": 0.236442959573391
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.6285981275624404,
+        "point_estimate": 1.9456213635008477
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1750559372397793,
+              1.443298749508216
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.172464237910967,
+              1.4395965956641268
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1775254379732196,
+              1.443122306430365
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1993469481170982,
+              1.4685236750599475
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006264833524130423,
+          "unweighted_smd": {
+            "age_years": 0.1074648990949599,
+            "breakdown_count": 0.16525516986764782,
+            "stage": 0.005328206349858829,
+            "subtype_pmrt": 0.06088162294320849,
+            "subtype_tnbc": 0.09276352990268982,
+            "travel_distance_km": 0.3229800155142617
+          },
+          "weighted_smd": {
+            "age_years": 0.002177635599951744,
+            "breakdown_count": 0.006264833524130423,
+            "stage": 0.0016255887777943743,
+            "subtype_pmrt": 0.0018082051631226634,
+            "subtype_tnbc": 0.001730708827474612,
+            "travel_distance_km": 0.002259961770183151
+          }
+        },
+        "delayed_count": 2370,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.19812561109666554,
+            "risk_difference": 0.06127602945748817,
+            "risk_ratio": 1.3092786900104074,
+            "risk_treated": 0.2594016405541537,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19831619843466802,
+            "risk_difference": 0.06004993243024548,
+            "risk_ratio": 1.3027989287018726,
+            "risk_treated": 0.2583661308649135,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19801500952868697,
+            "risk_difference": 0.06127098104115722,
+            "risk_ratio": 1.3094259429474244,
+            "risk_treated": 0.2592859905698442,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1961977186311787,
+            "risk_difference": 0.06540565689624747,
+            "risk_ratio": 1.333366041932424,
+            "risk_treated": 0.2616033755274262,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2630,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9272714299305191,
+          "maximum_stabilized_weight": 3.5066666666666664,
+          "minimum_raw_propensity": 0.26265251674433254,
+          "minimum_stabilized_weight": 0.5576470588235294,
+          "raw_predictions_outside_registered_bounds": 12
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261122,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21562720741671773,
+        "risk_difference": 0.026796518404564373,
+        "risk_ratio": 1.1242724363293257,
+        "risk_treated": 0.2424237258212821
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4481703629635192,
+        "point_estimate": 1.7466173995708616
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.105918030179235,
+              1.3559090433619512
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1024948584535486,
+              1.3489234759220652
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1060787641670364,
+              1.3566089803934898
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1540514392604257,
+              1.398502997162274
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0049442970244510795,
+          "unweighted_smd": {
+            "age_years": 0.1430118985373181,
+            "breakdown_count": 0.2072472447159976,
+            "stage": 0.03350728189253997,
+            "subtype_pmrt": 0.10796385235852345,
+            "subtype_tnbc": 0.08083897293838785,
+            "travel_distance_km": 0.2826813347597145
+          },
+          "weighted_smd": {
+            "age_years": 0.0007888679938318488,
+            "breakdown_count": 0.0049442970244510795,
+            "stage": 0.0031300498278258432,
+            "subtype_pmrt": 0.0006292082612031353,
+            "subtype_tnbc": 0.0002862651033220517,
+            "travel_distance_km": 0.0012544727842349565
+          }
+        },
+        "delayed_count": 2304,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.20746674969899045,
+            "risk_difference": 0.0463854246307743,
+            "risk_ratio": 1.223580042093849,
+            "risk_treated": 0.25385217432976476,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.20763369219503944,
+            "risk_difference": 0.0460389488450694,
+            "risk_ratio": 1.2217315906602624,
+            "risk_treated": 0.25367264104010884,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.20741090575195129,
+            "risk_difference": 0.04649644687687096,
+            "risk_ratio": 1.224175516269513,
+            "risk_treated": 0.25390735262882225,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.2032640949554896,
+            "risk_difference": 0.05541646060006597,
+            "risk_ratio": 1.2726328061638281,
+            "risk_treated": 0.2586805555555556,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2696,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9250789490776208,
+          "maximum_stabilized_weight": 3.594666666666666,
+          "minimum_raw_propensity": 0.2140165310534066,
+          "minimum_stabilized_weight": 0.5421176470588235,
+          "raw_predictions_outside_registered_bounds": 10
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261123,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21117466103085336,
+        "risk_difference": 0.02651533397310593,
+        "risk_ratio": 1.1255611532352925,
+        "risk_treated": 0.2376899950039593
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4785946371845051,
+        "point_estimate": 1.7884145361588102
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.117031515419281,
+              1.3816018152625078
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.118105195093088,
+              1.3803318853455075
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1149228283664827,
+              1.3791805749197532
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1929286205282974,
+              1.474966179907877
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.004491783826786423,
+          "unweighted_smd": {
+            "age_years": 0.19480402332063396,
+            "breakdown_count": 0.16844228327026153,
+            "stage": 0.043063331098526725,
+            "subtype_pmrt": 0.038199096630664335,
+            "subtype_tnbc": 0.14227967907265887,
+            "travel_distance_km": 0.3270531069131229
+          },
+          "weighted_smd": {
+            "age_years": 0.004491783826786423,
+            "breakdown_count": 0.0037099789192319155,
+            "stage": 0.0037954582523512586,
+            "subtype_pmrt": 0.002366830173925052,
+            "subtype_tnbc": 0.0037392743398348013,
+            "travel_distance_km": 0.004453215119802469
+          }
+        },
+        "delayed_count": 2279,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.2034768637101744,
+            "risk_difference": 0.049083855521300096,
+            "risk_ratio": 1.2412257326278309,
+            "risk_treated": 0.2525607192314745,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.2037002704849103,
+            "risk_difference": 0.04973845446214731,
+            "risk_ratio": 1.244174709948811,
+            "risk_treated": 0.2534387249470576,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.20356524191015213,
+            "risk_difference": 0.04884514335153456,
+            "risk_ratio": 1.2399483472384416,
+            "risk_treated": 0.2524103852616867,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1969864020580669,
+            "risk_difference": 0.06497059662556626,
+            "risk_ratio": 1.3298227489144885,
+            "risk_treated": 0.26195699868363315,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2721,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9512761926679352,
+          "maximum_stabilized_weight": 3.6279999999999997,
+          "minimum_raw_propensity": 0.20656761093356474,
+          "minimum_stabilized_weight": 0.536235294117647,
+          "raw_predictions_outside_registered_bounds": 15
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261124,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.2129089019110237,
+        "risk_difference": 0.026562784809204903,
+        "risk_ratio": 1.1247612691192486,
+        "risk_treated": 0.23947168672022862
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.635313800143581,
+        "point_estimate": 1.9447996745905882
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1777586181907735,
+              1.454694771785119
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1881247893088087,
+              1.4640866122901517
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1777329062906978,
+              1.4533706648578975
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2676876601008482,
+              1.5576595969951685
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0075112447087415934,
+          "unweighted_smd": {
+            "age_years": 0.0736596285858348,
+            "breakdown_count": 0.15471855302553586,
+            "stage": 0.01583448949446569,
+            "subtype_pmrt": 0.02220039614702425,
+            "subtype_tnbc": 0.16472403086361495,
+            "travel_distance_km": 0.3184525631923453
+          },
+          "weighted_smd": {
+            "age_years": 0.0008027450323887643,
+            "breakdown_count": 0.0022326011702651877,
+            "stage": 0.0008157409107306282,
+            "subtype_pmrt": 0.002115236472582908,
+            "subtype_tnbc": 0.0013544705888183098,
+            "travel_distance_km": 0.0075112447087415934
+          }
+        },
+        "delayed_count": 2244,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.19856364703132912,
+            "risk_difference": 0.061339690476068076,
+            "risk_ratio": 1.3089170217869235,
+            "risk_treated": 0.2599033375073972,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19763645373992475,
+            "risk_difference": 0.06311184792171734,
+            "risk_ratio": 1.3193330315710277,
+            "risk_treated": 0.2607483016616421,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19908958492300716,
+            "risk_difference": 0.06095067259645848,
+            "risk_ratio": 1.306146967055206,
+            "risk_treated": 0.26004025751946563,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19267053701015965,
+            "risk_difference": 0.07649167332852128,
+            "risk_ratio": 1.39700763030773,
+            "risk_treated": 0.26916221033868093,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2756,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9164444440069642,
+          "maximum_stabilized_weight": 3.674666666666666,
+          "minimum_raw_propensity": 0.25467175517247637,
+          "minimum_stabilized_weight": 0.528,
+          "raw_predictions_outside_registered_bounds": 11
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261125,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21277245366633735,
+        "risk_difference": 0.026575986380339506,
+        "risk_ratio": 1.124903322410405,
+        "risk_treated": 0.23934844004667685
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7232468058150596,
+        "point_estimate": 2.0555283450770068
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2138104672070449,
+              1.5003744762586593
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.217345881920548,
+              1.5027739384378433
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2116532838405427,
+              1.4947675002088738
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2681757080613034,
+              1.5752329625676262
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.003946149496644848,
+          "unweighted_smd": {
+            "age_years": 0.12071754175661659,
+            "breakdown_count": 0.14590405251294403,
+            "stage": 0.012570976658287067,
+            "subtype_pmrt": 0.06005159729551393,
+            "subtype_tnbc": 0.15456269905050427,
+            "travel_distance_km": 0.3089040457778718
+          },
+          "weighted_smd": {
+            "age_years": 0.0010734571957401436,
+            "breakdown_count": 0.003946149496644848,
+            "stage": 0.0005724633830177664,
+            "subtype_pmrt": 9.964173597795274e-05,
+            "subtype_tnbc": 0.002719865947286551,
+            "travel_distance_km": 0.003314986031093255
+          }
+        },
+        "delayed_count": 2277,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1962718292984226,
+            "risk_difference": 0.07028940157647726,
+            "risk_ratio": 1.3581227210635782,
+            "risk_treated": 0.26656123087489986,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19636234233305663,
+            "risk_difference": 0.07075075782688231,
+            "risk_ratio": 1.3603071596430625,
+            "risk_treated": 0.26711310015993894,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19683214872924712,
+            "risk_difference": 0.06968936520689459,
+            "risk_ratio": 1.3540547906264842,
+            "risk_treated": 0.2665215139361417,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19316929856775616,
+            "risk_difference": 0.08087549721617004,
+            "risk_ratio": 1.418676766006903,
+            "risk_treated": 0.2740447957839262,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2723,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9162634032086073,
+          "maximum_stabilized_weight": 3.630666666666666,
+          "minimum_raw_propensity": 0.2310542104238104,
+          "minimum_stabilized_weight": 0.535764705882353,
+          "raw_predictions_outside_registered_bounds": 8
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261126,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.20910932386840295,
+        "risk_difference": 0.02638897350844055,
+        "risk_ratio": 1.1261970199140796,
+        "risk_treated": 0.2354982973768435
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.8264869834328095,
+        "point_estimate": 2.152432286963826
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2574773602437181,
+              1.5589238902494749
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.2506819444544095,
+              1.5521271673456745
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2577944700907853,
+              1.561153448398797
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.303014440162112,
+              1.61404045792537
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.004231414072650755,
+          "unweighted_smd": {
+            "age_years": 0.11491341143000054,
+            "breakdown_count": 0.1479824930313411,
+            "stage": 0.03189142850231471,
+            "subtype_pmrt": 0.021756546164129982,
+            "subtype_tnbc": 0.14675786957887113,
+            "travel_distance_km": 0.30497875721317014
+          },
+          "weighted_smd": {
+            "age_years": 0.0010506448042197829,
+            "breakdown_count": 0.003759395075185182,
+            "stage": 0.0004030534416391547,
+            "subtype_pmrt": 0.0008086477731220432,
+            "subtype_tnbc": 0.004231414072650755,
+            "travel_distance_km": 0.0014947385748581626
+          }
+        },
+        "delayed_count": 2277,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.18512248857346766,
+            "risk_difference": 0.07439373207676617,
+            "risk_ratio": 1.4018622083682841,
+            "risk_treated": 0.25951622065023383,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.18546655145539614,
+            "risk_difference": 0.07337140111831159,
+            "risk_ratio": 1.3956044933307399,
+            "risk_treated": 0.25883795257370773,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.18518187102496608,
+            "risk_difference": 0.0744654070627252,
+            "risk_ratio": 1.4021203946723588,
+            "risk_treated": 0.2596472780876913,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.18068307014322438,
+            "risk_difference": 0.08106484377860257,
+            "risk_ratio": 1.4486576618071845,
+            "risk_treated": 0.26174791392182695,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2723,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9136496612605027,
+          "maximum_stabilized_weight": 3.14169669701547,
+          "minimum_raw_propensity": 0.22660735840035098,
+          "minimum_stabilized_weight": 0.535764705882353,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261127,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21079824801505606,
+        "risk_difference": 0.02646379329015472,
+        "risk_ratio": 1.125540859752613,
+        "risk_treated": 0.23726204130521078
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7107877214079628,
+        "point_estimate": 1.9989877940106924
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2086324365417376,
+              1.4775097541376818
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.2052170037444223,
+              1.4685596804824974
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2053928787439026,
+              1.4739140305094585
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2405760908782464,
+              1.5058988932183188
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.007575596167007751,
+          "unweighted_smd": {
+            "age_years": 0.10329987846872972,
+            "breakdown_count": 0.15822366515713593,
+            "stage": 0.03604215224913357,
+            "subtype_pmrt": 0.05898795417134994,
+            "subtype_tnbc": 0.11576380729298345,
+            "travel_distance_km": 0.3118221568789333
+          },
+          "weighted_smd": {
+            "age_years": 0.003519030497091247,
+            "breakdown_count": 0.0037298975131481436,
+            "stage": 0.003643475714937047,
+            "subtype_pmrt": 0.002577875671520256,
+            "subtype_tnbc": 0.00046603988439128196,
+            "travel_distance_km": 0.007575596167007751
+          }
+        },
+        "delayed_count": 2226,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1972051825560371,
+            "risk_difference": 0.0656463517772827,
+            "risk_ratio": 1.3328835019770784,
+            "risk_treated": 0.2628515343333198,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19750706361427461,
+            "risk_difference": 0.06472722393785085,
+            "risk_ratio": 1.3277210584440726,
+            "risk_treated": 0.26223428755212547,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19689902813687385,
+            "risk_difference": 0.06539765371047121,
+            "risk_ratio": 1.3321380218545833,
+            "risk_treated": 0.26229668184734506,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19502523431867338,
+            "risk_difference": 0.07092265427072461,
+            "risk_ratio": 1.3636588594214234,
+            "risk_treated": 0.265947888589398,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2774,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9225306098491748,
+          "maximum_stabilized_weight": 3.6986666666666657,
+          "minimum_raw_propensity": 0.22530704194477522,
+          "minimum_stabilized_weight": 0.5237647058823529,
+          "raw_predictions_outside_registered_bounds": 9
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261128,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21153648073841577,
+        "risk_difference": 0.026562551723303074,
+        "risk_ratio": 1.1255696021347263,
+        "risk_treated": 0.23809903246171885
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7481121185830761,
+        "point_estimate": 2.041854482977265
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2242073182520765,
+              1.50042623699796
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.2183765793919152,
+              1.5006699997297221
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2205203084117624,
+              1.5006071807068677
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2687586696145878,
+              1.5586414651334994
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006843476883844481,
+          "unweighted_smd": {
+            "age_years": 0.09342988711076981,
+            "breakdown_count": 0.11863863700560046,
+            "stage": 0.0006045483580458112,
+            "subtype_pmrt": 0.03350079103027036,
+            "subtype_tnbc": 0.127740509211647,
+            "travel_distance_km": 0.28884581649541874
+          },
+          "weighted_smd": {
+            "age_years": 0.0022635818370881204,
+            "breakdown_count": 0.006843476883844481,
+            "stage": 0.0025210005285527352,
+            "subtype_pmrt": 0.0026630319435967356,
+            "subtype_tnbc": 0.0009456012599502765,
+            "travel_distance_km": 0.00042591062375317557
+          }
+        },
+        "delayed_count": 2245,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1862880176789505,
+            "risk_difference": 0.06557309271736947,
+            "risk_ratio": 1.3519984459246241,
+            "risk_treated": 0.25186111039632,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.18745011663448424,
+            "risk_difference": 0.06481050983946934,
+            "risk_ratio": 1.3457480368809036,
+            "risk_treated": 0.2522606264739536,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.18667464582088913,
+            "risk_difference": 0.06537001452248856,
+            "risk_ratio": 1.3501815376963933,
+            "risk_treated": 0.2520446603433777,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.18257713248638838,
+            "risk_difference": 0.07399302341561606,
+            "risk_ratio": 1.405269939383742,
+            "risk_treated": 0.25657015590200444,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2755,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8596220536432727,
+          "maximum_stabilized_weight": 2.9498378222161,
+          "minimum_raw_propensity": 0.2584261190748518,
+          "minimum_stabilized_weight": 0.5282352941176471,
+          "raw_predictions_outside_registered_bounds": 1
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261129,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21070608232607468,
+        "risk_difference": 0.026434836782234433,
+        "risk_ratio": 1.1254583469561437,
+        "risk_treated": 0.23714091910830912
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.6363596734491146,
+        "point_estimate": 1.9183833015649778
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1781802203360208,
+              1.448271303465604
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1821694870750272,
+              1.4483258498641107
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1802381178838437,
+              1.4489223200772992
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2163891077715192,
+              1.4970728637384947
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.008777139227160178,
+          "unweighted_smd": {
+            "age_years": 0.13050871987127108,
+            "breakdown_count": 0.10276543392583351,
+            "stage": 0.014322029576971387,
+            "subtype_pmrt": 0.11974133030280562,
+            "subtype_tnbc": 0.09596169652707257,
+            "travel_distance_km": 0.29260347915464474
+          },
+          "weighted_smd": {
+            "age_years": 0.0017628700357764909,
+            "breakdown_count": 0.002079818714598983,
+            "stage": 0.0011204519629153284,
+            "subtype_pmrt": 0.002857381849461865,
+            "subtype_tnbc": 0.00039966924758589396,
+            "travel_distance_km": 0.008777139227160178
+          }
+        },
+        "delayed_count": 2275,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.19630703600411326,
+            "risk_difference": 0.058366038542012055,
+            "risk_ratio": 1.2973201558643528,
+            "risk_treated": 0.2546730745461253,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19644148470433503,
+            "risk_difference": 0.058363136576895014,
+            "risk_ratio": 1.2971018910019827,
+            "risk_treated": 0.25480462128123005,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19608839655336266,
+            "risk_difference": 0.05861032816318737,
+            "risk_ratio": 1.2988974829381983,
+            "risk_treated": 0.25469872471655003,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19376146788990825,
+            "risk_difference": 0.0660187518903115,
+            "risk_ratio": 1.3407217782217782,
+            "risk_treated": 0.25978021978021976,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2725,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9015588957702368,
+          "maximum_stabilized_weight": 2.930579088441486,
+          "minimum_raw_propensity": 0.2302479491040486,
+          "minimum_stabilized_weight": 0.5352941176470588,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261130,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.2132498447660324,
+        "risk_difference": 0.02670569236322473,
+        "risk_ratio": 1.125231942806453,
+        "risk_treated": 0.23995553712925713
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4588437872255982,
+        "point_estimate": 1.7630939524326856
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.109787237441835,
+              1.3590787772104673
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1048373638147058,
+              1.3579741046320668
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.107912689073118,
+              1.3565403279277957
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.167636740846376,
+              1.4298971543857337
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.010796023278510987,
+          "unweighted_smd": {
+            "age_years": 0.14328797154931341,
+            "breakdown_count": 0.17843156101930033,
+            "stage": 0.012006624045831304,
+            "subtype_pmrt": 0.03626428734726672,
+            "subtype_tnbc": 0.1510271319646697,
+            "travel_distance_km": 0.2731799172128387
+          },
+          "weighted_smd": {
+            "age_years": 0.00046232962997449405,
+            "breakdown_count": 0.002274943903016013,
+            "stage": 0.002154329734698215,
+            "subtype_pmrt": 0.0007636905921797257,
+            "subtype_tnbc": 7.838307852214638e-07,
+            "travel_distance_km": 0.010796023278510987
+          }
+        },
+        "delayed_count": 2206,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.2159069316188351,
+            "risk_difference": 0.049768775718936925,
+            "risk_ratio": 1.2305103191721485,
+            "risk_treated": 0.265675707337772,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.21625028319769435,
+            "risk_difference": 0.049008661596257774,
+            "risk_ratio": 1.2266293522097007,
+            "risk_treated": 0.2652589447939521,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.21597017223252069,
+            "risk_difference": 0.0496133183591258,
+            "risk_ratio": 1.2297230114985993,
+            "risk_treated": 0.2655834905916465,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.21045096635647817,
+            "risk_difference": 0.061534527750502804,
+            "risk_ratio": 1.2923936573722872,
+            "risk_treated": 0.271985494106981,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2794,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8456669853638416,
+          "maximum_stabilized_weight": 3.495222928989211,
+          "minimum_raw_propensity": 0.23418724006948546,
+          "minimum_stabilized_weight": 0.5217183686202166,
+          "raw_predictions_outside_registered_bounds": 0
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261131,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21131354047326614,
+        "risk_difference": 0.026459262836467934,
+        "risk_ratio": 1.1252132862721846,
+        "risk_treated": 0.23777280330973408
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4473253187669624,
+        "point_estimate": 1.7755422561935514
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1056131071585917,
+              1.3812148315200021
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1044634706311827,
+              1.3771683153550602
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1020591104018334,
+              1.3760048642234528
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1464167439308506,
+              1.4164395371812024
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006242846838894179,
+          "unweighted_smd": {
+            "age_years": 0.07568962723330286,
+            "breakdown_count": 0.15590655818288118,
+            "stage": 0.01987580470204428,
+            "subtype_pmrt": 0.08208167860498658,
+            "subtype_tnbc": 0.10117350806332055,
+            "travel_distance_km": 0.3160869169269131
+          },
+          "weighted_smd": {
+            "age_years": 0.006242846838894179,
+            "breakdown_count": 0.001637082166276673,
+            "stage": 0.001159856755714169,
+            "subtype_pmrt": 0.005211372037012237,
+            "subtype_tnbc": 0.005611288393909633,
+            "travel_distance_km": 0.005125581971188208
+          }
+        },
+        "delayed_count": 2287,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.18986223023110585,
+            "risk_difference": 0.044763564656288224,
+            "risk_ratio": 1.2357686655307942,
+            "risk_treated": 0.23462579488739407,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.18989190790175736,
+            "risk_difference": 0.04365615494700831,
+            "risk_ratio": 1.2299000280180148,
+            "risk_treated": 0.23354806284876567,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1905854511046432,
+            "risk_difference": 0.043787324007138195,
+            "risk_ratio": 1.229751661280253,
+            "risk_treated": 0.2343727751117814,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1872465904902322,
+            "risk_difference": 0.05061960977212021,
+            "risk_ratio": 1.2703366167554373,
+            "risk_treated": 0.23786620026235242,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2713,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9621675805136135,
+          "maximum_stabilized_weight": 3.5124454027396843,
+          "minimum_raw_propensity": 0.2597534961116788,
+          "minimum_stabilized_weight": 0.5381176470588235,
+          "raw_predictions_outside_registered_bounds": 6
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261132,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.2096476137207904,
+        "risk_difference": 0.02635338915308927,
+        "risk_ratio": 1.125703263134618,
+        "risk_treated": 0.23600100287387968
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7297652451489365,
+        "point_estimate": 2.048750938637696
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2165280386350443,
+              1.4981117012716267
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.2221028695457234,
+              1.5064927371909067
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2178906511878744,
+              1.5011117375723089
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2737131607471697,
+              1.5667388487226674
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0029178814627921473,
+          "unweighted_smd": {
+            "age_years": 0.11365330700909085,
+            "breakdown_count": 0.12245828409438303,
+            "stage": 0.00744966513780631,
+            "subtype_pmrt": 0.07804538710339678,
+            "subtype_tnbc": 0.10595318756725335,
+            "travel_distance_km": 0.2917100587350996
+          },
+          "weighted_smd": {
+            "age_years": 0.0029178814627921473,
+            "breakdown_count": 0.00113532937146451,
+            "stage": 0.001056695376768035,
+            "subtype_pmrt": 0.0019162209218421763,
+            "subtype_tnbc": 0.0006702529813276709,
+            "travel_distance_km": 0.0006965738988903694
+          }
+        },
+        "delayed_count": 2318,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.18425730158350423,
+            "risk_difference": 0.06542712749669807,
+            "risk_ratio": 1.3550856706052807,
+            "risk_treated": 0.2496844290802023,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1838575686128322,
+            "risk_difference": 0.06569536696026648,
+            "risk_ratio": 1.3573166307806885,
+            "risk_treated": 0.24955293557309868,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1843095811383756,
+            "risk_difference": 0.06543155795958536,
+            "risk_ratio": 1.3550089884391892,
+            "risk_treated": 0.24974113909796095,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.17859806114839671,
+            "risk_difference": 0.07463748673771198,
+            "risk_ratio": 1.4179075979760825,
+            "risk_treated": 0.2532355478861087,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2682,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9338460949849031,
+          "maximum_stabilized_weight": 3.2992817980000804,
+          "minimum_raw_propensity": 0.24961896534465258,
+          "minimum_stabilized_weight": 0.5454117647058824,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261133,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21401699254173123,
+        "risk_difference": 0.026672996364267537,
+        "risk_ratio": 1.1246302737342997,
+        "risk_treated": 0.24068998890599877
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4833081154663157,
+        "point_estimate": 1.7771394794416429
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.11877596187886,
+              1.3623823133626296
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1211563080026687,
+              1.3640199737264505
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1182647315125955,
+              1.3639456624740767
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1684497813074735,
+              1.4169579885951833
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0062524470757142426,
+          "unweighted_smd": {
+            "age_years": 0.12907466834417408,
+            "breakdown_count": 0.14454724273378328,
+            "stage": 0.04454974881202941,
+            "subtype_pmrt": 0.039500526889541906,
+            "subtype_tnbc": 0.10117350806332055,
+            "travel_distance_km": 0.30737795950137287
+          },
+          "weighted_smd": {
+            "age_years": 0.0053389462530571115,
+            "breakdown_count": 0.005856154423422198,
+            "stage": 0.0006250922590504617,
+            "subtype_pmrt": 0.0031487792174778053,
+            "subtype_tnbc": 0.0006223194278185487,
+            "travel_distance_km": 0.0062524470757142426
+          }
+        },
+        "delayed_count": 2287,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.19596861195837253,
+            "risk_difference": 0.04633574337397223,
+            "risk_ratio": 1.2364447189319012,
+            "risk_treated": 0.24230435533234476,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19589871079357793,
+            "risk_difference": 0.04687686016592721,
+            "risk_ratio": 1.2392913152722185,
+            "risk_treated": 0.24277557095950514,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.1959177168748429,
+            "risk_difference": 0.04627087253708176,
+            "risk_ratio": 1.2361750293703184,
+            "risk_treated": 0.24218858941192467,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19277552524880207,
+            "risk_difference": 0.056022026128548175,
+            "risk_ratio": 1.2906075657490463,
+            "risk_treated": 0.24879755137735024,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2713,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9061799821179671,
+          "maximum_stabilized_weight": 3.6173333333333324,
+          "minimum_raw_propensity": 0.2516828459600072,
+          "minimum_stabilized_weight": 0.5381176470588235,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261134,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21241223743535093,
+        "risk_difference": 0.02663562547560383,
+        "risk_ratio": 1.1253959084335268,
+        "risk_treated": 0.23904786291095476
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.4463614955703603,
+        "point_estimate": 1.7586777033089454
+      },
+      "aipw_interval_covers_truth": true,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1052655806794687,
+              1.3601326692882205
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1023803087340982,
+              1.35505111305
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1053173529973563,
+              1.3572261991156165
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.1568541165030262,
+              1.4225011188546481
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.002803402649314023,
+          "unweighted_smd": {
+            "age_years": 0.09529239159819675,
+            "breakdown_count": 0.19508005533675407,
+            "stage": 0.03923542279518042,
+            "subtype_pmrt": 0.018399068777623623,
+            "subtype_tnbc": 0.13211435814707917,
+            "travel_distance_km": 0.27315412226864794
+          },
+          "weighted_smd": {
+            "age_years": 0.002532511462928776,
+            "breakdown_count": 0.002803402649314023,
+            "stage": 0.0008435194416053609,
+            "subtype_pmrt": 0.0006640377075766991,
+            "subtype_tnbc": 0.001684691816241577,
+            "travel_distance_km": 1.3544193311534599e-05
+          }
+        },
+        "delayed_count": 2233,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.2040619695421836,
+            "risk_difference": 0.04665865129124466,
+            "risk_ratio": 1.2286494215258439,
+            "risk_treated": 0.2507206208334283,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.20449525859896162,
+            "risk_difference": 0.045939340191582356,
+            "risk_ratio": 1.2246474588522105,
+            "risk_treated": 0.25043459879054397,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.20348410229104646,
+            "risk_difference": 0.04690424719992531,
+            "risk_ratio": 1.2305057086613942,
+            "risk_treated": 0.2503883494909718,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.20093964582580412,
+            "risk_difference": 0.05745712981235082,
+            "risk_ratio": 1.285942226961825,
+            "risk_treated": 0.25839677563815494,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2767,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.8578617044024056,
+          "maximum_stabilized_weight": 3.689333333333333,
+          "minimum_raw_propensity": 0.2600258138716026,
+          "minimum_stabilized_weight": 0.5254117647058824,
+          "raw_predictions_outside_registered_bounds": 2
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261135,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21209249178561937,
+        "risk_difference": 0.026563898649857337,
+        "risk_ratio": 1.125246765815302,
+        "risk_treated": 0.2386563904354767
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7516303384464393,
+        "point_estimate": 2.0533427746820556
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.225684912038142,
+              1.502002351365404
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.2175931188863078,
+              1.4881431021130689
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.2243166303064483,
+              1.499281494676453
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.259398171476652,
+              1.5345360723560633
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.006658454830349383,
+          "unweighted_smd": {
+            "age_years": 0.12815757985341533,
+            "breakdown_count": 0.1738902246783906,
+            "stage": 0.026535021597010617,
+            "subtype_pmrt": 0.07586786790457102,
+            "subtype_tnbc": 0.11868851030868095,
+            "travel_distance_km": 0.3311109536964471
+          },
+          "weighted_smd": {
+            "age_years": 0.006658454830349383,
+            "breakdown_count": 0.0038681947692866497,
+            "stage": 0.0016400554150940328,
+            "subtype_pmrt": 0.0014091116673334398,
+            "subtype_tnbc": 0.0008662505873949418,
+            "travel_distance_km": 0.0029143853987335963
+          }
+        },
+        "delayed_count": 2240,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.19077115550802323,
+            "risk_difference": 0.0681325830260737,
+            "risk_ratio": 1.3571430012290735,
+            "risk_treated": 0.2589037385340969,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19080097151831088,
+            "risk_difference": 0.06721159956617784,
+            "risk_ratio": 1.3522602585895516,
+            "risk_treated": 0.2580125710844887,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19069101205791858,
+            "risk_difference": 0.06799170596032886,
+            "risk_ratio": 1.356554329575207,
+            "risk_treated": 0.25868271801824744,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.1891304347826087,
+            "risk_difference": 0.0751552795031056,
+            "risk_ratio": 1.3973727422003286,
+            "risk_treated": 0.2642857142857143,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2760,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9487456776659409,
+          "maximum_stabilized_weight": 3.6799999999999997,
+          "minimum_raw_propensity": 0.2159620823693732,
+          "minimum_stabilized_weight": 0.5270588235294118,
+          "raw_predictions_outside_registered_bounds": 7
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261136,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.2129834978004872,
+        "risk_difference": 0.026652116247788127,
+        "risk_ratio": 1.1251370013312232,
+        "risk_treated": 0.23963561404827532
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.7830128275574046,
+        "point_estimate": 2.070988394617764
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2389333430464124,
+              1.5154561269089613
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.234563944700071,
+              1.5085621814300052
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.238650926984934,
+              1.5135074088590734
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2694243576825295,
+              1.5495294458750901
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.007931108414666257,
+          "unweighted_smd": {
+            "age_years": 0.05263156348517448,
+            "breakdown_count": 0.15860306330688395,
+            "stage": 0.017771778033061868,
+            "subtype_pmrt": 0.02194501494738797,
+            "subtype_tnbc": 0.12951094589038117,
+            "travel_distance_km": 0.29371560875275576
+          },
+          "weighted_smd": {
+            "age_years": 0.00289398459654033,
+            "breakdown_count": 0.001167232160705268,
+            "stage": 0.00044988150749531087,
+            "subtype_pmrt": 4.066275905976898e-05,
+            "subtype_tnbc": 0.001528755877097153,
+            "travel_distance_km": 0.007931108414666257
+          }
+        },
+        "delayed_count": 2367,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1951793084839293,
+            "risk_difference": 0.07125253695906072,
+            "risk_ratio": 1.3650619397748687,
+            "risk_treated": 0.26643184544299003,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1963988832925711,
+            "risk_difference": 0.0700694170985578,
+            "risk_ratio": 1.3567709547216567,
+            "risk_treated": 0.2664683003911289,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19538850498130614,
+            "risk_difference": 0.07093965362249152,
+            "risk_ratio": 1.3630697395902522,
+            "risk_treated": 0.26632815860379766,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19445499430307633,
+            "risk_difference": 0.07761936142146952,
+            "risk_ratio": 1.399163630122518,
+            "risk_treated": 0.27207435572454586,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2633,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.906651512235605,
+          "maximum_stabilized_weight": 3.0676714361140855,
+          "minimum_raw_propensity": 0.2886925455544954,
+          "minimum_stabilized_weight": 0.5569411764705883,
+          "raw_predictions_outside_registered_bounds": 9
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261137,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21320245787462655,
+        "risk_difference": 0.026599983530660898,
+        "risk_ratio": 1.124763962835283,
+        "risk_treated": 0.23980244140528745
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.6911158772060042,
+        "point_estimate": 2.0155558322368257
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.2005015485338948,
+              1.5049801420744187
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1975729646594715,
+              1.4984528388509242
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1964371388234751,
+              1.50243044729775
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2531148090869275,
+              1.5537686975210985
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.005409158743425019,
+          "unweighted_smd": {
+            "age_years": 0.08612628719686789,
+            "breakdown_count": 0.19489510558582654,
+            "stage": 0.0061926327183263385,
+            "subtype_pmrt": 0.024689689544656238,
+            "subtype_tnbc": 0.2026782445872566,
+            "travel_distance_km": 0.34339716365238904
+          },
+          "weighted_smd": {
+            "age_years": 0.005409158743425019,
+            "breakdown_count": 0.00304025181678463,
+            "stage": 0.004091230455436412,
+            "subtype_pmrt": 0.0008948195859121409,
+            "subtype_tnbc": 0.001084257715362758,
+            "travel_distance_km": 0.0018412650565108961
+          }
+        },
+        "delayed_count": 2272,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1920744889081636,
+            "risk_difference": 0.06535447942084405,
+            "risk_ratio": 1.3402559069262547,
+            "risk_treated": 0.25742896832900763,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.19211998992625953,
+            "risk_difference": 0.06469401459881477,
+            "risk_ratio": 1.3367375494015274,
+            "risk_treated": 0.2568140045250743,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19241349413317443,
+            "risk_difference": 0.06484685673319296,
+            "risk_ratio": 1.3370182378597144,
+            "risk_treated": 0.2572603508663674,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.18951612903225806,
+            "risk_difference": 0.07412823716492506,
+            "risk_ratio": 1.3911447407851365,
+            "risk_treated": 0.2636443661971831,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2728,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9381815794185454,
+          "maximum_stabilized_weight": 3.6373333333333324,
+          "minimum_raw_propensity": 0.22773357576552603,
+          "minimum_stabilized_weight": 0.5345882352941177,
+          "raw_predictions_outside_registered_bounds": 16
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261138,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.2112054011961493,
+        "risk_difference": 0.026479039179524128,
+        "risk_ratio": 1.1253710323200148,
+        "risk_treated": 0.23768444037567343
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.5991705392085314,
+        "point_estimate": 1.8745696273277173
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1633073860012422,
+              1.4221591953570736
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.171738912633773,
+              1.4335770486023773
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1626611520574512,
+              1.4249227323504237
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2188628557121035,
+              1.4806377454893105
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.0051242383536266,
+          "unweighted_smd": {
+            "age_years": 0.12806548640517335,
+            "breakdown_count": 0.1729847035649054,
+            "stage": 0.002309093760253493,
+            "subtype_pmrt": 0.04604076100359208,
+            "subtype_tnbc": 0.09712323126149222,
+            "travel_distance_km": 0.29646174580678347
+          },
+          "weighted_smd": {
+            "age_years": 0.0049840788967374025,
+            "breakdown_count": 0.0043165238765978334,
+            "stage": 0.0026081476544759607,
+            "subtype_pmrt": 0.00013081660199527025,
+            "subtype_tnbc": 0.0027904356248082142,
+            "travel_distance_km": 0.0051242383536266
+          }
+        },
+        "delayed_count": 2298,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.1985697368629743,
+            "risk_difference": 0.05524654237802862,
+            "risk_ratio": 1.2782223678734703,
+            "risk_treated": 0.2538162792410029,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.1975567234845922,
+            "risk_difference": 0.05675322687848339,
+            "risk_ratio": 1.2872756030645025,
+            "risk_treated": 0.2543099503630756,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.19838303276413993,
+            "risk_difference": 0.05564365791713549,
+            "risk_ratio": 1.280485972725757,
+            "risk_treated": 0.2540266906812754,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19504071058475203,
+            "risk_difference": 0.06605589515937332,
+            "risk_ratio": 1.3386774738531817,
+            "risk_treated": 0.26109660574412535,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2702,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9007414822278058,
+          "maximum_stabilized_weight": 3.602666666666666,
+          "minimum_raw_propensity": 0.25288365968928095,
+          "minimum_stabilized_weight": 0.5407058823529411,
+          "raw_predictions_outside_registered_bounds": 4
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261139,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21275227286363593,
+        "risk_difference": 0.026631652697869712,
+        "risk_ratio": 1.1251768187451485,
+        "risk_treated": 0.23938392556150564
+      }
+    },
+    {
+      "aipw_e_values": {
+        "confidence_limit_nearest_null": 1.5981606598252833,
+        "point_estimate": 1.8981575416638101
+      },
+      "aipw_interval_covers_truth": false,
+      "bootstrap": {
+        "bootstrap_replications": 1000,
+        "confidence_intervals": {
+          "aipw": {
+            "ci_95": [
+              1.1629070262904626,
+              1.433008623898436
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "gcomp": {
+            "ci_95": [
+              1.1669034215947098,
+              1.4362711448809666
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "iptw": {
+            "ci_95": [
+              1.1626753701451766,
+              1.4329876503580994
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          },
+          "naive": {
+            "ci_95": [
+              1.2311444606067967,
+              1.5165486760489741
+            ],
+            "defined_resamples": 1000,
+            "non_estimable_resamples": 0,
+            "reason": null
+          }
+        }
+      },
+      "condition": "unmeasured_confounding",
+      "estimates": {
+        "covariate_balance": {
+          "maximum_weighted_smd": 0.003622722816984667,
+          "unweighted_smd": {
+            "age_years": 0.1234094419292105,
+            "breakdown_count": 0.18094766198135026,
+            "stage": 0.052621261781335485,
+            "subtype_pmrt": 0.021406750937602515,
+            "subtype_tnbc": 0.132531436892925,
+            "travel_distance_km": 0.326723350420522
+          },
+          "weighted_smd": {
+            "age_years": 0.0024591449751244373,
+            "breakdown_count": 0.0007118306774733453,
+            "stage": 0.003622722816984667,
+            "subtype_pmrt": 0.0011322672645072474,
+            "subtype_tnbc": 0.00048786183896691804,
+            "travel_distance_km": 0.002152668657370256
+          }
+        },
+        "delayed_count": 2224,
+        "estimates": {
+          "aipw": {
+            "risk_control": 0.20279917497138053,
+            "risk_difference": 0.05850394073260626,
+            "risk_ratio": 1.2884821436816125,
+            "risk_treated": 0.2613031157039868,
+            "undefined_reason": null
+          },
+          "gcomp": {
+            "risk_control": 0.202479843030003,
+            "risk_difference": 0.059370805661425996,
+            "risk_ratio": 1.2932183508885304,
+            "risk_treated": 0.261850648691429,
+            "undefined_reason": null
+          },
+          "iptw": {
+            "risk_control": 0.20270396975126523,
+            "risk_difference": 0.05878482904740859,
+            "risk_ratio": 1.290003343888837,
+            "risk_treated": 0.2614887987986738,
+            "undefined_reason": null
+          },
+          "naive": {
+            "risk_control": 0.19740634005763688,
+            "risk_difference": 0.07237783260423361,
+            "risk_ratio": 1.3666439111484534,
+            "risk_treated": 0.2697841726618705,
+            "undefined_reason": null
+          }
+        },
+        "n_patients": 5000,
+        "timely_count": 2776,
+        "weight_diagnostics": {
+          "maximum_raw_propensity": 0.9237161771123753,
+          "maximum_stabilized_weight": 3.701333333333333,
+          "minimum_raw_propensity": 0.2243879086731551,
+          "minimum_stabilized_weight": 0.5232941176470588,
+          "raw_predictions_outside_registered_bounds": 11
+        }
+      },
+      "n_patients": 5000,
+      "seed": 620261140,
+      "status": "estimable",
+      "truth": {
+        "risk_control": 0.21491687823473404,
+        "risk_difference": 0.026811035148699258,
+        "risk_ratio": 1.124750719296304,
+        "risk_treated": 0.2417279133834333
+      }
+    }
+  ],
+  "runtime_versions": {
+    "numpy": "2.5.4",
+    "python": "3.12.15",
+    "scikit_learn": "1.9.1"
+  },
+  "sample_size": 5000,
+  "summaries": {
+    "measured_confounding": {
+      "absolute_mean_point_estimate_error": 0.0038069613234161803,
+      "aipw_risk_ratio_max": 1.2505259548897203,
+      "aipw_risk_ratio_mean": 1.1474709474659457,
+      "aipw_risk_ratio_median": 1.1339347305723564,
+      "aipw_risk_ratio_min": 1.066938531259942,
+      "aipw_risk_ratio_sd": 0.05317471243380984,
+      "cohort_interval_coverage_count": 20,
+      "cohort_interval_coverage_denominator": 20,
+      "estimable_replicates": 20,
+      "mean_bias": 0.0038069613234161803,
+      "replicates": 20,
+      "truth_risk_ratio_mean": 1.1436639861425295,
+      "weighted_smd_below_0_10_count": 20,
+      "weighted_smd_denominator": 20
+    },
+    "unmeasured_confounding": {
+      "absolute_mean_point_estimate_error": 0.17760053535563336,
+      "aipw_risk_ratio_max": 1.4018622083682841,
+      "aipw_risk_ratio_mean": 1.302817310650893,
+      "aipw_risk_ratio_median": 1.3090978558986655,
+      "aipw_risk_ratio_min": 1.223580042093849,
+      "aipw_risk_ratio_sd": 0.05521918792579803,
+      "cohort_interval_coverage_count": 6,
+      "cohort_interval_coverage_denominator": 20,
+      "estimable_replicates": 20,
+      "mean_bias": 0.17760053535563336,
+      "replicates": 20,
+      "truth_risk_ratio_mean": 1.1252167752952595,
+      "weighted_smd_below_0_10_count": 20,
+      "weighted_smd_denominator": 20
+    }
+  },
+  "timestamp_utc": "2026-10-20T20:41:37.622912+00:00"
+}
