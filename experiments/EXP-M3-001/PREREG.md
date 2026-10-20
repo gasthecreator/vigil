@@ -44,6 +44,10 @@ No combined-factor interaction analysis is registered. These brackets are stress
 - Commit the runner and tests before generating the registered cohorts. The runner must refuse a dirty worktree or existing result/access files, write complete JSON and source/environment hashes, and render the report from saved JSON with byte-parity verification. Preserve all results, including sensitivities that make actions unstable.
 - The analysis must not mutate M3 defaults, acceptance tests, thresholds, or historical artifacts. Any follow-up tuning or new performance study requires a new preregistration and unseen seeds.
 
+## Amendment before runner implementation or cohort access (2026-10-20)
+
+The factory's implicit default is `legacy_synthetic_population_v0.json`, which is not the current mechanism profile. This registered study instead supplies `packages/vigil-sim/vigil_sim/config/synthetic_population_core_v4.json` explicitly to all three generators. Its profile identifier is `balanced_synthetic_core_v4`; it includes the audited G1 clearance and G2 shot-noise mechanisms. The runner must record this exact file's hash and must not use the factory's legacy default. No implementation or cohort output was accessed before this amendment.
+
 ## Limitations
 
 The study measures sensitivity only under the current synthetic generators, their labels, and the chosen stress brackets. It cannot establish that any assumption is clinically plausible, identify a valid prior or cutoff, remedy M3's near-chance recurrence discrimination, or support patient-facing outputs. M3 remains research-only and non-synthetic serving remains abstained.
