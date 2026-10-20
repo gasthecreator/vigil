@@ -5,7 +5,7 @@
 
 ## Context
 
-The S8-K7 preregistration requires cross-fitting for primary AIPW and defines propensity support `(0.01, 0.99)` with a maximum stabilized-weight diagnostic of 10. The implementation instead fits and predicts nuisance models on the same cohort, clips to `[0.02, 0.98]`, and truncates weights at the 99th percentile without enforcing the registered maximum. Its E-value point estimate uses the bootstrap mean, undefined risk ratios become 1.0, and the run lacks a source-SHA manifest, registered seeds, and a canonical frozen-access record. The full audit is `docs/audits/K7-S8-IMPLEMENTATION-AUDIT-2026-10.md`.
+The S8-K7 preregistration requires cross-fitting for primary AIPW and defines propensity support `(0.01, 0.99)` with a maximum stabilized-weight diagnostic of 10. The implementation instead fits and predicts nuisance models on the same cohort, clips to `[0.02, 0.98]`, and truncates weights at the 99th percentile without enforcing the registered maximum. Its E-value point estimate uses the bootstrap mean, undefined risk ratios become 1.0, and the run lacks a source-SHA manifest, registered seeds, and a canonical frozen-access record. The synthetic `treatment` label also drives outcomes but is not guaranteed to match `delays_days > 56`; the `true_causal_rr` generator argument is actually a conditional odds ratio. The full audit is `docs/audits/K7-S8-IMPLEMENTATION-AUDIT-2026-10.md`.
 
 ## Decision
 
