@@ -1,0 +1,13 @@
+# EXP-CORE-ML-013 conclusion
+
+**Result:** the registered checks found no detected mismatch in the tested synthetic mechanism paths. This is implementation-fidelity evidence for one frozen profile and the registered seeds only; it does not establish population realism, clinical calibration, or predictive performance.
+
+The study ran once from source commit `87ba7ad8e9094bb1057b65ad77b5ed757f3089fe`, after the implementation was frozen at `168b0f602406b039a01d803b9a37808e8a0fef32` and this protocol was committed. Five replicates contained 1,000 generated patients per G1/G2/G3 generator over the registered 730-day horizon. The source, runtime, preregistration, and result/report hashes are in [`ACCESS_LOG.json`](ACCESS_LOG.json); full replicate diagnostics are in [`results.json`](results.json), with byte-parity-verified rendering in [`REPORT.md`](REPORT.md).
+
+All five replicates had no Holm-adjusted rejection at the registered 0.01 family-wise level for the G2 Poisson event-count, conditional normalized event-time, and standardized lognormal-amplitude checks. G1 recurrence counts and G2 recurrence/event counts are separately reported. Eligible G2 recurrence person-time and exclusions are recorded for every replicate. The production-path tests also passed: G1 matched the independent 16-substep RK4 implementation within `1e-6` at exact observation days; G2 used the configured event/amplitude parameters and clearance kernel; recurrence-free controls emitted no recurrence-linked signals/events; and mechanism traces/future latent truth were absent from model-visible feature/label outputs.
+
+The findings are consistent with the configured synthetic mechanisms under this design. Non-rejection is not proof of a distribution or biological model, and this run does not calibrate any v4 coefficient. EXP-CORE-ML-011 remains immutable partial evidence. EXP-CORE-ML-012 was invalidated after test-seed overlap; the full event and disposition are recorded in its [`DEVIATION.md`](../EXP-CORE-ML-012/DEVIATION.md), and none of its outputs were reused.
+
+### Protocol execution note
+
+EXP-CORE-ML-013 froze an already committed implementation before new cohort access, then committed the new preregistration before generating data. The generic execution-order bullets in `PREREG.md` still describe preregister-before-implementation sequencing and do not match this replacement study's actual source-first sequence. The study-specific boundary and exact frozen source are correctly recorded in its status/configuration sections and access log; no implementation, parameter, threshold, or test changed after the registered cohort access. This is a documentation deviation; the preregistration is preserved unchanged.
