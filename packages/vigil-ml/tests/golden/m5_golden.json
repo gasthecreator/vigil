@@ -108,8 +108,10 @@
         ]
       },
       "clinical_context": "Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.",
+      "evidence_status": "illustrative_only",
       "journey_id": "false_alarm_explained",
       "narrative": "Under the model assumptions, the real-change probability is 1%. Under the model assumptions, the gross-error probability is 0%. Under the model assumptions, the stable-component probability is 98%. The biological reference change value threshold is 31%. The observed marker ratio is 1.15 relative to baseline. The recommended clinical action is explained.",
+      "synthetic": true,
       "title": "Synthetic scenario: 1.15x marker change; model output is explained",
       "verification": {
         "ok": true,
@@ -158,8 +160,10 @@
         ]
       },
       "clinical_context": "Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.",
+      "evidence_status": "illustrative_only",
       "journey_id": "j2_surprising_repeat",
       "narrative": "Under the model assumptions, the real-change probability is 0%. Under the model assumptions, the gross-error probability is 100%. Under the model assumptions, the stable-component probability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 10.00 relative to baseline. The recommended clinical action is needs_repeat.",
+      "synthetic": true,
       "title": "Synthetic scenario: 10x marker change; model output is needs_repeat",
       "verification": {
         "ok": true,
@@ -208,8 +212,10 @@
         ]
       },
       "clinical_context": "Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.",
+      "evidence_status": "illustrative_only",
       "journey_id": "real_progression_escalate",
       "narrative": "Under the model assumptions, the real-change probability is 99%. Under the model assumptions, the gross-error probability is 1%. Under the model assumptions, the stable-component probability is 0%. The biological reference change value threshold is 31%. The observed marker ratio is 2.50 relative to baseline. The recommended clinical action is escalate.",
+      "synthetic": true,
       "title": "Synthetic scenario: 2.5x marker change; model output is escalate",
       "verification": {
         "ok": true,

@@ -37,12 +37,14 @@ def main():
     ]
 
     for j in journeys:
+        assert j["synthetic"] is True and j["evidence_status"] == "illustrative_only"
         assert j["verification"]["ok"], (
             f"Verification failed for {j['journey_id']}: {j['verification']['violations']}"
         )
         lines.append(f"## {j['title']}")
         lines.append("")
-        lines.append(f"**Journey Identifier:** `{j['journey_id']}`  ")
+        lines.append(f"**Journey Identifier:** `{j['journey_id']}`")
+        lines.append("**Evidence status:** `synthetic illustration only`")
         lines.append(f"**Synthetic scenario:** {j['clinical_context']}")
         lines.append(f"**M3 model output:** `{j['adjudication']['action']}`")
         lines.append("**M5 fact-to-text check:** `PASSED` (zero template derivation violations; this is not model validation)")

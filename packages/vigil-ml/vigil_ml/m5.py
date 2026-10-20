@@ -220,6 +220,8 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
             "title": "Synthetic scenario: 10x marker change; model output is needs_repeat",
             "clinical_context": "Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.",
             "adjudication": adjudication,
@@ -237,6 +239,8 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
             "title": "Synthetic scenario: 1.15x marker change; model output is explained",
             "clinical_context": "Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.",
             "adjudication": adjudication,
@@ -254,6 +258,8 @@ def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
             "title": "Synthetic scenario: 2.5x marker change; model output is escalate",
             "clinical_context": "Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.",
             "adjudication": adjudication,

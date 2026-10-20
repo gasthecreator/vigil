@@ -259,6 +259,8 @@ def test_worked_journeys_match_reviewed_golden(jid):
     got = generate_worked_journey(jid)
     assert got == GOLDEN["journeys"][jid]
     assert got["journey_id"] == jid
+    assert got["synthetic"] is True
+    assert got["evidence_status"] == "illustrative_only"
     assert got["verification"]["ok"] is True
 
 
