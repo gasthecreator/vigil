@@ -192,6 +192,15 @@ def test_m12_frozen_runner_refuses_to_repeat_existing_access():
         M12_RUNNER.assert_no_prior_frozen_access()
 
 
+def test_m12_rerender_refuses_to_overwrite_historical_report(monkeypatch):
+    report = RUNNER.parent / "REPORT.md"
+    before = report.read_bytes()
+    monkeypatch.setattr(sys, "argv", [str(RUNNER), "--rerender"])
+    with pytest.raises(RuntimeError, match="refusing to overwrite historical evidence"):
+        M12_RUNNER.main()
+    assert report.read_bytes() == before
+
+
 def test_causality_latent_columns_do_not_change_weights():
     from vigil_ml.features import WindowedFeatureExtractor
     from vigil_sim.generators import GeneratorType, get_generator

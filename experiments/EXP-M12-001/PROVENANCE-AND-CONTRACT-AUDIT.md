@@ -21,3 +21,5 @@ These guards do not repair or validate the frozen results. Preserve the generate
 Q-7 clean-clone verification exposed a separate simulator transformation defect: `apply_site` could set a measured CA 15-3/CEA value to missing while leaving its `observed_*` mask true. The runner now validates input value/mask agreement and updates both together when site missingness is applied; regression coverage passes. The old EXP-M12-001 outputs remain unchanged, and the corrected runner has not been used to regenerate or select results.
 
 The pre-registration, original output files, old S10 retraction, and prior conclusions remain preserved. This audit supplements them; it does not rewrite their history or claim real-world privacy, clinical performance, or utility.
+
+The `--rerender` entry point previously rewrote the committed `REPORT.md` from historical `results.json` without checking for an existing report. It now refuses that overwrite, and a regression test verifies the report bytes remain unchanged. This is a preservation guard only; it does not improve or validate the historical result.

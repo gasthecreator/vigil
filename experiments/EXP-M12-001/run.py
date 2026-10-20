@@ -526,9 +526,12 @@ def main() -> int:
     args = ap.parse_args()
     t0 = time.time()
     if args.rerender:
+        report_path = OUT / "REPORT.md"
+        if report_path.exists():
+            raise RuntimeError("EXP-M12-001 REPORT.md already exists; refusing to overwrite historical evidence")
         stored = json.loads((OUT / "results.json").read_text())
         elapsed = float(stored.get("elapsed_s") or 0.0)
-        (OUT / "REPORT.md").write_text(render_report(stored, elapsed))
+        report_path.write_text(render_report(stored, elapsed))
         print("rewrote REPORT.md from results.json")
         return 0
     if args.smoke:
