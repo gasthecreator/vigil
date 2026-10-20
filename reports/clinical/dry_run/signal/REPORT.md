@@ -30,9 +30,9 @@ Rejection rate 0.000 against stop rate 0.1. Rejections by code: none. Complete-c
 
 ## Development split
 
-- comparator chosen (out-of-fold IPCW AUC): **B3_REGULARIZED_LOGISTIC_HORIZON** from B1_SINGLE_THRESHOLD 0.582, B2_VELOCITY_RULE 0.670, B3_REGULARIZED_LOGISTIC_HORIZON 0.685
-- recalibration on out-of-fold predictions: intercept -0.756, slope 0.555
-- operating threshold 0.199 (development alert rate 4.865 per 100 patient-months)
+- comparator chosen (out-of-fold IPCW AUC): **B3_REGULARIZED_LOGISTIC_HORIZON** from B1_SINGLE_THRESHOLD 0.582, B2_VELOCITY_RULE 0.651, B3_REGULARIZED_LOGISTIC_HORIZON 0.685
+- recalibration on out-of-fold predictions: intercept -0.739, slope 0.564
+- operating threshold 0.200 (development alert rate 4.865 per 100 patient-months)
 - candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3
 
 ## Confirmatory hypotheses (Holm-Bonferroni across three)
@@ -41,7 +41,7 @@ met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap
 
 | id | estimate | 95% CI | criterion | CI criterion | p (one-sided) | p Holm | met |
 |---|---:|---|---|---|---:|---:|---|
-| C1 | 0.958 | [0.595, 1.328] | CI within [0.8, 1.2] | no | 0.170 | 0.340 | **no** |
+| C1 | 0.943 | [0.586, 1.308] | CI within [0.8, 1.2] | no | 0.187 | 0.374 | **no** |
 | C2 | 0.006 | [-0.082, 0.102] | lower CI bound > 0.0 | no | 0.436 | 0.436 | **no** |
 | C3 | 3.516 | [2.814, 4.278] | upper CI bound <= 5.0 | yes | 0.000 | 0.001 | **YES** |
 

@@ -30,9 +30,9 @@ Rejection rate 0.000 against stop rate 0.1. Rejections by code: none. Complete-c
 
 ## Development split
 
-- comparator chosen (out-of-fold IPCW AUC): **B2_VELOCITY_RULE** from B1_SINGLE_THRESHOLD 0.505, B2_VELOCITY_RULE 0.519, B3_REGULARIZED_LOGISTIC_HORIZON 0.492
-- recalibration on out-of-fold predictions: intercept -1.323, slope 0.241
-- operating threshold 0.176 (development alert rate 4.887 per 100 patient-months)
+- comparator chosen (out-of-fold IPCW AUC): **B2_VELOCITY_RULE** from B1_SINGLE_THRESHOLD 0.505, B2_VELOCITY_RULE 0.514, B3_REGULARIZED_LOGISTIC_HORIZON 0.492
+- recalibration on out-of-fold predictions: intercept -1.345, slope 0.230
+- operating threshold 0.174 (development alert rate 4.887 per 100 patient-months)
 - candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3
 
 ## Confirmatory hypotheses (Holm-Bonferroni across three)
@@ -41,9 +41,9 @@ met only if the 95% CI criterion holds AND the Holm-adjusted one-sided bootstrap
 
 | id | estimate | 95% CI | criterion | CI criterion | p (one-sided) | p Holm | met |
 |---|---:|---|---|---|---:|---:|---|
-| C1 | -1.655 | [-3.634, 0.200] | CI within [0.8, 1.2] | no | 0.995 | 1.000 | **no** |
+| C1 | -1.734 | [-3.808, 0.210] | CI within [0.8, 1.2] | no | 0.995 | 1.000 | **no** |
 | C2 | -0.033 | [-0.156, 0.085] | lower CI bound > 0.0 | no | 0.695 | 1.000 | **no** |
-| C3 | 3.803 | [2.877, 4.853] | upper CI bound <= 5.0 | yes | 0.009 | 0.028 | **YES** |
+| C3 | 3.921 | [2.990, 4.968] | upper CI bound <= 5.0 | yes | 0.021 | 0.061 | **no** |
 
 A criterion not met is reported as not met. C3 measures workload only; meeting it says nothing about whether alerts are correct.
 
@@ -138,12 +138,12 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
 
 ```json
 {
-  "conditional_lead_time_days": "459.4 \u00b1 357.9",
+  "conditional_lead_time_days": "441.6 \u00b1 353.4",
   "conditional_median_days": 327.0,
-  "unconditional_mean_days": 116.1,
-  "recurrence_detection_rate": 0.2526,
-  "overdetection_rate": 0.7419,
-  "alert_burden_per_100_pt_years": 15.51,
+  "unconditional_mean_days": 120.9,
+  "recurrence_detection_rate": 0.2737,
+  "overdetection_rate": 0.7292,
+  "alert_burden_per_100_pt_years": 16.01,
   "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
 }
 ```
