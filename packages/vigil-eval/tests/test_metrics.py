@@ -61,6 +61,21 @@ def test_ipcw_weights_properties():
     assert weights[3] >= 1.0
 
 
+def test_kaplan_meier_preserves_zero_survival_without_probability_floor():
+    km = compute_kaplan_meier(np.array([1.0, 2.0]), np.array([0, 1]))
+    assert km.predict_survival(2.0)[0] == 0.0
+
+
+def test_ipcw_weights_are_not_truncated_at_a_hidden_cap():
+    # 10,000 censoring events leave one subject at risk. The registered KM
+    # estimate is 1/10,001, so its inverse must remain 10,001, not be capped.
+    censor_times = np.arange(1.0, 10_001.0)
+    times = np.concatenate((censor_times, np.array([10_001.0])))
+    events = np.concatenate((np.zeros(len(censor_times), dtype=int), np.array([1])))
+    weights = compute_ipcw_weights(times, events, horizon_time=10_000.0)
+    assert np.isclose(weights[-1], 10_001.0, rtol=1e-12)
+
+
 def test_competing_events_resolve_recurrence_status_without_being_censoring():
     times = np.array([50.0, 100.0, 200.0])
     event_codes = np.array([2, 1, 0])  # competing, recurrence, administrative censor

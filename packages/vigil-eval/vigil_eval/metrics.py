@@ -40,8 +40,9 @@ class KaplanMeierEstimate:
         probs[valid_mask] = self.survival_prob[indices[valid_mask]]
         probs[~valid_mask] = 1.0  # Before first event, survival is 1.0
 
-        # Floor probabilities at small positive epsilon to prevent division by zero in IPCW
-        return cast(NDArray[np.floating], np.clip(probs, 1e-4, 1.0))
+        # Preserve the estimated censoring survival exactly. A probability floor
+        # changes the estimand by silently truncating IPCW weights.
+        return cast(NDArray[np.floating], probs)
 
 
 def compute_kaplan_meier(
@@ -106,8 +107,25 @@ def compute_ipcw_weights(
     censoring_indicators = (event_indicators == 0).astype(int)
     g_km = compute_kaplan_meier(follow_up_times, censoring_indicators)
 
-    # Evaluate G(horizon)
-    g_at_horizon = float(g_km.predict_survival(horizon_time)[0])
+    # Only require support at the horizon for observations known to remain
+    # event-free beyond it. If G is zero there, the horizon estimand is not
+    # identifiable from this cohort; do not manufacture a finite weight.
+    has_horizon_controls = bool(np.any(np.asarray(follow_up_times) > horizon_time))
+    g_at_horizon = (
+        float(g_km.predict_survival(horizon_time)[0]) if has_horizon_controls else None
+    )
+
+    def inverse_supported_probability(probability: float, at: float) -> float:
+        if probability <= 0.0:
+            raise ValueError(
+                f"IPCW is undefined: censoring survival is zero at time {at}"
+            )
+        weight = 1.0 / probability
+        if not np.isfinite(weight):
+            raise ValueError(
+                f"IPCW is undefined: inverse censoring survival is not finite at time {at}"
+            )
+        return weight
 
     for i in range(n):
         t_i = follow_up_times[i]
@@ -117,13 +135,15 @@ def compute_ipcw_weights(
             if d_i in (1, 2):
                 # An event of either type resolves recurrence status by horizon.
                 g_ti = float(g_km.predict_survival(t_i)[0])
-                weights[i] = 1.0 / g_ti
+                weights[i] = inverse_supported_probability(g_ti, float(t_i))
             else:
                 # Censored before horizon: indeterminate status
                 weights[i] = 0.0
         else:
             # Survived past horizon
-            weights[i] = 1.0 / g_at_horizon
+            # A horizon control was found above, so this probability exists.
+            assert g_at_horizon is not None
+            weights[i] = inverse_supported_probability(g_at_horizon, horizon_time)
 
     return weights
 
