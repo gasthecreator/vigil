@@ -302,6 +302,33 @@ def test_lead_time_rejects_recurrence_without_event_day():
         evaluate_lead_time_and_overdetection(patients, observations)
 
 
+def test_lead_time_rejects_recurrence_day_for_non_recurrent_patient():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "p1",
+            "true_recurrence_event": False,
+            "true_recurrence_day": 30.0,
+            "is_indolent": False,
+        }]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="marked as non-recurrent"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
+def test_lead_time_rejects_observations_for_unmatched_patients():
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": False, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "unknown", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="unknown patients"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
 def test_frozen_test_access_logger(tmp_path):
     """Verifies append-only frozen test set audit log."""
     log_file = tmp_path / "test_access.jsonl"
