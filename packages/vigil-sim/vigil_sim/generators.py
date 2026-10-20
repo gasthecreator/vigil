@@ -172,7 +172,6 @@ class CohortDataset:
             for k, v in obs.analytes.items():
                 is_observed = bool(obs.observed_mask.get(k, True))
                 row[f"observed_{k}"] = is_observed
-                row[f"latent_{k}"] = v
                 if legacy_leaky:
                     row[k] = v
                 else:

@@ -40,6 +40,19 @@ def test_deterministic_seed_reproducibility():
     pd.testing.assert_frame_equal(df1, df2)
 
 
+def test_observation_export_excludes_latent_truth_columns():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=81).generate_cohort(
+        num_patients=20, duration_days=365.0
+    )
+
+    observations = cohort.to_observations_dataframe()
+
+    assert not any(column.startswith("latent_") for column in observations.columns)
+    for analyte in cohort.observations[0].analytes:
+        unobserved = ~observations[f"observed_{analyte}"]
+        assert observations.loc[unobserved, analyte].isna().all()
+
+
 def test_legacy_synthetic_profile_is_explicit_and_matches_its_assumptions():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=999)
     cohort = gen.generate_cohort(num_patients=300, duration_days=365.0)

@@ -194,11 +194,12 @@ def test_causality_latent_columns_do_not_change_weights():
 
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=3).generate_cohort(40, 730.0, 90.0)
     obs = cohort.to_observations_dataframe()
+    assert not any(col.startswith("latent_") for col in obs.columns)
     pts = cohort.to_patients_dataframe()
     x1, y1 = landmarks_from(obs, pts)
     obs2 = obs.copy()
-    for col in [c for c in obs2.columns if c.startswith("latent_")]:
-        obs2[col] = np.random.default_rng(0).permutation(obs2[col].to_numpy())
+    marker = obs2["ca_15_3"].to_numpy()
+    obs2["latent_ca_15_3"] = np.random.default_rng(0).permutation(marker)
     x2, y2 = landmarks_from(obs2, pts)
     assert np.array_equal(x1, x2)
     assert np.array_equal(y1, y2)
