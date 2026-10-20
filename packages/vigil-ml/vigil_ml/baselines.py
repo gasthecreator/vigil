@@ -26,6 +26,11 @@ from sklearn.preprocessing import StandardScaler
 from vigil_core.analytes import ANALYTE_REGISTRY
 
 
+def _reject_unknown_fit_options(options: dict[str, object]) -> None:
+    if options:
+        raise TypeError(f"Unsupported fit options: {sorted(options)}")
+
+
 def _prepare_classifier_training_data(
     X: pd.DataFrame,
     y: pd.Series,
@@ -125,6 +130,7 @@ class PrevalenceBaseline(BaseSurveillanceModel):
         sample_weight: np.ndarray | None = None,
         **kwargs,
     ) -> PrevalenceBaseline:
+        _reject_unknown_fit_options(kwargs)
         self.prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
@@ -155,6 +161,7 @@ class SingleThresholdBaseline(BaseSurveillanceModel):
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> SingleThresholdBaseline:
+        _reject_unknown_fit_options(kwargs)
         self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
@@ -193,6 +200,7 @@ class VelocityBaseline(BaseSurveillanceModel):
     def fit(
         self, X: pd.DataFrame, y: pd.Series, sample_weight: np.ndarray | None = None, **kwargs
     ) -> VelocityBaseline:
+        _reject_unknown_fit_options(kwargs)
         self.fallback_prevalence = _training_prevalence(y, sample_weight, expected_rows=len(X))
         return self
 
@@ -247,6 +255,7 @@ class RegularizedCoxHazardBaseline(BaseSurveillanceModel):
         sample_weight: np.ndarray | None = None,
         **kwargs,
     ) -> RegularizedCoxHazardBaseline:
+        _reject_unknown_fit_options(kwargs)
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         self.feature_cols = list(feat_df.columns)
 
@@ -311,6 +320,7 @@ class GradientBoostingBaseline(BaseSurveillanceModel):
         sample_weight: np.ndarray | None = None,
         **kwargs,
     ) -> GradientBoostingBaseline:
+        _reject_unknown_fit_options(kwargs)
         feat_df, labels, weights = _prepare_classifier_training_data(X, y, sample_weight)
         self.feature_cols = list(feat_df.columns)
 

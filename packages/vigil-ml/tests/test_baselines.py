@@ -104,3 +104,19 @@ def test_classifier_baselines_reject_multidimensional_labels(mock_dataset):
     X, y = mock_dataset
     with pytest.raises(ValueError, match="one-dimensional"):
         RegularizedCoxHazardBaseline().fit(X, pd.DataFrame({"target": y}))
+
+
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        PrevalenceBaseline,
+        SingleThresholdBaseline,
+        VelocityBaseline,
+        RegularizedCoxHazardBaseline,
+        GradientBoostingBaseline,
+    ],
+)
+def test_baselines_reject_ignored_fit_options(mock_dataset, model_type):
+    X, y = mock_dataset
+    with pytest.raises(TypeError, match="Unsupported fit options"):
+        model_type().fit(X, y, horizon_days=180)

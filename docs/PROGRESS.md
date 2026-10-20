@@ -217,7 +217,7 @@ Source tracing found M5 always labeled its plain-language explanation synthetic,
 
 ### Q-7 follow-up — enforce baseline fit row alignment (2026-10-20)
 
-Rule-baseline fit review found B0/B1/B2 accepted labels whose row count differed from the feature matrix, allowing fallback prevalence to be learned from a mismatched cohort. Shared helpers also accepted multidimensional labels or weights inconsistently. These inputs now fail explicitly; focused baseline tests pass (10), Ruff passes, and `git diff --check` passes. The full trainer/evaluator/serving and estimand audit remains open; no model performance result was generated or changed.
+Rule-baseline fit review found B0/B1/B2 accepted labels whose row count differed from the feature matrix, allowing fallback prevalence to be learned from a mismatched cohort. Shared helpers also accepted multidimensional labels or weights inconsistently, and all B0–B4 classes silently ignored unsupported `fit(**kwargs)`. These inputs/options now fail explicitly; focused baseline tests pass (15), Ruff passes, and `git diff --check` passes. The full trainer/evaluator/serving and estimand audit remains open; no model performance result was generated or changed.
 
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
