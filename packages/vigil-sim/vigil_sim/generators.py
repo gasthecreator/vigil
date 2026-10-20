@@ -108,7 +108,7 @@ class PatientBaseline:
     observed_recurrence_site: Optional[str]
 
     # Competing risks
-    competing_event: Optional[str]  # e.g. "cardiovascular_death", "lost_to_follow_up"
+    competing_event: Optional[str]  # configured competing cause or loss-to-follow-up label
     competing_event_day: Optional[float]
 
     # Facility and economics

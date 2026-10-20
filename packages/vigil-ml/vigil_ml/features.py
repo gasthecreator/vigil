@@ -45,6 +45,14 @@ TRACKED_SYMPTOMS = (
     "fatigue_weight_loss",
 )
 
+SUPPORTED_COMPETING_EVENTS = frozenset(
+    {
+        "cardiovascular_event",
+        "death",
+        "lost_to_follow_up",
+    }
+)
+
 
 @dataclass
 class WindowedFeatureExtractor:
@@ -408,7 +416,14 @@ class WindowedFeatureExtractor:
                 raise ValueError(f"recurrence day supplied without an observed event for patient {pt_id}")
             comp_day = pt_row.get("competing_event_day")
             comp_type = pt_row.get("competing_event")
-            has_comp_type = comp_type is not None and not pd.isna(comp_type) and str(comp_type) != ""
+            has_comp_type = comp_type is not None and not pd.isna(comp_type)
+            if has_comp_type and (
+                not isinstance(comp_type, str)
+                or comp_type not in SUPPORTED_COMPETING_EVENTS
+            ):
+                raise ValueError(
+                    f"unsupported competing event type {comp_type!r} for patient {pt_id}"
+                )
             has_comp_day = comp_day is not None and not pd.isna(comp_day)
             if rec_event and (rec_day is None or pd.isna(rec_day)):
                 raise ValueError(f"observed recurrence day is required for patient {pt_id}")

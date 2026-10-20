@@ -315,6 +315,23 @@ def test_invalid_observation_outcome_boundaries_fail_closed():
         WindowedFeatureExtractor().transform_cohort(patients, observations)
 
 
+@pytest.mark.parametrize("competing_event", ["cardiovascular_typo", "", "0"])
+def test_unknown_competing_event_types_cannot_create_negative_labels(competing_event):
+    patients = pd.DataFrame([{
+        "patient_id": "UNKNOWN-EVENT",
+        "observed_recurrence_event": False,
+        "observed_recurrence_day": np.nan,
+        "competing_event": competing_event,
+        "competing_event_day": 100.0,
+        "administrative_censor_day": 365.0,
+    }])
+    observations = pd.DataFrame(
+        {"patient_id": ["UNKNOWN-EVENT"], "day": [0.0], "ca_15_3": [20.0]}
+    )
+    with pytest.raises(ValueError, match="unsupported competing event type"):
+        WindowedFeatureExtractor().transform_cohort(patients, observations)
+
+
 def test_observation_rows_must_map_to_one_patient_record():
     patients = pd.DataFrame([{
         "patient_id": "KNOWN",
