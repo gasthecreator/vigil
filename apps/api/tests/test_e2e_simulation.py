@@ -39,7 +39,9 @@ def test_e2e_surveillance_simulation(client):
     5. Verifies the patient remains visible in the task-oriented Triage Queue
     """
     # Step 1: Enroll Patient
-    p_resp = client.post("/api/v1/patients/", json={"age": 54, "status": "active"})
+    p_resp = client.post(
+        "/api/v1/patients/", json={"age": 54, "status": "active", "synthetic": True}
+    )
     assert p_resp.status_code == 201, f"Failed to create patient: {p_resp.text}"
     patient = p_resp.json()
     patient_id = patient["id"]

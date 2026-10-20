@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -27,6 +27,11 @@ class TargetOrgan(str, Enum):
     RENAL = "renal"
     BONE_MARROW = "bone_marrow"
     SYSTEMIC = "systemic"
+
+
+EvidenceStatus = Literal[
+    "PRIMARY-VERIFIED", "SECONDARY", "BACKGROUND", "CONFLICTING", "STALE", "BLOCKED"
+]
 
 
 class PlausibilityStatus(str, Enum):
@@ -46,9 +51,9 @@ class BiologicalVariation(BaseModel):
     cv_g: float = Field(..., description="Between-subject biological coefficient of variation (%)")
     index_of_individuality: float = Field(..., description="II = CVi / CVg")
     citation: str = Field(..., description="Literature source / EFLM database DOI")
-    evidence_status: str = Field(
+    evidence_status: EvidenceStatus = Field(
         default="SECONDARY",
-        description="Evidence status: PRIMARY-VERIFIED (backed by saved public excerpt) or SECONDARY",
+        description="Evidence-register status for CVi and CVg",
     )
 
 
@@ -57,6 +62,9 @@ class AnalyticalSpecification(BaseModel):
 
     cv_a_desirable: float = Field(..., description="Desirable analytical CV (%) = 0.5 * CVi")
     bias_max_desirable: float = Field(..., description="Desirable maximum bias (%)")
+    evidence_status: EvidenceStatus = Field(
+        default="SECONDARY", description="Evidence-register status for CVa and bias goals"
+    )
 
 
 class PlausibilityBounds(BaseModel):
@@ -118,11 +126,12 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
             cv_g=62.9,
             index_of_individuality=0.10,  # High individuality (II < 0.6)
             citation="Ricós C et al. Scand J Clin Lab Invest 1999; Westgard Biodatabase (docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)",
-            evidence_status="PRIMARY-VERIFIED",
+            evidence_status="SECONDARY",
         ),
         analytical_spec=AnalyticalSpecification(
             cv_a_desirable=3.05,  # 0.5 * CVi
             bias_max_desirable=15.8,
+            evidence_status="SECONDARY",
         ),
         plausibility=PlausibilityBounds(
             physiological_min=0.0,
@@ -172,11 +181,12 @@ ANALYTE_REGISTRY: Dict[str, AnalyteDefinition] = {
             cv_g=55.6,
             index_of_individuality=0.23,
             citation="Ricós C et al. Scand J Clin Lab Invest 1999; Westgard Biodatabase (docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md)",
-            evidence_status="PRIMARY-VERIFIED",
+            evidence_status="SECONDARY",
         ),
         analytical_spec=AnalyticalSpecification(
             cv_a_desirable=6.35,
             bias_max_desirable=14.9,
+            evidence_status="SECONDARY",
         ),
         plausibility=PlausibilityBounds(
             physiological_min=0.0,

@@ -312,7 +312,7 @@ def test_caregiver_share_lifecycle_and_scope(companion_env):
     )
     assert resp_cg_exp.status_code == 200
     exp = resp_cg_exp.json()
-    assert exp["verdict"] == "needs_repeat"
+    assert exp["verdict"] == "abstain"
     assert exp["synthetic"] is False
     assert exp["flesch_kincaid_grade_level"] <= 8.0
     assert len(exp["questions_to_ask_your_doctor"]) == 3
@@ -511,8 +511,8 @@ def test_patient_observation_explainer_endpoint(companion_env):
     assert data["observation_id"] == "obs-comp-spike"
     assert data["patient_id"] == patient_id
     assert data["analyte_code"] == "ca_15_3"
-    assert data["verdict"] == "needs_repeat"
-    assert "uncertainty" in data["verbal_band"].lower() or "repeat" in data["verbal_band"].lower()
+    assert data["verdict"] == "abstain"
+    assert data["verbal_band"] == "No model estimate available"
     assert data["flesch_kincaid_grade_level"] <= 8.0
     assert data["word_count"] <= 120
     assert len(data["questions_to_ask_your_doctor"]) == 3

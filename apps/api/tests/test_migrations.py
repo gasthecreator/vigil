@@ -290,6 +290,66 @@ def test_migration_lifecycle_and_constraints(temp_db_alembic):
         assert result == "patients"
 
 
+def test_null_m3_score_requires_abstention_and_cannot_be_downgraded(temp_db_alembic):
+    alembic_cfg, db_url = temp_db_alembic
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(db_url)
+    now = datetime.now(timezone.utc)
+    with Session(engine) as session:
+        session.add(
+            Facility(
+                id="fac-abstain", name="Test", code="TEST", country="NG",
+                tier="tertiary", active=True, created_at=now,
+            )
+        )
+        session.add(
+            Patient(
+                id="pat-abstain", facility_id="fac-abstain", mrn="MRN-ABSTAIN",
+                biological_sex="female", primary_cancer_type="breast", synthetic=True,
+                status="active", created_at=now, updated_at=now,
+            )
+        )
+        session.commit()
+
+    with pytest.raises(IntegrityError):
+        with Session(engine) as session:
+            session.add(
+                RiskAssessment(
+                    id="risk-null-invalid", patient_id="pat-abstain", assessment_date=now,
+                    model_versions={"M3": "1.0"}, input_hash="c" * 64, score=None,
+                    risk_tier="unavailable", abstention=False, adjudicated_action="abstain",
+                    created_at=now,
+                )
+            )
+            session.commit()
+
+    with pytest.raises(IntegrityError):
+        with Session(engine) as session:
+            session.add(
+                RiskAssessment(
+                    id="risk-null-wrong-action", patient_id="pat-abstain", assessment_date=now,
+                    model_versions={"M3": "1.0"}, input_hash="e" * 64, score=None,
+                    risk_tier="unavailable", abstention=True, adjudicated_action="needs_repeat",
+                    created_at=now,
+                )
+            )
+            session.commit()
+
+    with Session(engine) as session:
+        session.add(
+            RiskAssessment(
+                id="risk-null-valid", patient_id="pat-abstain", assessment_date=now,
+                model_versions={"M3": "1.0"}, input_hash="d" * 64, score=None,
+                risk_tier="unavailable", abstention=True, abstention_reason="insufficient_history",
+                adjudicated_action="abstain", created_at=now,
+            )
+        )
+        session.commit()
+
+    with pytest.raises(RuntimeError, match="contain explicit abstentions"):
+        command.downgrade(alembic_cfg, "b2c3d4e5f6a9")
+
+
 def test_p16_governance_and_feedback_tables_are_db_enforced_append_only(temp_db_alembic):
     alembic_cfg, db_url = temp_db_alembic
     engine = create_engine(db_url)

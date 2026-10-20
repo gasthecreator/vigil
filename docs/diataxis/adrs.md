@@ -50,3 +50,8 @@
 - [ADR-0046: Require a ratified threshold grid for partner DCA](../adr/0046-ratified-partner-dca-thresholds.md)
 - [ADR-0047: Add explicit G1 clearance and G2 shot-noise mechanisms](../adr/0047-explicit-g1-clearance-and-g2-shot-noise.md)
 - [ADR-0048: Preserve competing death in partner landmark outcomes](../adr/0048-partner-competing-death-estimand.md)
+- [0049. Fail closed on the invalid historical K3 sampler](../adr/0049-quarantine-invalid-k3-sampler.md)
+- [0050. Fail closed on the invalid historical K8 ensemble](../adr/0050-quarantine-invalid-k8-ensemble.md)
+- [0051. Quarantine unsupported M1 organ priors](../adr/0051-quarantine-unsupported-m1-priors.md)
+- [0052. M3 abstains without a prior measurement](../adr/0052-m3-abstains-without-prior-history.md)
+- [0053. Synthetic provenance is explicit and source-bound](../adr/0053-synthetic-provenance-is-explicit.md)

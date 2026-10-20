@@ -29,7 +29,7 @@ def test_sse_stream_clinician_success(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # 1. Create Patient & Grant Consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 55, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 55, "status": "active", "synthetic": True}, headers=headers)
     assert p_resp.status_code == 201
     pid = p_resp.json()["id"]
 
@@ -81,7 +81,7 @@ def test_sse_stream_consent_rejection(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # Patient created with NO consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 62, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 62, "status": "active", "synthetic": True}, headers=headers)
     assert p_resp.status_code == 201
     pid = p_resp.json()["id"]
 
@@ -99,7 +99,7 @@ def test_sse_stream_patient_role_restrictions(client):
 
     # Create patient
     p_resp = client.post(
-        "/api/v1/patients/", json={"age": 49, "status": "active"}, headers=headers_doc
+        "/api/v1/patients/", json={"age": 49, "status": "active", "synthetic": True}, headers=headers_doc
     )
     pid = p_resp.json()["id"]
 

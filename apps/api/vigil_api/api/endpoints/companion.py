@@ -155,11 +155,22 @@ def get_caregiver_shared_summary(
     )
     if withheld:
         latest_risk_payload = {"withheld": True, "message": DISCLOSURE_LOCKED_DETAIL["message"]}
+    elif latest_risk and not patient.synthetic:
+        latest_risk_payload = {
+            "score": None,
+            "risk_tier": "unavailable",
+            "adjudicated_action": "abstain",
+            "abstention": True,
+            "abstention_reason": "clinical_validation_unavailable",
+            "assessment_date": latest_risk.assessment_date,
+        }
     elif latest_risk:
         latest_risk_payload = {
             "score": latest_risk.score,
             "risk_tier": latest_risk.risk_tier,
             "adjudicated_action": latest_risk.adjudicated_action,
+            "abstention": latest_risk.abstention,
+            "abstention_reason": latest_risk.abstention_reason,
             "assessment_date": latest_risk.assessment_date,
         }
     else:
@@ -191,7 +202,7 @@ def get_caregiver_shared_summary(
             for o in observations
         ],
         "latest_risk": latest_risk_payload,
-        "synthetic": True,
+        "synthetic": patient.synthetic,
     }
 
 
@@ -241,6 +252,7 @@ def record_caregiver_symptom(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: patient lacks active consent.",
         )
+    patient = db.execute(select(Patient).where(Patient.id == share.patient_id)).scalar_one()
 
     symptom = Symptom(
         patient_id=share.patient_id,
@@ -281,7 +293,7 @@ def record_caregiver_symptom(
         input_modality=symptom.input_modality,
         recorded_at=symptom.recorded_at,
         created_at=symptom.created_at,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -351,25 +363,32 @@ def get_caregiver_observation_explainer(
             detail=f"Observation '{obs_id}' not found for patient.",
         )
 
-    verdict = "explained"
-    if obs.plausibility_status in {"implausible", "extreme_spike"}:
+    patient_row = db.execute(select(Patient).where(Patient.id == share.patient_id)).scalar_one()
+    verdict = "abstain"
+    if not patient_row.synthetic:
+        verdict = "abstain"
+    elif obs.plausibility_status in {"implausible", "extreme_spike"}:
         verdict = "needs_repeat"
     else:
         risk = (
             db.execute(
                 select(RiskAssessment)
-                .where(RiskAssessment.patient_id == share.patient_id)
+                .where(
+                    RiskAssessment.patient_id == share.patient_id,
+                    RiskAssessment.observation_id == obs.id,
+                )
                 .order_by(desc(RiskAssessment.assessment_date))
             )
             .scalars()
             .first()
         )
-        if risk and risk.adjudicated_action in {"escalate", "needs_repeat", "explained"}:
+        if risk and risk.abstention:
+            verdict = "abstain"
+        elif risk and risk.adjudicated_action in {"escalate", "needs_repeat", "explained"}:
             verdict = risk.adjudicated_action
         elif risk and risk.risk_tier == "high":
             verdict = "escalate"
 
-    patient_row = db.execute(select(Patient).where(Patient.id == share.patient_id)).scalar_one()
     if verdict == "escalate" and patient_row.disclosure_unlocked_at is None:
         record_audit_event(
             db=db,
@@ -479,6 +498,10 @@ def caregiver_request_disclosure_release(
             detail="Access denied: patient lacks active clinical surveillance consent.",
         )
 
+    patient = db.execute(select(Patient).where(Patient.id == share.patient_id)).scalar_one_or_none()
+    if patient is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found.")
+
     task_id = str(uuid.uuid4())
     notes_text = (
         f"Caregiver '{share.caregiver_name}' requested clinician release of sensitive/escalate results. "
@@ -520,5 +543,5 @@ def caregiver_request_disclosure_release(
         requested=True,
         task_id=task.id,
         message="Request submitted. A clinician will review and release results.",
-        synthetic=True,
+        synthetic=patient.synthetic,
     )

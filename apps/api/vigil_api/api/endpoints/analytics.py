@@ -73,6 +73,7 @@ def seed_demo_cohort(
         patient = Patient(
             age=raw_patient["age"],
             status="active",
+            synthetic=True,
             created_at=raw_patient["created_at"],
         )
         db.add(patient)

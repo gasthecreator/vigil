@@ -1861,6 +1861,12 @@
             "description": "Clinical surveillance status",
             "title": "Status",
             "type": "string"
+          },
+          "synthetic": {
+            "default": false,
+            "description": "True only for generated or test records; ordinary enrolled patients are non-synthetic.",
+            "title": "Synthetic",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2019,6 +2025,11 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "synthetic": {
+            "default": false,
+            "title": "Synthetic",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2492,6 +2503,17 @@
             "title": "Abstention",
             "type": "boolean"
           },
+          "abstention_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Reason"
+          },
           "adjudicated_action": {
             "title": "Adjudicated Action",
             "type": "string"
@@ -2532,8 +2554,15 @@
             "type": "string"
           },
           "score": {
-            "title": "Score",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
           },
           "uncertainty": {
             "anyOf": [

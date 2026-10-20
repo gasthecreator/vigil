@@ -31,7 +31,7 @@ def test_offline_sync_batch_successful_replay(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # 1. Create Patient & Grant Consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 52, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 52, "status": "active", "synthetic": True}, headers=headers)
     assert p_resp.status_code == 201
     pid = p_resp.json()["id"]
 
@@ -101,7 +101,7 @@ def test_offline_sync_lww_conflict_resolution(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # 1. Create Patient & Consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 58, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 58, "status": "active", "synthetic": True}, headers=headers)
     pid = p_resp.json()["id"]
     client.post(
         f"/api/v1/patients/{pid}/consent",
@@ -201,7 +201,7 @@ def test_offline_sync_unconsented_patient_rejected(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # Patient with NO consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 60, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 60, "status": "active", "synthetic": True}, headers=headers)
     pid = p_resp.json()["id"]
 
     now = datetime.now(timezone.utc)

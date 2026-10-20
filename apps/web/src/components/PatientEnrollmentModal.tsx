@@ -43,6 +43,7 @@ export const PatientEnrollmentModal: React.FC<PatientEnrollmentModalProps> = ({
         age: ageNum,
         mrn: mrn.trim() || undefined,
         status: "active",
+        synthetic: false,
       });
 
       // 2. Register Mandatory Clinical Care Consent

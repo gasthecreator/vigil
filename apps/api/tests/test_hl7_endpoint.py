@@ -24,7 +24,7 @@ def test_hl7_oru_r01_successful_ingestion(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # 1. Create Patient & Grant Consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 52, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 52, "status": "active", "synthetic": True}, headers=headers)
     assert p_resp.status_code == 201
     pid = p_resp.json()["id"]
 
@@ -68,7 +68,7 @@ def test_hl7_oru_r01_json_wrapper(client):
     headers = {"X-Vigil-Role": "nurse_clerk", "X-Vigil-User-Id": "nurse-1"}
 
     # 1. Create Patient & Grant Consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 48, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 48, "status": "active", "synthetic": True}, headers=headers)
     pid = p_resp.json()["id"]
 
     client.post(
@@ -101,7 +101,7 @@ def test_hl7_oru_r01_consent_rejection(client):
     headers = {"X-Vigil-Role": "clinician", "X-Vigil-User-Id": "doc-1"}
 
     # Patient created with NO consent
-    p_resp = client.post("/api/v1/patients/", json={"age": 60, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 60, "status": "active", "synthetic": True}, headers=headers)
     pid = p_resp.json()["id"]
 
     hl7_text = (

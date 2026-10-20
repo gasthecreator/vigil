@@ -170,8 +170,39 @@ def test_normal_observation_ingestion_and_k2_update(ingestion_db, clinician_auth
     risk = data["risk_assessment"]
     assert risk["model_versions"] == {"M3": "1.0", "K2": "1.0", "M5": "1.0"}
     assert len(risk["input_hash"]) == 64
-    assert risk["adjudicated_action"] == "explained"
-    assert "The recommended clinical action is explained." in risk["clinical_note"]
+    assert risk["adjudicated_action"] == "abstain"
+    assert risk["abstention"] is True
+    assert risk["abstention_reason"] == "insufficient_history"
+    assert risk["score"] is None
+    assert "without structured rationale facts" in risk["clinical_note"]
+    explainer = client.get(
+        f"/api/v1/patients/pat-surv-01/observations/{data['observation_id']}/explainer",
+        headers=clinician_auth_headers,
+    )
+    assert explainer.status_code == 200
+    assert explainer.json()["verdict"] == "abstain"
+    assert "not enough history" in explainer.json()["headline"].lower()
+
+    # The first value is never used as its own personalized baseline. A second
+    # temporally later draw enables an ordinary, non-abstaining comparison.
+    later = client.post(
+        "/api/v1/patients/pat-surv-01/observations",
+        json={
+            "analyte_code": "ca_15_3",
+            "value": 18.7,
+            "unit": "U/mL",
+            "specimen_collected_at": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        },
+        headers=clinician_auth_headers,
+    )
+    assert later.status_code == 201
+    assert later.json()["risk_assessment"]["abstention"] is False
+    original_explainer = client.get(
+        f"/api/v1/patients/pat-surv-01/observations/{data['observation_id']}/explainer",
+        headers=clinician_auth_headers,
+    )
+    assert original_explainer.status_code == 200
+    assert original_explainer.json()["verdict"] == "abstain"
 
     # 3. Routine normal observation does not create alert or task
     assert data["alert"] is None
@@ -181,7 +212,7 @@ def test_normal_observation_ingestion_and_k2_update(ingestion_db, clinician_auth
     with Session(engine) as session:
         pat = session.execute(select(Patient).where(Patient.id == "pat-surv-01")).scalar_one()
         assert pat.detector_state is not None
-        assert len(pat.detector_state["history"]) == 1
+        assert len(pat.detector_state["history"]) == 2
 
 
 def test_surprising_observation_enforces_no_dismissal_invariant(
@@ -235,7 +266,6 @@ def test_surprising_observation_enforces_no_dismissal_invariant(
         ).scalar_one()
         assert stored_risk.adjudicated_action == "needs_repeat"
         assert stored_risk.adjudicated_action != "dismissed"
-
         stored_obs = session.execute(
             select(Observation).where(Observation.id == data["observation_id"])
         ).scalar_one()
@@ -250,3 +280,103 @@ def test_surprising_observation_enforces_no_dismissal_invariant(
             select(FollowUpTask).where(FollowUpTask.id == task_info["id"])
         ).scalar_one()
         assert stored_task.alert_id == stored_alert.id
+
+
+def test_backfilled_measurement_does_not_use_future_observation_as_m3_history(
+    ingestion_db, clinician_auth_headers
+):
+    client, engine = ingestion_db
+    now = datetime.now(timezone.utc)
+    with Session(engine) as session:
+        session.add(
+            Observation(
+                id="obs-future",
+                patient_id="pat-surv-01",
+                analyte_code="ca_15_3",
+                value=40.0,
+                unit="[iU]/mL",
+                specimen_collected_at=now + timedelta(days=5),
+                result_received_at=now,
+                plausibility_status="valid_normal",
+                raw_value=40.0,
+                raw_unit="U/mL",
+                status="valid",
+                created_at=now,
+            )
+        )
+        session.commit()
+
+    response = client.post(
+        "/api/v1/patients/pat-surv-01/observations",
+        json={
+            "analyte_code": "ca_15_3",
+            "value": 22.0,
+            "unit": "U/mL",
+            "specimen_collected_at": (now - timedelta(days=2)).isoformat(),
+        },
+        headers=clinician_auth_headers,
+    )
+
+    assert response.status_code == 201
+    risk = response.json()["risk_assessment"]
+    assert risk["abstention"] is True
+    assert risk["abstention_reason"] == "insufficient_history"
+    assert risk["score"] is None
+
+
+def test_real_patient_ingestion_preserves_non_synthetic_provenance(
+    ingestion_db, clinician_auth_headers
+):
+    client, engine = ingestion_db
+    now = datetime.now(timezone.utc)
+    with Session(engine) as session:
+        patient = session.execute(select(Patient).where(Patient.id == "pat-surv-01")).scalar_one()
+        patient.synthetic = False
+        session.add(
+            Observation(
+                id="obs-real-prior",
+                patient_id=patient.id,
+                analyte_code="ca_15_3",
+                value=20.0,
+                unit="[iU]/mL",
+                specimen_collected_at=now - timedelta(days=30),
+                result_received_at=now - timedelta(days=30),
+                plausibility_status="valid_normal",
+                raw_value=20.0,
+                raw_unit="U/mL",
+                status="valid",
+                created_at=now - timedelta(days=30),
+            )
+        )
+        session.commit()
+
+    response = client.post(
+        "/api/v1/patients/pat-surv-01/observations",
+        json={"analyte_code": "ca_15_3", "value": 23.0, "unit": "U/mL"},
+        headers=clinician_auth_headers,
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["synthetic"] is False
+    assert data["risk_assessment"]["abstention"] is True
+    assert data["risk_assessment"]["abstention_reason"] == "clinical_validation_unavailable"
+    assert data["risk_assessment"]["score"] is None
+    assert data["adjudicated_action"] == "abstain"
+    listed = client.get(
+        "/api/v1/patients/pat-surv-01/observations", headers=clinician_auth_headers
+    )
+    assert listed.status_code == 200
+    assert listed.json()[-1]["quality_flags"]["action"] == "abstain"
+    history = client.get(
+        "/api/v1/patients/pat-surv-01/risk-history", headers=clinician_auth_headers
+    )
+    assert history.status_code == 200
+    assert history.json()[0]["score"] is None
+    assert history.json()[0]["abstention_reason"] == "clinical_validation_unavailable"
+    explainer = client.get(
+        f"/api/v1/patients/pat-surv-01/observations/{data['observation_id']}/explainer",
+        headers=clinician_auth_headers,
+    )
+    assert explainer.status_code == 200
+    assert explainer.json()["synthetic"] is False
+    assert explainer.json()["verdict"] == "abstain"

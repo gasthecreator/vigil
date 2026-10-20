@@ -47,11 +47,14 @@ def test_root_and_health(client):
 
 def test_patient_workflow(client):
     # 1. Create Patient
-    p_resp = client.post("/api/v1/patients/", json={"age": 52, "status": "active"})
+    p_resp = client.post(
+        "/api/v1/patients/", json={"age": 52, "status": "active", "synthetic": True}
+    )
     assert p_resp.status_code == 201
     p_data = p_resp.json()
     patient_id = p_data["id"]
     assert p_data["age"] == 52
+    assert p_data["synthetic"] is True
     client.post(f"/api/v1/patients/{patient_id}/consent", json={"scope": "full", "granted": True})
 
     # 2. Submit Baseline Profile (Uses Literature/SEER priors)
@@ -70,6 +73,7 @@ def test_patient_workflow(client):
     b_data = b_resp.json()
     assert "target_organ_susceptibility_vector" in b_data
     assert b_data["target_organ_susceptibility_vector"] is None
+
 
     # 3. Submit Normal Lab Result
     l1_resp = client.post(
@@ -176,6 +180,35 @@ def test_patient_workflow(client):
     assert cohort["risk_metrics_status"] == "unavailable"
     assert cohort["average_cohort_risk"] is None
     assert cohort["critical_alerts"] is None
+
+
+def test_patient_creation_defaults_to_non_synthetic_without_source_evidence(client):
+    response = client.post("/api/v1/patients/", json={"age": 50, "status": "active"})
+    assert response.status_code == 201
+    assert response.json()["synthetic"] is False
+
+    generated = client.post(
+        "/api/v1/patients/", json={"age": 51, "status": "active", "synthetic": True}
+    )
+    assert generated.status_code == 201
+    listed = client.get("/api/v1/patients/")
+    provenance = {item["id"]: item["synthetic"] for item in listed.json()}
+    assert provenance[response.json()["id"]] is False
+    assert provenance[generated.json()["id"]] is True
+
+
+def test_non_local_environment_rejects_synthetic_patient_claim(monkeypatch):
+    from fastapi import HTTPException
+    from vigil_api.api.endpoints import patients
+    from vigil_api.schemas.patient import PatientCreate
+
+    monkeypatch.setattr(patients.settings, "ENVIRONMENT", "staging")
+    with pytest.raises(HTTPException) as exc:
+        patients.create_patient(
+            PatientCreate(age=50, status="active", synthetic=True), db=None, current_user=None
+        )
+    assert exc.value.status_code == 403
+    assert "only be created in the local environment" in exc.value.detail
 
 
 def test_legacy_inference_methods_fail_closed():

@@ -62,6 +62,13 @@ def test_analyte_registry_specifications():
         assert analyte.plausibility.reference_high > analyte.plausibility.reference_low
 
 
+def test_e9_registry_values_remain_secondary_in_both_cv_groups():
+    for code in ("ca_15_3", "cea"):
+        analyte = get_analyte(code)
+        assert analyte.biological_variation.evidence_status == "SECONDARY"
+        assert analyte.analytical_spec.evidence_status == "SECONDARY"
+
+
 def test_rcv_calculation_matches_analytical_formula():
     # CA 15-3: CVi = 6.1%, desirable CVa = 3.05%
     # Normal 95% bidirectional: RCV = sqrt(2) * 1.96 * sqrt(3.05^2 + 6.1^2)

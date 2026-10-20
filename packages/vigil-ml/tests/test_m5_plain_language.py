@@ -1,7 +1,7 @@
 """Unit tests for M5 Plain-Language Result Explainer and Readability Metrics.
 
 Verifies Master Plan §6.5, §6.8, and Phase 6b:
-- Plain-language result explainer driven by M3 verdicts ('explained', 'needs_repeat', 'escalate').
+- Plain-language result explainer driven by M3 verdicts, including explicit abstention.
 - Reading level strictly verified to Flesch-Kincaid Grade Level <= 8.0.
 - Length tests (concise text <= 120 words).
 - Verbal uncertainty bands present instead of raw percentages.
@@ -43,7 +43,7 @@ def test_flesch_kincaid_grade_level_calculation():
     assert score_complex > 12.0
 
 
-@pytest.mark.parametrize("verdict", ["explained", "needs_repeat", "escalate"])
+@pytest.mark.parametrize("verdict", ["abstain", "explained", "needs_repeat", "escalate"])
 def test_plain_language_explainer_reading_level_and_length(verdict: str):
     """Verify that all M3 verdicts yield FKGL <= 8.0 and concise word counts."""
     explainer = render_plain_language_explainer(
@@ -113,3 +113,11 @@ def test_plain_language_explainer_forbidden_claims():
 
         with pytest.raises(ValueError, match="Safety violation"):
             bad_explainer()
+
+
+def test_abstention_copy_does_not_imply_stability_or_repeat_error():
+    explainer = render_plain_language_explainer("abstain", synthetic=False)
+    assert "not enough history" in explainer["headline"].lower()
+    assert "stable" not in explainer["headline"].lower()
+    assert "repeat test" not in explainer["recommended_action"].lower()
+    assert "review this result" in explainer["recommended_action"].lower()

@@ -1,11 +1,11 @@
 """Module M3: Plausibility Adjudicator.
 
-Distinguishes genuine tumor marker progression, pre-analytical/analytical gross errors,
-and analytical/within-subject biological baseline fluctuations using Reference Change
-Values (RCV) and a calibrated Bayesian 3-way generative mixture model.
+Compares one tumor-marker observation with a patient's prior results under an explicit
+Bayesian 3-way generative mixture model. It is not a longitudinal recurrence detector.
 
 Safety Policy: Outlier results are NEVER dismissed ("dismissed" is not an allowed action).
 Results are classified as:
+  - "abstain": insufficient prior history to form a baseline; no probabilities are emitted
   - "escalate": high probability of true disease progression (p_real >= 0.60, p_err < 0.30)
   - "explained": high probability of baseline fluctuation (p_stable >= 0.90, p_err < 0.30)
   - "needs_repeat": potential analytical/pre-analytical error (p_error >= 0.30) or
@@ -17,7 +17,7 @@ Reference Change Values conform to Evidence E9 (Aarsand et al. 2021, Ricós et a
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 
 
 def rcv(
@@ -42,6 +42,13 @@ def rcv(
             down = exp(-z * sqrt(2) * s) - 1
             where s = sqrt(ln(1 + cva^2) + ln(1 + cvi^2))
     """
+    for name, value in (("cv_analytical", cv_analytical), ("cv_within", cv_within), ("z", z)):
+        if not math.isfinite(value):
+            raise ValueError(f"{name} must be finite, got {value}")
+    if cv_analytical < 0.0 or cv_within < 0.0:
+        raise ValueError("Coefficient of variation values must be nonnegative")
+    if z <= 0.0:
+        raise ValueError("z must be positive")
     if not log_normal:
         return math.sqrt(2.0) * z * math.sqrt(cv_analytical**2 + cv_within**2)
 
@@ -62,6 +69,21 @@ def _norm_pdf(x: float, mean: float, std: float) -> float:
 def _norm_cdf(z: float) -> float:
     """Evaluate standard normal cumulative distribution function."""
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+
+def abstain(
+    reason: Literal["insufficient_history", "clinical_validation_unavailable"],
+) -> Dict[str, Any]:
+    """Return an explicit M3 abstention without manufacturing component scores."""
+    return {
+        "p_real": None,
+        "p_error": None,
+        "p_stable": None,
+        "action": "abstain",
+        "abstention": True,
+        "abstention_reason": reason,
+        "rationale_facts": [],
+    }
 
 
 def adjudicate(
@@ -95,23 +117,54 @@ def adjudicate(
 
     Returns:
         dict containing:
-            "p_real": Posterior probability of true disease progression.
-            "p_error": Posterior probability of analytical/pre-analytical gross error.
-            "p_stable": Posterior probability of stable baseline fluctuation.
-            "action": Clinical decision ("explained" | "needs_repeat" | "escalate").
+            "p_real": Posterior model weight for the assumed real-change component.
+            "p_error": Posterior model weight for the assumed gross-error component.
+            "p_stable": Posterior model weight for the assumed stable component.
+            "action": "abstain" when history is unavailable, otherwise one of the three adjudications.
             "rationale_facts": Provenance-traceable structured facts for downstream narrative.
     """
+    inputs = {
+        "new_day": new_day,
+        "new_value": new_value,
+        "cv_analytical": cv_analytical,
+        "cv_within": cv_within,
+        "inter_lab_cv": inter_lab_cv,
+        "p_error_prior": p_error_prior,
+        "p_real_prior": p_real_prior,
+    }
+    for name, value in inputs.items():
+        if not math.isfinite(value):
+            raise ValueError(f"{name} must be finite, got {value}")
     if new_value <= 0.0:
         raise ValueError(f"Observed value must be positive, got {new_value}")
+    for name, value in (("cv_analytical", cv_analytical), ("cv_within", cv_within), ("inter_lab_cv", inter_lab_cv)):
+        if value < 0.0:
+            raise ValueError(f"{name} must be nonnegative, got {value}")
+    if p_error_prior < 0.0 or p_real_prior < 0.0 or p_error_prior + p_real_prior >= 1.0:
+        raise ValueError("p_error_prior and p_real_prior must be nonnegative and sum to less than 1")
+    if cv_analytical == 0.0 and cv_within == 0.0:
+        raise ValueError("cv_analytical and cv_within cannot both be zero")
+
+    for day, value in history:
+        if not math.isfinite(day) or not math.isfinite(value):
+            raise ValueError("Historical days and values must be finite")
+        if value <= 0.0:
+            raise ValueError("Historical values must be positive")
+        if day >= new_day:
+            raise ValueError("Historical observations must precede the current observation")
+
+    # A current result cannot supply its own baseline. With no prior draw, abstain
+    # instead of manufacturing a stable posterior from the observation itself.
+    if not history:
+        return abstain("insufficient_history")
 
     # Compute personalized baseline from historical draws (geometric mean)
-    log_history = [math.log(val) for _, val in history if val > 0.0]
+    log_history = [math.log(val) for _, val in history]
     n_hist = len(log_history)
     if n_hist > 0:
         log_base = sum(log_history) / n_hist
-    else:
-        log_base = math.log(new_value)
-        n_hist = 1
+    else:  # guarded above; retained as a defensive invariant
+        raise RuntimeError("M3 baseline requires at least one prior observation")
 
     base = math.exp(log_base)
     log_y = math.log(new_value)
@@ -232,5 +285,7 @@ def adjudicate(
         "p_error": float(p_error),
         "p_stable": float(p_stable),
         "action": action,
+        "abstention": False,
+        "abstention_reason": None,
         "rationale_facts": rationale_facts,
     }

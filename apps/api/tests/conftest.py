@@ -38,7 +38,9 @@ class ApiEnv:
 
     def create_patient(self, mrn: str, consent: bool = True) -> str:
         res = self.client.post(
-            "/api/v1/patients/", json={"age": 52, "mrn": mrn}, headers=self.headers("admin")
+            "/api/v1/patients/",
+            json={"age": 52, "mrn": mrn, "synthetic": True},
+            headers=self.headers("admin"),
         )
         assert res.status_code == 201, res.text
         pid = res.json()["id"]

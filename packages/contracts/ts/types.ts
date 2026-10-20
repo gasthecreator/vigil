@@ -397,6 +397,8 @@ export interface PatientCreate {
   mrn?: string | null;
   /** Clinical surveillance status */
   status?: string;
+  /** True only for generated or test records; ordinary enrolled patients are non-synthetic. */
+  synthetic?: boolean;
 }
 
 export interface PatientDelayNoticeResponse {
@@ -422,6 +424,7 @@ export interface PatientResponse {
   is_masked?: boolean;
   mrn?: string | null;
   status: string;
+  synthetic?: boolean;
 }
 
 export interface PatientUpdate {
@@ -515,6 +518,7 @@ export interface RadiotherapyCourseResponse {
 
 export interface RiskAssessmentSummary {
   abstention?: boolean;
+  abstention_reason?: string | null;
   adjudicated_action: string;
   assessment_date: string /* ISO 8601 */;
   clinical_note?: string | null;
@@ -522,7 +526,7 @@ export interface RiskAssessmentSummary {
   input_hash: string;
   model_versions: Record<string, string>;
   risk_tier: string;
-  score: number;
+  score: number | null;
   uncertainty?: Record<string, unknown> | null;
 }
 

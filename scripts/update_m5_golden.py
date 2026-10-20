@@ -21,7 +21,7 @@ OUT = (
     / "m5_golden.json"
 )
 JOURNEYS = ("j2_surprising_repeat", "false_alarm_explained", "real_progression_escalate")
-VERDICTS = ("explained", "needs_repeat", "escalate")
+VERDICTS = ("abstain", "explained", "needs_repeat", "escalate")
 
 
 def build() -> dict:

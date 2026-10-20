@@ -40,9 +40,9 @@ All acceptance test suites (`acceptance_p4`, `acceptance_3b`, `acceptance_k1`) p
      - `docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`: CA 15-3 ($CV_i = 6.1\%$, $CV_g = 62.9\%$, $CV_a = 3.1\%$, $RCV = 19.0\%$), CEA ($CV_i = 12.7\%$, $CV_g = 55.6\%$, $CV_a = 6.4\%$, $RCV = 39.4\%$).
      - `docs/evidence/excerpts/E12_wu_2017_seer_metastasis.md`: SEER 2010–2013 de novo metastatic breast cancer rates ($5.1\%$ overall, $8.1\%$ in non-Hispanic Black women).
      - `docs/evidence/excerpts/E7_jedy_agba_2016_stage_africa.md`: Stage at diagnosis in Sub-Saharan Africa ($77.0\%$ late-stage III/IV, $I^2 = 93.3\%$).
-  3. Upgraded `vigil_core.analytes.ANALYTE_REGISTRY` to include `evidence_status` (`PRIMARY-VERIFIED` for CA 15-3 and CEA; `SECONDARY` for exploratory markers).
+  3. Initially added `evidence_status` to `vigil_core.analytes.ANALYTE_REGISTRY`. The original primary labels for CA 15-3 and CEA were later found to overstate the source: the CV values are reproduced from a Westgard/Ricós secondary compilation. Q-7 changes both registry statuses to `SECONDARY` and adds that status to the analytical-CV specification as well.
   4. Extended `scripts/check_evidence.py` to audit and enforce that any numeric value claimed in evidence files must be backed by a saved excerpt in `docs/evidence/excerpts/`.
-- **Status**: **CLOSED** (Verified by `scripts/check_evidence.py` returning exit code 0).
+- **Status at Phase 5a submission**: Marked CLOSED after excerpt verification. The later P5a overseer verdict clarified that this is a verified retrieval of a secondary compilation, not primary verification of the underlying CV estimates. Q-7 reconciles the registry and model card to `SECONDARY`; see `docs/models/MODEL-CARD-M3.md` and `docs/evidence/E9.md`.
 
 ### Q-3: Study S7 Plausibility Evaluation Redo & TRIAGE Note
 - **Remediation**:

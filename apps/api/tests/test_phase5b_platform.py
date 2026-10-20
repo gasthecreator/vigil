@@ -43,7 +43,7 @@ def client():
 def _create_consented_patient(client, age: int = 50) -> str:
     """Helper creating an active patient with valid surveillance consent."""
     headers = {"X-Vigil-Role": "clinician"}
-    resp = client.post("/api/v1/patients/", json={"age": age, "status": "active"}, headers=headers)
+    resp = client.post("/api/v1/patients/", json={"age": age, "status": "active", "synthetic": True}, headers=headers)
     assert resp.status_code == 201
     pid = resp.json()["id"]
 
@@ -129,7 +129,7 @@ def test_batch_import_strict_validation_rejection(client):
 
     # Patient without consent
     p_unconsented = client.post(
-        "/api/v1/patients/", json={"age": 60, "status": "active"}, headers=headers
+        "/api/v1/patients/", json={"age": 60, "status": "active", "synthetic": True}, headers=headers
     ).json()["id"]
 
     payload = {
@@ -410,7 +410,7 @@ def test_reminder_worker_honours_patient_opt_out(client):
     headers = {"X-Vigil-Role": "clinician"}
 
     # Create patient with explicit opt-out in scope
-    p_resp = client.post("/api/v1/patients/", json={"age": 51, "status": "active"}, headers=headers)
+    p_resp = client.post("/api/v1/patients/", json={"age": 51, "status": "active", "synthetic": True}, headers=headers)
     pid = p_resp.json()["id"]
 
     client.post(

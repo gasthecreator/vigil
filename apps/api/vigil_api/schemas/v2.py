@@ -28,12 +28,13 @@ class RiskAssessmentSummary(BaseModel):
     assessment_date: datetime
     model_versions: Dict[str, str]
     input_hash: str
-    score: float
+    score: Optional[float]
     risk_tier: str
     uncertainty: Optional[Dict[str, Any]] = None
     adjudicated_action: str
     clinical_note: Optional[str] = None
     abstention: bool = False
+    abstention_reason: Optional[str] = None
 
 
 class AlertSummary(BaseModel):
@@ -134,7 +135,7 @@ class PatientV2Response(BaseModel):
     age: Optional[int] = None
     biological_sex: str
     primary_cancer_type: str
-    synthetic: bool = True
+    synthetic: bool = False
     status: str
     created_at: datetime
     updated_at: datetime

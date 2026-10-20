@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from vigil_api import silent_mode
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import get_current_user, require_roles
+from vigil_api.config import settings
 from vigil_api.consent import consented_patient_ids, has_active_consent, verify_patient_consent
 from vigil_api.crypto import compute_blind_index
 from vigil_api.database import get_db
@@ -69,7 +70,7 @@ from vigil_api.schemas.v2 import (
 )
 from vigil_core.analytes import check_plausibility, get_analyte
 from vigil_core.units import IncompatibleUnitsError, InvalidUnitError, UnitConversionError
-from vigil_ml.m3 import adjudicate
+from vigil_ml.m3 import abstain, adjudicate
 from vigil_ml.m5 import (
     render_clinician_note,
     render_plain_language_explainer,
@@ -110,6 +111,11 @@ def create_patient(
     ),
 ):
     """Registers a new patient into the oncology surveillance roster."""
+    if payload.synthetic and settings.ENVIRONMENT != "local":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Synthetic patient records can only be created in the local environment.",
+        )
     now = datetime.now(timezone.utc)
 
     # Enforce ADR 0011: Prohibit duplicate MRN or external_id registration
@@ -138,7 +144,7 @@ def create_patient(
         external_id=payload.external_id,
         mrn_bidx=mrn_bidx,
         external_id_bidx=ext_bidx,
-        synthetic=True,
+        synthetic=payload.synthetic,
         created_at=now,
         updated_at=now,
     )
@@ -202,6 +208,7 @@ def list_patients(
                         age=p.age,
                         created_at=p.created_at,
                         status=p.status,
+                        synthetic=p.synthetic,
                         mrn=p.mrn,
                         external_id=p.external_id,
                         is_masked=False,
@@ -219,6 +226,7 @@ def list_patients(
                 age=p.age,
                 created_at=p.created_at,
                 status=p.status,
+                synthetic=p.synthetic,
                 mrn=p.mrn if consented else mask_identifier(p.mrn),
                 external_id=p.external_id if consented else mask_identifier(p.external_id),
                 is_masked=not consented,
@@ -649,7 +657,11 @@ def ingest_single_observation_internal(
     history_obs = (
         db.execute(
             select(Observation)
-            .where(Observation.patient_id == patient.id, Observation.analyte_code == analyte.code)
+            .where(
+                Observation.patient_id == patient.id,
+                Observation.analyte_code == analyte.code,
+                Observation.specimen_collected_at < specimen_date,
+            )
             .order_by(Observation.specimen_collected_at.asc())
         )
         .scalars()
@@ -670,25 +682,38 @@ def ingest_single_observation_internal(
 
     current_day = (specimen_date - pt_created).total_seconds() / 86400.0
 
+    # Research-only model outputs are served only for synthetic records or to
+    # the isolated silent shadow store. Real records are recorded, but no
+    # unvalidated M3/K2 score or action is shown or persisted.
+    silent = silent_mode.is_silent()
+    research_path_enabled = silent or patient.synthetic
+
     # 2. Execute M3 Plausibility Adjudication
     cv_a = analyte.analytical_spec.cv_a_desirable / 100.0
     cv_i = analyte.biological_variation.cv_i / 100.0
-    m3_result = adjudicate(
-        history=history,
-        new_day=current_day,
-        new_value=plausibility.canonical_value,
-        cv_analytical=cv_a,
-        cv_within=cv_i,
-        lab_changed=lab_changed,
-    )
+    if research_path_enabled:
+        m3_result = adjudicate(
+            history=history,
+            new_day=current_day,
+            new_value=plausibility.canonical_value,
+            cv_analytical=cv_a,
+            cv_within=cv_i,
+            lab_changed=lab_changed,
+        )
+    else:
+        m3_result = abstain("clinical_validation_unavailable")
 
     # 3. Update & Persist K2 SequentialDetector
-    silent = silent_mode.is_silent()
-    detector = detector_from_dict(
-        silent_mode.load_detector_state(patient.id) if silent else patient.detector_state
+    detector = (
+        detector_from_dict(
+            silent_mode.load_detector_state(patient.id) if silent else patient.detector_state
+        )
+        if research_path_enabled
+        else detector_from_dict(None)
     )
-    detector.update(day=current_day, value=plausibility.canonical_value)
-    if not silent:
+    if research_path_enabled:
+        detector.update(day=current_day, value=plausibility.canonical_value)
+    if not silent and research_path_enabled:
         patient.detector_state = detector_to_dict(detector)
 
     # 4. Generate & Verify M5 Clinician Note
@@ -741,6 +766,8 @@ def ingest_single_observation_internal(
             if (m3_result["action"] == "escalate" or detector.alert)
             else "medium"
             if m3_result["action"] == "needs_repeat"
+            else "unavailable"
+            if m3_result["abstention"]
             else "low"
         )
         s_surprising = (
@@ -815,6 +842,8 @@ def ingest_single_observation_internal(
         if (m3_result["action"] == "escalate" or detector.alert)
         else "medium"
         if m3_result["action"] == "needs_repeat"
+        else "unavailable"
+        if m3_result["abstention"]
         else "low"
     )
     risk = RiskAssessment(
@@ -828,15 +857,18 @@ def ingest_single_observation_internal(
         uncertainty={
             "p_error": m3_result["p_error"],
             "p_stable": m3_result["p_stable"],
-            "log_e": detector.log_e,
-            "k2_tier": detector.tier.value,
-            "k2_alert": detector.alert,
+            "k2_state_available": research_path_enabled,
+            "k2_skip_reason": None if research_path_enabled else "clinical_validation_unavailable",
+            "log_e": detector.log_e if research_path_enabled else None,
+            "k2_tier": detector.tier.value if research_path_enabled else None,
+            "k2_alert": detector.alert if research_path_enabled else None,
         },
-        abstention=False,
+        abstention=m3_result["abstention"],
+        abstention_reason=m3_result["abstention_reason"],
         adjudicated_action=m3_result["action"],
         clinical_note=clinical_note,
         rationale_facts=m3_result["rationale_facts"],
-        k2_state_snapshot=detector_to_dict(detector),
+        k2_state_snapshot=detector_to_dict(detector) if research_path_enabled else None,
         created_at=now,
     )
     db.add(risk)
@@ -1193,13 +1225,14 @@ def ingest_observation(
             adjudicated_action=risk.adjudicated_action,
             clinical_note=risk.clinical_note,
             abstention=risk.abstention,
+            abstention_reason=risk.abstention_reason,
         )
         if risk is not None
         else None,
         alert=alert_summary,
         follow_up_task=follow_up_summary,
         outputs_withheld=risk is None,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1242,14 +1275,26 @@ def list_patient_observations(
         flags = getattr(o, "quality_flags", None)
         if withheld:
             flags = None
+        elif not patient.synthetic:
+            flags = {
+                "action": "abstain",
+                "p_real": None,
+                "p_error": None,
+                "p_stable": None,
+                "abstention": True,
+                "abstention_reason": "clinical_validation_unavailable",
+                "narrative": "No validated model output is available for this record.",
+            }
         elif not flags and o.risk_assessment:
             ra = o.risk_assessment
             unc = ra.uncertainty or {}
             flags = {
                 "action": ra.adjudicated_action,
                 "p_real": ra.score,
-                "p_error": unc.get("p_error", 0.0),
-                "p_stable": unc.get("p_stable", 0.0),
+                "p_error": unc.get("p_error"),
+                "p_stable": unc.get("p_stable"),
+                "abstention": ra.abstention,
+                "abstention_reason": ra.abstention_reason,
                 "narrative": ra.clinical_note,
             }
         res.append(
@@ -1302,12 +1347,15 @@ def list_patient_risk_history(
             assessment_date=a.assessment_date,
             model_versions=a.model_versions or {},
             input_hash=a.input_hash,
-            score=a.score,
-            risk_tier=a.risk_tier,
-            uncertainty=a.uncertainty,
-            adjudicated_action=a.adjudicated_action,
+            score=a.score if patient.synthetic else None,
+            risk_tier=a.risk_tier if patient.synthetic else "unavailable",
+            uncertainty=a.uncertainty if patient.synthetic else None,
+            adjudicated_action=a.adjudicated_action if patient.synthetic else "abstain",
             clinical_note=a.clinical_note,
-            abstention=a.abstention,
+            abstention=a.abstention if patient.synthetic else True,
+            abstention_reason=(
+                a.abstention_reason if patient.synthetic else "clinical_validation_unavailable"
+            ),
         )
         for a in assessments
     ]
@@ -1444,7 +1492,7 @@ def record_patient_symptom(
         input_modality=symptom.input_modality,
         recorded_at=symptom.recorded_at,
         created_at=symptom.created_at,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1475,7 +1523,7 @@ def list_patient_symptoms(
             input_modality=s.input_modality,
             recorded_at=s.recorded_at,
             created_at=s.created_at,
-            synthetic=True,
+            synthetic=patient.synthetic,
         )
         for s in symptoms
     ]
@@ -1546,7 +1594,7 @@ def create_caregiver_share(
         expires_at=share.expires_at,
         revoked_at=share.revoked_at,
         created_at=share.created_at,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1584,7 +1632,7 @@ def list_caregiver_shares(
             expires_at=s.expires_at,
             revoked_at=s.revoked_at,
             created_at=s.created_at,
-            synthetic=True,
+            synthetic=patient.synthetic,
         )
         for s in shares
     ]
@@ -1643,7 +1691,7 @@ def revoke_caregiver_share(
         expires_at=share.expires_at,
         revoked_at=share.revoked_at,
         created_at=share.created_at,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1727,7 +1775,7 @@ def submit_second_look_request(
         status="submitted",
         notes=task.notes,
         created_at=now,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1763,7 +1811,7 @@ def unlock_patient_disclosure(
         unlocked=True,
         unlocked_at=now,
         message="Sensitive results unlocked for patient/caregiver viewing.",
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1821,7 +1869,7 @@ def request_disclosure_release(
         requested=True,
         task_id=task.id,
         message="Request submitted. A clinician will review and release your results.",
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1858,7 +1906,7 @@ def lock_patient_disclosure(
         locked=True,
         locked_at=now,
         message="Sensitive results re-locked. Patient and caregivers cannot view without new release.",
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
 
 
@@ -1889,21 +1937,28 @@ def get_observation_explainer(
         )
 
     # Determine verdict based on plausibility status or associated risk assessment
-    verdict = "explained"
-    if obs.plausibility_status in {"implausible", "extreme_spike"}:
+    verdict = "abstain"
+    if not patient.synthetic:
+        verdict = "abstain"
+    elif obs.plausibility_status in {"implausible", "extreme_spike"}:
         verdict = "needs_repeat"
     else:
         # Check if an alert or high risk is linked
         risk = (
             db.execute(
                 select(RiskAssessment)
-                .where(RiskAssessment.patient_id == patient.id)
+                .where(
+                    RiskAssessment.patient_id == patient.id,
+                    RiskAssessment.observation_id == obs.id,
+                )
                 .order_by(desc(RiskAssessment.assessment_date))
             )
             .scalars()
             .first()
         )
-        if risk and risk.adjudicated_action in {"escalate", "needs_repeat", "explained"}:
+        if risk and risk.abstention:
+            verdict = "abstain"
+        elif risk and risk.adjudicated_action in {"escalate", "needs_repeat", "explained"}:
             verdict = risk.adjudicated_action
         elif risk and risk.risk_tier == "high":
             verdict = "escalate"

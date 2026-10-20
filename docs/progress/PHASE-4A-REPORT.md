@@ -92,6 +92,10 @@ Every `MET` status in this table is backed by a named, passing test in the test 
 
 ## 5. Biological Variation Evidence Base (Evidence E9)
 
+> **Q-7 correction:** This report's original CV table below cited inaccessible EuBIVAS full-text values and marked them `PRIMARY-VERIFIED`. That characterization was withdrawn by the overseer. Current CA 15-3 and CEA values are from the retrieved Westgard/Ricós secondary compilation, and the canonical registry marks them `SECONDARY`; see `docs/evidence/E9.md` and `docs/models/MODEL-CARD-M3.md`. The original table is retained as historical phase-report content, not current evidence.
+
+> **Q-7 correction:** The report's claim that M3 “correctly adjudicates” early recurrence visits as stable was not supported by S7. Simulator recurrence AUROCs are near chance; the contract-matched evaluation samples from M3's own assumptions. Treat the earlier sentence as an unsupported historical claim, not evidence of correct recurrence classification.
+
 All biological variation estimates are registered and cited per Evidence E9:
 
 | Analyte | $CV_i$ (%) | $CV_g$ (%) | Index of Individuality ($II$) | Evidence Status | Literature Reference |

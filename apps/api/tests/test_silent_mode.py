@@ -295,7 +295,11 @@ def test_no_get_route_returns_a_shadow_value_as_any_role(api_env, monkeypatch):
         obs_id = session.execute(select(Observation.id).limit(1)).scalar_one()
 
     markers = {r.id for r in rows}
-    markers |= {f"{r.score!r}"[:10] for r in rows if r.score > 1e-3}  # score digits (skip tiny values)
+    markers |= {
+        f"{r.score!r}"[:10]
+        for r in rows
+        if r.score is not None and r.score > 1e-3
+    }  # non-null score digits (skip tiny values)
     markers |= {"biomarker_spike", "lab_error_repeat", "sequential_divergence", "critical_panic_boundary"}
 
     get_paths = [p for p, ops in app.openapi()["paths"].items() if "get" in ops]
