@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""One-command report regeneration (G-11).
+"""One-command evidence verification (G-11).
 
-Regenerates / verifies every *cheap* committed study report from a clean tooling
-checkout, then diffs governance artefacts that must stay fresh.
+Re-derives reports from committed result records, verifies current deterministic
+artifacts, checks preserved historical evidence without replaying frozen cohorts,
+then diffs governance artefacts that must stay fresh.
 
 Usage:
   make reproduce
@@ -67,15 +68,11 @@ def main() -> int:
     steps: list[tuple[list[str], str]] = [
         (
             [sys.executable, str(ROOT / "scripts" / "verify_study_reproducibility.py")],
-            "Study report regeneration + bit-diff (verify_study_reproducibility)",
+            "Study artifact integrity + derived-report checks (verify_study_reproducibility)",
         ),
         (
             [sys.executable, str(ROOT / "scripts" / "generate_status.py"), "--check"],
             "docs/STATUS.md freshness",
-        ),
-        (
-            [sys.executable, str(ROOT / "scripts" / "run_alert_fatigue_simulation.py"), "--verify"],
-            "EXP-UF-001 synthetic alert-burden metrics",
         ),
         (
             [sys.executable, str(ROOT / "scripts" / "generate_sbom.py")],

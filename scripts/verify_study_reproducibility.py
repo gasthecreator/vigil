@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""scripts/verify_study_reproducibility.py
+"""Verify reproducible outputs and integrity of preserved study artifacts.
 
-Automated Study Reproducibility and Anti-Fabrication Check.
-Enforces Master Plan §3, §10, Reality Rule RR1, and Overseer Condition P14-A.
-
-Re-runs fast/cheap study scripts (e.g. Study M10-V2 Missed-Signal Audit),
-verifies exact deterministic reproduction of results against committed artifacts,
-and verifies mathematical integrity of S8-K7 causal and M7 twin study records.
-Fails CI if any committed study result is stale, drift-prone, or hand-edited.
+K4/K5/K6/M7/M12 aggregates and reports are re-derived only from committed result
+records. Their frozen cohorts are not replayed. Invalidated historical artifacts
+must carry explicit provenance and status records.
 """
 
 from __future__ import annotations
 
+import ast
+import hashlib
+import importlib.util
 import json
 import subprocess
 import sys
@@ -109,26 +108,52 @@ def verify_s8_k7_integrity() -> bool:
 
 
 def verify_m7_cpsat_v2() -> bool:
-    print("🔬 Verifying EXP-M7-001 (CP-SAT research track) against committed results...")
+    print("🔬 Verifying EXP-M7-001 stored artifacts (no frozen replay)...")
     exp = ROOT / "experiments" / "EXP-M7-001"
-    # (1) Re-run the first replications of one frozen cell and compare every metric to results.json.
-    cmd = [sys.executable, str(ROOT / "scripts" / "run_study_m7_cpsat_v2.py"), "--mode", "verify", "--reps", "2"]
-    res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
-    if res.returncode != 0:
-        print(f"❌ EXP-M7-001 verify failed:\n{res.stdout}\n{res.stderr}")
+    runner_path = ROOT / "scripts" / "run_study_m7_cpsat_v2.py"
+    spec = importlib.util.spec_from_file_location("exp_m7_run_verify", runner_path)
+    if spec is None or spec.loader is None:
+        print("❌ EXP-M7-001: could not load report renderer.")
         return False
-    print("  " + res.stdout.strip().splitlines()[-1])
-    # (2) Re-derive the all-in analysis from results.json in-process and compare with the committed file.
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    result = json.loads((exp / "results.json").read_text())
+    development = json.loads((exp / "dev_results.json").read_text())
+    expected_report = mod.render_report(result, development)
+    stored_report = (exp / "REPORT.md").read_text()
+    if _canonical_m7_report(expected_report) != _canonical_m7_report(stored_report):
+        print("❌ EXP-M7-001: REPORT.md is not the render of the preserved result records.")
+        return False
+    print("  ✅ REPORT.md equals a fresh render of the preserved result records.")
+    # Re-derive the all-in analysis from results.json in-process; no simulation or solver.
     sys.path.insert(0, str(ROOT / "scripts"))
     from analyze_m7_cpsat_v2_allin import analyse
 
-    derived = analyse(json.loads((exp / "results.json").read_text()))
+    derived = analyse(result)
     committed = json.loads((exp / "ALLIN_ANALYSIS.json").read_text())
     if json.loads(json.dumps(derived, sort_keys=True)) != committed:
         print("❌ ALLIN_ANALYSIS.json does not match a fresh derivation from results.json (stale or hand-edited).")
         return False
     print("  ✅ ALLIN_ANALYSIS.json equals a fresh derivation from results.json.")
     return True
+
+
+def _canonical_m7_report(report: str) -> str:
+    """Ignore JSON key ordering in historical table rows while comparing every value."""
+    rows = []
+    other = []
+    for line in report.splitlines():
+        if not line.startswith("| lambda_"):
+            other.append(line)
+            continue
+        columns = line.split("|")
+        for index, column in enumerate(columns):
+            value = column.strip()
+            if value.startswith("{"):
+                parsed = ast.literal_eval(value)
+                columns[index] = " " + repr(dict(sorted(parsed.items()))) + " "
+        rows.append("|".join(columns))
+    return "\n".join(other + sorted(rows)) + "\n"
 
 
 def _first_diff(a, b, tol: float = 1e-6, path: str = "") -> str | None:
@@ -164,8 +189,54 @@ def _close(a, b, tol: float = 1e-6) -> bool:
     return d is None
 
 
+def verify_alert_fatigue_history() -> bool:
+    """Check the preserved EXP-UF-001 artifact without replaying its consumed seed."""
+    print("🔬 Verifying EXP-UF-001 historical artifact integrity (no seed replay)...")
+    exp = ROOT / "reports" / "usability" / "alert-fatigue"
+    result_path = exp / "results.json"
+    report_path = exp / "REPORT.md"
+    status_path = exp / "RECONCILIATION.md"
+    if not all(path.exists() for path in (result_path, report_path, status_path)):
+        print("❌ EXP-UF-001: result, report, or historical reconciliation is missing.")
+        return False
+
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    report = report_path.read_text(encoding="utf-8")
+    status = status_path.read_text(encoding="utf-8")
+    hashes = {
+        "results.json": hashlib.sha256(result_path.read_bytes()).hexdigest(),
+        "REPORT.md": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+    }
+    for filename, digest in hashes.items():
+        if f"`{filename}` SHA-256: `{digest}`" not in status:
+            print(f"❌ EXP-UF-001: preserved {filename} does not match its reconciliation hash.")
+            return False
+    if "historical; not current evidence" not in status.lower():
+        print("❌ EXP-UF-001: stale result is not explicitly marked historical.")
+        return False
+    if result.get("seed") != 1624 or result.get("data_status", "").split(";")[0] != "SYNTHETIC":
+        print("❌ EXP-UF-001: preserved result metadata does not match its preregistration.")
+        return False
+
+    report_fields = {
+        "patients_with_observed_ca_15_3": f"- Patients with observed CA 15-3: {result['patients_with_observed_ca_15_3']}",
+        "patients_with_latched_alert": f"- Patients with a latched alert: {result['patients_with_latched_alert']}",
+        "fraction_with_latched_alert": f"- Fraction with a latched alert: {result['fraction_with_latched_alert']}",
+        "observed_ca_15_3_count": f"- Observed CA 15-3 values processed: {result['observed_ca_15_3_count']}",
+    }
+    if any(line not in report for line in report_fields.values()):
+        print("❌ EXP-UF-001: REPORT.md disagrees with its preserved results.json.")
+        return False
+    for key, value in (("observed streams", 246), ("latched alerts", 44), ("observations", 979)):
+        if str(value) not in status:
+            print(f"❌ EXP-UF-001: reconciliation omits the audited current-source {key} count.")
+            return False
+    print("  ✅ preserved report/result agree and the current-source mismatch is disclosed.")
+    return True
+
+
 def verify_m12_study() -> bool:
-    print("🔬 Verifying EXP-M12-001 (M12 FedAvg/DP-SGD) against committed results...")
+    print("🔬 Verifying EXP-M12-001 historical artifact integrity (no frozen replay)...")
     import importlib.util
 
     exp = ROOT / "experiments" / "EXP-M12-001"
@@ -174,16 +245,15 @@ def verify_m12_study() -> bool:
     mod = importlib.util.module_from_spec(spec)
     sys.modules["exp_m12_run_verify"] = mod
     spec.loader.exec_module(mod)
-    fresh = json.loads(json.dumps(mod.replication(("frozen", 0, False))))
-    stored0 = json.loads(json.dumps(stored["replications"][0]))
-    fresh.pop("wall_s", None)
-    stored0.pop("wall_s", None)
-    # Neural training floats differ across BLAS/platform builds (CI saw ECE at ~2e-5 relative);
-    # same pattern as K4 classical baselines (tol 1e-4). Aggregate below is still exact of stored reps.
-    if not _close(fresh, stored0, tol=1e-4):
-        print("❌ EXP-M12-001: frozen replication 0 does not reproduce results.json.")
+    status = (exp / "PROVENANCE-AND-CONTRACT-AUDIT.md").read_text()
+    conclusion = (exp / "CONCLUSION.md").read_text()
+    if "historical, provenance-incomplete, and not current model-selection evidence" not in status:
+        print("❌ EXP-M12-001: historical invalidation status is missing.")
         return False
-    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-4; wall_s excluded).")
+    if "Do not use H1–H4" not in conclusion:
+        print("❌ EXP-M12-001: conclusion does not withhold the invalid historical findings.")
+        return False
+    print("  ✅ invalid historical status is explicit; frozen training/evaluation was not replayed.")
     agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
     if not _close(agg, stored["aggregate"]):
         print("❌ EXP-M12-001: aggregate does not equal a fresh derivation from the stored replications.")
@@ -198,7 +268,7 @@ def verify_m12_study() -> bool:
 
 
 def verify_k5_study() -> bool:
-    print("🔬 Verifying EXP-K5-001 (K5 lab harmonisation) against committed results...")
+    print("🔬 Verifying EXP-K5-001 stored aggregates and report (no frozen replay)...")
     import importlib.util
 
     exp = ROOT / "experiments" / "EXP-K5-001"
@@ -207,22 +277,23 @@ def verify_k5_study() -> bool:
     mod = importlib.util.module_from_spec(spec)
     sys.modules["exp_k5_run_verify"] = mod
     spec.loader.exec_module(mod)
-    # (1) Re-run frozen replication 0 and compare every number.
-    fresh = json.loads(json.dumps(mod.replication(("frozen", 0, stored["detector_calibration"], False))))
-    if not _close(fresh, stored["replications"][0]):
-        print("❌ EXP-K5-001: frozen replication 0 does not reproduce results.json.")
-        return False
-    print("  ✅ frozen replication 0 reproduces results.json (relative tolerance 1e-6; floats differ in the last digits across BLAS builds).")
-    # (2) The aggregate and the hypothesis verdicts are a pure function of the stored replications.
+    # The frozen run is single-access. Re-derive only from stored replication records.
     agg = json.loads(json.dumps(mod.aggregate(stored["replications"])))
     if not _close(agg, stored["aggregate"]):
         print("❌ EXP-K5-001: aggregate does not equal a fresh derivation from the stored replications.")
         return False
     print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored replications.")
-    # (3) REPORT.md is the render of results.json.
-    report = mod.render_report(stored, stored["detector_calibration"], float(
-        __import__("re").search(r"Run time (\d+) s", (exp / "REPORT.md").read_text()).group(1)))
-    if report != (exp / "REPORT.md").read_text():
+    # REPORT.md is re-derived from results.json and its preserved runtime field.
+    import re
+
+    report_path = exp / "REPORT.md"
+    report_text = report_path.read_text()
+    runtime = re.search(r"Run time (\d+) s", report_text)
+    if runtime is None:
+        print("❌ EXP-K5-001: REPORT.md does not record its runtime.")
+        return False
+    report = mod.render_report(stored, stored["detector_calibration"], float(runtime.group(1)))
+    if report != report_text:
         print("❌ EXP-K5-001: REPORT.md is not the render of results.json.")
         return False
     print("  ✅ REPORT.md equals a fresh render of results.json.")
@@ -230,7 +301,7 @@ def verify_k5_study() -> bool:
 
 
 def verify_k4_study() -> bool:
-    print("🔬 Verifying EXP-K4-001 (K4 deep families, pre-training, scale) against committed results...")
+    print("🔬 Verifying EXP-K4-001 historical artifact integrity (no frozen replay)...")
     import importlib.util
 
     exp = ROOT / "experiments" / "EXP-K4-001"
@@ -239,11 +310,16 @@ def verify_k4_study() -> bool:
     mod = importlib.util.module_from_spec(spec)
     sys.modules["exp_k4_run_verify"] = mod
     spec.loader.exec_module(mod)
-    # (1) The committed code is the code that produced the committed result.
-    if stored["code_hash"] != mod.code_hash():
-        print("❌ EXP-K4-001: k4.py or run.py changed after the frozen run (code hash differs); re-run or file an amendment.")
+    # The original source hash and missing access-log status are recorded; the
+    # frozen run must not be repeated to make current source hashes match.
+    history = (exp / "FROZEN-SEEDS-SPENT.md").read_text()
+    if stored.get("code_hash") not in history or "Preserve these artifacts; do not rerun" not in history:
+        print("❌ EXP-K4-001: historical code hash or no-replay disposition is missing.")
         return False
-    print("  ✅ code hash of k4.py and run.py equals the hash recorded by the frozen run.")
+    if "access record is incomplete" not in history:
+        print("❌ EXP-K4-001: missing frozen-access provenance is not disclosed.")
+        return False
+    print("  ✅ historical source hash and incomplete access status are explicit; no frozen cohort was replayed.")
     # (2) The aggregate and the verdicts are a pure function of the stored records.
     agg = json.loads(json.dumps(mod.aggregate(stored)))
     if not _close(agg, stored["aggregate"]):
@@ -255,51 +331,12 @@ def verify_k4_study() -> bool:
         print("❌ EXP-K4-001: REPORT.md is not the render of results.json.")
         return False
     print("  ✅ REPORT.md equals a fresh render of results.json.")
-    # (4) The classical baselines of frozen replication 0 are regenerated from the seeds. (The neural arms are not
-    # compared across machines: floating-point differences grow over epochs; same-machine determinism is tested.)
-    fresh = json.loads(json.dumps(mod.unit_baselines("frozen", 0, "full")["records"]))
-    old = [r for r in stored["records"] if r["rep"] == 0 and r["arm"] == "classical"]
-    drop = ("train_seconds",)
-    fresh = [{k: v for k, v in r.items() if k not in drop} for r in fresh]
-    old = [{k: v for k, v in r.items() if k not in drop} for r in old]
-    if not _close(fresh, old, tol=1e-4):
-        print("❌ EXP-K4-001: classical baselines of frozen replication 0 do not reproduce results.json.")
-        return False
-    print("  ✅ classical baselines of frozen replication 0 reproduce results.json (relative tolerance 1e-4).")
     return True
 
 
-def _k6_model_free_rep(mod) -> dict:
-    """Frozen replication 0, fixed and stage-heuristic arms only: they need the alert thresholds
-    (calibrated on the training world) and the test worlds, and no fitted model."""
-    from vigil_ml import k6
-    from vigil_ml import k6_engine as E
-    from vigil_sim import GeneratorType
-    from vigil_sim.surveillance import build_world
-
-    cfg = mod.design("full")
-    s = mod.base_seed("frozen", 0)
-    train = build_world(GeneratorType.G1_SMOOTH, s, cfg["n_train_generated"])
-    theta = k6.calibrate_thresholds(E.threshold_samples(train))
-    stub = {"hazard": None, "prior": None, "table": None}
-    gens = {"G1": (GeneratorType.G1_SMOOTH, 1), "G2": (GeneratorType.G2_BURST, 2), "G3": (GeneratorType.G3_NOISE, 3)}
-    records = []
-    for wname, (gen, off) in gens.items():
-        world = build_world(gen, s + off, cfg["n_test_generated"])
-        for fam, arm, params, factory in mod.arm_list(cfg, stub, full=(wname == "G1")):
-            if fam not in ("fixed", "heuristic"):
-                continue
-            res = E.simulate(world, factory(), theta, k6.CostTable())
-            records.append(mod._record("frozen", 0, wname, fam, arm, params, world, res))
-    return {"records": records}
-
-
 def verify_k6_study() -> bool:
-    print("🔬 Verifying EXP-K6-001 (K6 active sensing) against committed results...")
+    print("🔬 Verifying EXP-K6-001 historical artifact integrity (no frozen replay)...")
     import importlib.util
-    import os
-
-    import xgboost  # noqa: F401  (imported before anything else that may load an OpenMP runtime)
 
     exp = ROOT / "experiments" / "EXP-K6-001"
     stored = json.loads((exp / "results.json").read_text())
@@ -307,34 +344,26 @@ def verify_k6_study() -> bool:
     mod = importlib.util.module_from_spec(spec)
     sys.modules["exp_k6_run_verify"] = mod
     spec.loader.exec_module(mod)
-    # (1) The stored results were produced by exactly this code (k6.py, k6_engine.py, surveillance.py, run.py).
-    if stored.get("code_hash") != mod.code_hash():
-        print("❌ EXP-K6-001: results.json was produced by different code than the committed code.")
+    conclusion = (exp / "CONCLUSION.md").read_text()
+    replay_audit = (exp / "PROVENANCE-AND-REPLAY-AUDIT.md").read_text()
+    if stored.get("code_hash") not in conclusion:
+        print("❌ EXP-K6-001: historical source hash is missing from the conclusion.")
         return False
-    print("  ✅ results.json carries the hash of the committed code.")
-    # (2) The aggregate and the hypothesis verdicts are a pure function of the stored records.
+    if "No K6 cohort was generated" not in replay_audit:
+        print("❌ EXP-K6-001: no-replay provenance is not documented.")
+        return False
+    print("  ✅ historical source hash and no-replay provenance are explicit.")
+    # Re-derive aggregates and reports only from the committed records.
     agg = json.loads(json.dumps(mod.aggregate(stored)))
     if not _close(agg, stored["aggregate"]):
         print("❌ EXP-K6-001: aggregate does not equal a fresh derivation from the stored records.")
         return False
     print("  ✅ aggregate and hypothesis verdicts equal a fresh derivation from the stored records.")
-    # (3) REPORT.md is the render of results.json.
+    # REPORT.md is the render of results.json.
     if mod.render_report(stored) != (exp / "REPORT.md").read_text():
         print("❌ EXP-K6-001: REPORT.md is not the render of results.json.")
         return False
     print("  ✅ REPORT.md equals a fresh render of results.json.")
-    # (4) Re-run frozen replication 0 and compare every stored number of the arms that use no model
-    #     (fixed and stage-heuristic). With VIGIL_VERIFY_K6_FULL=1 the whole replication is re-run, models included
-    #     (about three minutes; tree-ensemble floats are only guaranteed on the same platform, hence opt-in).
-    full = os.environ.get("VIGIL_VERIFY_K6_FULL") == "1"
-    fresh = json.loads(json.dumps(mod.run_rep("frozen", 0, "full") if full else _k6_model_free_rep(mod)))
-    keep = (lambda r: True) if full else (lambda r: r["family"] in ("fixed", "heuristic"))
-    old = [r for r in stored["records"] if r["rep"] == 0 and keep(r)]
-    new = [r for r in fresh["records"] if keep(r)]
-    if not _close(new, old):
-        print("❌ EXP-K6-001: frozen replication 0 does not reproduce results.json.")
-        return False
-    print(f"  ✅ frozen replication 0 reproduces results.json ({'all arms' if full else 'fixed and heuristic arms'}; relative tolerance 1e-6).")
     return True
 
 
@@ -371,6 +400,8 @@ def verify_ocr_study() -> bool:
 
 def main() -> int:
     ok = True
+    if not verify_alert_fatigue_history():
+        ok = False
     if not verify_ocr_study():
         ok = False
     if not verify_k4_study():

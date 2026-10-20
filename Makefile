@@ -16,7 +16,7 @@ help:
 	@echo "make coverage-ratchet   Measure core+eval coverage and enforce floor"
 	@echo "make test               Run unit, property, and integration tests"
 	@echo "make verify-phase       Verify phase exit gates (e.g. make verify-phase PHASE=0)"
-	@echo "make reproduce          Regenerate/verify committed cheap study reports (G-11)"
+	@echo "make reproduce          Verify study evidence, derived reports, and supply-chain outputs (G-11)"
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
 	@echo "make reproduce-ml-core  Run preregistered single-generator core model tuning study"
 	@echo "make reproduce-ml-core-cross-generator  Run preregistered G1/G2 to G3 robustness study"
