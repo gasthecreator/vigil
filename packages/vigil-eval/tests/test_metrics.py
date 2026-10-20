@@ -90,6 +90,28 @@ def test_competing_events_resolve_recurrence_status_without_being_censoring():
     assert ipcw_brier_score(np.array([0.05, 0.95, 0.05]), times, event_codes, 150.0) < 0.01
 
 
+def test_ipcw_rejects_invalid_horizons_and_non_vector_event_codes():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    for horizon in (np.nan, np.inf, 0.0, -1.0):
+        with np.testing.assert_raises_regex(ValueError, "horizon_time"):
+            compute_ipcw_weights(times, events, horizon)
+    with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+        compute_ipcw_weights(times, events[:, None], 30.0)
+
+
+def test_survival_metrics_validate_inputs_even_when_weights_are_supplied():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    weights = np.ones(2)
+    with np.testing.assert_raises_regex(ValueError, "horizon_time"):
+        ipcw_brier_score(np.array([0.2, 0.4]), times, events, np.nan, weights=weights)
+    with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+        compute_ipcw_calibration_curve(
+            np.array([0.2, 0.4]), times, events[:, None], 30.0, weights=weights
+        )
+
+
 def test_patient_landmark_weights_equalize_total_patient_contribution():
     times = np.array([50.0, 200.0, 100.0, 300.0, 80.0])
     events = np.array([1, 0, 2, 0, 2])

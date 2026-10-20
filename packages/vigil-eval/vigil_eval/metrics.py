@@ -34,6 +34,28 @@ def _probability_vector(values: np.ndarray, name: str) -> NDArray[np.float64]:
     return probabilities
 
 
+def _survival_inputs(
+    follow_up_times: np.ndarray,
+    event_indicators: np.ndarray,
+    horizon_time: float,
+) -> tuple[NDArray[np.float64], NDArray[np.int64], float]:
+    """Validate the shared time, event-code, and horizon contract."""
+    times = np.asarray(follow_up_times, dtype=float)
+    events_raw = np.asarray(event_indicators)
+    horizon = float(horizon_time)
+    if times.ndim != 1 or events_raw.ndim != 1:
+        raise ValueError("follow_up_times and event_indicators must be one-dimensional")
+    if len(events_raw) != len(times):
+        raise ValueError("follow_up_times and event_indicators must have equal length")
+    if not np.isfinite(times).all() or np.any(times < 0):
+        raise ValueError("follow_up_times must be finite and non-negative")
+    if not np.isfinite(horizon) or horizon <= 0:
+        raise ValueError("horizon_time must be finite and positive")
+    if not np.isin(events_raw, [0, 1, 2]).all():
+        raise ValueError("event_indicators must use codes 0=censor, 1=recurrence, 2=competing event")
+    return times, events_raw.astype(np.int64), horizon
+
+
 @dataclass
 class KaplanMeierEstimate:
     """Estimated Kaplan-Meier survival/censoring curve."""
@@ -104,13 +126,10 @@ def compute_ipcw_weights(
     - If T_i > horizon (outcome-free past horizon): w_i = 1 / G(horizon)
     - If T_i <= horizon and Delta_i == 0 (censored prior to horizon): w_i = 0 (uninformative)
     """
+    follow_up_times, event_indicators, horizon_time = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
     n = len(follow_up_times)
-    if len(event_indicators) != n:
-        raise ValueError("follow_up_times and event_indicators must have equal length")
-    if not np.isfinite(follow_up_times).all() or np.any(np.asarray(follow_up_times) < 0):
-        raise ValueError("follow_up_times must be finite and non-negative")
-    if not np.isin(event_indicators, [0, 1, 2]).all():
-        raise ValueError("event_indicators must use codes 0=censor, 1=recurrence, 2=competing event")
     weights = np.zeros(n, dtype=float)
 
     # Estimate censoring distribution G(t) by reversing event indicator
@@ -172,7 +191,11 @@ def ipcw_time_dependent_roc_auc(
 
     Evaluates recurrence cases versus patients without recurrence by t; competing events are controls.
     """
-    if not (len(risk_scores) == len(follow_up_times) == len(event_indicators)):
+    follow_up_times, event_indicators, horizon_time = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
+    risk_scores = np.asarray(risk_scores, dtype=float)
+    if risk_scores.ndim != 1 or not (len(risk_scores) == len(follow_up_times)):
         raise ValueError("risk scores, follow-up times, and event indicators must have equal length")
     weights = (
         compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
@@ -229,9 +252,10 @@ def ipcw_brier_score(
     BS(t) = 1/N * sum_i [ (0 - S_i(t))^2 * I(T_i <= t, Delta_i=1) / G(T_i)
                         + (1 - S_i(t))^2 * I(T_i > t) / G(t) ]
     """
+    follow_up_times, event_indicators, horizon_time = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
     n = len(follow_up_times)
-    if len(event_indicators) != n:
-        raise ValueError("follow_up_times and event_indicators must have equal length")
     if n == 0:
         return float("nan")
 
@@ -279,8 +303,9 @@ def survival_decision_curve_analysis(
     Using IPCW weights to account for right-censoring at horizon.
     """
     predicted_risks = _probability_vector(predicted_risks, "predicted_risks")
-    follow_up_times = np.asarray(follow_up_times, dtype=float)
-    event_indicators = np.asarray(event_indicators)
+    follow_up_times, event_indicators, horizon_time = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
     if not (len(predicted_risks) == len(follow_up_times) == len(event_indicators)):
         raise ValueError("risks, follow-up times, and event indicators must have equal length")
     if thresholds is None:
@@ -442,8 +467,9 @@ def compute_ipcw_calibration_curve(
 ) -> CalibrationReport:
     """Compute horizon calibration using censoring weights and competing-event controls."""
     p = _probability_vector(predicted_probs, "predicted_probs")
-    times = np.asarray(follow_up_times, dtype=float)
-    events = np.asarray(event_indicators)
+    times, events, horizon_time = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
     if not (len(p) == len(times) == len(events)):
         raise ValueError("Predictions and event-time arrays must have equal length")
     if n_bins < 1:

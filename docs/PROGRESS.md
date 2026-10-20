@@ -219,6 +219,10 @@ Source tracing found M5 always labeled its plain-language explanation synthetic,
 
 Rule-baseline fit review found B0/B1/B2 accepted labels whose row count differed from the feature matrix, allowing fallback prevalence to be learned from a mismatched cohort. Shared helpers also accepted multidimensional labels or weights inconsistently, and all B0–B4 classes silently ignored unsupported `fit(**kwargs)`. These inputs/options now fail explicitly; focused baseline tests pass (15), and Ruff passes. `make typecheck` passes (15 strict-mypy source files; 2 import contracts). The full `vigil-ml` suite reports 505 passed and 2 unchanged fixed-score failures (B1 AUC 0.5488 < 0.65; fast logistic 0.7108 < 0.72); the acceptance gates remain untouched. `git diff --check` passes. The full trainer/evaluator/serving and estimand audit remains open; no model performance result was generated or changed.
 
+### Q-7 follow-up — validate survival metric horizons and event arrays (2026-10-20)
+
+IPCW review found negative/infinite horizons and multidimensional event-code arrays were accepted; NaN horizons could trigger an assertion, and supplied-weight metric paths skipped parts of survival input validation. Shared validation now rejects malformed horizons, times, and event arrays across the survival metrics. Metric tests pass (17); the full evaluator suite is 47 passed, 1 unchanged K3 shuffled-outcome canary failure (AUC 0.6136 > 0.60). `make typecheck` passes (15 strict-mypy source files; 2 import contracts), Ruff and `git diff --check` pass. This fixes malformed-input handling only; censoring assumptions and observed-vs-latent estimands remain open.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
