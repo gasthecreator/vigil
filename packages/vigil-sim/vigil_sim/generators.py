@@ -781,6 +781,20 @@ class BaseCohortGenerator(ABC):
             raise ValueError(
                 "facility_lab_effects must define count, offset_sd, increasing positive scale bounds, and assignment"
             )
+        baseline_sampling = config.get("baseline_analyte_sampling")
+        if (
+            not isinstance(baseline_sampling, dict)
+            or not isinstance(baseline_sampling.get("provenance"), str)
+            or not baseline_sampling["provenance"].strip()
+            or not _is_finite_number(baseline_sampling.get("between_patient_cv_cap"))
+            or baseline_sampling["between_patient_cv_cap"] < 0
+            or not _is_finite_number(baseline_sampling.get("reference_low_fraction"))
+            or not _is_finite_number(baseline_sampling.get("reference_high_fraction"))
+            or not 0 <= baseline_sampling["reference_low_fraction"]
+            < baseline_sampling["reference_high_fraction"]
+            <= 1
+        ):
+            raise ValueError("baseline_analyte_sampling is incomplete or malformed")
         verification = config.get("verification")
         if not isinstance(verification, dict):
             raise ValueError("Population config requires an explicit verification mechanism")
@@ -1038,17 +1052,26 @@ class BaseCohortGenerator(ABC):
         # Baseline analyte levels (inter-individual variation CVg centered at reference midpoint)
         # In adjuvant surveillance, patients entering monitoring have completed primary treatment
         # with no clinical evidence of disease (NED) and normal postoperative marker levels (Molina et al. 1995).
-        # General unselected population CVg is conditioned to the disease-free remission distribution (sigma_g <= 0.22).
+        # Baseline sampling settings are explicit synthetic profile assumptions.
         base_levels: Dict[str, float] = {}
+        baseline_sampling = cfg["baseline_analyte_sampling"]
         for code, analyte in ANALYTE_REGISTRY.items():
             ref_mid = 0.5 * (
                 analyte.plausibility.reference_low + analyte.plausibility.reference_high
             )
-            sigma_g = min(0.22, analyte.biological_variation.cv_g / 100.0)
+            sigma_g = min(
+                baseline_sampling["between_patient_cv_cap"],
+                analyte.biological_variation.cv_g / 100.0,
+            )
             val = ref_mid * math.exp(float(self.rng.normal(-0.5 * sigma_g**2, sigma_g)))
             base_levels[code] = max(
-                analyte.plausibility.reference_low * 0.8,
-                min(analyte.plausibility.reference_high * 0.95, val),
+                analyte.plausibility.reference_low
+                * baseline_sampling["reference_low_fraction"],
+                min(
+                    analyte.plausibility.reference_high
+                    * baseline_sampling["reference_high_fraction"],
+                    val,
+                ),
             )
 
         delay_range = cfg.get("out_of_pocket_delay_factor_range", [1.0, 2.4])

@@ -37,6 +37,12 @@
     "scale_max": 1.06,
     "assignment": "one seeded effect per facility and analyte, shared by patients in that facility"
   },
+  "baseline_analyte_sampling": {
+    "between_patient_cv_cap": 0.22,
+    "reference_low_fraction": 0.8,
+    "reference_high_fraction": 0.95,
+    "provenance": "Legacy synthetic baseline distribution settings transcribed from source; not clinically calibrated."
+  },
   "baseline_symptom_probabilities": {"fatigue_weight_loss": 0.08, "bone_pain": 0.04},
   "symptom_mechanics": {
     "provenance": "Explicit synthetic symptom stress mapping transcribed from prior generator logic; not clinically calibrated.",
