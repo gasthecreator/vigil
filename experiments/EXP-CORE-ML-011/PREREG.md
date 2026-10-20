@@ -59,3 +59,13 @@ call order. Event times and amplitudes use the separately derived streams as
 stated above. No registered 10,000-patient mechanism cohort or frozen result was
 accessed before this amendment. The amendment is committed before the runner and
 registered outputs.
+
+## Protocol amendment before registered output access (2026-10-19, parameterization)
+
+The v4 profile and runner are now specified: G2 event amplitudes are lognormal
+with the profile's arithmetic mean `m` and coefficient of variation `c`, using
+`sigma = sqrt(log(1+c^2))` and `mu = log(m) - sigma^2/2`. G1 uses the profile's
+fixed integration step and the exact piecewise-constant-burden transition;
+intermediate assay visits do not enter the integration grid. The run will count
+and fail on any recurrence-free G1 burden/marker signal or G2 event. No
+registered cohort or frozen result was accessed before this amendment.
