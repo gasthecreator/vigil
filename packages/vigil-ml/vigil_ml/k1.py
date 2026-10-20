@@ -179,8 +179,18 @@ def simulate_patient(
     The numerical assumptions are loaded from `models/k1_assumptions.json`; they are
     synthetic research assumptions, not clinically calibrated values.
     """
-    days = np.array(schedule_days, dtype=float)
-    parameter_values = np.array([getattr(params, name) for name in PARAM_NAMES], dtype=float)
+    raw_days = np.asarray(schedule_days, dtype=object)
+    if raw_days.ndim != 1 or any(
+        isinstance(day, (bool, np.bool_)) for day in raw_days.reshape(-1)
+    ):
+        raise ValueError("schedule_days must be a one-dimensional numeric sequence, not boolean")
+    days = np.asarray(schedule_days, dtype=np.float64)
+    if not np.all(np.isfinite(days)) or np.any(np.diff(days) <= 0):
+        raise ValueError("schedule_days must be finite and strictly increasing")
+    raw_parameters = [getattr(params, name) for name in PARAM_NAMES]
+    if any(isinstance(value, (bool, np.bool_)) for value in raw_parameters):
+        raise ValueError("K1 parameters must be numeric, not boolean")
+    parameter_values = np.asarray(raw_parameters, dtype=np.float64)
     if (
         not np.all(np.isfinite(parameter_values))
         or np.any(parameter_values < LO_BOUNDS)
@@ -200,6 +210,8 @@ def simulate_patient(
         0.0,
     )
     mu = BASELINE_CA153 + elev
+    if isinstance(measurement_noise_sd, (bool, np.bool_)):
+        raise ValueError("measurement_noise_sd must be numeric, not boolean")
     noise_sd = OBSERVATION_SD if measurement_noise_sd is None else float(measurement_noise_sd)
     if not np.isfinite(noise_sd) or noise_sd <= 0:
         raise ValueError("measurement_noise_sd must be finite and positive")

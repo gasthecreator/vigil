@@ -37,6 +37,30 @@ def test_observations_reject_boolean_time_and_mask_values(days, values, match):
         k1.K1Observations(np.asarray(days), values)
 
 
+def test_simulator_rejects_boolean_inputs_before_numeric_coercion():
+    params = k1.sample_prior(np.random.default_rng(4))
+    with pytest.raises(ValueError, match="schedule_days.*boolean"):
+        k1.simulate_patient(params, [False, True], np.random.default_rng(5))
+    with pytest.raises(ValueError, match="parameters.*boolean"):
+        k1.simulate_patient(
+            k1.K1Params(True, params.shedding_ca153, params.clearance_ca153, params.onset_day),
+            [0.0, 30.0],
+            np.random.default_rng(5),
+        )
+    with pytest.raises(ValueError, match="measurement_noise_sd.*boolean"):
+        k1.simulate_patient(
+            params, [0.0, 30.0], np.random.default_rng(5), measurement_noise_sd=True
+        )
+
+
+@pytest.mark.parametrize("schedule", [[0.0, 0.0], [0.0, np.nan], [[0.0, 1.0]]])
+def test_simulator_rejects_invalid_schedules_before_generation(schedule):
+    with pytest.raises(ValueError, match="schedule_days"):
+        k1.simulate_patient(
+            k1.sample_prior(np.random.default_rng(4)), schedule, np.random.default_rng(5)
+        )
+
+
 def test_trained_artifact_loader_requires_registered_identity_and_finite_weights(tmp_path):
     path = tmp_path / "weights.safetensors"
     manifest_path = tmp_path / "manifest.json"
