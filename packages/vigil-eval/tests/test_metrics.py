@@ -122,6 +122,18 @@ def test_patient_landmark_weights_equalize_total_patient_contribution():
     assert np.allclose(totals, totals[0])
 
 
+def test_patient_landmark_weights_reject_fractional_events_and_non_vector_ids():
+    times = np.array([10.0, 20.0])
+    with np.testing.assert_raises_regex(ValueError, "event_indicators"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0.5, 1.0]), 15.0, np.array(["a", "b"])
+        )
+    with np.testing.assert_raises_regex(ValueError, "patient arrays"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0, 1]), 15.0, np.array([["a"], ["b"]])
+        )
+
+
 def test_ipcw_time_dependent_roc_auc():
     """Verifies that IPCW ROC-AUC correctly discriminates high-risk vs low-risk cases."""
     rng = np.random.default_rng(42)

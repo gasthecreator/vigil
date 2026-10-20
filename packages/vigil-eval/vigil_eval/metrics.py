@@ -534,10 +534,11 @@ def patient_landmark_ipcw_weights(
     patient_ids: np.ndarray,
 ) -> np.ndarray:
     """IPCW weights normalized so each determinable patient contributes equal total weight."""
-    times = np.asarray(follow_up_times, dtype=float)
-    events = np.asarray(event_indicators, dtype=int)
+    times, events, _horizon = _survival_inputs(
+        follow_up_times, event_indicators, horizon_time
+    )
     ids = np.asarray(patient_ids)
-    if not (len(times) == len(events) == len(ids)):
+    if ids.ndim != 1 or not (len(times) == len(ids)):
         raise ValueError("Follow-up, event, and patient arrays must have equal length")
     weights = compute_ipcw_weights(times, events, horizon_time)
     # Preserve within-patient IPCW ratios while normalizing each patient's total
