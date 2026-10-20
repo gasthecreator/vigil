@@ -34,7 +34,8 @@ Population assumptions are stored in versioned JSON under `packages/vigil-sim/vi
 
 - Default compatibility profile: `legacy_synthetic_v0`; retains the old assumed age, stage, subtype, recurrence, site, and competing-event distributions for reproducibility. It is explicitly marked as unsourced and not clinically calibrated.
 - `balanced_synthetic_v1`: equal stage, subtype, and recurrence-site probabilities and a bounded uniform age distribution. This neutral profile is used by `EXP-CORE-ML-001` and is not intended to mimic case mix.
-- Financial-friction and visit-process values remain simulator assumptions. They are not population-calibrated and must not be read as evidence about care access.
+- `balanced_synthetic_core_v3`: adds explicit facility-effect, verification, assay-missingness, baseline-symptom, financial-friction, and visit-interval assumptions. These values were formerly implicit generator defaults. It is intended for newly preregistered core-engine work; existing study profiles and outputs remain historical and unchanged.
+- Financial-friction and visit-process values are simulator assumptions. They are not population-calibrated and must not be read as evidence about care access.
 
 The simulator's current historical results are not automatically reproducible from these profile files because the implementation and censor-aware label contract have changed. See ADR-0035 and the per-study status in the progress ledger.
 
@@ -44,7 +45,7 @@ The simulator's current historical results are not automatically reproducible fr
 Each generated patient trajectory records:
 1. **Observable Data:** Standardized laboratory panels (CA 15-3, CEA, ALT, AST, ALP, GGT, Bilirubin, Creatinine, Calcium, WBC), symptom severity scores (Grade 0–4), and imaging flags.
 2. **Latent Ground-Truth State (`LatentCompartmentState`):** Exact physical tumor cell burden in locoregional, bone, liver, lung, and brain compartments, true recurrence onset day, and true circulating marker concentrations.
-3. **Partial Verification Mechanism (ML_PROGRAM §4.2):** Imaging is triggered selectively based on symptom severity and biomarker thresholds ($P(\text{Image} \mid \text{CA 15-3}, \text{Symptoms})$), faithfully reproducing clinical partial verification bias.
+3. **Partial Verification Stress Mechanism (ML_PROGRAM §4.2):** Imaging probability varies with configured symptom and marker thresholds. This is an explicit synthetic mechanism for testing verification-bias methods; it is not calibrated to or claimed to reproduce a clinical imaging policy.
 
 ---
 

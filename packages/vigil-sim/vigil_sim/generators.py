@@ -482,6 +482,26 @@ class BaseCohortGenerator(ABC):
                 raise ValueError("measurement_missingness high-cost skip rate must be in [0, 1]")
             if not missingness.get("high_cost_analytes"):
                 raise ValueError("measurement_missingness requires high_cost_analytes")
+        baseline_symptoms = config.get("baseline_symptom_probabilities")
+        if baseline_symptoms is not None and any(
+            not np.isfinite(baseline_symptoms.get(key, np.nan))
+            or not 0 <= baseline_symptoms[key] <= 1
+            for key in ("fatigue_weight_loss", "bone_pain")
+        ):
+            raise ValueError("baseline_symptom_probabilities must define probabilities in [0, 1]")
+        delay_range = config.get("out_of_pocket_delay_factor_range")
+        if delay_range is not None and (
+            len(delay_range) != 2 or not np.isfinite(delay_range).all()
+            or not 0 < delay_range[0] <= delay_range[1]
+        ):
+            raise ValueError("out_of_pocket_delay_factor_range must be positive, finite, and increasing")
+        visit_gamma = config.get("visit_interval_gamma")
+        if visit_gamma is not None and (
+            not np.isfinite(visit_gamma.get("shape", np.nan))
+            or not np.isfinite(visit_gamma.get("scale", np.nan))
+            or visit_gamma["shape"] <= 0 or visit_gamma["scale"] <= 0
+        ):
+            raise ValueError("visit_interval_gamma shape and scale must be positive and finite")
         if len(config["recurrence_time_gamma_by_subtype"]) != 3:
             raise ValueError("recurrence_time_gamma_by_subtype must match the three subtypes")
         if len(config["recurrence_multiplier_by_subtype"]) != 3:
@@ -631,9 +651,8 @@ class BaseCohortGenerator(ABC):
                 min(analyte.plausibility.reference_high * 0.95, val),
             )
 
-        delay_factor = float(
-            self.rng.uniform(1.0, 2.4)
-        )  # Out-of-pocket financial friction multiplier
+        delay_range = cfg.get("out_of_pocket_delay_factor_range", [1.0, 2.4])
+        delay_factor = float(self.rng.uniform(*delay_range))
 
         return PatientBaseline(
             patient_id=pt_id,
@@ -679,9 +698,10 @@ class BaseCohortGenerator(ABC):
         }
 
         # Non-specific baseline symptoms
-        if self.rng.random() < 0.08:
+        baseline_symptoms = self.population_config.get("baseline_symptom_probabilities", {})
+        if self.rng.random() < baseline_symptoms.get("fatigue_weight_loss", 0.08):
             symptoms["fatigue_weight_loss"] = 1
-        if self.rng.random() < 0.04:
+        if self.rng.random() < baseline_symptoms.get("bone_pain", 0.04):
             symptoms["bone_pain"] = 1
 
         # Couple symptoms directly to latent compartment burdens
@@ -838,7 +858,10 @@ class BaseCohortGenerator(ABC):
                 visit_days.append(curr_day)
 
                 # Next scheduled visit: Gamma distribution modified by out-of-pocket friction
-                interval = nominal_interval_days * float(self.rng.gamma(shape=4.0, scale=0.25))
+                visit_gamma = self.population_config.get("visit_interval_gamma", {"shape": 4.0, "scale": 0.25})
+                interval = nominal_interval_days * float(
+                    self.rng.gamma(shape=visit_gamma["shape"], scale=visit_gamma["scale"])
+                )
                 interval *= pt.out_of_pocket_delay_factor
                 curr_day += interval
 

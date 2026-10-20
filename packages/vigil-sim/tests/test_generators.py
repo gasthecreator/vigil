@@ -124,6 +124,28 @@ def test_k3_profile_shares_lab_effects_within_facility_and_records_verification(
     )
 
 
+def test_core_v3_versions_generator_assumptions_and_shared_facility_effects():
+    config_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_core_v3.json"
+    profile = json.loads(config_path.read_text(encoding="utf-8"))
+    assert profile["profile_id"] == "balanced_synthetic_core_v3"
+    for key in (
+        "facility_lab_effects", "verification", "measurement_missingness",
+        "baseline_symptom_probabilities", "out_of_pocket_delay_factor_range",
+        "visit_interval_gamma",
+    ):
+        assert key in profile
+
+    generator = get_generator(GeneratorType.G1_SMOOTH, seed=48105, population_config=profile)
+    patients = [generator.sample_baseline(i) for i in range(1, 100)]
+    effects_by_facility = {}
+    for patient in patients:
+        effect = (patient.lab_offsets["ca_15_3"], patient.lab_scales["ca_15_3"])
+        assert effects_by_facility.setdefault(patient.facility_id, effect) == effect
+        assert profile["out_of_pocket_delay_factor_range"][0] <= patient.out_of_pocket_delay_factor
+        assert patient.out_of_pocket_delay_factor <= profile["out_of_pocket_delay_factor_range"][1]
+    assert len(effects_by_facility) > 1
+
+
 def test_positive_imaging_below_visibility_threshold_is_not_confirmed_recurrence():
     profile_path = Path(__file__).parents[1] / "vigil_sim" / "config" / "synthetic_population_k3_v2.json"
     profile = json.loads(profile_path.read_text(encoding="utf-8"))

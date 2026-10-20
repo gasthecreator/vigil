@@ -1,0 +1,151 @@
+{
+  "profile_id": "balanced_synthetic_core_v3",
+  "interpretation": "Synthetic core-engine stress assumptions. Not a Nigerian population estimate and not calibrated for clinical prediction. Replaces implicit generator defaults with versioned assumptions.",
+  "age_years": {
+    "minimum": 24.0,
+    "maximum": 82.0,
+    "distribution": "uniform"
+  },
+  "stage_probabilities": [
+    0.25,
+    0.25,
+    0.25,
+    0.25
+  ],
+  "subtype_probabilities": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333334
+  ],
+  "receptor_probabilities": {
+    "hr_positive_her2_negative_pr_positive": 0.85,
+    "her2_positive_er_positive": 0.5,
+    "her2_positive_pr_positive": 0.4
+  },
+  "recurrence_probability_by_stage": [
+    0.15,
+    0.3,
+    0.55,
+    0.85
+  ],
+  "recurrence_multiplier_by_subtype": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "recurrence_cap_by_subtype": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "recurrence_time_gamma_by_subtype": [
+    {
+      "shape": 2.5,
+      "scale_days": 150.0,
+      "offset_days": 60.0
+    },
+    {
+      "shape": 3.5,
+      "scale_days": 180.0,
+      "offset_days": 90.0
+    },
+    {
+      "shape": 3.5,
+      "scale_days": 180.0,
+      "offset_days": 90.0
+    }
+  ],
+  "recurrence_day_cap": 1825.0,
+  "indolent_probability": 0.08,
+  "site_probabilities_by_subtype": [
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ]
+  ],
+  "competing_event_probabilities": {
+    "cardiovascular_event": 0.05,
+    "lost_to_follow_up": 0.04
+  },
+  "competing_event_time_days": {
+    "cardiovascular_event": [
+      120.0,
+      1800.0
+    ],
+    "lost_to_follow_up": [
+      180.0,
+      1400.0
+    ]
+  },
+  "facility_lab_effects": {
+    "facility_count": 6,
+    "offset_sd": 0.06,
+    "scale_min": 0.94,
+    "scale_max": 1.06,
+    "assignment": "one seeded effect per facility and analyte, shared by patients in that facility"
+  },
+  "verification": {
+    "visible_burden_threshold": 12.0,
+    "sensitivity": 0.9,
+    "specificity": 0.99,
+    "routine_imaging_probability": 0.08,
+    "symptom_grade_thresholds": [
+      2,
+      3
+    ],
+    "symptom_probability_increments": [
+      0.4,
+      0.7
+    ],
+    "marker_thresholds": [
+      35.0,
+      75.0
+    ],
+    "marker_probability_increments": [
+      0.3,
+      0.65
+    ],
+    "maximum_imaging_probability": 0.95,
+    "result_semantics": "positive/negative only when imaging is performed; otherwise unknown"
+  },
+  "measurement_missingness": {
+    "high_cost_analytes": [
+      "ca_15_3",
+      "ca_27_29",
+      "cea"
+    ],
+    "high_cost_skip_probability_per_cost_factor": 0.12,
+    "base_skip_probability_by_generator": {
+      "g1_smooth_kinetics": 0.03,
+      "g2_shedding_bursts": 0.05,
+      "g3_heavy_tailed_noise": 0.06
+    },
+    "interpretation": "G1 high-cost analytes have cost-dependent missingness; other profiles use generator-specific skip rates."
+  },
+  "baseline_symptom_probabilities": {
+    "fatigue_weight_loss": 0.08,
+    "bone_pain": 0.04
+  },
+  "out_of_pocket_delay_factor_range": [
+    1.0,
+    2.4
+  ],
+  "visit_interval_gamma": {
+    "shape": 4.0,
+    "scale": 0.25
+  }
+}
