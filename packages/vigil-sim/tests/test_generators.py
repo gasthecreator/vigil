@@ -2,7 +2,7 @@
 Tests for vigil_sim.generators: Mechanistic cohort generators G1, G2, G3 and anti-leakage invariants.
 """
 
-import hashlib
+import gzip
 import json
 from pathlib import Path
 
@@ -106,22 +106,24 @@ def test_profile_requires_explicit_verification_mechanism(invalid_verification):
 
 
 @pytest.mark.parametrize(
-    ("profile_name", "generator_type", "expected_sha256"),
+    ("profile_name", "generator_type"),
     [
-        ("legacy-default", "g1_smooth_kinetics", "4738aecdcc612ac08d6557e204fdc79d34e8b353d2b1f6d1f15380372a175088"),
-        ("legacy-default", "g2_shedding_bursts", "2da9f21d9d2206d4175425c93d76e6238144d222ed5e0693d710f7b76a012a36"),
-        ("legacy-default", "g3_heavy_tailed_noise", "2ee3632bf640eb3811bef503241e56f8d8b081f4dee565e59c7f5faa49237afc"),
-        ("synthetic_population_v1.json", "g1_smooth_kinetics", "f449d0cfaaeaad016dd361a2c3b6ac0fb9f6f5e8408958a7660fdc04e047f422"),
-        ("synthetic_population_v1.json", "g2_shedding_bursts", "888f488927d1df50d2fb60fc73d9462765c0670fb268ab09a24ffbef66e88fe8"),
-        ("synthetic_population_v1.json", "g3_heavy_tailed_noise", "c987194d4c70564ce45800e897fcc41be322a46ea4ee4ddf8729a52df5f59adc"),
-        ("synthetic_population_k3_v2.json", "g1_smooth_kinetics", "e0589f3aaa93afe5977077f14accd862992e66c11e4297f383216867565888ec"),
-        ("synthetic_population_k3_v2.json", "g2_shedding_bursts", "67e2fe08d4e0e7f8add2691cde247ee83db959452b4cf9114c39b2bbde093385"),
-        ("synthetic_population_k3_v2.json", "g3_heavy_tailed_noise", "32470abcd9be0c81fc7950fda8b678694458b1afdde28766f8d367a996410dfc"),
+        ("legacy-default", "g1_smooth_kinetics"),
+        ("legacy-default", "g2_shedding_bursts"),
+        ("legacy-default", "g3_heavy_tailed_noise"),
+        ("synthetic_population_v1.json", "g1_smooth_kinetics"),
+        ("synthetic_population_v1.json", "g2_shedding_bursts"),
+        ("synthetic_population_v1.json", "g3_heavy_tailed_noise"),
+        ("synthetic_population_k3_v2.json", "g1_smooth_kinetics"),
+        ("synthetic_population_k3_v2.json", "g2_shedding_bursts"),
+        ("synthetic_population_k3_v2.json", "g3_heavy_tailed_noise"),
     ],
 )
-def test_historical_generator_profiles_preserve_seeded_cohort_fingerprint(
-    profile_name, generator_type, expected_sha256
+def test_historical_generator_profiles_preserve_seeded_cohort(
+    profile_name, generator_type, historical_generator_baseline
 ):
+    expected = historical_generator_baseline[profile_name][generator_type]
+
     if profile_name == "legacy-default":
         population_config = None
     else:
@@ -133,23 +135,48 @@ def test_historical_generator_profiles_preserve_seeded_cohort_fingerprint(
         population_config=population_config,
     ).generate_cohort(num_patients=80, duration_days=730.0)
 
-    # Platform math libraries can differ by a few ulps. Keep row order, field
-    # names, categories, masks, and seeded random events exact while defining
-    # numeric compatibility to 1e-6 absolute precision across supported hosts.
-    payload = {
-        "patients": _canonical_frame_json(cohort.to_patients_dataframe()),
-        "observations": _canonical_frame_json(cohort.to_observations_dataframe()),
-    }
-    fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
-    assert fingerprint == expected_sha256
+    _assert_historical_frame_compatible(
+        cohort.to_patients_dataframe(),
+        pd.DataFrame(expected["patients"]),
+        context=f"{profile_name}/{generator_type}/patients",
+    )
+    _assert_historical_frame_compatible(
+        cohort.to_observations_dataframe(),
+        pd.DataFrame(expected["observations"]),
+        context=f"{profile_name}/{generator_type}/observations",
+    )
 
 
-def _canonical_frame_json(frame: pd.DataFrame) -> str:
-    """Serialize frame values with a stable precision for cross-platform fingerprints."""
-    canonical = frame.copy()
-    float_columns = canonical.select_dtypes(include=["floating"]).columns
-    canonical[float_columns] = canonical[float_columns].round(6)
-    return canonical.to_json(orient="records", double_precision=6)
+def _assert_historical_frame_compatible(
+    actual: pd.DataFrame, expected: pd.DataFrame, *, context: str
+) -> None:
+    assert actual.columns.equals(expected.columns), f"{context}: column names or order changed"
+    assert actual.index.equals(expected.index), f"{context}: row index changed"
+    for column in actual.columns:
+        actual_series = actual[column]
+        expected_series = expected[column]
+        assert actual_series.isna().equals(expected_series.isna()), (
+            f"{context}/{column}: null mask changed"
+        )
+        is_float = pd.api.types.is_float_dtype(actual_series.dtype) or pd.api.types.is_float_dtype(
+            expected_series.dtype
+        )
+        pd.testing.assert_series_equal(
+            actual_series,
+            expected_series,
+            check_dtype=False,
+            check_exact=not is_float,
+            rtol=0.0,
+            atol=1e-6 if is_float else 0.0,
+            obj=f"{context}/{column}",
+        )
+
+
+@pytest.fixture(scope="module")
+def historical_generator_baseline():
+    baseline_path = Path(__file__).parent / "fixtures" / "historical_generator_cohorts.json.gz"
+    with gzip.open(baseline_path, "rt", encoding="utf-8") as stream:
+        return json.load(stream)
 
 
 @pytest.mark.parametrize("invalid_symptoms", [None, {}, {"burden_rules": {}}])
