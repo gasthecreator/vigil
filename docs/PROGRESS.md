@@ -243,6 +243,8 @@ The continued A–B boundary audit found Python `bool` values passed numeric che
 
 Call-site tracing found `FastLandmarkJointModel(horizon_days=...)` accepted values but ignored them; the actual target horizon is carried by the labels. The model alias now inherits the canonical logistic constructor, so `horizon_days` fails clearly, and all repository call sites pass only effective classifier settings. Focused joint-model tests pass (5); changed Python sources pass Ruff and whitespace checks. The historical experiment artifacts and their hashes were not changed or regenerated; source call-site cleanup does not constitute new performance evidence. This source-level contract fix does not implement K3 or close A–B.
 
+The PR #79 CI run for this source update confirms the unchanged K3 shuffled-outcome canary still fails: 76 evaluator tests passed and `test_k3_joint_model_canaries` produced AUC 0.6136378551 against the fixed 0.60 ceiling. The coverage job stopped at that test failure before evaluating its ratchet; the seeded-failure check passed. This matches the existing proposal-bound failure and was not addressed by weakening the test. Other workflows were still running at the last poll.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
