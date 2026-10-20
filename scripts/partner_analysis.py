@@ -86,8 +86,13 @@ class Landmarks:
 
 
 def _stage(s: str) -> str:
-    s = str(s)
-    return "STAGE III" if s.startswith("III") else ("STAGE II" if s.startswith("II") else "STAGE I")
+    # Keep this boundary strict even though normal callers pass contract-clean
+    # rows: an unvalidated value must never silently become Stage I.
+    value = str(s).strip().upper()
+    stages = {"I": "I", "IIA": "II", "IIB": "II", "IIIA": "III", "IIIB": "III", "IIIC": "III"}
+    if value not in stages:
+        raise ValueError(f"unsupported AJCC stage_ajcc value: {s!r}")
+    return f"STAGE {stages[value]}"
 
 
 def _subtype(er: str, pr: str, her2: str) -> str:

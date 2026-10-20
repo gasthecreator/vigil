@@ -29,6 +29,27 @@ from contracts.partner import ingest_path  # noqa: E402
 KEY = b"unit-test-partition-key-0123456789"
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("I", "STAGE I"),
+        ("IIA", "STAGE II"),
+        ("IIB", "STAGE II"),
+        ("IIIA", "STAGE III"),
+        ("IIIB", "STAGE III"),
+        ("IIIC", "STAGE III"),
+    ],
+)
+def test_stage_mapping_preserves_contract_stage_group(raw, expected):
+    assert pa._stage(raw) == expected
+
+
+@pytest.mark.parametrize("raw", ["IV", "Stage IV", "IIX", "", "unknown"])
+def test_stage_mapping_rejects_out_of_contract_values(raw):
+    with pytest.raises(ValueError, match="unsupported AJCC stage_ajcc"):
+        pa._stage(raw)
+
+
 # ------------------------------------------------------------------------------------------------ partition
 def test_partition_is_deterministic_keyed_and_balanced():
     ids = [f"P{i:05d}" for i in range(4000)]
