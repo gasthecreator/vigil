@@ -159,6 +159,11 @@ def metric_values(frame: pd.DataFrame, model_names: list[str]) -> dict[str, floa
 
 
 def main() -> None:
+    raise RuntimeError(
+        "EXP-CORE-ML-002 is withdrawn; its frozen test seed is retired and must not be reused. "
+        "See WITHDRAWN.md and run a separately preregistered study with fresh seeds."
+    )
+
     with PROFILE_PATH.open(encoding="utf-8") as stream:
         profile = json.load(stream)
     if profile["profile_id"] != "balanced_synthetic_v1":
