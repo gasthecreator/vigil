@@ -13,6 +13,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -292,6 +293,78 @@ def test_begg_greenes_bounds_move_with_the_assumption():
     # verified: tp=1 fp=1 tn=1 fn=1; both unverified patients are predicted positive
     assert [r["sensitivity"] for r in rows] == pytest.approx([1 / 2, 2 / 3, 3 / 4])
     assert [r["specificity"] for r in rows] == pytest.approx([1 / 4, 1 / 3, 1 / 2])
+
+
+def test_verification_propensity_is_fit_on_development_with_explicit_missingness_features():
+    n = 40
+    patients = pd.DataFrame(
+        {
+            "patient_id": [f"DEV-{i}" for i in range(n)],
+            "restaging_imaging_done": [i % 2 == 0 for i in range(n)],
+        }
+    )
+    X = pd.DataFrame(
+        {
+            "patient_id": patients["patient_id"],
+            "eval_day": np.full(n, 180.0),
+            "age": np.linspace(30.0, 70.0, n),
+            "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            "history_length": np.full(n, 2.0),
+        }
+    )
+    X.loc[[3, 11, 27], "ca_15_3_curr"] = np.nan
+    dev = pa.Landmarks(
+        X=X,
+        y=np.tile([0, 1], n // 2),
+        T=np.full(n, 365.0),
+        E=np.tile([0, 1], n // 2),
+        first=np.ones(n, dtype=bool),
+        end_day={pid: 545.0 for pid in patients["patient_id"]},
+        patients=patients,
+    )
+
+    model, medians, issue = pa._fit_verification_propensity(dev)
+    assert issue is None and model is not None and medians is not None
+    assert medians[1] == pytest.approx(float(np.nanmedian(X["ca_15_3_curr"])))
+    matrix, returned_medians = pa._verification_feature_matrix(X, medians)
+    assert matrix.shape == (n, 6)
+    assert matrix[3, 4] == 1.0  # CA 15-3 missingness is explicit, not encoded as zero
+    assert np.array_equal(returned_medians, medians)
+
+    held_out = X.copy()
+    held_out["ca_15_3_curr"] = 1_000_000.0
+    _, held_out_medians = pa._verification_feature_matrix(held_out, medians)
+    assert np.array_equal(held_out_medians, medians)  # test patients cannot refit imputation
+
+
+def test_verification_propensity_fails_closed_without_complete_development_labels():
+    n = 20
+    patients = pd.DataFrame(
+        {
+            "patient_id": [f"DEV-{i}" for i in range(n)],
+            "restaging_imaging_done": [None] * n,
+        }
+    )
+    X = pd.DataFrame(
+        {
+            "patient_id": patients["patient_id"],
+            "age": np.linspace(30.0, 70.0, n),
+            "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            "history_length": np.full(n, 2.0),
+        }
+    )
+    dev = pa.Landmarks(
+        X=X,
+        y=np.tile([0, 1], n // 2),
+        T=np.full(n, 365.0),
+        E=np.tile([0, 1], n // 2),
+        first=np.ones(n, dtype=bool),
+        end_day={pid: 545.0 for pid in patients["patient_id"]},
+        patients=patients,
+    )
+    model, medians, issue = pa._fit_verification_propensity(dev)
+    assert model is None and medians is None
+    assert issue == "development verification status is incomplete or non-binary"
 
 
 # ------------------------------------------------------------------------------------------------ whole pipeline on synthetic cohorts

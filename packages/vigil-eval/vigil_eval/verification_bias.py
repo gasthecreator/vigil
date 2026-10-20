@@ -153,15 +153,19 @@ def evaluate_ipw_verification(
     risk_scores: np.ndarray,
     observed_verified_labels: np.ndarray,
     verification_mask: np.ndarray,
-    verification_features: np.ndarray,
+    verification_features: np.ndarray | None,
     cutoff: float,
+    verification_propensities: np.ndarray | None = None,
 ) -> VerificationBiasReport:
     """
     Inverse Probability of Verification Weighting (Begg & Greenes, 1983).
     Models P(Verification = 1 | X) via logistic regression and weights verified
-    cases by its inverse. This identifies population metrics only under the stated
-    conditional exchangeability and positivity assumptions; diagnostics are returned
-    and unsupported cases are reported as undefined.
+    cases by its inverse, unless caller supplies propensities fitted on a distinct
+    development sample. The latter path is useful when the evaluation cohort is
+    held out; it never refits on that cohort. Either path identifies population
+    metrics only under conditional exchangeability, positivity, and a sufficiently
+    specified propensity model. Diagnostics are returned and unsupported cases
+    are reported as undefined.
     """
     scores, labels, v_mask, features = _validated_inputs(
         risk_scores, observed_verified_labels, verification_mask, verification_features
@@ -172,6 +176,16 @@ def evaluate_ipw_verification(
     if n_verified == 0:
         return _undefined_report("ipw", {"n_total": n, "n_verified": 0, "reason": "no verified outcomes"})
 
+    supplied_propensities = None
+    if verification_propensities is not None:
+        supplied_propensities = np.asarray(verification_propensities, dtype=float)
+        if supplied_propensities.ndim != 1 or len(supplied_propensities) != n:
+            raise ValueError("verification_propensities must be one-dimensional and aligned with rows")
+        if not np.all(np.isfinite(supplied_propensities)) or np.any(
+            (supplied_propensities < 0.0) | (supplied_propensities > 1.0)
+        ):
+            raise ValueError("verification_propensities must be finite probabilities in [0, 1]")
+
     # A cohort with no unverified outcomes needs no estimated propensity model.
     if np.all(v_mask):
         prop_scores = np.ones(n, dtype=float)
@@ -179,6 +193,8 @@ def evaluate_ipw_verification(
         return _undefined_report(
             "ipw", {"n_total": n, "n_verified": n_verified, "reason": "verification has no variation"}
         )
+    elif supplied_propensities is not None:
+        prop_scores = supplied_propensities
     else:
         if features is None:
             raise ValueError("verification_features are required when verification varies")

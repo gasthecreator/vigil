@@ -180,8 +180,11 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
     "specificity": 0.9550561797752809
   },
   "ipw": {
-    "sensitivity": 0.29340563335087344,
-    "specificity": 0.9546736374057001
+    "sensitivity": 0.2599566409137687,
+    "specificity": 0.9618753517448542,
+    "minimum_verified_propensity": 0.2112012174721741,
+    "maximum_inverse_weight": 4.7348211907526085,
+    "effective_sample_size": 109.7869338609718
   },
   "sensitivity_analysis": [
     {
@@ -205,7 +208,7 @@ A criterion not met is reported as not met. C3 measures workload only; meeting i
       "specificity": 0.9199303742384682
     }
   ],
-  "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"
+  "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate"
 }
 ```
 

@@ -147,6 +147,43 @@ def test_verification_ipw_requires_finite_declared_features():
         )
 
 
+def test_verification_ipw_accepts_propensities_fitted_on_an_independent_split():
+    scores = np.array([0.1, 0.3, 0.7, 0.9])
+    labels = np.array([0.0, np.nan, 1.0, 1.0])
+    verified = np.array([True, False, True, True])
+    propensities = np.array([0.4, 0.5, 0.6, 0.8])
+    report = evaluate_ipw_verification(
+        scores,
+        labels,
+        verified,
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=propensities,
+    )
+    assert report.details["metrics_defined"]
+    assert report.details["minimum_verified_propensity"] == pytest.approx(0.4)
+    assert report.details["maximum_verified_inverse_weight"] == pytest.approx(2.5)
+
+
+def test_verification_ipw_rejects_misaligned_or_invalid_supplied_propensities():
+    scores = np.array([0.1, 0.9])
+    labels = np.array([0.0, 1.0])
+    verified = np.array([True, False])
+    with pytest.raises(ValueError, match="aligned with rows"):
+        evaluate_ipw_verification(
+            scores, labels, verified, None, 0.5, verification_propensities=np.array([0.5])
+        )
+    with pytest.raises(ValueError, match="finite probabilities"):
+        evaluate_ipw_verification(
+            scores,
+            labels,
+            verified,
+            None,
+            0.5,
+            verification_propensities=np.array([np.nan, 0.5]),
+        )
+
+
 def test_verification_mask_rejects_unknown_values_instead_of_treating_them_as_verified():
     with pytest.raises(ValueError, match="verification_mask must contain only known 0/1"):
         evaluate_complete_case(

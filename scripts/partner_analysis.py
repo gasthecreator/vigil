@@ -277,6 +277,8 @@ class FittedPlan:
     dev_auc: Dict[str, float]
     dev_alert_rate: float
     notes: List[str] = field(default_factory=list)
+    verification_propensity_model: Optional[LogisticRegression] = None
+    verification_propensity_medians: Optional[np.ndarray] = None
 
     def candidate_risk(self, X: pd.DataFrame) -> np.ndarray:
         raw = self.candidate.predict_risk(_model_view(X))
@@ -284,6 +286,69 @@ class FittedPlan:
 
     def comparator_risk(self, X: pd.DataFrame) -> np.ndarray:
         return self.comparator.predict_risk(_model_view(X))
+
+
+VERIFICATION_FEATURE_COLUMNS = ("age", "ca_15_3_curr", "history_length")
+
+
+def _verification_feature_matrix(
+    X: pd.DataFrame, medians: Optional[np.ndarray] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Impute verification covariates from development medians and preserve missingness indicators."""
+    raw = np.column_stack(
+        [
+            pd.to_numeric(X[column], errors="coerce").to_numpy(dtype=float)
+            if column in X
+            else np.full(len(X), np.nan, dtype=float)
+            for column in VERIFICATION_FEATURE_COLUMNS
+        ]
+    )
+    missing = ~np.isfinite(raw)
+    if medians is None:
+        fitted_medians = np.nanmedian(np.where(np.isfinite(raw), raw, np.nan), axis=0)
+        if not np.isfinite(fitted_medians).all():
+            raise InsufficientData(
+                "verification propensity cannot be fit: a development covariate is entirely missing"
+            )
+    else:
+        fitted_medians = np.asarray(medians, dtype=float)
+        if (
+            fitted_medians.shape != (len(VERIFICATION_FEATURE_COLUMNS),)
+            or not np.isfinite(fitted_medians).all()
+        ):
+            raise ValueError("verification propensity medians are malformed")
+    imputed = np.where(missing, fitted_medians, raw)
+    return np.column_stack((imputed, missing.astype(float))), fitted_medians
+
+
+def _fit_verification_propensity(
+    dev: Landmarks,
+) -> Tuple[Optional[LogisticRegression], Optional[np.ndarray], Optional[str]]:
+    """Fit the verification mechanism only on development patients, never the test cohort."""
+    if "restaging_imaging_done" not in dev.patients:
+        return None, None, "development cohort lacks restaging_imaging_done"
+    first = dev.X.loc[dev.first].reset_index(drop=True)
+    patients = dev.patients.set_index("patient_id")
+    verified = first["patient_id"].map(patients["restaging_imaging_done"])
+    numeric = pd.to_numeric(verified, errors="coerce").to_numpy(dtype=float)
+    if not np.isfinite(numeric).all() or np.any((numeric != 0.0) & (numeric != 1.0)):
+        return None, None, "development verification status is incomplete or non-binary"
+    if np.unique(numeric).size < 2:
+        return None, None, "development verification status has no variation"
+    try:
+        features, medians = _verification_feature_matrix(first)
+    except InsufficientData as exc:
+        return None, None, str(exc)
+    model = LogisticRegression(max_iter=500)
+    model.fit(features, numeric.astype(int))
+    return model, medians, None
+
+
+def _predict_verification_propensity(plan: FittedPlan, X: pd.DataFrame) -> Optional[np.ndarray]:
+    if plan.verification_propensity_model is None or plan.verification_propensity_medians is None:
+        return None
+    features, _ = _verification_feature_matrix(X, plan.verification_propensity_medians)
+    return np.asarray(plan.verification_propensity_model.predict_proba(features)[:, 1], dtype=float)
 
 
 def _model_view(X: pd.DataFrame) -> pd.DataFrame:
@@ -309,12 +374,14 @@ def _out_of_fold(dev: Landmarks, horizon: float, folds: int = 5) -> Tuple[np.nda
         Xtr = _model_view(dev.X.iloc[trd])
         Xte = _model_view(dev.X.iloc[te])
         train_weights = w[trd]
-        cand[te] = GradientBoostingBaseline().fit(
-            Xtr, ytr, sample_weight=train_weights
-        ).predict_risk(Xte)
-        cox[te] = RegularizedCoxHazardBaseline().fit(
-            Xtr, ytr, sample_weight=train_weights
-        ).predict_risk(Xte)
+        cand[te] = (
+            GradientBoostingBaseline().fit(Xtr, ytr, sample_weight=train_weights).predict_risk(Xte)
+        )
+        cox[te] = (
+            RegularizedCoxHazardBaseline()
+            .fit(Xtr, ytr, sample_weight=train_weights)
+            .predict_risk(Xte)
+        )
     return cand, cox
 
 
@@ -347,16 +414,26 @@ def fit_on_development(
     auc = {k: ipcw_auc(v, Tf, Ef, horizon) for k, v in rule_scores.items()}
     best = max(auc, key=lambda k: (auc[k], -list(auc).index(k)))
     a, b = weighted_calibration_fit(oof_cand[first], Tf, Ef, horizon)
-    candidate = GradientBoostingBaseline().fit(
-        Xtr, ytr, sample_weight=train_weights
-    )
+    candidate = GradientBoostingBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     comparator = {
         "B1_SINGLE_THRESHOLD": b1,
         "B2_VELOCITY_RULE": b2,
-    }.get(best) or RegularizedCoxHazardBaseline().fit(
-        Xtr, ytr, sample_weight=train_weights
+    }.get(best) or RegularizedCoxHazardBaseline().fit(Xtr, ytr, sample_weight=train_weights)
+    verification_model, verification_medians, verification_issue = _fit_verification_propensity(dev)
+    plan = FittedPlan(
+        best,
+        comparator,
+        candidate,
+        a,
+        b,
+        1.0,
+        auc,
+        float("nan"),
+        verification_propensity_model=verification_model,
+        verification_propensity_medians=verification_medians,
     )
-    plan = FittedPlan(best, comparator, candidate, a, b, 1.0, auc, float("nan"))
+    if verification_issue:
+        plan.notes.append(f"verification-bias analysis unavailable: {verification_issue}")
     p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_cand))))
     grid = np.unique(np.quantile(p_all, np.linspace(0.0, 1.0, 201)))
     pids, days = dev.X["patient_id"].to_numpy(), dev.X["eval_day"].to_numpy()
@@ -536,7 +613,11 @@ def secondary(
     ok = w > 0
     if ok.sum() and len(np.unique(yf[ok])) > 1:
         cal = compute_ipcw_calibration_curve(
-            plan.candidate.predict_risk(_model_view(Xf)), Tf, Ef, horizon_time=horizon, n_bins=5,
+            plan.candidate.predict_risk(_model_view(Xf)),
+            Tf,
+            Ef,
+            horizon_time=horizon,
+            n_bins=5,
             weights=w,
         )
         out["calibration_before_recalibration"] = {
@@ -632,19 +713,44 @@ def secondary(
             "not_run": "restaging_imaging_done is missing for at least one test patient (optional column of the data dictionary)"
         }
     else:
-        v = vr.astype(bool).to_numpy() & ok
-        feats = (
-            Xf[[c for c in ("age", "ca_15_3_curr", "history_length") if c in Xf.columns]]
-            .fillna(0.0)
-            .to_numpy()
-        )
-        if v.sum() < 10 or len(np.unique(yf[v])) < 2:
+        verification_numeric = pd.to_numeric(vr, errors="coerce").to_numpy(dtype=float)
+        if not np.isfinite(verification_numeric).all() or np.any(
+            (verification_numeric != 0.0) & (verification_numeric != 1.0)
+        ):
             out["verification_bias"] = {
-                "not_run": "fewer than ten verified patients or only one outcome class among them"
+                "not_run": "restaging_imaging_done must contain known binary values for every test patient"
+            }
+        elif plan.verification_propensity_model is None:
+            out["verification_bias"] = {
+                "not_run": "no valid verification propensity model was fit on development patients"
             }
         else:
+            v = verification_numeric.astype(bool) & ok
+            props = _predict_verification_propensity(plan, Xf)
+            if props is None:
+                out["verification_bias"] = {
+                    "not_run": "development verification propensity model or imputation state is unavailable"
+                }
+                return out
+            if v.sum() < 10 or len(np.unique(yf[v])) < 2:
+                out["verification_bias"] = {
+                    "not_run": "fewer than ten verified determinable patients or only one outcome class among them"
+                }
+                return out
             cc = evaluate_complete_case(p, yf, v, plan.threshold)
-            ipw = evaluate_ipw_verification(p, yf, v, feats, plan.threshold)
+            ipw = evaluate_ipw_verification(
+                p,
+                yf,
+                v,
+                verification_features=None,
+                cutoff=plan.threshold,
+                verification_propensities=props,
+            )
+            if not ipw.details.get("metrics_defined", False):
+                out["verification_bias"] = {
+                    "not_run": f"development-fit propensity unsupported on test patients: {ipw.details.get('reason', 'undefined metrics')}"
+                }
+                return out
             out["verification_bias"] = {
                 "complete_case": {
                     "sensitivity": cc.empirical_sensitivity,
@@ -653,10 +759,13 @@ def secondary(
                 "ipw": {
                     "sensitivity": ipw.empirical_sensitivity,
                     "specificity": ipw.empirical_specificity,
+                    "minimum_verified_propensity": ipw.details["minimum_verified_propensity"],
+                    "maximum_inverse_weight": ipw.details["maximum_verified_inverse_weight"],
+                    "effective_sample_size": ipw.details["effective_sample_size"],
                 },
                 "sensitivity_analysis": begg_greenes_sensitivity(
                     p, yf, v, plan.threshold, (0.0, 0.05, 0.10, 0.20)
                 ),
-                "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate",
+                "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate",
             }
     return out

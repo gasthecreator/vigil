@@ -46,3 +46,4 @@
 - [ADR-0042: Preserve the estimated censoring survival in IPCW](../adr/0042-ipcw-preserves-estimated-censoring-support.md)
 - [ADR-0043: Reject invalid evaluation probabilities](../adr/0043-reject-invalid-evaluation-probabilities.md)
 - [ADR-0044: Disable invalid prototype trainers](../adr/0044-disable-invalid-prototype-trainers.md)
+- [ADR-0045: Fit verification propensity on development data](../adr/0045-development-fit-verification-propensity.md)

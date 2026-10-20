@@ -242,8 +242,11 @@
         "specificity": 0.9354838709677419
       },
       "ipw": {
-        "sensitivity": 0.05516217543362249,
-        "specificity": 0.9366868454866585
+        "sensitivity": 0.048498709244888194,
+        "specificity": 0.9409076188889142,
+        "minimum_verified_propensity": 0.2798735284892447,
+        "maximum_inverse_weight": 3.5730424574199384,
+        "effective_sample_size": 125.68011069569663
       },
       "sensitivity_analysis": [
         {
@@ -267,7 +270,7 @@
           "specificity": 0.9339875111507582
         }
       ],
-      "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"
+      "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate"
     }
   },
   "status": "COMPLETED",
