@@ -13,9 +13,10 @@ Implements:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from vigil_api.audit import record_audit_event
 from vigil_api.auth import require_roles
@@ -30,8 +31,6 @@ from vigil_api.schemas.v2 import (
 )
 from vigil_ml.quality import (
     AuditReport,
-    AuditTrajectory,
-    AuditVisit,
     MissedSignalAuditEngine,
     generate_synthetic_audit_cohort,
     verify_neutral_register,
@@ -42,78 +41,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _extract_trajectories_from_db(
+def _has_eligible_facility_observations(
     db: Session,
     current_user: User,
     facility_id: Optional[str] = None,
     lookback_days: int = 365,
-) -> List[AuditTrajectory]:
-    """Extract longitudinal surveillance trajectories from the facility database."""
+) -> bool:
+    """Check for eligible facility data without deriving or materializing model inputs."""
     query = db.query(Patient)
     if facility_id:
         query = query.filter(Patient.facility_id == facility_id)
     patients = query.all()
-    trajectories: List[AuditTrajectory] = []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
 
     for p in patients:
         # ADR 0017: Enforce patient consent. Exclude patients without active consent.
         if not has_active_consent(p.id, db, current_user):
             continue
 
-        obs_list = sorted(p.observations, key=lambda o: o.specimen_collected_at)
-        if not obs_list:
-            continue
-        first_date = obs_list[0].specimen_collected_at
-        visits = []
-        for o in obs_list:
-            dt = o.specimen_collected_at
-            day = max(0, (dt - first_date).days)
-
-            # Clinician-attributable actions check (Condition P13-C)
-            # Must come from clinician events: AlertAcknowledgement or completed FollowUpTask
-            action_rec = None
-            if o.risk_assessment and o.risk_assessment.alerts:
-                for a in o.risk_assessment.alerts:
-                    for ack in a.acknowledgements:
-                        if ack.acknowledged_at and 0 <= (ack.acknowledged_at - dt).days <= 30:
-                            action_rec = "clinical_review_completed"
-                            break
-                    if action_rec:
-                        break
-
-            if not action_rec and p.follow_up_tasks:
-                for t in p.follow_up_tasks:
-                    if (
-                        t.status == "completed"
-                        and t.completed_at
-                        and 0 <= (t.completed_at - dt).days <= 30
-                    ):
-                        action_rec = (
-                            "imaging_ordered"
-                            if t.task_type == "imaging_referral"
-                            else "clinical_review_completed"
-                        )
-                        break
-
-            visits.append(
-                AuditVisit(
-                    day=day,
-                    marker_value=float(o.value),
-                    action_recorded=action_rec,
-                )
-            )
-
-        stage_str = f"stage_{p.initial_stage.lower()}" if p.initial_stage else "stage_2"
-        trajectories.append(
-            AuditTrajectory(
-                trajectory_id=str(p.id),
-                subtype=p.primary_cancer_type or "breast",
-                stage=stage_str,
-                subgroup="urban_referral" if p.facility_id else "rural_public",
-                visits=visits,
-            )
-        )
-    return trajectories
+        for observation in p.observations:
+            specimen_at = observation.specimen_collected_at
+            if specimen_at.tzinfo is None:
+                specimen_at = specimen_at.replace(tzinfo=timezone.utc)
+            if specimen_at >= cutoff:
+                return True
+    return False
 
 
 def _build_audit_response(
@@ -203,12 +155,25 @@ def run_quality_audit(
             seed=20261017,
         )
     else:
-        trajectories = _extract_trajectories_from_db(
+        has_facility_data = _has_eligible_facility_observations(
             db,
             current_user,
             facility_id=payload.facility_id,
             lookback_days=payload.lookback_days,
         )
+        if has_facility_data:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "m10_facility_analysis_unavailable",
+                    "message": (
+                        "Facility-derived M10 results are disabled until the signal detector, "
+                        "analyte-specific inputs, and thresholds are validated. The synthetic "
+                        "benchmark remains available with its source label."
+                    ),
+                },
+            )
+        trajectories = []
 
     engine = MissedSignalAuditEngine()
     report = engine.generate_audit_report(trajectories, n_bootstrap=payload.n_bootstrap)

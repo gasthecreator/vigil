@@ -276,8 +276,8 @@ def test_quality_audit_latest_endpoint(client):
     assert bad_resp.status_code == 403
 
 
-def test_quality_audit_consent_filtering_and_action_attribution(client):
-    """Condition P13-C & P13-F: Real-data audit must respect consent withdrawal and require clinician attribution."""
+def test_quality_audit_abstains_on_nonempty_facility_data(client):
+    """Facility metrics remain unavailable while M10/K2 assumptions are unvalidated."""
     from datetime import datetime, timedelta, timezone
 
     from vigil_api.database import get_db
@@ -378,13 +378,61 @@ def test_quality_audit_consent_filtering_and_action_attribution(client):
 
     headers = {"X-Vigil-Role": "quality_lead", "X-Vigil-User-Id": "USR-QL-01"}
     resp = client.post("/api/v1/quality/audit", json={"facility_id": "FAC-01", "include_synthetic_benchmark": False}, headers=headers)
-    assert resp.status_code == 200
-    data = resp.json()
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["code"] == "m10_facility_analysis_unavailable"
+    assert "synthetic" in resp.json()["detail"]["message"].lower()
 
-    # Total patients audited must be 2 (p1 and p3). p2 MUST BE EXCLUDED because consent was withdrawn!
-    assert data["total_patients_audited"] == 2, f"Expected 2 consented patients, got {data['total_patients_audited']}"
-    assert data["synthetic"] is False
-    # Between p1 and p3, p1 has only pending system task (so action NOT recorded), while p3 has completed task (action recorded)
-    assert data["total_action_recorded"] == 1, "Completed task should be counted as recorded action"
-    assert data["total_action_not_recorded"] == 1, "Pending system task must NOT be counted as recorded action"
+
+def test_quality_audit_empty_when_only_observations_lack_active_consent(client):
+    from datetime import datetime, timedelta, timezone
+
+    from vigil_api.database import get_db
+    from vigil_api.models.patient import Patient
+    from vigil_api.models.v2 import ConsentRecord, Observation
+
+    now = datetime.now(timezone.utc)
+    db = next(app.dependency_overrides[get_db]())
+    try:
+        db.add_all(
+            [
+                Patient(
+                    id="PAT-WITHDRAWN",
+                    mrn="MRN-WITHDRAWN",
+                    facility_id="FAC-01",
+                    initial_stage="2",
+                    primary_cancer_type="breast",
+                ),
+                ConsentRecord(
+                    id="CNS-WITHDRAWN",
+                    patient_id="PAT-WITHDRAWN",
+                    consent_type="surveillance_monitoring",
+                    granted=False,
+                    scope="surveillance_monitoring",
+                    granted_at=now - timedelta(days=10),
+                    withdrawn_at=now - timedelta(days=1),
+                ),
+                Observation(
+                    id="OBS-WITHDRAWN",
+                    patient_id="PAT-WITHDRAWN",
+                    analyte_code="CA-15-3",
+                    value=52.0,
+                    unit="U/mL",
+                    raw_value=52.0,
+                    raw_unit="U/mL",
+                    specimen_collected_at=now - timedelta(days=1),
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.post(
+        "/api/v1/quality/audit",
+        json={"facility_id": "FAC-01", "include_synthetic_benchmark": False},
+        headers={"X-Vigil-Role": "quality_lead", "X-Vigil-User-Id": "USR-QL-01"},
+    )
+    assert response.status_code == 200
+    assert response.json()["total_patients_audited"] == 0
+    assert response.json()["synthetic"] is False
 

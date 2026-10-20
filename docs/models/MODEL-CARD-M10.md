@@ -23,15 +23,17 @@ Partner real-world performance unknown until Phase 9. Reproduction via `make rep
 
 Source: `reports/ml/STUDY_M10_MISSED_SIGNALS.json` (pre-registered `docs/studies/PREREG-M10.md`; synthetic facilities with injected ground truth).
 
-| Hypothesis | Status |
+These statuses are preserved as the original script output. Q-6 invalidated K2's anytime-valid guarantee, and the M10 facility path used unvalidated M3 inputs; they are not current validation evidence.
+
+| Hypothesis | Historical result |
 |---|---|
-| H1_sensitivity_precision | SUPPORTED |
-| H2_delay_accuracy | SUPPORTED |
-| H3_specificity_and_benign_spikes | SUPPORTED |
-| H4_pipeline_only_decoupling | SUPPORTED |
-| H5_small_cell_privacy | SUPPORTED |
+| H1_sensitivity_precision | historical result: SUPPORTED |
+| H2_delay_accuracy | historical result: SUPPORTED |
+| H3_specificity_and_benign_spikes | historical result: SUPPORTED |
+| H4_pipeline_only_decoupling | historical result: SUPPORTED |
+| H5_small_cell_privacy | historical result: SUPPORTED |
 
 - Sensitivity 0.966, precision 1.000; mean delay error 35.5 days.
 - Privacy: k-anonymity floor 5, neutral register verified: True.
-- These are synthetic-data results with injected signals; they say nothing about real-world performance.
+- Facility-derived statistics are disabled by ADR-0054 until the detector and analyte-specific assumptions are validated.
 <!-- measured:end -->
