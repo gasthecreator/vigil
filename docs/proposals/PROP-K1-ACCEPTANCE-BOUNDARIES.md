@@ -18,6 +18,8 @@ The K1-WORLD recurrence gate xfailed under its registered stub. No acceptance as
 
 The original one-time command and complete output are recorded in `experiments/EXP-K1-004/ACCEPTANCE.md`. Results are also recorded in `experiments/EXP-K1-004/results.json`. The unchanged K1 v2 acceptance file now reports 3 passed and 1 expected xfail after the negative-control correction. The amortized coverage boundary remains unresolved at 39/40 (0.975) against the 0.97 ceiling. This test remains a consumed fixed-seed check and is not tuning evidence.
 
+On PR #79 head `ac53e66`, GitHub acceptance CI reports the amortized 90% interval coverage as `0.97` outside `[0.75, 0.97]`. The displayed value is rounded to two decimals; the earlier local 39/40 result is 0.975 and exceeds the upper bound. The frozen assertion remains unchanged.
+
 ## Decision needed
 
 Overseer review is needed only for the finite-sample coverage criterion. The negative-control defect is fixed in implementation; the K1 acceptance gate remains NOT MET while the unchanged coverage check is unresolved, so this branch is not ready to merge.
