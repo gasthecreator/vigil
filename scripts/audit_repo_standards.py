@@ -296,7 +296,7 @@ def t1_templates(r: Repo) -> Item:
     return Item("T1", "T1.3", "Issue and PR templates", s, ev, "" if s == 3 else "templates incomplete")
 
 
-CC_RE = re.compile(r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+")
+CC_RE = re.compile(r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|results)(\([^)]+\))?!?: .+")
 
 
 def t1_conventional(r: Repo) -> Item:

@@ -22,6 +22,7 @@ make test       # Runs unit and property tests
 3. **Small PRs:** Keep PRs under ~400 lines where feasible, focused on a single concern.
 4. **Conventional Commits:** Write commit messages following Conventional Commits format:
    `type(scope): brief summary` (e.g., `feat(vigil-core): add LOINC mappings for hepatic panel`).
+   Allowed types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, and `results` (generated or audited research evidence).
 5. **Mandatory Automated Checks:**
    - Code must pass `make lint`, `make test`, and `python3 scripts/check_claims.py`.
    - Never commit secrets, personal machine paths, or ungrounded claims.

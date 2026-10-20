@@ -15,7 +15,7 @@ import re
 import subprocess
 import sys
 
-TYPES = "feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+TYPES = "feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|results"
 CC_RE = re.compile(rf"^({TYPES})(\([a-z0-9][a-z0-9._/-]*\))?!?: \S.{{9,}}$")
 SKIP_RE = re.compile(r"^(Merge |Revert \"|fixup! |squash! )")
 
