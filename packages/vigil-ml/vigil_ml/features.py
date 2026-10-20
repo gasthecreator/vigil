@@ -233,7 +233,7 @@ class WindowedFeatureExtractor:
         elif treatment_value is None or (
             pd.api.types.is_scalar(treatment_value) and pd.isna(treatment_value)
         ):
-            active_treatment = 0.0 if synthetic_only is True else float("nan")
+            active_treatment = float("nan")
         elif isinstance(treatment_value, str) and treatment_value.strip():
             # CohortDataset's direct survival-feature API uses this explicit
             # sentinel; unlike null, it is known inactive status.

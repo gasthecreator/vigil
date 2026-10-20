@@ -516,6 +516,18 @@ def test_treatment_features_preserve_time_and_unknown_status():
     assert np.isnan(unknown_first["active_treatment"])
     assert unknown_first["active_treatment_missing"] == 1.0
 
+    synthetic_unknown_source = extractor.transform_cohort(
+        patients,
+        unknown_observations,
+        horizon_days=365.0,
+        synthetic_only=True,
+    )[0]
+    synthetic_unknown_first = synthetic_unknown_source.loc[
+        synthetic_unknown_source["eval_day"] == 0.0
+    ].iloc[0]
+    assert np.isnan(synthetic_unknown_first["active_treatment"])
+    assert synthetic_unknown_first["active_treatment_missing"] == 1.0
+
     changed_future = observations.copy()
     changed_future.loc[1, "treatment_active"] = None
     changed = extractor.transform_cohort(

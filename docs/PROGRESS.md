@@ -426,3 +426,7 @@ The package A source audit confirmed `StageHeuristicPolicy.decide` silently conv
 ### Q-7 follow-up — bind target provenance to tagged observations (2026-10-20)
 
 Package B review found `transform_cohort(..., synthetic_only=...)` accepted a caller declaration that contradicted the observation frame's `is_synthetic` values and accepted mixed tagged sources. The extractor now rejects non-boolean flags, mixed-source cohorts, and a supplied declaration that disagrees with tagged rows. Untagged external frames retain explicit-or-unknown provenance behavior. Feature tests pass (59); Ruff and `git diff --check` pass. No model result or frozen cohort was accessed.
+
+### Q-7 follow-up — preserve unknown treatment status in synthetic cohorts (2026-10-20)
+
+Package B review found null `treatment_active` was converted to inactive when `synthetic_only=True`, despite the extractor and simulator having an explicit `none` sentinel for known inactivity. Null now remains missing regardless of source provenance; only the sentinel maps to inactive. A regression covers synthetic and unspecified-source null values. Feature and baseline sanity tests pass (63); the complete `vigil-ml` suite passes (564) with three existing ONNX exporter warnings. Ruff and `git diff --check` pass. No historical result or frozen cohort was regenerated. Any affected historical feature matrix requires a preregistered replacement study before reuse.
