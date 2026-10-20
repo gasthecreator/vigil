@@ -103,6 +103,7 @@ CONFIG: Dict[str, Any] = {
     "baselines": ["B1_SingleThreshold", "B2_Velocity", "B3_RegularizedHazard", "B4_GradientBoosting", "K3_JointModel"],
 }
 SMOKE_CONFIG: Dict[str, Any] = {
+    "n_replications": 2,
     "n_pool": 60,
     "n_test": 40,
     "n_corpus_per_source": 60,
@@ -134,6 +135,7 @@ def design(scope: str) -> Dict[str, Any]:
                 cfg["fit"]["max_epochs"] = v
             else:
                 cfg[k] = v
+        cfg["bootstrap_seed"] = base_seed("smoke", SMOKE_CONFIG["n_replications"])
     return cfg
 
 
@@ -145,7 +147,10 @@ def code_hash() -> str:
 
 
 def base_seed(kind: str, r: int) -> int:
-    s = CONFIG["seeds"]["frozen" if kind in ("frozen", "smoke") else "dev"]
+    if kind == "smoke":
+        development = CONFIG["seeds"]["dev"]
+        return int(development["base"] + development["step"] * (development["n"] + r))
+    s = CONFIG["seeds"]["frozen" if kind == "frozen" else "dev"]
     return int(s["base"] + s["step"] * r)
 
 
@@ -1008,7 +1013,9 @@ def mode_smoke(workers: int) -> Dict[str, Any]:
         cfg["lr_selection_n"] = cfg["n_scale"]
         hp = select_hyperparameters(dev, cfg)
         hp["designated_family"] = "grud"
-        res = build_results("smoke", [0, 1], hp, "smoke", workers, "smoke")
+        res = build_results(
+            "smoke", list(range(SMOKE_CONFIG["n_replications"])), hp, "smoke", workers, "smoke"
+        )
         render_report(res)
         return res
 
@@ -1019,6 +1026,25 @@ def mode_rerender() -> None:
     (OUT / "REPORT.md").write_text(render_report(res))
 
 
+def assert_mode_outputs_absent(mode: str) -> None:
+    """Prevent a replay or rerender from overwriting committed study evidence."""
+    output_names = {
+        "dev": ("hyperparameters.json", "dev_grid.json"),
+        "dev-pipeline": ("dev_results.json",),
+        "frozen": ("results.json", "REPORT.md"),
+        "rerender": ("REPORT.md",),
+    }
+    existing = [OUT / name for name in output_names.get(mode, ()) if (OUT / name).exists()]
+    if mode in ("frozen", "rerender") and (OUT / "FROZEN-SEEDS-SPENT.md").exists():
+        existing.append(OUT / "FROZEN-SEEDS-SPENT.md")
+    if existing:
+        names = ", ".join(path.name for path in existing)
+        raise RuntimeError(
+            f"EXP-K4-001 {mode} mode refuses to overwrite existing evidence ({names}); "
+            "use a newly preregistered experiment directory and fresh seeds."
+        )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
@@ -1026,6 +1052,11 @@ def main() -> int:
         g.add_argument(f"--{k}", action="store_true")
     ap.add_argument("--workers", type=int, default=8)
     a = ap.parse_args()
+    mode = next(
+        name for name in ("dev", "dev-pipeline", "frozen", "smoke", "rerender")
+        if getattr(a, name.replace("-", "_"))
+    )
+    assert_mode_outputs_absent(mode)
     if a.dev:
         mode_dev(a.workers)
     elif a.dev_pipeline:

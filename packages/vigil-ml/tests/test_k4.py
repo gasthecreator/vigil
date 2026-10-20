@@ -207,9 +207,12 @@ def test_no_pickle_and_no_forbidden_columns_in_module_or_runner():
 
 
 def test_build_sequences_never_truncates_and_log_reference_is_fixed():
-    ref = np.ones(A)
-    ok = k4.build_sequences(["a"], [[0.0, 10.0]], [np.full((2, A), np.e)], np.zeros((1, S)), ref)
-    assert ok.x[0, 0, 0] == pytest.approx(1.0) and ok.valid[0].sum() == 2 and ok.t[0, 5] == 10.0
+    ref = np.ones(k4.N_LAB)
+    values = np.full((2, A), np.e)
+    ok = k4.build_sequences(["a"], [[0.0, 10.0]], [values], np.zeros((1, S)), ref)
+    assert ok.x[0, 0, 0] == pytest.approx(1.0)
+    assert ok.x[0, 0, k4.N_LAB] == pytest.approx(np.e)
+    assert ok.valid[0].sum() == 2 and ok.t[0, 5] == 10.0
     with pytest.raises(ValueError):
         k4.build_sequences(["a"], [list(range(25))], [np.ones((25, A))], np.zeros((1, S)), ref)
     nan = np.full((1, A), np.nan)
@@ -218,10 +221,43 @@ def test_build_sequences_never_truncates_and_log_reference_is_fixed():
     assert k4.log_reference(np.array([1e9]), np.array([1.0]))[0] == 5.0
 
 
+@pytest.mark.parametrize(
+    ("days", "values", "statics", "reference_mid", "max_steps", "message"),
+    [
+        ([[0.0, 0.0]], [np.ones((2, A))], np.zeros((1, S)), np.ones(k4.N_LAB), 24, "unique"),
+        ([[0.0, np.inf]], [np.ones((2, A))], np.zeros((1, S)), np.ones(k4.N_LAB), 24, "finite"),
+        ([[0.0]], [np.ones((1, A - 1))], np.zeros((1, S)), np.ones(k4.N_LAB), 24, "shape"),
+        ([[0.0]], [np.zeros((1, A))], np.zeros((1, S)), np.ones(k4.N_LAB), 24, "positive"),
+        ([[0.0]], [np.ones((1, A))], np.zeros((1, S - 1)), np.ones(k4.N_LAB), 24, "statics"),
+        ([[0.0]], [np.ones((1, A))], np.zeros((1, S)), np.zeros(k4.N_LAB), 24, "reference_mid"),
+        ([[0.0]], [np.ones((1, A))], np.zeros((1, S)), np.ones(k4.N_LAB), True, "max_steps"),
+    ],
+)
+def test_build_sequences_rejects_malformed_inputs(days, values, statics, reference_mid, max_steps, message):
+    with pytest.raises(ValueError, match=message):
+        k4.build_sequences(["a"], days, values, statics, reference_mid, max_steps=max_steps)
+
+
+def test_sequence_set_rejects_nonbinary_masks_and_hidden_values():
+    x = np.zeros((1, 2, A), dtype=np.float32)
+    m = np.zeros_like(x)
+    t = np.array([[0.0, 1.0]], dtype=np.float32)
+    s = np.zeros((1, S), dtype=np.float32)
+    valid = np.ones((1, 2), dtype=bool)
+    with pytest.raises(ValueError, match="m must contain"):
+        k4.SequenceSet(["a"], x, m + 0.5, t, s, valid)
+    x[0, 0, 0] = 1.0
+    with pytest.raises(ValueError, match="unobserved"):
+        k4.SequenceSet(["a"], x, m, t, s, valid)
+
+
 def test_attach_labels_marks_only_rows_that_exist():
-    ds = k4.build_sequences(["a", "b"], [[0.0, 5.0], [0.0]], [np.ones((2, A)), np.ones((1, A))], np.zeros((2, S)), np.ones(A))
+    ds = k4.build_sequences(["a", "b"], [[0.0, 5.0], [0.0]], [np.ones((2, A)), np.ones((1, A))], np.zeros((2, S)), np.ones(k4.N_LAB))
     lab = k4.attach_labels(ds, {("a", 5.0): 1.0, ("b", 0.0): 0.0})
     assert lab.row_mask[0].tolist()[:2] == [False, True] and lab.row_mask[1, 0] and lab.y[0, 1] == 1.0
+    for invalid in ({("unknown", 0.0): 1.0}, {("a", 1.0): 0.0}, {("a", 5.0): 0.5}, {("a", 5.0): True}):
+        with pytest.raises(ValueError):
+            k4.attach_labels(ds, invalid)
 
 
 def test_symptom_channels_are_used_as_given_and_never_masked_for_pretraining():

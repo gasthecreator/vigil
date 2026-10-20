@@ -78,6 +78,71 @@ class SequenceSet:
     y: Optional[np.ndarray] = None
     row_mask: Optional[np.ndarray] = None
 
+    def __post_init__(self) -> None:
+        ids = list(self.patient_ids)
+        if any(not isinstance(pid, str) or not pid.strip() for pid in ids):
+            raise ValueError("patient_ids must contain non-empty strings")
+        if len(ids) != len(set(ids)):
+            raise ValueError("patient_ids must be unique within a SequenceSet")
+        x, m = np.asarray(self.x), np.asarray(self.m)
+        t, s, valid = np.asarray(self.t), np.asarray(self.s), np.asarray(self.valid)
+        if x.ndim != 3 or x.shape[0] != len(ids) or x.shape[1] < 1 or x.shape[2] != N_CHANNELS:
+            raise ValueError(f"x must have shape [patients, steps, {N_CHANNELS}]")
+        if m.shape != x.shape:
+            raise ValueError("m must have the same shape as x")
+        if t.shape != x.shape[:2] or valid.shape != x.shape[:2]:
+            raise ValueError("t and valid must have shape [patients, steps]")
+        if s.shape != (len(ids), N_STATIC):
+            raise ValueError(f"s must have shape [patients, {N_STATIC}]")
+        for name, values in (("x", x), ("t", t), ("s", s)):
+            if values.dtype.kind not in "iuf" or not np.isfinite(values).all():
+                raise ValueError(f"{name} must contain finite numeric values")
+        for name, values in (("m", m), ("valid", valid)):
+            if values.dtype.kind not in "biuf" or not np.isin(values, (0, 1)).all():
+                raise ValueError(f"{name} must contain only boolean or 0/1 values")
+        valid_bool = valid.astype(bool)
+        mask_bool = m.astype(bool)
+        lengths = valid_bool.sum(axis=1)
+        expected_valid = np.arange(x.shape[1])[None, :] < lengths[:, None]
+        if not np.array_equal(valid_bool, expected_valid):
+            raise ValueError("valid visits must form a contiguous prefix before padding")
+        if np.any(mask_bool & ~valid_bool[:, :, None]):
+            raise ValueError("padded visits cannot contain observed channels")
+        if np.any(x[~mask_bool] != 0.0):
+            raise ValueError("unobserved and padded channel values must be zero")
+        if np.any(t < 0.0):
+            raise ValueError("visit days must be non-negative")
+        for i, length in enumerate(lengths):
+            if length and np.any(np.diff(t[i, :length]) <= 0.0):
+                raise ValueError(f"visit days must be strictly increasing for patient {ids[i]}")
+        if (self.y is None) != (self.row_mask is None):
+            raise ValueError("y and row_mask must either both be provided or both be omitted")
+        if self.y is not None and self.row_mask is not None:
+            y, row_mask = np.asarray(self.y), np.asarray(self.row_mask)
+            if y.shape != x.shape[:2] or row_mask.shape != x.shape[:2]:
+                raise ValueError("y and row_mask must have shape [patients, steps]")
+            if y.dtype.kind not in "biuf" or not np.isfinite(y).all():
+                raise ValueError("y must contain finite numeric labels")
+            if row_mask.dtype.kind not in "biuf" or not np.isin(row_mask, (0, 1)).all():
+                raise ValueError("row_mask must contain only boolean or 0/1 values")
+            row_mask_bool = row_mask.astype(bool)
+            if np.any(row_mask_bool & ~valid_bool):
+                raise ValueError("labels cannot be attached to padded visits")
+            if np.any(~np.isin(y[row_mask_bool], (0, 1))):
+                raise ValueError("scored labels must be binary")
+        x32, t32, s32 = x.astype(np.float32), t.astype(np.float32), s.astype(np.float32)
+        if not np.isfinite(x32).all() or not np.isfinite(t32).all() or not np.isfinite(s32).all():
+            raise ValueError("x, t, and s must remain finite when represented as float32")
+        for i, length in enumerate(lengths):
+            if length and np.any(np.diff(t32[i, :length]) <= 0.0):
+                raise ValueError(f"visit days lose strict ordering at float32 precision for patient {ids[i]}")
+        self.patient_ids = ids
+        self.x, self.m, self.t, self.s = x32, mask_bool.astype(np.float32), t32, s32
+        self.valid = valid_bool
+        if self.y is not None and self.row_mask is not None:
+            self.y = np.asarray(self.y, dtype=np.float32)
+            self.row_mask = np.asarray(self.row_mask, dtype=bool)
+
     def __len__(self) -> int:
         return len(self.patient_ids)
 
@@ -101,9 +166,17 @@ class SequenceSet:
 
 def log_reference(value: np.ndarray, reference_mid: np.ndarray) -> np.ndarray:
     """The fixed input scaling: clip(log(value / reference midpoint), -5, 5). Never fitted."""
+    raw_value, raw_reference = np.asarray(value), np.asarray(reference_mid)
+    if raw_value.dtype.kind not in "iuf" or raw_reference.dtype.kind not in "iuf":
+        raise ValueError("values and reference midpoints must be numeric, not boolean or object")
+    values, reference = raw_value.astype(float), raw_reference.astype(float)
+    if reference.ndim != 1 or reference.size == 0 or not np.isfinite(reference).all() or np.any(reference <= 0):
+        raise ValueError("reference midpoints must be a non-empty finite positive vector")
+    if np.isinf(values).any() or np.any(values[np.isfinite(values)] <= 0.0):
+        raise ValueError("observed laboratory values must be finite and positive; use NaN for missing")
     with np.errstate(divide="ignore", invalid="ignore"):
-        z = np.log(np.asarray(value, dtype=float) / reference_mid)
-    return np.clip(np.nan_to_num(z, nan=0.0, posinf=5.0, neginf=-5.0), -5.0, 5.0)
+        z = np.log(values / reference)
+    return np.clip(np.where(np.isnan(z), 0.0, z), -5.0, 5.0)
 
 
 def build_sequences(
@@ -120,15 +193,59 @@ def build_sequences(
     any further columns (symptom grades) are used as given. A patient with more than `max_steps` visits raises (the
     study never truncates silently).
     """
-    P, n_lab = len(patient_ids), len(reference_mid)
-    C = np.asarray(values[0]).shape[-1] if P else n_lab
+    P = len(patient_ids)
+    if P == 0:
+        raise ValueError("at least one patient is required to build sequences")
+    if len(days) != P or len(values) != P:
+        raise ValueError("patient_ids, days, and values must have the same number of patients")
+    if isinstance(max_steps, (bool, np.bool_)) or not isinstance(max_steps, (int, np.integer)):
+        raise ValueError("max_steps must be an integer")
+    if not 1 <= max_steps <= MAX_STEPS:
+        raise ValueError(f"max_steps must be between 1 and {MAX_STEPS}")
+    reference_mid = np.asarray(reference_mid)
+    if (
+        reference_mid.shape != (N_LAB,)
+        or reference_mid.dtype.kind not in "iuf"
+        or not np.isfinite(reference_mid).all()
+        or np.any(reference_mid <= 0.0)
+    ):
+        raise ValueError(f"reference_mid must contain {N_LAB} finite positive laboratory midpoints")
+    reference_mid = reference_mid.astype(float)
+    n_lab = N_LAB
+    static_values = np.asarray(statics)
+    if (
+        static_values.shape != (P, N_STATIC)
+        or static_values.dtype.kind not in "iuf"
+        or not np.isfinite(static_values).all()
+    ):
+        raise ValueError(f"statics must have shape [patients, {N_STATIC}] with finite numeric values")
+    ids = list(patient_ids)
+    if any(not isinstance(pid, str) or not pid.strip() for pid in ids) or len(ids) != len(set(ids)):
+        raise ValueError("patient_ids must be unique non-empty strings")
+    C = N_CHANNELS
     x = np.zeros((P, max_steps, C), dtype=np.float32)
     m = np.zeros((P, max_steps, C), dtype=np.float32)
     t = np.zeros((P, max_steps), dtype=np.float32)
     valid = np.zeros((P, max_steps), dtype=bool)
     for i in range(P):
-        d = np.asarray(days[i], dtype=float)
-        v = np.asarray(values[i], dtype=float).reshape(len(d), C)
+        raw_days, raw_values = np.asarray(days[i]), np.asarray(values[i])
+        if raw_days.dtype.kind not in "iuf" or raw_days.ndim != 1:
+            raise ValueError(f"days for patient {ids[i]} must be a numeric vector")
+        if raw_values.dtype.kind not in "iuf" or raw_values.ndim != 2:
+            raise ValueError(f"values for patient {ids[i]} must be a numeric matrix")
+        d = raw_days.astype(float)
+        v = raw_values.astype(float)
+        if v.shape != (len(d), C):
+            raise ValueError(f"values for patient {ids[i]} must have shape [{len(d)}, {C}]")
+        if not np.isfinite(d).all() or np.any(d < 0.0):
+            raise ValueError(f"days for patient {ids[i]} must be finite and non-negative")
+        if len(np.unique(d)) != len(d):
+            raise ValueError(f"days for patient {ids[i]} must be unique")
+        if np.isinf(v).any():
+            raise ValueError(f"values for patient {ids[i]} must be finite or NaN when missing")
+        laboratory_values = v[:, :n_lab]
+        if np.any(laboratory_values[np.isfinite(laboratory_values)] <= 0.0):
+            raise ValueError(f"observed laboratory values for patient {ids[i]} must be positive")
         if len(d) > max_steps:
             raise ValueError(f"patient {patient_ids[i]} has {len(d)} visits; max_steps is {max_steps}")
         order = np.argsort(d, kind="stable")
@@ -143,11 +260,36 @@ def build_sequences(
         if n:
             t[i, n:] = d[-1]
         valid[i, :n] = True
-    return SequenceSet(list(patient_ids), x, m, t, np.asarray(statics, dtype=np.float32), valid)
+    return SequenceSet(ids, x, m, t, static_values.astype(np.float32), valid)
 
 
 def attach_labels(ds: SequenceSet, rows: Dict[Tuple[str, float], float]) -> SequenceSet:
     """Attach landmark labels: `rows[(patient_id, visit_day)] = y`. Only visits that have a row are scored."""
+    valid_keys = {
+        (pid, float(ds.t[i, j]))
+        for i, pid in enumerate(ds.patient_ids)
+        for j in range(int(ds.valid[i].sum()))
+    }
+    for key, value in rows.items():
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise ValueError("label keys must be (patient_id, visit_day) pairs")
+        pid, day = key
+        if (
+            not isinstance(pid, str)
+            or isinstance(day, (bool, np.bool_))
+            or not isinstance(day, (int, float, np.integer, np.floating))
+            or isinstance(value, (bool, np.bool_))
+            or not isinstance(value, (int, float, np.integer, np.floating))
+        ):
+            raise ValueError("label keys require a string patient_id, and keys/labels must be numeric")
+        try:
+            numeric_day, numeric_value = float(day), float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("label visit days and values must be numeric") from exc
+        if not np.isfinite(numeric_day) or not np.isfinite(numeric_value) or numeric_value not in (0.0, 1.0):
+            raise ValueError("label visit days must be finite and labels must be binary")
+        if (pid, numeric_day) not in valid_keys:
+            raise ValueError(f"label row does not match a known patient visit: {(pid, numeric_day)!r}")
     y = np.zeros(ds.valid.shape, dtype=np.float32)
     mask = np.zeros(ds.valid.shape, dtype=bool)
     for i, pid in enumerate(ds.patient_ids):
