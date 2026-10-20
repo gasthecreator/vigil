@@ -50,6 +50,21 @@ def test_stage_mapping_rejects_out_of_contract_values(raw):
         pa._stage(raw)
 
 
+@pytest.mark.parametrize("status", ["EQUIVOCAL", "UNKNOWN"])
+def test_partner_receptor_statuses_do_not_become_negative(status):
+    tables = _tables([{"pid": "A", "follow": 500, "index": 0, "rec_day": None, "labs": [(0, 20.0)]}])
+    baseline = tables["baseline_profile"][0]
+    baseline["er_status"] = status
+    baseline["pr_status"] = status
+    baseline["her2_status"] = status
+    patients_df, _observations_df = pa.to_vigil_frames(tables, ["A"])
+    patient = patients_df.iloc[0]
+    assert np.isnan(patient["er_status"])
+    assert np.isnan(patient["pr_status"])
+    assert np.isnan(patient["her2_status"])
+    assert patient["subtype"] == "UNCLASSIFIED"
+
+
 # ------------------------------------------------------------------------------------------------ partition
 def test_partition_is_deterministic_keyed_and_balanced():
     ids = [f"P{i:05d}" for i in range(4000)]

@@ -16,6 +16,11 @@
 - IPCW weights are those of `vigil_eval.metrics.compute_ipcw_weights` at 365 days; competing deaths resolve the fixed-horizon outcome and are not censoring observations.
 - The feature extractor (`WindowedFeatureExtractor`) censors at the last laboratory day; the pipeline uses it to build eligible features and recomputes time and event codes from partner follow-up and vital status.
 
+## 2a. Baseline feature encoding
+- Receptor status is encoded as 1 for `POSITIVE`, 0 for `NEGATIVE`, and missing for `EQUIVOCAL` or `UNKNOWN`; each receptor feature has a separate missingness indicator. These source states are never coerced to negative.
+- Receptor-derived subtype is `UNCLASSIFIED` when the contract values do not support one of the three named groups. Its one-hot flags remain zero and `subtype_unclassified` identifies that state; a null subtype is separately represented by `subtype_missing`.
+- Numeric missing values are imputed using training-only medians in B3/B4; the feature flags preserve which receptor/subtype states were unavailable. This is descriptive encoding, not a clinically validated risk contribution.
+
 ## 3. Candidate, comparators and what "recalibrate" means here
 - **Candidate:** `GradientBoostingBaseline` (B4) fitted **from scratch** on the development split (determinable landmarks only: event within 365 days, or followed beyond 365 days). `PREREGISTRATION.md` section 3 says "recalibrate, never retrain from scratch without an ADR". There is no clinically trained Vigil model to recalibrate: the model of `vigil_ml.runtime` is an untrained latency surrogate (`SurrogateInferenceNet`), and every performance number in this repository is synthetic. Fitting on the partner's development split is therefore the only available candidate; it is recorded as a deviation to be accepted or rejected at ratification, and is the subject of ADR-0021.
 - **Comparator** (chosen on the development split among rule and hazard baselines): B1 single threshold (`SingleThresholdBaseline`), B2 velocity rule (`VelocityBaseline`), B3 regularised hazard (`RegularizedCoxHazardBaseline`). The one with the highest development IPCW AUC at first landmarks is chosen; B3's development AUC is out-of-fold.

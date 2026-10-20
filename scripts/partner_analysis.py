@@ -105,6 +105,17 @@ def _subtype(er: str, pr: str, her2: str) -> str:
     return "UNCLASSIFIED"
 
 
+def _status_flag(status: str) -> float:
+    """Encode known receptor results without converting equivocal/unknown to negative."""
+    if status == "POSITIVE":
+        return 1.0
+    if status == "NEGATIVE":
+        return 0.0
+    if status in {"EQUIVOCAL", "UNKNOWN"}:
+        return float("nan")
+    raise ValueError(f"unsupported receptor status: {status!r}")
+
+
 def to_vigil_frames(
     tables: Dict[str, List[Dict[str, Any]]], cohort_ids: Sequence[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -136,9 +147,9 @@ def to_vigil_frames(
             {
                 "patient_id": pid,
                 "age": float(p["age_at_diagnosis"]),
-                "er_status": b["er_status"] == "POSITIVE",
-                "pr_status": b["pr_status"] == "POSITIVE",
-                "her2_status": b["her2_status"] == "POSITIVE",
+                "er_status": _status_flag(b["er_status"]),
+                "pr_status": _status_flag(b["pr_status"]),
+                "her2_status": _status_flag(b["her2_status"]),
                 "stage": _stage(b["stage_ajcc"]),
                 "subtype": _subtype(b["er_status"], b["pr_status"], b["her2_status"]),
                 "observed_recurrence_event": rec,

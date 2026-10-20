@@ -32,6 +32,28 @@ def test_feature_extractor_no_future_leakage():
     assert feat_at_180["symptom_bone_pain"] == 2.0
 
 
+def test_unknown_receptor_statuses_remain_missing_and_unclassified():
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {
+            "patient_id": "PT-UNKNOWN",
+            "er_status": np.nan,
+            "pr_status": 0.0,
+            "her2_status": np.nan,
+            "subtype": "UNCLASSIFIED",
+        },
+        [{"day": 0.0, "analytes": {"ca_15_3": 20.0}, "symptoms": {}}],
+        current_day=0.0,
+    )
+    assert np.isnan(features["is_er_pos"])
+    assert features["er_status_missing"] == 1.0
+    assert features["is_pr_pos"] == 0.0
+    assert features["pr_status_missing"] == 0.0
+    assert np.isnan(features["is_her2_pos"])
+    assert features["her2_status_missing"] == 1.0
+    assert features["subtype_unclassified"] == 1.0
+    assert features["subtype_missing"] == 0.0
+
+
 def test_simulator_truth_fields_cannot_change_observed_features_or_labels():
     from vigil_sim.generators import GeneratorType, get_generator
 
