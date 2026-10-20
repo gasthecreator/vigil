@@ -467,9 +467,14 @@ def boot_ci(values_fn, n_rep: int, B: int, seed: int, level: float) -> Tuple[flo
     return float(np.quantile(stats, a)), float(np.quantile(stats, 1 - a))
 
 
-def aggregate(reps: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate(
+    reps: List[Dict[str, Any]], bootstrap_replicates: Optional[int] = None
+) -> Dict[str, Any]:
     n = len(reps)
-    B, seed = CONFIG["bootstrap_B"], CONFIG["bootstrap_seed"]
+    B = CONFIG["bootstrap_B"] if bootstrap_replicates is None else bootstrap_replicates
+    if B < 1:
+        raise ValueError("bootstrap_replicates must be at least one")
+    seed = CONFIG["bootstrap_seed"]
     lvl_family = 1 - 0.05 / CONFIG["bonferroni_m"]
     agg: Dict[str, Any] = {"n_replications": n, "cells": {}, "new_site": {}}
 
@@ -721,7 +726,7 @@ def main() -> int:
                "achieved_alarms_per_1000_at_h_star": 0.0, "target_attained": True,
                "diagnostic_alarm_rate_vs_threshold": {"2": {"all_per_1000": 1.0, "non_recurrent_per_1000": 1.0}}}
         reps = run("dev", 2, det, 1, smoke=True)
-        agg = aggregate(reps)
+        agg = aggregate(reps, bootstrap_replicates=len(reps))
         report = render_report({"aggregate": agg}, det, 0.0)
         print(json.dumps({"ok": "H1" in report and "Control" in report, "cells": list(agg["cells"])}))
         return 0
