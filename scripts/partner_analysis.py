@@ -419,7 +419,16 @@ def _target_series(
     values: np.ndarray, horizon: float, synthetic_only: bool | None
 ) -> pd.Series:
     """Attach the partner fixed-horizon estimand before fitting a surveillance model."""
-    horizon_days = float(horizon)
+    if isinstance(horizon, (bool, np.bool_)) or not np.isscalar(horizon):
+        raise ValueError("horizon_days must be a finite positive number, not boolean")
+    try:
+        horizon_days = float(horizon)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("horizon_days must be finite and positive") from exc
+    if not np.isfinite(horizon_days) or horizon_days <= 0.0:
+        raise ValueError("horizon_days must be finite and positive")
+    if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
+        raise ValueError("synthetic_only must be boolean when supplied")
     labels = pd.Series(
         np.asarray(values, dtype=float),
         name=f"observed_recurrence_before_competing_death_within_{horizon_days:g}d",

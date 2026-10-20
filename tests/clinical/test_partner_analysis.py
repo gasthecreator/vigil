@@ -472,6 +472,20 @@ def test_verification_propensity_fails_closed_without_complete_development_label
     assert issue == "development verification status is incomplete or non-binary"
 
 
+@pytest.mark.parametrize(
+    "horizon", [True, np.bool_(False), 0.0, -1.0, np.nan, np.inf, np.array([365.0])]
+)
+def test_partner_target_contract_rejects_invalid_horizons(horizon):
+    with pytest.raises(ValueError, match="horizon_days"):
+        pa._target_series(np.array([0.0, 1.0]), horizon, synthetic_only=True)
+
+
+@pytest.mark.parametrize("synthetic_only", [0, 1, "true"])
+def test_partner_target_contract_rejects_non_boolean_provenance(synthetic_only):
+    with pytest.raises(ValueError, match="synthetic_only"):
+        pa._target_series(np.array([0.0, 1.0]), 365.0, synthetic_only=synthetic_only)
+
+
 def test_out_of_fold_censoring_weights_are_fit_inside_patient_folds(monkeypatch):
     n = 10
     patients = np.array([f"P{i:02d}" for i in range(n)])
