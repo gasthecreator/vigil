@@ -6,6 +6,7 @@ Conforms strictly to docs/MASTER_PLAN.md §14 (WP2.1) and docs/ML_PROGRAM.md §5
 import numpy as np
 from vigil_eval.metrics import (
     compute_calibration_curve,
+    compute_ipcw_calibration_curve,
     compute_ipcw_weights,
     compute_kaplan_meier,
     ipcw_brier_score,
@@ -194,3 +195,47 @@ def test_undefined_ipcw_metrics_are_nan_not_plausible_scores():
     scores = np.array([0.2, 0.8])
     assert np.isnan(ipcw_time_dependent_roc_auc(scores, times, events, horizon_time=30.0))
     assert np.isnan(ipcw_brier_score(scores, times, events, horizon_time=30.0))
+
+
+def test_probability_metrics_reject_invalid_predictions_instead_of_clipping():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    invalid = np.array([-0.1, 1.1])
+    for metric in (
+        lambda: ipcw_brier_score(invalid, times, events, horizon_time=30.0),
+        lambda: compute_calibration_curve(invalid, np.array([1, 0])),
+        lambda: compute_ipcw_calibration_curve(invalid, times, events, horizon_time=30.0),
+    ):
+        try:
+            metric()
+        except ValueError as exc:
+            assert "probabilit" in str(exc)
+        else:
+            raise AssertionError("invalid probabilities must not be clipped into valid scores")
+
+
+def test_empty_calibration_is_undefined_not_perfect():
+    report = compute_calibration_curve(np.array([]), np.array([]))
+    assert np.isnan(report.expected_calibration_error)
+    assert np.isnan(report.max_calibration_error)
+
+
+def test_ipcw_calibration_rejects_fractional_event_codes_even_with_supplied_weights():
+    with np.testing.assert_raises_regex(ValueError, "event_indicators"):
+        compute_ipcw_calibration_curve(
+            np.array([0.2]), np.array([10.0]), np.array([0.5]),
+            horizon_time=30.0, weights=np.array([1.0]),
+        )
+
+
+def test_decision_curve_rejects_invalid_thresholds_and_probabilities():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    with np.testing.assert_raises_regex(ValueError, "strictly between"):
+        survival_decision_curve_analysis(
+            np.array([0.2, 0.4]), times, events, 30.0, thresholds=np.array([1.0])
+        )
+    with np.testing.assert_raises_regex(ValueError, "probabilities"):
+        survival_decision_curve_analysis(
+            np.array([0.2, 1.1]), times, events, 30.0, thresholds=np.array([0.1])
+        )

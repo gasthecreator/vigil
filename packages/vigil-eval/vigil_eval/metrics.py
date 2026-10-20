@@ -22,6 +22,18 @@ import numpy as np
 from numpy.typing import NDArray
 
 
+def _probability_vector(values: np.ndarray, name: str) -> NDArray[np.float64]:
+    """Validate probabilities without silently repairing invalid model output."""
+    probabilities = np.asarray(values, dtype=float)
+    if probabilities.ndim != 1:
+        raise ValueError(f"{name} must be a one-dimensional probability array")
+    if not np.isfinite(probabilities).all() or np.any(
+        (probabilities < 0.0) | (probabilities > 1.0)
+    ):
+        raise ValueError(f"{name} must contain finite probabilities in [0, 1]")
+    return probabilities
+
+
 @dataclass
 class KaplanMeierEstimate:
     """Estimated Kaplan-Meier survival/censoring curve."""
@@ -224,7 +236,7 @@ def ipcw_brier_score(
         return float("nan")
 
     # Risk of event occurring by horizon: p_i = 1 - S_i(horizon)
-    p_hat = np.clip(predicted_probabilities, 0.0, 1.0)
+    p_hat = _probability_vector(predicted_probabilities, "predicted_probabilities")
     weights = (
         compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
         if weights is None
@@ -236,8 +248,8 @@ def ipcw_brier_score(
         raise ValueError("weights must be finite and non-negative")
     if not np.any(weights > 0):
         return float("nan")
-    if len(predicted_probabilities) != n or not np.isfinite(predicted_probabilities).all():
-        raise ValueError("predicted_probabilities must be finite and match follow_up_times")
+    if len(p_hat) != n:
+        raise ValueError("predicted_probabilities must match follow_up_times")
 
     # For patients experiencing recurrence by horizon, Y_i = 1; competing events
     # and event-free follow-up beyond horizon resolve Y_i = 0.
@@ -266,10 +278,29 @@ def survival_decision_curve_analysis(
     Net Benefit(p_t) = TruePositives/N - FalsePositives/N * (p_t / (1 - p_t))
     Using IPCW weights to account for right-censoring at horizon.
     """
+    predicted_risks = _probability_vector(predicted_risks, "predicted_risks")
+    follow_up_times = np.asarray(follow_up_times, dtype=float)
+    event_indicators = np.asarray(event_indicators)
+    if not (len(predicted_risks) == len(follow_up_times) == len(event_indicators)):
+        raise ValueError("risks, follow-up times, and event indicators must have equal length")
     if thresholds is None:
         thresholds = np.linspace(0.01, 0.50, 50)
+    else:
+        thresholds = np.asarray(thresholds, dtype=float)
+    if thresholds.ndim != 1 or len(thresholds) == 0:
+        raise ValueError("thresholds must be a non-empty one-dimensional array")
+    if not np.isfinite(thresholds).all() or np.any((thresholds <= 0.0) | (thresholds >= 1.0)):
+        raise ValueError("decision thresholds must be finite and strictly between zero and one")
 
     n = len(predicted_risks)
+    if n == 0:
+        undefined = np.full(len(thresholds), np.nan)
+        return DecisionCurveResult(
+            thresholds=thresholds,
+            net_benefit_model=undefined.copy(),
+            net_benefit_all=undefined.copy(),
+            net_benefit_none=undefined.copy(),
+        )
     weights = compute_ipcw_weights(follow_up_times, event_indicators, horizon_time)
 
     is_case = (follow_up_times <= horizon_time) & (event_indicators == 1)
@@ -278,11 +309,6 @@ def survival_decision_curve_analysis(
     nb_model = []
     nb_all = []
     nb_none = np.zeros(len(thresholds), dtype=float)
-
-    # Baseline prevalence at horizon via IPCW
-    weighted_cases = np.sum(weights[is_case])
-    total_w = np.sum(weights[is_case | is_control])
-    weighted_cases / total_w if total_w > 0 else 0.05
 
     for pt in thresholds:
         harm_ratio = pt / (1.0 - pt)
@@ -334,9 +360,23 @@ def compute_calibration_curve(
         n_bins: Number of bins.
         strategy: 'quantile' (equal-sized bins) or 'uniform' (equal-width bins).
     """
-    p = np.clip(predicted_probs, 0.0, 1.0)
+    p = _probability_vector(predicted_probs, "predicted_probs")
     y = np.asarray(observed_labels, dtype=float)
     n = len(p)
+    if y.ndim != 1 or len(y) != n:
+        raise ValueError("predicted_probs and observed_labels must be equal-length vectors")
+    if n_bins < 1:
+        raise ValueError("n_bins must be at least one")
+    if strategy not in {"quantile", "uniform"}:
+        raise ValueError("strategy must be 'quantile' or 'uniform'")
+    if not np.isfinite(y).all() or not np.isin(y, (0.0, 1.0)).all():
+        raise ValueError("observed_labels must contain finite binary values")
+    if n == 0:
+        return CalibrationReport(
+            bin_centers=np.array([]), predicted_probs=np.array([]), observed_probs=np.array([]),
+            bin_counts=np.array([], dtype=int), expected_calibration_error=float("nan"),
+            max_calibration_error=float("nan"),
+        )
 
     if strategy == "quantile":
         # Adaptive quantile bin edges
@@ -401,13 +441,15 @@ def compute_ipcw_calibration_curve(
     weights: np.ndarray | None = None,
 ) -> CalibrationReport:
     """Compute horizon calibration using censoring weights and competing-event controls."""
-    p = np.clip(np.asarray(predicted_probs, dtype=float), 0.0, 1.0)
+    p = _probability_vector(predicted_probs, "predicted_probs")
     times = np.asarray(follow_up_times, dtype=float)
-    events = np.asarray(event_indicators, dtype=int)
+    events = np.asarray(event_indicators)
     if not (len(p) == len(times) == len(events)):
         raise ValueError("Predictions and event-time arrays must have equal length")
     if n_bins < 1:
         raise ValueError("n_bins must be at least one")
+    if not np.isin(events, (0, 1, 2)).all():
+        raise ValueError("event_indicators must use codes 0=censor, 1=recurrence, 2=competing event")
 
     weights = (
         compute_ipcw_weights(times, events, horizon_time)
@@ -416,6 +458,8 @@ def compute_ipcw_calibration_curve(
     )
     if len(weights) != len(times):
         raise ValueError("weights must have the same length as follow_up_times")
+    if not np.isfinite(weights).all() or np.any(weights < 0):
+        raise ValueError("weights must be finite and non-negative")
     known = weights > 0
     if not np.any(known):
         return CalibrationReport(
