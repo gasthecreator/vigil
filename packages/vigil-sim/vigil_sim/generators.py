@@ -298,11 +298,22 @@ class CohortDataset:
                 "or False (synthetic oracle truth)"
             )
         pt_map = {p.patient_id: p for p in self.patients}
+        if len(pt_map) != len(self.patients):
+            raise ValueError("patient_id values must be unique")
         last_observation_day: dict[str, float] = {}
+        observed_days: dict[str, set[float]] = {}
         for item in self.observations:
+            if item.patient_id not in pt_map:
+                raise ValueError(f"observation references unknown patient_id {item.patient_id!r}")
             if not _is_finite_nonnegative_number(item.day):
                 raise ValueError("observation days must be finite and non-negative")
             observation_day = float(item.day)
+            patient_days = observed_days.setdefault(item.patient_id, set())
+            if observation_day in patient_days:
+                raise ValueError(
+                    f"duplicate observation day for patient {item.patient_id}"
+                )
+            patient_days.add(observation_day)
             last_observation_day[item.patient_id] = max(
                 last_observation_day.get(item.patient_id, -np.inf), observation_day
             )
@@ -362,6 +373,14 @@ class CohortDataset:
             if not _is_finite_nonnegative_number(admin_end) or float(admin_end) < last_day:
                 raise ValueError(
                     f"observations extend beyond administrative follow-up for patient {patient_id}"
+                )
+            if (
+                use_observed_labels
+                and recurrence_event
+                and float(recurrence_day) > float(admin_end)
+            ):
+                raise ValueError(
+                    f"observed recurrence occurs after administrative follow-up for patient {patient_id}"
                 )
             competing_day = patient.competing_event_day
             if competing_day is not None and np.isfinite(competing_day) and float(competing_day) < last_day:

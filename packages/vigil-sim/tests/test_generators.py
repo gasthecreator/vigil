@@ -573,6 +573,52 @@ def test_survival_training_rejects_invalid_observation_days(bad_day):
         )
 
 
+def test_survival_training_rejects_duplicate_observation_days():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=93).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.observations.append(cohort.observations[0])
+    with pytest.raises(ValueError, match="duplicate observation day"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+def test_survival_training_rejects_observations_for_unknown_patients():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=94).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.observations[0].patient_id = "unknown-patient"
+    with pytest.raises(ValueError, match="unknown patient_id"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+def test_survival_training_rejects_duplicate_patient_ids():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=96).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    cohort.patients.append(cohort.patients[0])
+    with pytest.raises(ValueError, match="patient_id values must be unique"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
+def test_survival_training_rejects_observed_event_after_administrative_censor():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=95).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    patient = cohort.patients[0]
+    patient.observed_recurrence_event = True
+    patient.observed_recurrence_day = patient.administrative_censor_day + 1.0
+    with pytest.raises(ValueError, match="observed recurrence occurs after administrative"):
+        cohort.get_survival_training_examples(
+            horizon_days=180.0, use_observed_labels=True
+        )
+
+
 @pytest.mark.parametrize(
     "event,day",
     [(True, None), (True, np.nan), (True, np.inf), (True, -1.0), (True, "10"), (False, 10.0)],
