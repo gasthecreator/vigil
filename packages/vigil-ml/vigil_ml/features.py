@@ -58,6 +58,7 @@ THERAPY_HISTORY_COLUMNS = {
     "endocrine_therapy": "history_endocrine_therapy",
     "radiotherapy_given": "history_radiotherapy_given",
 }
+NO_ACTIVE_TREATMENT = "none"
 
 
 @dataclass
@@ -234,7 +235,11 @@ class WindowedFeatureExtractor:
         ):
             active_treatment = 0.0 if synthetic_only is True else float("nan")
         elif isinstance(treatment_value, str) and treatment_value.strip():
-            active_treatment = 1.0
+            # CohortDataset's direct survival-feature API uses this explicit
+            # sentinel; unlike null, it is known inactive status.
+            active_treatment = float(
+                treatment_value.strip().casefold() != NO_ACTIVE_TREATMENT
+            )
         else:
             raise ValueError("treatment_active must be a non-empty treatment name or missing")
         features["active_treatment"] = active_treatment

@@ -409,7 +409,7 @@ def test_treatment_features_preserve_time_and_unknown_status():
         "patient_id": ["TREATMENT", "TREATMENT"],
         "day": [0.0, 100.0],
         "ca_15_3": [20.0, 22.0],
-        "treatment_active": [None, "chemotherapy"],
+        "treatment_active": [" NoNe ", "chemotherapy"],
     })
     extractor = WindowedFeatureExtractor()
 
@@ -426,8 +426,10 @@ def test_treatment_features_preserve_time_and_unknown_status():
     assert first["history_endocrine_therapy"] == 0.0
     assert first["history_radiotherapy_given"] == 1.0
 
+    unknown_observations = observations.copy()
+    unknown_observations.loc[0, "treatment_active"] = None
     unknown_source = extractor.transform_cohort(
-        patients, observations, horizon_days=365.0
+        patients, unknown_observations, horizon_days=365.0
     )[0]
     unknown_first = unknown_source.loc[unknown_source["eval_day"] == 0.0].iloc[0]
     assert np.isnan(unknown_first["active_treatment"])
