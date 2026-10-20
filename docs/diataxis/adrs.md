@@ -64,3 +64,4 @@
 - [ADR-0060: Make simulator mechanics and cohort schedules explicit](../adr/0060-explicit-simulator-mechanics-and-schedule.md)
 - [ADR-0061: Preserve undefined evaluation metrics as undefined](../adr/0061-report-undefined-evaluation-metrics.md)
 - [ADR-0062: Replace seed-sensitive ML thresholds with valid software contracts](../adr/0062-redesign-seed-sensitive-ml-gates.md)
+- [ADR-0063: Use source-aligned observed-diagnosis semantics for the E1 simulator comparison](../adr/0063-source-aligned-e1-simulator-comparison.md)
