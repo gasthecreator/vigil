@@ -78,6 +78,8 @@ class ConformalRiskControllerK8:
             raise ValueError("validation scores must be finite in [0, 1] and labels must be binary")
         val_labels = val_labels.astype(int)
         pos_scores = np.sort(val_scores[val_labels == 1])
+        if pos_scores.size == 0:
+            raise ValueError("validation labels must include at least one positive event")
         k = int(np.floor((len(pos_scores) + 1) * self.alpha_conf))
         self.calibrated_threshold = float(pos_scores[k - 1]) if k > 0 else float("-inf")
         self.running_threshold = self.calibrated_threshold

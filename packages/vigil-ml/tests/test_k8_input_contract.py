@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from vigil_ml.conformal_k8 import ConformalRiskControllerK8
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
 
 
@@ -43,3 +44,12 @@ def test_adaptive_conformal_rejects_invalid_parameters():
         AdaptiveConformal(float("nan"))
     with pytest.raises(ValueError, match="gamma must be finite and positive"):
         AdaptiveConformal(0.1, gamma=0.0)
+
+
+def test_k8_cannot_calibrate_a_false_negative_bound_without_positive_events():
+    controller = ConformalRiskControllerK8(alpha_conf=0.1)
+    with pytest.raises(ValueError, match="at least one positive event"):
+        controller.calibrate(np.array([0.1, 0.2]), np.array([0, 0]))
+    assert not controller.is_calibrated
+    result = controller.predict(raw_risk=0.15, epistemic_std=0.0)
+    assert result.risk_score is None
