@@ -47,6 +47,48 @@ class WindowedFeatureExtractor:
         if self.tracked_analytes is None:
             self.tracked_analytes = list(TRACKED_ANALYTES)
 
+    @staticmethod
+    def _advanced_stage(stage_value: Any) -> float:
+        value = str(stage_value).strip().upper()
+        if value.startswith("STAGE "):
+            value = value[6:]
+        stage_groups = {
+            "I": "I",
+            "IA": "I",
+            "IB": "I",
+            "II": "II",
+            "IIA": "II",
+            "IIB": "II",
+            "IIC": "II",
+            "III": "III",
+            "IIIA": "III",
+            "IIIB": "III",
+            "IIIC": "III",
+            "IIID": "III",
+            "IV": "IV",
+            "IVA": "IV",
+            "IVB": "IV",
+        }
+        if value not in stage_groups:
+            raise ValueError(f"unsupported stage value: {stage_value!r}")
+        return float(stage_groups[value] in {"III", "IV"})
+
+    @staticmethod
+    def _subtype_flags(subtype_value: Any) -> tuple[float, float, float, float]:
+        value = str(subtype_value).strip().upper()
+        groups = {
+            "TNBC": (1.0, 0.0, 0.0),
+            "HER2+": (0.0, 1.0, 0.0),
+            "HR+": (0.0, 0.0, 1.0),
+            "HR+HER2-": (0.0, 0.0, 1.0),
+            "HR+/HER2-": (0.0, 0.0, 1.0),
+            "UNCLASSIFIED": (0.0, 0.0, 0.0),
+        }
+        if value not in groups:
+            raise ValueError(f"unsupported subtype value: {subtype_value!r}")
+        tnbc, her2, luminal = groups[value]
+        return tnbc, her2, luminal, float(value == "UNCLASSIFIED")
+
     def extract_features_at_visit(
         self,
         patient_row: Dict[str, Any],
@@ -90,6 +132,7 @@ class WindowedFeatureExtractor:
         stage_missing = stage_value is None or pd.isna(stage_value)
         subtype_value = patient_row.get("subtype")
         subtype_missing = subtype_value is None or pd.isna(subtype_value)
+        advanced_stage = float("nan") if stage_missing else self._advanced_stage(stage_value)
 
         features: Dict[str, float] = {
             "eval_day": float(current_day),
@@ -101,23 +144,20 @@ class WindowedFeatureExtractor:
             "pr_status_missing": float(receptor_missing["pr_status"]),
             "is_her2_pos": binary_value(patient_row.get("her2_status")),
             "her2_status_missing": float(receptor_missing["her2_status"]),
-            "is_stage_3_or_4": 1.0
-            if not stage_missing and str(stage_value).upper() in ["STAGE III", "STAGE IV"]
-            else (float("nan") if stage_missing else 0.0),
+            "is_stage_3_or_4": advanced_stage,
             "stage_missing": float(stage_missing),
             "history_length": float(len(history)),
         }
 
         # Subtype one-hot
-        sub = str(subtype_value).upper() if not subtype_missing else ""
-        features["sub_tnbc"] = float("nan") if subtype_missing else float("TNBC" in sub)
-        features["sub_her2"] = float("nan") if subtype_missing else float("HER2+" in sub)
-        features["sub_luminal"] = float("nan") if subtype_missing else float("HR+" in sub)
-        features["subtype_missing"] = float(subtype_missing)
-        features["subtype_unclassified"] = float(
-            not subtype_missing
-            and not any(marker in sub for marker in ("TNBC", "HER2+", "HR+"))
+        subtype_flags = (
+            (float("nan"), float("nan"), float("nan"), 0.0)
+            if subtype_missing
+            else self._subtype_flags(subtype_value)
         )
+        features["sub_tnbc"], features["sub_her2"], features["sub_luminal"] = subtype_flags[:3]
+        features["subtype_missing"] = float(subtype_missing)
+        features["subtype_unclassified"] = subtype_flags[3]
 
         # Visit schedule friction / missingness features
         if len(history) > 1:

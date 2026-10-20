@@ -19,6 +19,7 @@
 ## 2a. Baseline feature encoding
 - Receptor status is encoded as 1 for `POSITIVE`, 0 for `NEGATIVE`, and missing for `EQUIVOCAL` or `UNKNOWN`; each receptor feature has a separate missingness indicator. These source states are never coerced to negative.
 - Receptor-derived subtype is `UNCLASSIFIED` when the contract values do not support one of the three named groups. Its one-hot flags remain zero and `subtype_unclassified` identifies that state; a null subtype is separately represented by `subtype_missing`.
+- Stage group accepts AJCC stage I–IV values and supported substages; subtype accepts the repository's declared named groups. A non-missing value outside those contracts raises an input error instead of being assigned to an ordinary category.
 - Numeric missing values are imputed using training-only medians in B3/B4; the feature flags preserve which receptor/subtype states were unavailable. This is descriptive encoding, not a clinically validated risk contribution.
 
 ## 3. Candidate, comparators and what "recalibrate" means here

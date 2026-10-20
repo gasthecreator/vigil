@@ -54,6 +54,30 @@ def test_unknown_receptor_statuses_remain_missing_and_unclassified():
     assert features["subtype_missing"] == 0.0
 
 
+@pytest.mark.parametrize(
+    ("stage", "expected"),
+    [("Stage I", 0.0), ("IIA", 0.0), ("Stage III", 1.0), ("Stage IV", 1.0)],
+)
+def test_stage_feature_accepts_declared_groups_only(stage, expected):
+    features = WindowedFeatureExtractor().extract_features_at_visit(
+        {"stage": stage}, [{"day": 0.0}], current_day=0.0
+    )
+    assert features["is_stage_3_or_4"] == expected
+
+
+def test_feature_extractor_rejects_unrecognized_stage_and_subtype():
+    extractor = WindowedFeatureExtractor()
+    history = [{"day": 0.0}]
+    with pytest.raises(ValueError, match="unsupported stage value"):
+        extractor.extract_features_at_visit(
+            {"stage": "STAGE FIVE"}, history, current_day=0.0
+        )
+    with pytest.raises(ValueError, match="unsupported subtype value"):
+        extractor.extract_features_at_visit(
+            {"subtype": "SOMETHING ELSE"}, history, current_day=0.0
+        )
+
+
 def test_simulator_truth_fields_cannot_change_observed_features_or_labels():
     from vigil_sim.generators import GeneratorType, get_generator
 
