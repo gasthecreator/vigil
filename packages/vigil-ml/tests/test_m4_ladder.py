@@ -633,18 +633,13 @@ def test_prior_validation():
         m4.recommend("ovary", prior(), facility([]), AS_OF)
 
 
-def test_prior_from_m1_is_an_interval_product_and_says_so():
+def test_m1_and_m4_prior_conversion_fail_closed_while_m1_is_quarantined():
     from vigil_ml.organ_susceptibility import BaselineOrganSusceptibilityModelM1
 
-    pred = BaselineOrganSusceptibilityModelM1().predict_susceptibility("TNBC", "Stage II", 50.0)
-    p = m4.prior_from_m1(pred, "liver", (0.05, 0.15))
-    share = pred.probabilities["liver"]
-    lo_s, hi_s = pred.credible_intervals_95["liver"]
-    assert p.lo == pytest.approx(lo_s * 0.05) and p.hi == pytest.approx(hi_s * 0.15)
-    assert p.value == pytest.approx(share * 0.10)
-    assert "approximation" in p.provenance
-    with pytest.raises(ValueError):
-        m4.prior_from_m1(pred, "ovary", 0.1)
+    with pytest.raises(RuntimeError, match="quarantined"):
+        BaselineOrganSusceptibilityModelM1().predict_susceptibility("TNBC", "Stage II", 50.0)
+    with pytest.raises(RuntimeError, match="quarantined"):
+        m4.prior_from_m1(object(), "liver", (0.05, 0.15))
 
 
 def test_facility_templates_are_illustrative_and_unverified(templates):

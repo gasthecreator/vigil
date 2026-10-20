@@ -161,6 +161,10 @@ A source-to-audit consistency check found `CORE-ML-RERUN-2026-10.md` still descr
 
 Package A review found the existing entrypoint and claim inventories explicitly lacked prompt-by-prompt coverage. Added `CORE-ML-PROMPT-CROSSWALK-2026-10.md`, mapping P0–P16 ML assignments and constraints to current evidence and open status. It records the K1/K2/K3/K8 validity limits, the required baseline/experiment work, model-facing API integrations, and the remaining prompt-linked M7/M10/K7/Phase 9 obligations without treating prior phase reports as proof of current validity. Claims policy and all 495 documentation links pass; `git diff --check` passes. This is an inventory increment; package A still requires exact source/test/result/card links and complete producer reconciliation.
 
+### Q-7 update — quarantine unsupported M1 inference (2026-10-20)
+
+The M1 audit found its unsupported subtype priors, age/stage adjustments, normal-approximation intervals, and cohort-sized confidence badge remained callable from the public ML package and M4 conversion helper after API quarantine. ADR-0051 now makes direct and cohort M1 inference and `prior_from_m1` fail closed; both historical model cards are withdrawn, the E12 dossier reflects its existing `SECONDARY` status and unresolved denominators/estimand, and S-020 records the unavailable model. Focused M1/M4 tests pass (39); full `vigil-ml` suite: 419 passed, 2 failed on unchanged B1 and logistic-baseline fixed-score floors (0.5488 < 0.65; 0.7108 < 0.72), with 3 non-failing ONNX export warnings. Ruff, strict mypy (15 source files), claims policy, reality audit, 498 documentation links, and `git diff --check` pass. This contains the callable output path; it does not reconstruct M1, reconcile historical results, or close packages A/F/G or Q-7.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|
