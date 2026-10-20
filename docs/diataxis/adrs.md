@@ -69,3 +69,4 @@
 - [ADR-0065: Retire the EXP-M12-001 frozen run](../adr/0065-retire-exp-m12-frozen-run.md)
 - [ADR-0066: Match verification IPW support checks to the estimand](../adr/0066-verification-propensity-support.md)
 - [ADR-0067: Validate K6 hazard training inputs before conversion](../adr/0067-validate-k6-hazard-targets.md)
+- [ADR-0068: Retire the historical S8-K7 run](../adr/0068-retire-s8-k7-historical-run.md)

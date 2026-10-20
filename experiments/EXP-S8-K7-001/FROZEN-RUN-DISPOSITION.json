@@ -1,0 +1,17 @@
+{
+  "experiment_id": "EXP-S8-K7-001",
+  "status": "retired",
+  "reason": "The committed S8-K7 result was produced by an implementation that does not match its preregistration and has incomplete run provenance.",
+  "known_deviations": [
+    "The preregistration requires cross-fitting for primary AIPW, but the estimator fits nuisance models on and predicts for the same cohort.",
+    "The preregistered propensity support is (0.01, 0.99), while the implementation clips to (0.02, 0.98).",
+    "The report's E-value point estimate is computed from the bootstrap mean rather than the original-cohort point estimate.",
+    "Risk-ratio denominators of zero are silently replaced by 1.0.",
+    "The result has no source-SHA/run manifest or canonical frozen-access record, and its seed choices are not specified in the preregistration."
+  ],
+  "replacement_policy": "Do not rerun or overwrite this study. A replacement requires a new experiment ID, preregistration, seeds, source-bound access log, estimator tests, and output manifest.",
+  "historical_outputs": [
+    "reports/ml/STUDY_S8_K7_CAUSAL.json",
+    "reports/ml/STUDY_S8_K7_CAUSAL.md"
+  ]
+}

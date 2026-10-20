@@ -32,7 +32,22 @@ from vigil_ml.causal_k7 import (
 )
 
 
+def assert_legacy_k7_replay_is_disabled() -> None:
+    """Fail closed before fitting or writing the invalid historical S8-K7 result."""
+    disposition_path = ROOT / "experiments" / "EXP-S8-K7-001" / "FROZEN-RUN-DISPOSITION.json"
+    if not disposition_path.is_file():
+        raise RuntimeError("legacy S8-K7 run disabled: missing frozen-run disposition")
+    try:
+        disposition = json.loads(disposition_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("legacy S8-K7 run disabled: invalid frozen-run disposition") from exc
+    if not isinstance(disposition, dict) or disposition.get("status") != "retired":
+        raise RuntimeError("legacy S8-K7 run disabled: disposition is not retired")
+    raise RuntimeError("legacy S8-K7 run is retired; register a replacement experiment")
+
+
 def run_study(n_patients: int = 5000, n_boot: int = 1000) -> Dict[str, Any]:
+    assert_legacy_k7_replay_is_disabled()
     print(f"🔬 Starting Pre-Registered Study S8-K7 (N={n_patients}, {n_boot} bootstraps)...")
     start_time = time.perf_counter()
 
@@ -160,6 +175,7 @@ def run_study(n_patients: int = 5000, n_boot: int = 1000) -> Dict[str, Any]:
 
 
 def write_reports(res: Dict[str, Any]) -> None:
+    assert_legacy_k7_replay_is_disabled()
     json_path = ROOT / "reports" / "ml" / "STUDY_S8_K7_CAUSAL.json"
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w") as f:
