@@ -3,7 +3,7 @@ id: PROP-CORE-ML-CALIBRATION-ESTIMAND
 title: Align the legacy CA 15-3 simulator comparison with its cited estimand
 author: Codex
 date: 2026-10-20
-status: UNDER REVIEW
+status: ACCEPTED
 plan_version_impact: NONE
 ---
 
@@ -65,3 +65,7 @@ If the simulator cannot faithfully define observed diagnosis, site eligibility, 
 ## 7. Impact on Master Plan
 
 No Master Plan change is requested. This proposal clarifies evidence required for the existing M13 calibration-target requirement.
+
+## 8. Overseer disposition (2026-10-20)
+
+The owner selected the source-aligned observed-diagnosis comparison. Record the decision in ADR-0063 and preregister a fresh multi-seed study before generating any study cohort. This disposition does not ratify simulator calibration, a fixed cutoff for clinical use, or a clinical claim. Because the current simulator emits only bone, lung, liver, and brain recurrence sites, the E1 distant-metastasis sensitivity statistic is not comparable unless a preregistered simulation model can represent the source's locoregional exclusion; do not infer that endpoint from the current site mix.
