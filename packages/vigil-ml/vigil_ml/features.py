@@ -407,23 +407,29 @@ class WindowedFeatureExtractor:
                 # competing event within H, or when follow-up covers all of H.
                 # A loss/admin censor before H is unknown, never a negative label.
                 if event_flag == 1 and time_to_event_or_censor <= horizon_days:
-                    y = 1.0
+                    y_label = 1.0
                 elif event_flag == 2 and time_to_event_or_censor <= horizon_days:
-                    y = 0.0
+                    y_label = 0.0
                 elif time_to_event_or_censor >= horizon_days or (
                     event_flag != 0 and time_to_event_or_censor > horizon_days
                 ):
-                    y = 0.0
+                    y_label = 0.0
                 else:
-                    y = np.nan
+                    y_label = np.nan
 
                 features_list.append(feat)
-                labels_list.append(y)
+                labels_list.append(y_label)
                 follow_up_times.append(time_to_event_or_censor)
                 event_indicators.append(event_flag)
 
         X = pd.DataFrame(features_list)
-        y = pd.Series(labels_list, dtype=float, name=f"recurrence_within_{int(horizon_days)}d")
+        y = pd.Series(
+            labels_list,
+            dtype=float,
+            name=f"observed_diagnosis_within_{int(horizon_days)}d",
+        )
+        y.attrs["target_estimand"] = "observed_diagnosis"
+        y.attrs["horizon_days"] = float(horizon_days)
 
         return X, y, np.array(follow_up_times), np.array(event_indicators)
 

@@ -233,15 +233,15 @@ class CohortDataset:
     def get_unleaked_training_examples(
         self,
         horizon_days: float = 180.0,
-        use_observed_labels: bool = True,
+        use_observed_labels: bool | None = None,
     ) -> Tuple[pd.DataFrame, pd.Series]:
         """
         Extracts strictly un-leaked feature vectors X and prospective clinical event labels y.
 
         Parameters:
             horizon_days: Prospective prediction horizon window (e.g. 90, 180, 365 days).
-            use_observed_labels: If True, uses clinically verified labels (with partial verification bias).
-                                 If False, uses latent ground-truth recurrence labels.
+            use_observed_labels: Required. True uses observed-diagnosis labels (partial verification);
+                                 False uses latent ground-truth labels (synthetic oracle only).
 
         Unmeasured lab values are emitted as NaN, never as their simulator-side
         latent values. Outcomes censored before the horizon are NaN, not negative.
@@ -256,18 +256,23 @@ class CohortDataset:
     def get_survival_training_examples(
         self,
         horizon_days: float = 180.0,
-        use_observed_labels: bool = True,
+        use_observed_labels: bool | None = None,
     ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
         """Build current-visit features and censor-aware outcomes.
 
-        Event codes are 0=censored, 1=recurrence and 2=terminal competing event.
+        Event codes are 0=censored, 1=target event and 2=terminal competing event.
         Loss to follow-up is censoring, not a competing event. `y` is the
-        recurrence-by-horizon label and remains missing when the horizon is not
-        observed. The observed-label mode estimates diagnosed recurrence;
-        setting `use_observed_labels=False` is an oracle-only simulation path.
+        selected target-by-horizon label and remains missing when the horizon is
+        not observed. `use_observed_labels` is mandatory: True estimates observed
+        diagnosis; False selects the synthetic oracle-only recurrence path.
         """
         if not np.isfinite(horizon_days) or horizon_days <= 0:
             raise ValueError("horizon_days must be finite and positive")
+        if not isinstance(use_observed_labels, (bool, np.bool_)):
+            raise ValueError(
+                "use_observed_labels must be explicitly set to True (observed diagnosis) "
+                "or False (synthetic oracle truth)"
+            )
         pt_map = {p.patient_id: p for p in self.patients}
         last_observation_day: dict[str, float] = {}
         for item in self.observations:
@@ -363,7 +368,17 @@ class CohortDataset:
             event_codes.append(event_code)
 
         X = pd.DataFrame(features_list)
-        y = pd.Series(labels_list, name=f"recurrence_within_{int(horizon_days)}d")
+        target_estimand = (
+            "observed_diagnosis" if use_observed_labels else "oracle_true_recurrence"
+        )
+        y = pd.Series(
+            labels_list,
+            name=f"{target_estimand}_within_{int(horizon_days)}d",
+            dtype=float,
+        )
+        y.attrs["target_estimand"] = target_estimand
+        y.attrs["horizon_days"] = float(horizon_days)
+        y.attrs["synthetic_only"] = True
         return X, y, np.asarray(follow_up_times, dtype=float), np.asarray(event_codes, dtype=int)
 
 

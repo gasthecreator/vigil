@@ -91,6 +91,9 @@ def test_competing_event_is_a_known_non_recurrence_outcome():
     _X, y, times, events = WindowedFeatureExtractor().transform_cohort(
         patients, observations, horizon_days=365.0
     )
+    assert y.name == "observed_diagnosis_within_365d"
+    assert y.attrs["target_estimand"] == "observed_diagnosis"
+    assert y.attrs["horizon_days"] == 365.0
     assert np.array_equal(y.to_numpy(), [0.0, 0.0])
     assert np.array_equal(events, [2, 2])
     assert np.array_equal(times, [150.0, 50.0])

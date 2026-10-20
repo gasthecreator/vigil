@@ -237,7 +237,9 @@ def test_latent_states_export_for_recovery_studies():
 def test_unleaked_training_examples_contract():
     gen = get_generator(GeneratorType.G1_SMOOTH, seed=42)
     cohort = gen.generate_cohort(num_patients=25, duration_days=730.0)
-    X, y = cohort.get_unleaked_training_examples(horizon_days=180.0)
+    X, y = cohort.get_unleaked_training_examples(
+        horizon_days=180.0, use_observed_labels=True
+    )
 
     assert len(X) == len(y)
     assert set(y.dropna().unique()).issubset({0, 1})
@@ -276,11 +278,11 @@ def test_unobserved_simulator_value_cannot_change_training_features():
     analyte = next(
         key for key, measured in observation.observed_mask.items() if not measured
     )
-    before_X, before_y = cohort.get_unleaked_training_examples()
+    before_X, before_y = cohort.get_unleaked_training_examples(use_observed_labels=True)
     row = before_X.index[before_X["patient_id"] == observation.patient_id]
     row = row[before_X.loc[row, "day"] == observation.day][0]
     observation.analytes[analyte] += 1_000_000.0
-    after_X, after_y = cohort.get_unleaked_training_examples()
+    after_X, after_y = cohort.get_unleaked_training_examples(use_observed_labels=True)
     pd.testing.assert_series_equal(before_X.loc[row], after_X.loc[row])
     assert before_y.loc[row] == after_y.loc[row]
 
@@ -300,7 +302,13 @@ def test_training_labels_are_unknown_when_loss_to_follow_up_precedes_horizon():
     patient.competing_event_day = first_observation.day + 10.0
     patient.administrative_censor_day = first_observation.day + 365.0
 
-    X, y, times, event_codes = cohort.get_survival_training_examples(horizon_days=180.0)
+    X, y, times, event_codes = cohort.get_survival_training_examples(
+        horizon_days=180.0, use_observed_labels=True
+    )
+    assert y.name == "observed_diagnosis_within_180d"
+    assert y.attrs["target_estimand"] == "observed_diagnosis"
+    assert y.attrs["horizon_days"] == 180.0
+    assert y.attrs["synthetic_only"] is True
     row = X.index[(X["patient_id"] == patient.patient_id) & (X["day"] == first_observation.day)][0]
     assert np.isnan(y.iloc[row])
     assert times[row] == pytest.approx(10.0)
@@ -325,7 +333,21 @@ def test_oracle_training_labels_censor_recurrence_after_loss_to_follow_up():
     X, y, times, event_codes = cohort.get_survival_training_examples(
         horizon_days=180.0, use_observed_labels=False
     )
+    assert y.name == "oracle_true_recurrence_within_180d"
+    assert y.attrs["target_estimand"] == "oracle_true_recurrence"
+    assert y.attrs["horizon_days"] == 180.0
+    assert y.attrs["synthetic_only"] is True
     row = X.index[(X["patient_id"] == patient.patient_id) & (X["day"] == first_observation.day)][0]
     assert np.isnan(y.iloc[row])
     assert times[row] == pytest.approx(10.0)
     assert event_codes[row] == 0
+
+
+def test_training_helper_requires_an_explicit_observed_or_oracle_estimand():
+    cohort = get_generator(GeneratorType.G1_SMOOTH, seed=84).generate_cohort(
+        num_patients=4, duration_days=180.0
+    )
+    with pytest.raises(ValueError, match="must be explicitly set"):
+        cohort.get_unleaked_training_examples()
+    with pytest.raises(ValueError, match="must be explicitly set"):
+        cohort.get_survival_training_examples()
