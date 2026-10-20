@@ -14,8 +14,8 @@ import pytest
 from vigil_eval.audit import FrozenTestAccessLogger
 from vigil_eval.bootstrap import patient_cluster_bootstrap
 from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
-from vigil_eval.regression_gate import ModelRegressionGate
-from vigil_eval.subgroups import empirical_bayes_shrinkage
+from vigil_eval.regression_gate import ModelRegressionGate, render_benchmark_table_markdown
+from vigil_eval.subgroups import empirical_bayes_shrinkage, evaluate_subgroups_with_shrinkage
 from vigil_eval.verification_bias import (
     evaluate_complete_case,
     evaluate_ipw_verification,
@@ -74,6 +74,21 @@ def test_empirical_bayes_shrinkage_analytical():
     assert b_factors[0] < b_factors[1]
     # Subgroup 2 should be pulled significantly toward grand mean
     assert abs(shrunk[1] - grand_mean) < abs(estimates[1] - grand_mean)
+
+
+def test_subgroup_analysis_keeps_undefined_metrics_undefined():
+    data = pd.DataFrame({"patient_id": ["p1", "p2"], "site": ["A", "B"]})
+    result = evaluate_subgroups_with_shrinkage(
+        data,
+        patient_col="patient_id",
+        subgroup_col="site",
+        metric_fn=lambda _: {"other_metric": 0.8},
+        target_metric="roc_auc",
+        n_bootstraps=10,
+    )
+    assert len(result) == 2
+    assert all(np.isnan(item.raw_estimate) and np.isnan(item.shrunk_estimate) for item in result)
+    assert all(np.isnan(item.raw_ci_lower) and np.isnan(item.shrunk_ci_upper) for item in result)
 
 
 def test_verification_bias_corrections():
@@ -275,3 +290,17 @@ def test_model_regression_gate():
     res_leaked = gate.evaluate({"roc_auc": 0.99, "brier_score": 0.02, "ece": 0.01})
     assert not res_leaked.passed
     assert any("STOP-AND-THINK TRIGGER" in f for f in res_leaked.failures)
+
+
+def test_regression_gate_rejects_missing_candidate_and_baseline_metrics():
+    gate = ModelRegressionGate()
+    result = gate.evaluate({"roc_auc": 0.8}, baseline_metrics={"roc_auc": 0.7})
+    assert not result.passed
+    assert any("Candidate brier_score is missing" in failure for failure in result.failures)
+    assert any("Baseline brier_score is missing" in failure for failure in result.failures)
+
+
+def test_benchmark_table_marks_missing_metrics_as_unavailable():
+    table = render_benchmark_table_markdown([{"model_id": "partial"}])
+    assert "N/A" in table
+    assert "0.0000" not in table

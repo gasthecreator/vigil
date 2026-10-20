@@ -256,7 +256,7 @@ def evaluate_ipw_verification(
             pair_w = w_pos * w_v[neg_mask]
             concordant += np.sum(pair_w[gt]) + 0.5 * np.sum(pair_w[eq])
             total_pairs += np.sum(pair_w)
-        auc = float(concordant / total_pairs) if total_pairs > 0 else 0.5
+        auc = float(concordant / total_pairs) if total_pairs > 0 else float("nan")
     else:
         auc = float("nan")
 

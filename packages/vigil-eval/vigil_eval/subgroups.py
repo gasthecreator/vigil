@@ -63,7 +63,20 @@ def empirical_bayes_shrinkage(
     Returns:
         (shrunk_estimates, shrinkage_factors, grand_mean, tau_squared)
     """
+    estimates = np.asarray(estimates, dtype=float)
+    standard_errors = np.asarray(standard_errors, dtype=float)
+    if (
+        estimates.ndim != 1
+        or standard_errors.ndim != 1
+        or len(estimates) != len(standard_errors)
+        or not np.isfinite(estimates).all()
+        or not np.isfinite(standard_errors).all()
+        or np.any(standard_errors < 0)
+    ):
+        raise ValueError("estimates and non-negative standard_errors must be aligned finite vectors")
     k = len(estimates)
+    if k == 0:
+        return estimates.copy(), np.array([], dtype=float), float("nan"), float("nan")
     if k <= 1:
         return estimates, np.zeros(k), float(estimates[0]), 0.0
 
@@ -137,28 +150,41 @@ def evaluate_subgroups_with_shrinkage(
         )
 
         summary = boot_res.get(target_metric)
-        if summary is not None:
+        if (
+            summary is not None
+            and np.isfinite(summary.point_estimate)
+            and np.isfinite(summary.standard_error)
+            and np.isfinite(summary.ci_lower)
+            and np.isfinite(summary.ci_upper)
+        ):
             raw_ests.append(summary.point_estimate)
             ses.append(summary.standard_error)
             ci_lows.append(summary.ci_lower)
             ci_highs.append(summary.ci_upper)
         else:
-            raw_ests.append(0.5)
-            ses.append(0.1)
-            ci_lows.append(0.3)
-            ci_highs.append(0.7)
+            raw_ests.append(float("nan"))
+            ses.append(float("nan"))
+            ci_lows.append(float("nan"))
+            ci_highs.append(float("nan"))
 
     arr_ests = np.array(raw_ests)
     arr_ses = np.array(ses)
-
-    shrunk_ests, b_factors, grand_mean, tau2 = empirical_bayes_shrinkage(arr_ests, arr_ses)
+    valid = np.isfinite(arr_ests) & np.isfinite(arr_ses)
+    shrunk_ests = np.full(len(arr_ests), np.nan)
+    b_factors = np.full(len(arr_ests), np.nan)
+    if np.any(valid):
+        shrunk_valid, factors_valid, _, _ = empirical_bayes_shrinkage(
+            arr_ests[valid], arr_ses[valid]
+        )
+        shrunk_ests[valid] = shrunk_valid
+        b_factors[valid] = factors_valid
 
     results = []
     for i, s_val in enumerate(strata):
         # Shrunk confidence interval: shift raw bounds by the shrinkage displacement
         displacement = shrunk_ests[i] - arr_ests[i]
-        shrunk_l = max(0.0, min(1.0, ci_lows[i] + displacement))
-        shrunk_u = max(0.0, min(1.0, ci_highs[i] + displacement))
+        shrunk_l = ci_lows[i] + displacement
+        shrunk_u = ci_highs[i] + displacement
 
         results.append(
             SubgroupEstimate(
