@@ -223,6 +223,10 @@ Rule-baseline fit review found B0/B1/B2 accepted labels whose row count differed
 
 IPCW review found negative/infinite horizons and multidimensional event-code arrays were accepted; NaN horizons could trigger an assertion, supplied-weight metric paths skipped input validation, and the patient-landmark adapter truncated fractional event codes and failed to normalize rows with missing IDs. Shared validation now rejects malformed horizons, times, event codes, and missing/non-vector patient IDs across these paths. Metric tests pass (18); the full evaluator suite is 48 passed, 1 unchanged K3 shuffled-outcome canary failure (AUC 0.6136 > 0.60). `make typecheck` passes (15 strict-mypy source files; 2 import contracts), Ruff and `git diff --check` pass. This fixes malformed-input handling only; censoring assumptions and observed-vs-latent estimands remain open.
 
+### Q-7 follow-up — require explicit feature target horizons (2026-10-20)
+
+`transform_cohort` defaulted to 180 days while `build_landmark_features` defaulted to 365 days. The Master Plan specifies 3-, 6-, and 12-month outcomes; historical core studies explicitly use 365 days. Both entry points now require a horizon argument, and omitted-horizon plus target-provenance regressions pass. Feature tests: 39 passed; full `vigil-ml` tests: 508 passed, 2 unchanged fixed-score failures (B1 AUC 0.5488 < 0.65; fast logistic 0.7108 < 0.72). `make typecheck`, Ruff, claims policy, 515 documentation links, and `git diff --check` pass. Draft proposal `docs/proposals/PROP-CORE-ML-HORIZON-CONTRACT.md` tracks the still-required preregistered 3/6/12-month evidence; historical 365-day artifacts were not changed or regenerated. Package A–B and Q-7 remain open.
+
 ## Pending human actions (executor appends; owner resolves)
 | ID | Action | Why | Draft artifact | Status |
 |---|---|---|---|---|

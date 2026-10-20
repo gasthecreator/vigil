@@ -341,7 +341,7 @@ class WindowedFeatureExtractor:
         self,
         patients_df: pd.DataFrame,
         observations_df: pd.DataFrame,
-        horizon_days: float = 180.0,
+        horizon_days: float,
     ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
         """
         Transforms full cohort into feature matrix X, prospective binary label y,
@@ -606,9 +606,10 @@ class WindowedFeatureExtractor:
 def build_landmark_features(
     observations_df: pd.DataFrame,
     patients_df: Optional[pd.DataFrame] = None,
-    horizon_days: float = 365.0,
+    *,
+    horizon_days: float,
 ) -> Tuple[pd.DataFrame, pd.Series, np.ndarray, np.ndarray]:
-    """Module-level entrypoint for building landmark feature matrix."""
+    """Build landmarks for an explicitly selected target horizon."""
     extractor = WindowedFeatureExtractor()
     if patients_df is None:
         raise ValueError(

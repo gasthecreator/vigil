@@ -303,9 +303,35 @@ def test_same_day_observations_are_rejected_as_temporally_ambiguous():
 def test_feature_labels_require_observed_outcome_metadata():
     observations = pd.DataFrame({"patient_id": ["NO-LABEL"], "day": [0.0], "ca_15_3": [18.0]})
     with pytest.raises(ValueError, match="required columns"):
-        WindowedFeatureExtractor().transform_cohort(pd.DataFrame({"patient_id": ["NO-LABEL"]}), observations)
+        WindowedFeatureExtractor().transform_cohort(
+            pd.DataFrame({"patient_id": ["NO-LABEL"]}), observations, horizon_days=365.0
+        )
     with pytest.raises(ValueError, match="patients_df with observed outcome metadata"):
+        build_landmark_features(observations, horizon_days=365.0)
+    with pytest.raises(TypeError, match="horizon_days"):
+        WindowedFeatureExtractor().transform_cohort(pd.DataFrame(), observations)
+    with pytest.raises(TypeError, match="horizon_days"):
         build_landmark_features(observations)
+
+
+@pytest.mark.parametrize("horizon_days", [90.0, 180.0, 365.0])
+def test_feature_label_contract_records_explicit_target_horizon(horizon_days):
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "HORIZON",
+            "observed_recurrence_event": False,
+            "observed_recurrence_day": np.nan,
+            "administrative_censor_day": 730.0,
+        }]
+    )
+    observations = pd.DataFrame(
+        {"patient_id": ["HORIZON"], "day": [0.0], "ca_15_3": [18.0]}
+    )
+    _X, labels, _times, _events = WindowedFeatureExtractor().transform_cohort(
+        patients, observations, horizon_days=horizon_days
+    )
+    assert labels.name == f"observed_diagnosis_within_{int(horizon_days)}d"
+    assert labels.attrs["horizon_days"] == horizon_days
 
 
 def test_invalid_observation_outcome_boundaries_fail_closed():
@@ -319,7 +345,7 @@ def test_invalid_observation_outcome_boundaries_fail_closed():
     }])
     observations = pd.DataFrame({"patient_id": ["BAD-BOUNDARY"], "day": [10.0], "ca_15_3": [20.0]})
     with pytest.raises(ValueError, match="extend beyond administrative follow-up"):
-        WindowedFeatureExtractor().transform_cohort(patients, observations)
+        WindowedFeatureExtractor().transform_cohort(patients, observations, horizon_days=365.0)
 
 
 @pytest.mark.parametrize("competing_event", ["cardiovascular_typo", "", "0"])
@@ -336,7 +362,7 @@ def test_unknown_competing_event_types_cannot_create_negative_labels(competing_e
         {"patient_id": ["UNKNOWN-EVENT"], "day": [0.0], "ca_15_3": [20.0]}
     )
     with pytest.raises(ValueError, match="unsupported competing event type"):
-        WindowedFeatureExtractor().transform_cohort(patients, observations)
+        WindowedFeatureExtractor().transform_cohort(patients, observations, horizon_days=365.0)
 
 
 @pytest.mark.parametrize(
@@ -359,7 +385,7 @@ def test_observation_mask_and_numeric_value_are_consistent(value, mask, expected
         }
     )
     features, _labels, _times, _events = WindowedFeatureExtractor().transform_cohort(
-        patients, observations
+        patients, observations, horizon_days=365.0
     )
     if np.isnan(expected):
         assert features["ca_15_3_curr"].isna().all()
@@ -384,7 +410,7 @@ def test_finite_unobserved_lab_value_is_rejected():
         }
     )
     with pytest.raises(ValueError, match="disagrees with ca_15_3 value presence"):
-        WindowedFeatureExtractor().transform_cohort(patients, observations)
+        WindowedFeatureExtractor().transform_cohort(patients, observations, horizon_days=365.0)
 
 
 def test_observation_mask_rejects_nonbinary_values():
@@ -401,7 +427,7 @@ def test_observation_mask_rejects_nonbinary_values():
         }
     )
     with pytest.raises(ValueError, match="must be a non-null boolean or 0/1"):
-        WindowedFeatureExtractor().transform_cohort(patients, observations)
+        WindowedFeatureExtractor().transform_cohort(patients, observations, horizon_days=365.0)
 
 
 def test_observation_rows_must_map_to_one_patient_record():
@@ -411,7 +437,7 @@ def test_observation_rows_must_map_to_one_patient_record():
     }])
     observations = pd.DataFrame({"patient_id": ["UNKNOWN"], "day": [0.0], "ca_15_3": [18.0]})
     with pytest.raises(ValueError, match="unknown patient_ids"):
-        WindowedFeatureExtractor().transform_cohort(patients, observations)
+        WindowedFeatureExtractor().transform_cohort(patients, observations, horizon_days=365.0)
 
 
 def test_zero_mean_biomarker_cv_is_unavailable_not_zero():
@@ -476,7 +502,9 @@ def test_recurrence_metadata_must_match_event_flag_and_followup():
         "administrative_censor_day": 20.0,
     }])
     with pytest.raises(ValueError, match="without an observed event"):
-        WindowedFeatureExtractor().transform_cohort(no_event_with_day, observations)
+        WindowedFeatureExtractor().transform_cohort(
+            no_event_with_day, observations, horizon_days=365.0
+        )
 
     event_after_followup = pd.DataFrame([{
         "patient_id": "CONFLICT",
@@ -485,4 +513,6 @@ def test_recurrence_metadata_must_match_event_flag_and_followup():
         "administrative_censor_day": 20.0,
     }])
     with pytest.raises(ValueError, match="after administrative follow-up"):
-        WindowedFeatureExtractor().transform_cohort(event_after_followup, observations)
+        WindowedFeatureExtractor().transform_cohort(
+            event_after_followup, observations, horizon_days=365.0
+        )
