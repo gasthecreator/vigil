@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify EXP-S8-K7-003 artifacts without generating or reading cohorts."""
+"""Verify EXP-S8-K7-003 artifacts against immutable run-time source snapshots."""
 
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ sys.path.insert(0, str(EXPERIMENT))
 from run import (  # noqa: E402
     ACCESS_LOG,
     COMPLETION,
-    DEPENDENCY_LOCK,
     IMPLEMENTATION,
     PREREG,
     PROJECT_CONFIG,
@@ -23,10 +22,12 @@ from run import (  # noqa: E402
     RESULTS,
     RUNNER,
     SEEDS,
-    VERIFIER,
     _render_report,
     sha256,
 )
+
+LOCK_AT_RUN = EXPERIMENT / "DEPENDENCY-LOCK-AT-RUN.lock"
+VERIFIER_AT_RUN = EXPERIMENT / "VERIFY-SOURCE-AT-RUN.py"
 
 
 def verify() -> dict[str, Any]:
@@ -36,9 +37,9 @@ def verify() -> dict[str, Any]:
         PREREG,
         IMPLEMENTATION,
         RUNNER,
-        VERIFIER,
+        VERIFIER_AT_RUN,
         PROJECT_CONFIG,
-        DEPENDENCY_LOCK,
+        LOCK_AT_RUN,
         RESULTS,
         REPORT,
     ):
@@ -50,9 +51,9 @@ def verify() -> dict[str, Any]:
         "preregistration_sha256": sha256(PREREG),
         "implementation_sha256": sha256(IMPLEMENTATION),
         "runner_sha256": sha256(RUNNER),
-        "verifier_sha256": sha256(VERIFIER),
+        "verifier_sha256": sha256(VERIFIER_AT_RUN),
         "project_config_sha256": sha256(PROJECT_CONFIG),
-        "dependency_lock_sha256": sha256(DEPENDENCY_LOCK),
+        "dependency_lock_sha256": sha256(LOCK_AT_RUN),
         "access_log_sha256": sha256(ACCESS_LOG),
         "results_sha256": sha256(RESULTS),
         "report_sha256": sha256(REPORT),
@@ -106,6 +107,18 @@ def verify() -> dict[str, Any]:
         "implementation_commit"
     ):
         raise RuntimeError("access record does not identify the result implementation")
+    for key in (
+        "preregistration_sha256",
+        "implementation_sha256",
+        "runner_sha256",
+        "verifier_sha256",
+        "project_config_sha256",
+        "dependency_lock_sha256",
+    ):
+        if k7_entries[0].get(key) != checks[key]:
+            raise RuntimeError(f"pre-run access record mismatch for {key}")
+    if k7_entries[0].get("evaluation_seeds") != list(SEEDS):
+        raise RuntimeError("pre-run access record seed set differs from registration")
     subprocess.check_call(
         ["git", "merge-base", "--is-ancestor", completion["implementation_commit"], "HEAD"],
         cwd=ROOT,

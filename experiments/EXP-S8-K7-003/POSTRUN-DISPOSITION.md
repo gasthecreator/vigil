@@ -11,6 +11,8 @@
 
 These are design defects, not reasons to tune or replay the consumed seeds. They invalidate the preregistered cross-fitting contract and any scientific interpretation of its H1 recovery/coverage criterion. The saved result file, report, completion manifest, preregistration, and access log are retained unchanged. Their checks establish byte/hash and arithmetic consistency only; the H1 label in the historical report is superseded by this disposition and must not be cited.
 
+After the repository lockfile was security-updated, K7-003's exact run-time lock and verifier bytes were added as `DEPENDENCY-LOCK-AT-RUN.lock` and `VERIFY-SOURCE-AT-RUN.py`. The current verifier validates those source snapshots against the original access record; the study outputs remain unchanged.
+
 ## Corrective action
 
 EXP-S8-K7-004 has a new registration and fresh seed range. Its implementation must use purpose-separated, collision-checked seed mappings and group-aware stratified folds keyed by original source-patient identity in both point and bootstrap estimates. The corrected implementation, property tests, and source-bound pre-run access record must be committed before the one-time run. No K7-003 data are regenerated.
