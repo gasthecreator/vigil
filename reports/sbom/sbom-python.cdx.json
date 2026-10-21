@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:d51d874e-3dc5-5649-86a1-56d006be9a1f",
+  "serialNumber": "urn:uuid:45c4cdcc-48cd-5a47-9629-fb9459d39df7",
   "version": 1,
   "metadata": {
     "timestamp": "1970-01-01T00:00:00+00:00",
@@ -140,13 +140,13 @@
     {
       "type": "library",
       "name": "certifi",
-      "version": "2026.7.22",
-      "purl": "pkg:pypi/certifi@2026.7.22",
+      "version": "2026.10.19",
+      "purl": "pkg:pypi/certifi@2026.10.19",
       "scope": "required",
       "hashes": [
         {
           "alg": "SHA256",
-          "content": "741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55"
+          "content": "035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae"
         }
       ]
     },
@@ -1101,13 +1101,13 @@
     {
       "type": "library",
       "name": "pillow",
-      "version": "12.3.0",
-      "purl": "pkg:pypi/pillow@12.3.0",
+      "version": "13.0.0",
+      "purl": "pkg:pypi/pillow@13.0.0",
       "scope": "required",
       "hashes": [
         {
           "alg": "SHA256",
-          "content": "3b8182a766685eaa002637e28b4ec8d6b18819a0c71f579bf0dbaa5830297cce"
+          "content": "cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510"
         }
       ]
     },
