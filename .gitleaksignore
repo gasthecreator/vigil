@@ -8,6 +8,13 @@
 8ffc337fab6f13522968077b87e26e1f66075818:experiments/EXP-S8-K7-003/RUN_COMPLETION.json:generic-api-key:2
 79757dfd127c35148fd44c208e77fd6030bf3f96:experiments/EXP-S8-K7-004/results.json:generic-api-key:47
 79757dfd127c35148fd44c208e77fd6030bf3f96:experiments/EXP-S8-K7-004/RUN_COMPLETION.json:generic-api-key:2
+# Squash-merging the Q-7 branch changed the scanner fingerprint to this main
+# commit. These five exact rows are the same verified access-log SHA-256 values.
+37c4cd9a2c715c18daacb7a8110af1bba57df0f7:experiments/EXP-S8-K7-003/RUN_COMPLETION.json:generic-api-key:2
+37c4cd9a2c715c18daacb7a8110af1bba57df0f7:experiments/EXP-S8-K7-003/results.json:generic-api-key:47
+37c4cd9a2c715c18daacb7a8110af1bba57df0f7:experiments/EXP-S8-K7-004/RUN_COMPLETION.json:generic-api-key:2
+37c4cd9a2c715c18daacb7a8110af1bba57df0f7:experiments/EXP-S8-K7-004/results.json:generic-api-key:47
+37c4cd9a2c715c18daacb7a8110af1bba57df0f7:experiments/EXP-SIM-CAL-E1-002/RUN_COMPLETION.json:generic-api-key:2
 # Existing historical findings surfaced by the current full-history run:
 # synthetic values in tests, the old JWT fallback removed in a later commit,
 # and the workflow's deliberately split token used to prove the scanner fails.
