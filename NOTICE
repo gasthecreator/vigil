@@ -10,7 +10,7 @@ Third-party runtime components (full inventory: reports/quality/LICENCE_INVENTOR
   - annotated-doc 0.0.5 (pip): MIT
   - annotated-types 0.8.0 (pip): MIT
   - anyio 4.15.1 (pip): MIT
-  - certifi 2026.7.22 (pip): MPL-2.0
+  - certifi 2026.10.19 (pip): MPL-2.0
   - cffi 2.1.1 (pip): MIT-0
   - charset-normalizer 3.5.2 (pip): MIT
   - click 8.5.0 (pip): BSD-3-Clause
@@ -74,7 +74,7 @@ Third-party runtime components (full inventory: reports/quality/LICENCE_INVENTOR
   - ortools 9.15.6755 (pip): Apache 2.0
   - packaging 26.3 (pip): Apache-2.0 OR BSD-2-Clause
   - pandas 3.0.6 (pip): BSD
-  - pillow 12.3.0 (pip): MIT-CMU
+  - pillow 13.0.0 (pip): MIT-CMU
   - pluggy 1.6.0 (pip): MIT
   - prometheus_client 0.26.0 (pip): Apache-2.0 AND BSD-2-Clause
   - protobuf 6.33.6 (pip): 3-Clause BSD License

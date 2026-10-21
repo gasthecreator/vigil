@@ -2,6 +2,12 @@
 # integrity digests for the E1-002 run manifest and its duplicate progress note.
 082dc7fcad3a45c23d0b8784b9d192048a61af63:experiments/EXP-SIM-CAL-E1-002/RUN_COMPLETION.json:generic-api-key:2
 082dc7fcad3a45c23d0b8784b9d192048a61af63:docs/PROGRESS.md:generic-api-key:465
+# These exact K7 access-log SHA-256 integrity digests are not credentials. Keep
+# the ignores fingerprint-specific so all other generic-api-key findings remain live.
+8ffc337fab6f13522968077b87e26e1f66075818:experiments/EXP-S8-K7-003/results.json:generic-api-key:47
+8ffc337fab6f13522968077b87e26e1f66075818:experiments/EXP-S8-K7-003/RUN_COMPLETION.json:generic-api-key:2
+79757dfd127c35148fd44c208e77fd6030bf3f96:experiments/EXP-S8-K7-004/results.json:generic-api-key:47
+79757dfd127c35148fd44c208e77fd6030bf3f96:experiments/EXP-S8-K7-004/RUN_COMPLETION.json:generic-api-key:2
 # Existing historical findings surfaced by the current full-history run:
 # synthetic values in tests, the old JWT fallback removed in a later commit,
 # and the workflow's deliberately split token used to prove the scanner fails.

@@ -43,7 +43,7 @@
       "license": "MPL-2.0",
       "name": "certifi",
       "needs_review": false,
-      "version": "2026.7.22"
+      "version": "2026.10.19"
     },
     {
       "ecosystem": "pip",
@@ -491,7 +491,7 @@
       "license": "MIT-CMU",
       "name": "pillow",
       "needs_review": false,
-      "version": "12.3.0"
+      "version": "13.0.0"
     },
     {
       "ecosystem": "pip",
