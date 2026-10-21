@@ -1,0 +1,5 @@
+# K7-004 post-run dependency-lock update
+
+K7-004 completed on 2026-10-20 before changing its registered environment. Its pre-run access record and completion manifest bind the exact original `uv.lock` hash `2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e` and the run-time verifier hash `421b2a3f71b2a36e2e73cfe481a1644e2788bd5e9c3163f46ee2d35e6fed4620`. The byte-identical source snapshots are retained as `DEPENDENCY-LOCK-AT-RUN.lock` and `VERIFY-SOURCE-AT-RUN.py`.
+
+After all study outputs were written and independently audited, the current repository lockfile was updated from Certifi 2026.7.22 to 2026.10.19 to fix [GHSA-6q48-6c7w-9gw2](https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2), which `pip-audit` reported as critical. The run's cohort outputs, report, completion manifest, access record, and original verifier source were not rewritten. `verify.py` now compares run provenance with the preserved byte-identical snapshots and still verifies current code, result, report, access-log and ancestry checks. This environment maintenance does not change or rerun the study.
