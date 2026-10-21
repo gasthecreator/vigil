@@ -28,12 +28,13 @@ class RiskAssessmentSummary(BaseModel):
     assessment_date: datetime
     model_versions: Dict[str, str]
     input_hash: str
-    score: float
+    score: Optional[float]
     risk_tier: str
     uncertainty: Optional[Dict[str, Any]] = None
     adjudicated_action: str
     clinical_note: Optional[str] = None
     abstention: bool = False
+    abstention_reason: Optional[str] = None
 
 
 class AlertSummary(BaseModel):
@@ -134,7 +135,7 @@ class PatientV2Response(BaseModel):
     age: Optional[int] = None
     biological_sex: str
     primary_cancer_type: str
-    synthetic: bool = True
+    synthetic: bool = False
     status: str
     created_at: datetime
     updated_at: datetime
@@ -262,8 +263,8 @@ class PlainLanguageExplainerResponse(BaseModel):
     questions_to_ask_your_doctor: List[str]
     flesch_kincaid_grade_level: float
     word_count: int
-    verified: bool = True
-    synthetic: bool = True
+    verified: bool
+    synthetic: bool
 
 
 # ==============================================================================
@@ -465,7 +466,10 @@ class QualityAuditResponse(BaseModel):
     suppressed_strata_count: int
     register_audit_verified: bool = True
     narrative_summary: str
-    synthetic: bool = True
+    synthetic: bool = Field(
+        ...,
+        description="True only when this response was computed from the built-in synthetic benchmark cohort.",
+    )
 
 
 # ==============================================================================

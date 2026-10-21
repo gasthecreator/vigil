@@ -1,0 +1,10 @@
+{
+  "experiment_id": "EXP-M12-001",
+  "status": "retired",
+  "reason": "The preregistered frozen run has already been executed, but its access provenance is incomplete and its outcomes are invalid under the corrected censoring contract.",
+  "replacement_policy": "Do not replay or regenerate this experiment. Any replacement requires a new preregistration, new seeds, canonical access logging before frozen test generation, and a censoring-aware training and evaluation contract.",
+  "historical_outputs": [
+    "results.json",
+    "REPORT.md"
+  ]
+}

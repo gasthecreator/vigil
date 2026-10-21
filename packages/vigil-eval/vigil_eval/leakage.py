@@ -20,9 +20,10 @@ from typing import Any, Callable, List, Optional
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GroupKFold, KFold
 
 
 class LeakageError(Exception):
@@ -237,16 +238,31 @@ def run_shuffled_label_canary(
     Performance must collapse to chance (~0.50 ROC-AUC).
     If ROC-AUC exceeds max_tolerated_auc, raises CanaryTestFailedError.
     """
-    np.random.default_rng(seed)
-    y_shuffled = y.sample(frac=1.0, random_state=seed).reset_index(drop=True)
-    X_clean = X.reset_index(drop=True).select_dtypes(include=[np.number]).fillna(0.0)
+    labels = np.asarray(y, dtype=float)
+    observed = np.isfinite(labels)
+    if int(observed.sum()) < n_splits * 2:
+        raise ValueError("Not enough observed horizon labels for shuffled-label canary")
+    X_observed = X.loc[observed].reset_index(drop=True)
+    groups = X_observed["patient_id"].to_numpy() if "patient_id" in X_observed else None
+    X_clean = X_observed.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan)
+    y_observed = labels[observed]
+    y_shuffled = pd.Series(np.random.default_rng(seed).permutation(y_observed))
 
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    if groups is not None and len(np.unique(groups)) >= n_splits:
+        splits = GroupKFold(n_splits=n_splits).split(X_clean, y_shuffled, groups=groups)
+    else:
+        splits = KFold(n_splits=n_splits, shuffle=True, random_state=seed).split(X_clean)
     auc_scores = []
 
-    for train_idx, test_idx in kf.split(X_clean):
+    for train_idx, test_idx in splits:
         X_train, X_test = X_clean.iloc[train_idx], X_clean.iloc[test_idx]
         y_train, y_test = y_shuffled.iloc[train_idx], y_shuffled.iloc[test_idx]
+        # Fit preprocessing inside each fold. Global medians would let held-out
+        # feature distributions influence the canary's training pipeline.
+        imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+        feature_columns = X_clean.columns
+        X_train = pd.DataFrame(imputer.fit_transform(X_train), columns=feature_columns)
+        X_test = pd.DataFrame(imputer.transform(X_test), columns=feature_columns)
 
         clf = (
             model_factory()

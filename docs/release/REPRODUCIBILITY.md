@@ -7,9 +7,11 @@
 
 ---
 
-## 1. Overview & Hermetic Guarantee
+## 1. Reproduction and preservation boundary
 
-Vigil is committed to total mathematical and bit-for-bit computational reproducibility. All scientific studies, machine learning models, simulation benchmarks, and governance audits are deterministic and execute from a clean repository checkout without internet access or manual intervention. CI job `clean-clone-reproducibility` clones the commit into a fresh directory and re-runs `scripts/verify_study_reproducibility.py`.
+Vigil does not claim that every historical study can be regenerated from current source. The repository distinguishes reproducible current artifacts from frozen, invalidated, or provenance-incomplete history. `scripts/verify_study_reproducibility.py` re-derives aggregates and reports from committed result records and checks explicit historical status records. It does not replay the one-time K4, K5, K6, M7, or M12 study cohorts. A green integrity check is not evidence that a historical study result is valid or reproduced from current code.
+
+CI job `clean-clone-reproducibility` runs this verifier in a fresh checkout, checks `docs/STATUS.md`, regenerates SBOMs, and verifies a release manifest only when it belongs to the checked-out commit. Any result used for current model selection must have its own current preregistration, source/data lineage, and reproduction evidence.
 
 ### Frozen Environment Specifications
 - **Operating System:** Ubuntu 22.04 / 24.04 LTS or macOS Sonoma 14+
@@ -22,6 +24,10 @@ Vigil is committed to total mathematical and bit-for-bit computational reproduci
 ## 2. One-Command Full Verification Suite
 
 From a clean checkout of `main` or the release candidate tag:
+
+Committed release hash manifests identify one exact source commit. PR reproduction
+checks verify a manifest only when its recorded `git_commit` matches `HEAD`; the
+release workflow generates and verifies a fresh manifest for each tagged commit.
 
 ```bash
 # 1. Install hermetic Python and Node dependencies
@@ -40,7 +46,7 @@ python3 scripts/audit_repo_standards.py
 # 3. Execute Safety Hazard Log verifier (runs all 22 cited control tests)
 python3 scripts/verify_hazard_log.py
 
-# 4. Execute Study Reproducibility verifier (asserts bit-for-bit reproduction)
+# 4. Verify derived reports and preserved study evidence without replaying frozen cohorts
 python3 scripts/verify_study_reproducibility.py
 python3 scripts/generate_status.py --check
 ```
@@ -55,9 +61,9 @@ python3 scripts/generate_release_manifest.py verify   --release v1.0.0-rc.2
 
 ---
 
-## 3. Scientific Studies Deterministic Reproduction
+## 3. Study-specific reproduction
 
-Each study script generates its corresponding report in `reports/ml/` without manual edits:
+The commands below describe existing synthetic studies. Check each study's preregistration, result status, and access record before rerunning it. A historical result with a consumed seed must not be replayed merely to make a current-source hash match.
 
 ### Study M10-V2: Missed-Signal Quality Audit Engine
 ```bash
@@ -65,7 +71,7 @@ uv run python scripts/run_study_m10_audit.py
 ```
 - **Inputs:** Mechanistic longitudinal trajectories across 5 facility archetypes.
 - **Outputs:** `reports/ml/STUDY_M10_MISSED_SIGNALS.json` and `.md`.
-- **Expected Invariant:** 100% bit-for-bit reproduction of all detection metrics and hypotheses (H1–H4).
+- **Verification:** CI compares the committed deterministic report output; this is a synthetic audit, not model-performance evidence.
 
 ### Study S8-K7: Causal Inference of Delay Harm & Confounder Sensitivity
 ```bash

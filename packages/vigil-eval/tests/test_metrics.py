@@ -6,10 +6,12 @@ Conforms strictly to docs/MASTER_PLAN.md §14 (WP2.1) and docs/ML_PROGRAM.md §5
 import numpy as np
 from vigil_eval.metrics import (
     compute_calibration_curve,
+    compute_ipcw_calibration_curve,
     compute_ipcw_weights,
     compute_kaplan_meier,
     ipcw_brier_score,
     ipcw_time_dependent_roc_auc,
+    patient_landmark_ipcw_weights,
     survival_decision_curve_analysis,
 )
 
@@ -58,6 +60,113 @@ def test_ipcw_weights_properties():
     assert weights[0] >= 1.0
     # Patient 4 survived to t=200 (> 180), weight >= 1.0
     assert weights[3] >= 1.0
+
+
+def test_kaplan_meier_preserves_zero_survival_without_probability_floor():
+    km = compute_kaplan_meier(np.array([1.0, 2.0]), np.array([0, 1]))
+    assert km.predict_survival(2.0)[0] == 0.0
+
+
+def test_ipcw_weights_are_not_truncated_at_a_hidden_cap():
+    # 10,000 censoring events leave one subject at risk. The registered KM
+    # estimate is 1/10,001, so its inverse must remain 10,001, not be capped.
+    censor_times = np.arange(1.0, 10_001.0)
+    times = np.concatenate((censor_times, np.array([10_001.0])))
+    events = np.concatenate((np.zeros(len(censor_times), dtype=int), np.array([1])))
+    weights = compute_ipcw_weights(times, events, horizon_time=10_000.0)
+    assert np.isclose(weights[-1], 10_001.0, rtol=1e-12)
+
+
+def test_competing_events_resolve_recurrence_status_without_being_censoring():
+    times = np.array([50.0, 100.0, 200.0])
+    event_codes = np.array([2, 1, 0])  # competing, recurrence, administrative censor
+    weights = compute_ipcw_weights(times, event_codes, horizon_time=150.0)
+    assert weights[0] > 0.0
+    assert weights[1] > 0.0
+    assert weights[2] > 0.0
+
+    scores = np.array([0.1, 0.9, 0.2])
+    assert ipcw_time_dependent_roc_auc(scores, times, event_codes, 150.0) == 1.0
+    assert ipcw_brier_score(np.array([0.05, 0.95, 0.05]), times, event_codes, 150.0) < 0.01
+
+
+def test_ipcw_rejects_invalid_horizons_and_non_vector_event_codes():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    for horizon in (np.nan, np.inf, 0.0, -1.0):
+        with np.testing.assert_raises_regex(ValueError, "horizon_time"):
+            compute_ipcw_weights(times, events, horizon)
+    with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+        compute_ipcw_weights(times, events[:, None], 30.0)
+
+
+def test_ipcw_rejects_boolean_time_horizon_and_event_codes():
+    with np.testing.assert_raises_regex(ValueError, "horizon_time.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), np.array([0]), True)
+    with np.testing.assert_raises_regex(ValueError, "horizon_time.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), np.array([0]), np.bool_(True))
+    with np.testing.assert_raises_regex(ValueError, "event_indicators.*boolean"):
+        compute_ipcw_weights(np.array([1.0]), [True], 2.0)
+    with np.testing.assert_raises_regex(ValueError, "follow_up_times.*boolean"):
+        compute_ipcw_weights([True], np.array([1]), 2.0)
+
+
+def test_survival_metrics_validate_inputs_even_when_weights_are_supplied():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    weights = np.ones(2)
+    with np.testing.assert_raises_regex(ValueError, "horizon_time"):
+        ipcw_brier_score(np.array([0.2, 0.4]), times, events, np.nan, weights=weights)
+    with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+        compute_ipcw_calibration_curve(
+            np.array([0.2, 0.4]), times, events[:, None], 30.0, weights=weights
+        )
+
+
+def test_survival_metrics_reject_multidimensional_supplied_weights():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    invalid_weights = np.ones((2, 1))
+    metric_calls = (
+        lambda: ipcw_time_dependent_roc_auc(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+        lambda: ipcw_brier_score(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+        lambda: compute_ipcw_calibration_curve(
+            np.array([0.8, 0.2]), times, events, 30.0, weights=invalid_weights
+        ),
+    )
+    for metric in metric_calls:
+        with np.testing.assert_raises_regex(ValueError, "one-dimensional"):
+            metric()
+
+
+def test_patient_landmark_weights_equalize_total_patient_contribution():
+    times = np.array([50.0, 200.0, 100.0, 300.0, 80.0])
+    events = np.array([1, 0, 2, 0, 2])
+    patient_ids = np.array(["A", "A", "B", "B", "C"])
+    weights = patient_landmark_ipcw_weights(times, events, 150.0, patient_ids)
+    totals = [weights[patient_ids == patient].sum() for patient in ("A", "B", "C")]
+    assert totals[0] > 0.0
+    assert np.allclose(totals, totals[0])
+
+
+def test_patient_landmark_weights_reject_fractional_events_and_non_vector_ids():
+    times = np.array([10.0, 20.0])
+    with np.testing.assert_raises_regex(ValueError, "event_indicators"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0.5, 1.0]), 15.0, np.array(["a", "b"])
+        )
+    with np.testing.assert_raises_regex(ValueError, "patient arrays"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0, 1]), 15.0, np.array([["a"], ["b"]])
+        )
+    with np.testing.assert_raises_regex(ValueError, "must not contain missing"):
+        patient_landmark_ipcw_weights(
+            times, np.array([0, 1]), 15.0, np.array(["a", None], dtype=object)
+        )
 
 
 def test_ipcw_time_dependent_roc_auc():
@@ -147,3 +256,55 @@ def test_calibration_curve_and_ece():
     overconfident_probs = np.full(n, 0.90)
     calib_bad = compute_calibration_curve(overconfident_probs, labels, n_bins=5)
     assert calib_bad.expected_calibration_error > 0.20
+
+
+def test_undefined_ipcw_metrics_are_nan_not_plausible_scores():
+    times = np.array([10.0, 20.0])
+    events = np.array([0, 0])
+    scores = np.array([0.2, 0.8])
+    assert np.isnan(ipcw_time_dependent_roc_auc(scores, times, events, horizon_time=30.0))
+    assert np.isnan(ipcw_brier_score(scores, times, events, horizon_time=30.0))
+
+
+def test_probability_metrics_reject_invalid_predictions_instead_of_clipping():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    invalid = np.array([-0.1, 1.1])
+    for metric in (
+        lambda: ipcw_brier_score(invalid, times, events, horizon_time=30.0),
+        lambda: compute_calibration_curve(invalid, np.array([1, 0])),
+        lambda: compute_ipcw_calibration_curve(invalid, times, events, horizon_time=30.0),
+    ):
+        try:
+            metric()
+        except ValueError as exc:
+            assert "probabilit" in str(exc)
+        else:
+            raise AssertionError("invalid probabilities must not be clipped into valid scores")
+
+
+def test_empty_calibration_is_undefined_not_perfect():
+    report = compute_calibration_curve(np.array([]), np.array([]))
+    assert np.isnan(report.expected_calibration_error)
+    assert np.isnan(report.max_calibration_error)
+
+
+def test_ipcw_calibration_rejects_fractional_event_codes_even_with_supplied_weights():
+    with np.testing.assert_raises_regex(ValueError, "event_indicators"):
+        compute_ipcw_calibration_curve(
+            np.array([0.2]), np.array([10.0]), np.array([0.5]),
+            horizon_time=30.0, weights=np.array([1.0]),
+        )
+
+
+def test_decision_curve_rejects_invalid_thresholds_and_probabilities():
+    times = np.array([10.0, 40.0])
+    events = np.array([1, 0])
+    with np.testing.assert_raises_regex(ValueError, "strictly between"):
+        survival_decision_curve_analysis(
+            np.array([0.2, 0.4]), times, events, 30.0, thresholds=np.array([1.0])
+        )
+    with np.testing.assert_raises_regex(ValueError, "probabilities"):
+        survival_decision_curve_analysis(
+            np.array([0.2, 1.1]), times, events, 30.0, thresholds=np.array([0.1])
+        )

@@ -1,0 +1,65 @@
+{
+  "schema_version": 2,
+  "status": "synthetic_research_assumptions",
+  "source": "The earlier K1 four-parameter toy simulator; values are not clinically sourced or population calibrated.",
+  "time_unit": "day",
+  "reference_schedule_days": [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0],
+  "identifiability_reference_parameters": [100.0, 0.2, 0.125, 135.0],
+  "inference": {
+    "default_random_seed": 42,
+    "default_posterior_draws": 400,
+    "particle_count": 4096,
+    "particle_resampling_ess_fraction": 0.5,
+    "nuts_warmup": 1000,
+    "nuts_chains": 4,
+    "nuts_target_accept_probability": 0.85,
+    "neural_hidden_dimensions": [64, 64],
+    "npe_mixture_components": 5,
+    "amortized_log_scale_bounds": [-5.0, 2.0],
+    "npe_log_scale_bounds": [-5.0, 2.0],
+    "unconstrained_logit_clip_epsilon": 1e-7,
+    "identifiability_finite_difference_fraction_of_half_range": 1e-4,
+    "identifiability_eigenvalue_ratio_threshold": 1e-6
+  },
+  "training": {
+    "time_bin_count": 7,
+    "default_validation_seed_offset": 100000,
+    "default_amortized_simulations": 1500,
+    "default_amortized_epochs": 8,
+    "default_npe_simulations": 20000,
+    "default_npe_epochs": 100,
+    "schedule_jitter_days": 12.0,
+    "missing_visit_probability": 0.15,
+    "batch_size": 256,
+    "amortized_learning_rate": 0.008,
+    "npe_learning_rate": 0.002,
+    "weight_decay": 0.00001
+  },
+  "analytes": {
+    "ca153": {
+      "unit": "U/mL",
+      "baseline": 18.0,
+      "measurement_noise": {
+        "distribution": "normal",
+        "standard_deviation": 1.5,
+        "unit": "U/mL"
+      }
+    }
+  },
+  "parameters": {
+    "doubling_time_days": {"lower": 40.0, "upper": 160.0, "prior": "uniform"},
+    "shedding_ca153": {"lower": 0.05, "upper": 0.35, "prior": "uniform"},
+    "clearance_ca153": {"lower": 0.05, "upper": 0.2, "prior": "uniform"},
+    "onset_day": {"lower": 30.0, "upper": 240.0, "prior": "uniform"}
+  },
+  "dynamics": {
+    "burden_at_onset": 1.0,
+    "marker_equation": "baseline + shedding*burden_at_onset/(growth_rate+clearance)*(exp(growth_rate*elapsed)-exp(-clearance*elapsed))",
+    "growth_rate_equation": "ln(2)/doubling_time_days"
+  },
+  "limitations": [
+    "Single-analyte synthetic observation model",
+    "No treatment, laboratory, missingness, censoring, competing-event, or verification process",
+    "No validated mapping from latent burden to clinical recurrence or detection"
+  ]
+}

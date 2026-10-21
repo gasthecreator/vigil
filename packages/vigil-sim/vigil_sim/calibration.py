@@ -1,10 +1,14 @@
 """
 vigil_sim.calibration
 
-Calibration Target Evaluation Suite for Vigil Simulation Laboratory.
-Enforces Master Plan §6.13, §14, ML_PROGRAM §9, and Overseer Condition C2 (VERDICT-P0-P1.md).
+Historical calibration-target evaluator for the Vigil Simulation Laboratory.
+It compares synthetic outputs with summaries cited in E1/E12; it does not establish
+clinical calibration or reproduce the source cohorts.
 
-Tuned to reproduce empirical figures from published literature (EVIDENCE E1, E12):
+The CA 15-3 comparator uses the analyte registry's population reference upper limit.
+That synthetic comparison point is not an assay-independent diagnostic threshold.
+
+Historical comparison targets from published literature (EVIDENCE E1, E12):
 - Molina et al. 1995 (Breast Cancer Res Treat, n=1,023):
     * Pre-clinical lead time: 4.2 ± 2.3 months (~126 ± 69 days) among elevated recurrent patients
     * Pre-recurrence sensitivity: 54% (CA 15-3 alone) excluding locoregional recurrences
@@ -19,8 +23,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 import numpy as np
+from vigil_core.analytes import ANALYTE_REGISTRY
 
-from vigil_sim.generators import CohortDataset, GeneratorType
+from vigil_sim.generators import CohortDataset, GeneratorType, LongitudinalObservation
 
 
 @dataclass
@@ -67,7 +72,7 @@ class CalibrationReport:
 
 def evaluate_cohort_calibration(
     cohort: CohortDataset,
-    ca_15_3_cutoff: float = 30.0,  # Clinical threshold ([iU]/mL)
+    ca_15_3_cutoff: float | None = None,
     target_conditional_lead_days: float = 126.0,  # 4.2 months * 30 days
     lead_tolerance_days: float = 35.0,
     min_sensitivity: float = 0.48,
@@ -76,9 +81,25 @@ def evaluate_cohort_calibration(
     min_patient_specificity: float = 0.88,
 ) -> CalibrationReport:
     """
-    Evaluates whether the generated cohort reproduces the published calibration figures
-    from Molina et al. 1995 (n=1,023) and Wu et al. 2017 (n=243,896).
+    Compare synthetic measurements with historical literature summaries.
+    Results are conditional on this simulator, selected profile, and observation
+    process; they are not evidence of clinical calibration. The default CA 15-3
+    comparison point is the registry reference upper limit, not a diagnostic threshold.
     """
+    analyte = ANALYTE_REGISTRY["ca_15_3"]
+    if ca_15_3_cutoff is None:
+        ca_15_3_cutoff = analyte.plausibility.reference_high
+        cutoff_source = "ANALYTE_REGISTRY.ca_15_3.plausibility.reference_high"
+    elif isinstance(ca_15_3_cutoff, (bool, np.bool_)) or not isinstance(
+        ca_15_3_cutoff, (int, float, np.integer, np.floating)
+    ):
+        raise ValueError("ca_15_3_cutoff must be a finite positive numeric value")
+    else:
+        cutoff_source = "explicit evaluate_cohort_calibration argument"
+    ca_15_3_cutoff = float(ca_15_3_cutoff)
+    if not np.isfinite(ca_15_3_cutoff) or ca_15_3_cutoff <= 0:
+        raise ValueError("ca_15_3_cutoff must be a finite positive numeric value")
+
     pt_map = {p.patient_id: p for p in cohort.patients}
 
     # Lead time tracking
@@ -88,6 +109,8 @@ def evaluate_cohort_calibration(
     # Sensitivity tracking (overall and by organ)
     recurrent_total = 0
     recurrent_positive = 0
+    recurrent_with_measured_ca153 = 0
+    recurrent_without_measured_ca153 = 0
     organ_totals: Dict[str, int] = {}
     organ_positives: Dict[str, int] = {}
 
@@ -96,15 +119,26 @@ def evaluate_cohort_calibration(
     non_rec_obs_negative = 0
     non_rec_patients_total = 0
     non_rec_patients_clean = 0
+    non_rec_patients_with_measured_ca153 = 0
+    non_rec_patients_without_measured_ca153 = 0
+    measured_ca153_observations = 0
 
     # Group observations by patient
-    pt_obs: Dict[str, List] = {}
+    pt_obs: Dict[str, List[LongitudinalObservation]] = {}
     for obs in cohort.observations:
         pt_obs.setdefault(obs.patient_id, []).append(obs)
 
-    for pt_id, obs_list in pt_obs.items():
-        pt = pt_map[pt_id]
+    for pt_id, pt in pt_map.items():
+        # Patient-level sensitivity/coverage denominators come from the cohort,
+        # not only patients who happened to have an observation row.
+        obs_list = pt_obs.get(pt_id, [])
         obs_sorted = sorted(obs_list, key=lambda x: x.day)
+        measured_obs = [
+            obs for obs in obs_sorted
+            if obs.observed_mask.get("ca_15_3", False)
+            and np.isfinite(obs.analytes.get("ca_15_3", np.nan))
+        ]
+        measured_ca153_observations += len(measured_obs)
 
         if pt.true_recurrence_event and pt.true_recurrence_day is not None:
             recurrent_total += 1
@@ -114,10 +148,18 @@ def evaluate_cohort_calibration(
             # Find preclinical elevations: obs <= recurrence_day and ca_15_3 >= cutoff
             elevated_days = [
                 obs.day
-                for obs in obs_sorted
+                for obs in measured_obs
                 if obs.day <= pt.true_recurrence_day
                 and obs.analytes.get("ca_15_3", 0.0) >= ca_15_3_cutoff
             ]
+            has_measured_in_detection_window = any(
+                (pt.true_recurrence_day - 180.0) <= obs.day <= (pt.true_recurrence_day + 30.0)
+                for obs in measured_obs
+            )
+            if has_measured_in_detection_window:
+                recurrent_with_measured_ca153 += 1
+            else:
+                recurrent_without_measured_ca153 += 1
 
             if elevated_days:
                 first_elevation_day = elevated_days[0]
@@ -135,7 +177,7 @@ def evaluate_cohort_calibration(
             near_rec_elevated = any(
                 (pt.true_recurrence_day - 180.0) <= obs.day <= (pt.true_recurrence_day + 30.0)
                 and obs.analytes.get("ca_15_3", 0.0) >= ca_15_3_cutoff
-                for obs in obs_sorted
+                for obs in measured_obs
             )
             if near_rec_elevated:
                 recurrent_positive += 1
@@ -146,7 +188,12 @@ def evaluate_cohort_calibration(
             non_rec_patients_total += 1
             pt_had_false_positive = False
 
-            for obs in obs_sorted:
+            if measured_obs:
+                non_rec_patients_with_measured_ca153 += 1
+            else:
+                non_rec_patients_without_measured_ca153 += 1
+
+            for obs in measured_obs:
                 non_rec_obs_total += 1
                 val = obs.analytes.get("ca_15_3", 0.0)
                 if val < ca_15_3_cutoff:
@@ -154,20 +201,20 @@ def evaluate_cohort_calibration(
                 else:
                     pt_had_false_positive = True
 
-            if not pt_had_false_positive:
+            if measured_obs and not pt_had_false_positive:
                 non_rec_patients_clean += 1
 
     # Lead time statistics
-    mean_cond_lead = float(np.mean(conditional_lead_times)) if conditional_lead_times else 0.0
+    mean_cond_lead = float(np.mean(conditional_lead_times)) if conditional_lead_times else float("nan")
     std_cond_lead = (
-        float(np.std(conditional_lead_times)) if len(conditional_lead_times) > 1 else 0.0
+        float(np.std(conditional_lead_times)) if len(conditional_lead_times) > 1 else float("nan")
     )
-    mean_uncond_lead = float(np.mean(unconditional_lead_times)) if unconditional_lead_times else 0.0
+    mean_uncond_lead = float(np.mean(unconditional_lead_times)) if unconditional_lead_times else float("nan")
 
     lead_met = abs(mean_cond_lead - target_conditional_lead_days) <= lead_tolerance_days
 
     # Sensitivity statistics
-    sens_overall = (recurrent_positive / recurrent_total) if recurrent_total > 0 else 0.0
+    sens_overall = (recurrent_positive / recurrent_total) if recurrent_total > 0 else float("nan")
     sens_met = min_sensitivity <= sens_overall <= max_sensitivity
 
     organ_sens: Dict[str, float] = {}
@@ -176,10 +223,12 @@ def evaluate_cohort_calibration(
         organ_sens[site] = float(pos / count) if count > 0 else 0.0
 
     # Specificity statistics
-    obs_spec = (non_rec_obs_negative / non_rec_obs_total) if non_rec_obs_total > 0 else 1.0
-    pt_spec = (
-        (non_rec_patients_clean / non_rec_patients_total) if non_rec_patients_total > 0 else 1.0
+    obs_spec = (
+        (non_rec_obs_negative / non_rec_obs_total)
+        if non_rec_obs_total > 0 else float("nan")
     )
+    pt_spec = ((non_rec_patients_clean / non_rec_patients_with_measured_ca153)
+               if non_rec_patients_with_measured_ca153 > 0 else float("nan"))
     spec_met = (obs_spec >= min_observation_specificity) and (pt_spec >= min_patient_specificity)
 
     all_met = bool(lead_met and sens_met and spec_met)
@@ -187,6 +236,11 @@ def evaluate_cohort_calibration(
     details = {
         "num_recurrent_patients": recurrent_total,
         "num_non_recurrent_patients": non_rec_patients_total,
+        "num_recurrent_with_measured_ca153_in_detection_window": recurrent_with_measured_ca153,
+        "num_recurrent_without_measured_ca153_in_detection_window": recurrent_without_measured_ca153,
+        "num_non_recurrent_with_measured_ca153": non_rec_patients_with_measured_ca153,
+        "num_non_recurrent_without_measured_ca153": non_rec_patients_without_measured_ca153,
+        "num_measured_ca153_observations": measured_ca153_observations,
         "num_elevated_recurrent_patients": len(conditional_lead_times),
         "mean_conditional_lead_time_days": mean_cond_lead,
         "std_conditional_lead_time_days": std_cond_lead,
@@ -195,7 +249,15 @@ def evaluate_cohort_calibration(
         "observation_level_specificity": obs_spec,
         "patient_level_specificity": pt_spec,
         "organ_stratified_sensitivity": organ_sens,
-        "tuning_reference": "Tuned to reproduce reported figures from Molina et al. 1995 (n=1,023) and Wu et al. 2017 (n=243,896)",
+        "ca_15_3_cutoff": ca_15_3_cutoff,
+        "ca_15_3_cutoff_source": cutoff_source,
+        "ca_15_3_canonical_unit": analyte.canonical_unit,
+        "ca_15_3_cutoff_interpretation": (
+            "population reference upper limit used as a synthetic comparison point; "
+            "not an assay-independent diagnostic threshold"
+        ),
+        "measurement_contract": "Every cohort patient contributes to recurrence and control coverage counts, including patients with no observation rows. Only finite CA 15-3 values with observed_mask=true are evaluated. Recurrent patients without a measured test in the detection window remain sensitivity misses; they contribute zero to unconditional detected lead time. Non-recurrent patients without any measured CA 15-3 are excluded from patient-level specificity and reported separately.",
+        "tuning_reference": "Historical synthetic thresholds reference Molina et al. 1995 and Wu et al. 2017; this evaluator does not establish clinical calibration or reproduce those cohorts.",
     }
 
     return CalibrationReport(

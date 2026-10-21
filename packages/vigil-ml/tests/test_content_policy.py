@@ -14,12 +14,13 @@ CONTENT_POLICY = (ROOT / "docs/design/CONTENT.md").read_text(encoding="utf-8").l
 
 def test_plain_language_bands_match_the_policy_and_do_not_expose_numeric_risk():
     expected_bands = {
-        "explained": "Normal biological fluctuation (routine monitoring)",
-        "needs_repeat": "Analytical uncertainty (suspected lab or specimen variation)",
-        "escalate": "Elevated signal (clinical team review recommended)",
+        "abstain": "No model estimate available",
+        "explained": "Model output found no large change",
+        "needs_repeat": "Model output asks for more review",
+        "escalate": "Model output flagged a change",
     }
     for verdict, band in expected_bands.items():
-        explainer = render_plain_language_explainer(verdict)
+        explainer = render_plain_language_explainer(verdict, synthetic=True)
         assert explainer["verbal_band"] == band
         assert band.lower() in CONTENT_POLICY
         user_copy = " ".join(

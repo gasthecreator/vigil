@@ -12,6 +12,7 @@
     "PR-04": 5.0
   },
   "parameter_provenance": "PROPOSED values of PREREGISTRATION.md (not ratified); PR-04 supplied on the command line",
+  "dca_thresholds": null,
   "bootstrap_seed": 20261018,
   "bootstrap_resamples": 2000,
   "partition_key_id": "SYNTHETIC-DRYRUN-KEY",

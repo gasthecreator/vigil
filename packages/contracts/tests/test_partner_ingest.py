@@ -195,6 +195,24 @@ def test_missing_table_and_missing_required_column_are_refused(tmp_path):
     } in exc2.value.report["fatal"]
 
 
+def test_deceased_patient_without_explicit_death_day_is_rejected(tmp_path):
+    d = _copy(tmp_path)
+
+    def remove_death_day(cols, rows):
+        row = next(r for r in rows if r["vital_status"] in {"DEAD_DISEASE", "DEAD_OTHER"})
+        row["days_to_death"] = ""
+        return cols, rows
+
+    _edit(d / "patients.csv", remove_death_day)
+    result = ingest_path(d)
+    assert any(
+        r["table"] == "patients"
+        and r["code"] == "MISSING_REQUIRED"
+        and r["field"] == "days_to_death"
+        for r in result.report["rejections"]
+    )
+
+
 def test_an_excel_date_cell_is_refused_as_an_absolute_date(tmp_path):
     from datetime import datetime
 

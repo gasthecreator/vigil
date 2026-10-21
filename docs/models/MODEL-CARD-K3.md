@@ -1,5 +1,7 @@
 # Model Card: Model K3 — Bayesian Joint Longitudinal–Survival Model
 
+> **RETRACTED / NOT A VALID K3 MODEL CARD.** This historical card contains unsupported sampler, convergence, latency, benchmark, and intended-use claims. The implementation is not the registered patient-grouped longitudinal competing-risk model, and its fast path is logistic. Do not use or cite these claims. See [`PROP-K3-JOINT-MODEL-REIMPLEMENTATION.md`](../proposals/PROP-K3-JOINT-MODEL-REIMPLEMENTATION.md) and the [core ML audit](../audits/CORE-ML-AUDIT-2026-10.md). A corrected card is part of Q-7 package E.
+
 **Model Identifier:** `MODEL-K3-JOINT-SURVIVAL`  
 **Model Version:** 1.0.0-alpha  
 **Date:** 2026-10-15  

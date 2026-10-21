@@ -96,7 +96,7 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
               {sortedObs.map((obs) => {
                 const isSelected = obs.id === selectedObservationId;
                 const rawQc = (obs.quality_flags as Record<string, unknown>) || {};
-                const action = (rawQc.action as "escalate" | "needs_repeat" | "explained") || "explained";
+                const action = (rawQc.action as "abstain" | "escalate" | "needs_repeat" | "explained" | "unavailable") || "unavailable";
 
                 return (
                   <div
@@ -113,6 +113,8 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
                       className={`absolute -left-[23px] top-4 w-3 h-3 rounded-full border-2 bg-white ${
                         action === "escalate"
                           ? "border-red-600 bg-red-100"
+                          : action === "abstain"
+                          ? "border-slate-500 bg-slate-100"
                           : action === "needs_repeat"
                           ? "border-amber-500 bg-amber-100"
                           : "border-emerald-600 bg-emerald-100"
@@ -128,7 +130,7 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
                           <span className="text-sm font-bold text-slate-800">
                             {obs.value} {obs.unit}
                           </span>
-                          <Badge variant={action}>{action.toUpperCase()}</Badge>
+                          <Badge variant={action === "unavailable" ? "default" : action}>{action.toUpperCase()}</Badge>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
                           Collected: {new Date(obs.specimen_collected_at).toLocaleDateString()} at{" "}
@@ -155,25 +157,35 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="w-5 h-5 text-indigo-700" />
-              Recurrence Risk History (Conformal K8)
+              M3 Assessment History (synthetic model output; not clinically calibrated)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {riskHistory.map((rh) => {
                 const unc = (rh.uncertainty as Record<string, any>) || {};
-                const lower = typeof unc.lower === "number" ? unc.lower : Math.max(0, rh.score - 0.05);
-                const upper = typeof unc.upper === "number" ? unc.upper : Math.min(1, rh.score + 0.05);
+                const lower = typeof unc.lower === "number" ? unc.lower : null;
+                const upper = typeof unc.upper === "number" ? unc.upper : null;
                 return (
                   <div
                     key={rh.id}
                     className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs"
                   >
                     <div>
-                      <span className="font-bold text-slate-800">Risk Score: {(rh.score * 100).toFixed(1)}%</span>
-                      <span className="text-slate-500 ml-2 font-mono">
-                        Interval: [{(lower * 100).toFixed(1)}%, {(upper * 100).toFixed(1)}%]
-                      </span>
+                      {rh.abstention || rh.score == null ? (
+                        <span className="font-semibold text-amber-800">
+                          Model abstained{rh.abstention_reason ? `: ${rh.abstention_reason.replaceAll("_", " ")}` : ""}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="font-bold text-slate-800">M3 real-change component: {(rh.score * 100).toFixed(1)}%</span>
+                          {lower != null && upper != null && (
+                            <span className="text-slate-500 ml-2 font-mono">
+                              Interval: [{(lower * 100).toFixed(1)}%, {(upper * 100).toFixed(1)}%]
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
                     <span className="text-slate-500">{new Date(rh.assessment_date).toLocaleDateString()}</span>
                   </div>

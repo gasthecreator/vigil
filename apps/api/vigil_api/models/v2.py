@@ -191,7 +191,7 @@ class Patient(Base):
     receptor_pr = Column(Boolean, nullable=True)
     receptor_her2 = Column(Boolean, nullable=True)
     primary_diagnosis_date = Column(DateTime, nullable=True)
-    synthetic = Column(Boolean, default=True, nullable=False, index=True)  # Principle 1
+    synthetic = Column(Boolean, default=False, nullable=False, index=True)  # Explicit source provenance
     status = Column(String(50), default="active", nullable=False, index=True)
     detector_state = Column(JSON, nullable=True)  # Persisted K2 SequentialDetector state
     # Bad-news mode: escalate-level results are withheld from patient/caregiver routes until a clinician releases them
@@ -310,6 +310,10 @@ class RiskAssessment(Base):
 
     __table_args__ = (
         CheckConstraint("adjudicated_action != 'dismissed'", name="chk_risk_no_dismissal"),
+        CheckConstraint(
+            "score IS NOT NULL OR (abstention = true AND adjudicated_action = 'abstain')",
+            name="chk_risk_null_score_requires_abstention",
+        ),
     )
 
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
@@ -322,7 +326,7 @@ class RiskAssessment(Base):
     assessment_date = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     model_versions = Column(JSON, nullable=False)  # e.g. {"M3": "1.0", "K2": "1.0", "M5": "1.0"}
     input_hash = Column(String(64), nullable=False, index=True)  # SHA-256 of inputs
-    score = Column(Float, nullable=False)  # e.g. p_real or e-process score
+    score = Column(Float, nullable=True)  # NULL when the producing model explicitly abstains
     risk_tier = Column(String(50), default="low", nullable=False, index=True)
     uncertainty = Column(JSON, nullable=True)  # confidence/credible intervals
     abstention = Column(Boolean, default=False, nullable=False)
@@ -564,7 +568,7 @@ class BaselineProfile(Base):
     her2_status = Column(Boolean, nullable=False)
     has_hypertension = Column(Boolean, default=False, nullable=False)
     renal_history = Column(Boolean, default=False, nullable=False)
-    target_organ_susceptibility_vector = Column(JSON, nullable=False)
+    target_organ_susceptibility_vector = Column(JSON, nullable=True)
 
     patient = relationship("Patient", back_populates="baseline_profile")
 

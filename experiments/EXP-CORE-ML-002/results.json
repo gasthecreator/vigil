@@ -1,0 +1,456 @@
+{
+  "bootstrap": {
+    "method": "patient-cluster percentile",
+    "replicates": 500,
+    "seed": 42005
+  },
+  "calibration": "weighted logistic Platt scaling fitted on the independent calibration cohort",
+  "canaries": {
+    "B3_shuffled_label_auc": 0.4865881250004116,
+    "B4_shuffled_label_auc": 0.49921066910864015,
+    "unobserved_ca_15_3_count": 1098
+  },
+  "cohort_size_per_split": 1000,
+  "counts": {
+    "landmarks": {
+      "calibration": 4727,
+      "test": 4730,
+      "train": 4742,
+      "validation": 4781
+    },
+    "patients": {
+      "calibration": 996,
+      "test": 995,
+      "train": 991,
+      "validation": 995
+    },
+    "test_competing_events": 85,
+    "test_determinable_landmarks": 3024,
+    "test_recurrence_cases_by_horizon": 535
+  },
+  "experiment_id": "EXP-CORE-ML-002",
+  "generator": "G1 smooth kinetics",
+  "horizon_days": 365.0,
+  "paired_differences_vs_B1": {
+    "B0_prevalence": {
+      "auc": {
+        "ci_95": [
+          -0.11645010584395246,
+          -0.05073086706460672
+        ],
+        "estimate": -0.08542650262955037,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.007485689101267732,
+          0.012406299967860463
+        ],
+        "estimate": 0.009972796073437054,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.017137986058099443,
+          0.009576745139365428
+        ],
+        "estimate": 0.0002551367704166363,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B2_velocity": {
+      "auc": {
+        "ci_95": [
+          -0.07617246981896549,
+          -0.0017328787522189338
+        ],
+        "estimate": -0.040144787789107905,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.0007820647530702817,
+          0.005930967448597092
+        ],
+        "estimate": 0.003245576193870975,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.023419910515496113,
+          0.002684803591530987
+        ],
+        "estimate": -0.006860272162689113,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B3_regularized_hazard": {
+      "auc": {
+        "ci_95": [
+          0.11646027454679014,
+          0.20454677010843916
+        ],
+        "estimate": 0.16084907170679918,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.017690126374560338,
+          -0.009197598713470107
+        ],
+        "estimate": -0.013323518093124528,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.020841437944985195,
+          0.008063748519034405
+        ],
+        "estimate": -0.007782803033485955,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B4_gradient_boosting": {
+      "auc": {
+        "ci_95": [
+          0.1511086595626814,
+          0.2314372424007604
+        ],
+        "estimate": 0.19063957974455692,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.028543027935809297,
+          -0.017949897774279706
+        ],
+        "estimate": -0.023107996526788466,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.021452461836002554,
+          0.006287910485606027
+        ],
+        "estimate": -0.010108550956942235,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "K3_fast_landmark_approximation": {
+      "auc": {
+        "ci_95": [
+          0.08915360562212174,
+          0.17140871386016254
+        ],
+        "estimate": 0.12912260487695215,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          -0.008409396196222968,
+          -0.0011415548403517154
+        ],
+        "estimate": -0.004704290022146174,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          -0.023025776749393694,
+          0.004381057471867556
+        ],
+        "estimate": -0.011740059321659078,
+        "valid_bootstrap_replicates": 500
+      }
+    }
+  },
+  "preregistration": "experiments/EXP-CORE-ML-002/PREREG.md",
+  "profile": {
+    "age_years": {
+      "distribution": "uniform",
+      "maximum": 82.0,
+      "minimum": 24.0
+    },
+    "competing_event_probabilities": {
+      "cardiovascular_event": 0.05,
+      "lost_to_follow_up": 0.04
+    },
+    "competing_event_time_days": {
+      "cardiovascular_event": [
+        120.0,
+        1800.0
+      ],
+      "lost_to_follow_up": [
+        180.0,
+        1400.0
+      ]
+    },
+    "indolent_probability": 0.08,
+    "interpretation": "Synthetic stress-test assumptions only. Not a Nigerian population estimate and not calibrated for clinical prediction.",
+    "profile_id": "balanced_synthetic_v1",
+    "receptor_probabilities": {
+      "her2_positive_er_positive": 0.5,
+      "her2_positive_pr_positive": 0.4,
+      "hr_positive_her2_negative_pr_positive": 0.85
+    },
+    "recurrence_cap_by_subtype": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "recurrence_day_cap": 1825.0,
+    "recurrence_multiplier_by_subtype": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "recurrence_probability_by_stage": [
+      0.15,
+      0.3,
+      0.55,
+      0.85
+    ],
+    "recurrence_time_gamma_by_subtype": [
+      {
+        "offset_days": 60.0,
+        "scale_days": 150.0,
+        "shape": 2.5
+      },
+      {
+        "offset_days": 90.0,
+        "scale_days": 180.0,
+        "shape": 3.5
+      },
+      {
+        "offset_days": 90.0,
+        "scale_days": 180.0,
+        "shape": 3.5
+      }
+    ],
+    "site_probabilities_by_subtype": [
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ]
+    ],
+    "stage_probabilities": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "subtype_probabilities": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333334
+    ]
+  },
+  "seeds": {
+    "calibration": 42002,
+    "test": 42004,
+    "train": 42001,
+    "validation": 42003
+  },
+  "selected_models": {
+    "B3_regularized_hazard": {
+      "candidate_validation_ipcw_brier": {
+        "C=0.05": 0.10356191643979981,
+        "C=0.5": 0.10491626484232372,
+        "C=5.0": 0.10552531956042574
+      },
+      "parameter_id": "C=0.05",
+      "validation_ipcw_brier": 0.10356191643979981
+    },
+    "B4_gradient_boosting": {
+      "candidate_validation_ipcw_brier": {
+        "depth=2,estimators=150": 0.09245912515495479,
+        "depth=2,estimators=50": 0.09439266579809434,
+        "depth=3,estimators=150": 0.09264912817539558,
+        "depth=3,estimators=50": 0.09314073305422867
+      },
+      "parameter_id": "depth=2,estimators=150",
+      "validation_ipcw_brier": 0.09245912515495479
+    },
+    "K3_fast_landmark_approximation": {
+      "candidate_validation_ipcw_brier": {
+        "C=0.1": 0.11025707274726264,
+        "C=1.0": 0.11045431184963768,
+        "C=10.0": 0.1104794609175134
+      },
+      "parameter_id": "C=0.1",
+      "validation_ipcw_brier": 0.11025707274726264
+    }
+  },
+  "status": "synthetic research evaluation; not clinical validation",
+  "test_metrics": {
+    "B0_prevalence": {
+      "auc": {
+        "ci_95": [
+          0.4999999999999999,
+          0.5000000000000001
+        ],
+        "estimate": 0.49999999999999994,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.11715618579374235,
+          0.137997196764042
+        ],
+        "estimate": 0.12786847237392482,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.029324687151619417,
+          0.0633091233738728
+        ],
+        "estimate": 0.045841111836547266,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B1_single_threshold": {
+      "auc": {
+        "ci_95": [
+          0.5507308670646067,
+          0.6164501058439523
+        ],
+        "estimate": 0.5854265026295503,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.10746711643904011,
+          0.12733187648216585
+        ],
+        "estimate": 0.11789567630048776,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.032086396345236835,
+          0.0595647177080096
+        ],
+        "estimate": 0.04558597506613063,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B2_velocity": {
+      "auc": {
+        "ci_95": [
+          0.5210431286339282,
+          0.5676909637898399
+        ],
+        "estimate": 0.5452817148404424,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.11049439150309517,
+          0.13051248963111808
+        ],
+        "estimate": 0.12114125249435874,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.02422539699879909,
+          0.05657791476826936
+        ],
+        "estimate": 0.03872570290344152,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B3_regularized_hazard": {
+      "auc": {
+        "ci_95": [
+          0.7154149926549923,
+          0.7791117786714762
+        ],
+        "estimate": 0.7462755743363495,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.09518284735175139,
+          0.11395416861342664
+        ],
+        "estimate": 0.10457215820736324,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.02779630872207532,
+          0.0526317985777467
+        ],
+        "estimate": 0.037803172032644675,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "B4_gradient_boosting": {
+      "auc": {
+        "ci_95": [
+          0.750133652405977,
+          0.8065108095537481
+        ],
+        "estimate": 0.7760660823741072,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.08570872171420094,
+          0.10423694184763799
+        ],
+        "estimate": 0.0947876797736993,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.0289360416521589,
+          0.05207381038398453
+        ],
+        "estimate": 0.035477424109188395,
+        "valid_bootstrap_replicates": 500
+      }
+    },
+    "K3_fast_landmark_approximation": {
+      "auc": {
+        "ci_95": [
+          0.6808604633813822,
+          0.7476041774244291
+        ],
+        "estimate": 0.7145491075065025,
+        "valid_bootstrap_replicates": 500
+      },
+      "brier": {
+        "ci_95": [
+          0.10284627333570664,
+          0.1233141279152762
+        ],
+        "estimate": 0.11319138627834159,
+        "valid_bootstrap_replicates": 500
+      },
+      "ipcw_ece": {
+        "ci_95": [
+          0.024929087878245663,
+          0.052235727682228936
+        ],
+        "estimate": 0.03384591574447155,
+        "valid_bootstrap_replicates": 500
+      }
+    }
+  }
+}

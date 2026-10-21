@@ -12,6 +12,7 @@
     "PR-04": 5.0
   },
   "parameter_provenance": "PROPOSED values of PREREGISTRATION.md (not ratified); PR-04 supplied on the command line",
+  "dca_thresholds": null,
   "bootstrap_seed": 20261018,
   "bootstrap_resamples": 2000,
   "partition_key_id": "SYNTHETIC-DRYRUN-KEY",
@@ -32,8 +33,8 @@
         "rows_flagged": 0
       },
       "lab_observations": {
-        "rows_in": 18885,
-        "rows_clean": 18885,
+        "rows_in": 18390,
+        "rows_clean": 18390,
         "rows_rejected": 0,
         "duplicates_dropped": 0,
         "rows_flagged": 0
@@ -58,24 +59,24 @@
   "cohort": {
     "cohort_complete_case": 600,
     "patients_with_a_landmark": 600,
-    "patients_excluded_fewer_than_two_post_index_draws_or_recurred_first": 0,
-    "landmarks": 5635,
+    "patients_excluded_fewer_than_two_post_index_draws_or_terminal_event_before_second_draw": 0,
+    "landmarks": 5530,
     "development_patients": 307,
     "test_patients": 293,
-    "development_events_at_first_landmark": 35,
-    "test_events_at_first_landmark": 36
+    "development_events_at_first_landmark": 43,
+    "test_events_at_first_landmark": 42
   },
   "development": {
-    "comparator": "B1_SINGLE_THRESHOLD",
+    "comparator": "B2_VELOCITY_RULE",
     "comparator_dev_auc_out_of_fold": {
-      "B1_SINGLE_THRESHOLD": 0.5433265366578265,
-      "B2_VELOCITY_RULE": 0.5027735116990223,
-      "B3_REGULARIZED_COX_HAZARD": 0.45846740246304285
+      "B1_SINGLE_THRESHOLD": 0.505475581441474,
+      "B2_VELOCITY_RULE": 0.5136512043141306,
+      "B3_REGULARIZED_LOGISTIC_HORIZON": 0.49152813869633055
     },
-    "recalibration_intercept": -1.250097628067341,
-    "recalibration_slope": 0.37357674232779237,
-    "operating_threshold": 0.1824358728562874,
-    "dev_alert_rate_per_100_patient_months": 4.8815530087874635,
+    "recalibration_intercept": -1.3451259651578074,
+    "recalibration_slope": 0.22993502112940972,
+    "operating_threshold": 0.17398294064932837,
+    "dev_alert_rate_per_100_patient_months": 4.88701095728963,
     "notes": [
       "candidate = GradientBoostingBaseline (B4) fitted from scratch on the development split; see ANALYSIS-SPEC.md section 3"
     ]
@@ -84,44 +85,44 @@
     "n_test_patients": 293,
     "n_boot": 2000,
     "seed": 20261018,
-    "comparator": "B1_SINGLE_THRESHOLD",
-    "operating_threshold": 0.1824358728562874,
+    "comparator": "B2_VELOCITY_RULE",
+    "operating_threshold": 0.17398294064932837,
     "C1": {
-      "estimate": -0.7618043687097382,
+      "estimate": -1.7343233864833385,
       "ci95": [
-        -2.238994878254811,
-        0.5785553342378789
+        -3.807769822877218,
+        0.21037649709507922
       ],
       "criterion": "CI within [0.8, 1.2]",
       "ci_criterion_met": false,
-      "p": 0.9885,
+      "p": 0.9945,
       "p_holm": 1.0,
       "reject": false,
       "met": false
     },
     "C2": {
-      "estimate": -0.04562705953935714,
+      "estimate": -0.03303595339394688,
       "ci95": [
-        -0.206914481159722,
-        0.11227960920376572
+        -0.1556505872107233,
+        0.08502841541231881
       ],
       "criterion": "lower CI bound > 0.0",
       "ci_criterion_met": false,
-      "p": 0.7095,
+      "p": 0.6945,
       "p_holm": 1.0,
       "reject": false,
       "met": false
     },
     "C3": {
-      "estimate": 5.118326737214003,
+      "estimate": 3.9206236072528045,
       "ci95": [
-        4.305843562382722,
-        5.92784288081219
+        2.9901723604750763,
+        4.968046906996451
       ],
       "criterion": "upper CI bound <= 5.0",
-      "ci_criterion_met": false,
-      "p": 0.594,
-      "p_holm": 1.0,
+      "ci_criterion_met": true,
+      "p": 0.0205,
+      "p_holm": 0.0615,
       "reject": false,
       "met": false
     },
@@ -129,145 +130,117 @@
   },
   "secondary": {
     "calibration_before_recalibration": {
-      "ece": 0.09311833083629609,
-      "mean_predicted": 0.14306637995523594,
-      "observed_ipcw": 0.1233694612555097,
-      "note": "ECE is unweighted and on determinable outcomes only; the IPCW means are the calibration-in-the-large inputs"
+      "ece": 0.0904955008679142,
+      "mean_predicted": 0.12748014295918675,
+      "observed_ipcw": 0.14458276239637544,
+      "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes"
     },
     "decision_curve": {
-      "thresholds": [
-        0.01,
-        0.08,
-        0.15000000000000002,
-        0.22,
-        0.29000000000000004,
-        0.36000000000000004,
-        0.43,
-        0.5
-      ],
-      "net_benefit_model": [
-        0.11451460732879767,
-        0.03921394845628333,
-        -0.009539040851614004,
-        -0.0029789731004601153,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-      ],
-      "net_benefit_all": [
-        0.11451460732879767,
-        0.04714071875598881,
-        -0.0313300455817533,
-        -0.12388530608267982,
-        -0.23469089964012718,
-        -0.36973521678826615,
-        -0.5379483135868248,
-        -0.7532610774889804
-      ]
+      "not_run": "no clinically ratified PR-10 threshold grid is present in the frozen protocol"
     },
     "subgroups": {
       "groups": {
         "age<50": {
-          "patients": 120,
+          "patients": 118,
           "events": 14,
           "result": "insufficient data"
         },
         "age50-64": {
-          "patients": 85,
-          "events": 8,
+          "patients": 82,
+          "events": 10,
           "result": "insufficient data"
         },
         "age>=65": {
-          "patients": 88,
-          "events": 14,
+          "patients": 93,
+          "events": 18,
           "result": "insufficient data"
         },
         "stage I-II": {
-          "patients": 184,
-          "events": 27,
-          "ipcw_auc": 0.49610832994629195,
+          "patients": 177,
+          "events": 20,
+          "ipcw_auc": 0.4831167338272715,
           "ci95": [
-            0.3607135996596697,
-            0.6315442319960717
+            0.3537924852092443,
+            0.6110552295788424
           ]
         },
         "stage III": {
-          "patients": 109,
-          "events": 9,
-          "result": "insufficient data"
+          "patients": 116,
+          "events": 22,
+          "ipcw_auc": 0.3796807383141365,
+          "ci95": [
+            0.2517618552377042,
+            0.5127291629686477
+          ]
         },
         "subtype HER2+": {
-          "patients": 154,
-          "events": 21,
-          "ipcw_auc": 0.3821165942264598,
+          "patients": 144,
+          "events": 24,
+          "ipcw_auc": 0.4018722752701146,
           "ci95": [
-            0.23672090171394167,
-            0.5379278221532162
+            0.2779191985895781,
+            0.5307617125964708
           ]
         },
         "subtype HR+": {
-          "patients": 86,
-          "events": 9,
+          "patients": 103,
+          "events": 11,
           "result": "insufficient data"
         },
         "subtype TNBC": {
-          "patients": 53,
-          "events": 6,
+          "patients": 46,
+          "events": 7,
           "result": "insufficient data"
         }
       },
       "worst_group": [
-        "subtype HER2+",
-        0.3821165942264598
+        "stage III",
+        0.3796807383141365
       ],
       "facility": "single-site extraction: not applicable"
     },
     "lead_time": {
-      "conditional_lead_time_days": "428.3 \u00b1 277.6",
-      "conditional_median_days": 358.0,
-      "unconditional_mean_days": 147.4,
-      "recurrence_detection_rate": 0.3441,
-      "overdetection_rate": 0.7557,
-      "alert_burden_per_100_pt_years": 21.53,
-      "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
+      "not_computed": "No censoring- and competing-risk-aware lead-time/over-detection estimand is registered for partner follow-up."
     },
     "m10_aggregate": {
-      "patients_with_dismissed_prior_signal": 10,
+      "patients_with_dismissed_prior_signal": 11,
       "small_cell_threshold": 5
     },
     "verification_bias": {
       "complete_case": {
-        "sensitivity": 0.08333333333333333,
-        "specificity": 0.956989247311828
+        "sensitivity": 0.047619047619047616,
+        "specificity": 0.9512195121951219
       },
       "ipw": {
-        "sensitivity": 0.08513766215559572,
-        "specificity": 0.9573454869000981
+        "sensitivity": 0.051816719243133025,
+        "specificity": 0.9511466972458436,
+        "minimum_verified_propensity": 0.32943742232684536,
+        "maximum_inverse_weight": 3.0354778547528465,
+        "effective_sample_size": 122.719508749161
       },
       "sensitivity_analysis": [
         {
           "assumed_unverified_event_rate": 0.0,
-          "sensitivity": 0.08333333333333333,
-          "specificity": 0.9571984435797666
+          "sensitivity": 0.047619047619047616,
+          "specificity": 0.9601593625498008
         },
         {
           "assumed_unverified_event_rate": 0.05,
-          "sensitivity": 0.0757918552036199,
-          "specificity": 0.9571945337620579
+          "sensitivity": 0.04558969276511397,
+          "specificity": 0.9600082457225315
         },
         {
           "assumed_unverified_event_rate": 0.1,
-          "sensitivity": 0.07061068702290076,
-          "specificity": 0.9571903574397339
+          "sensitivity": 0.044142614601018676,
+          "specificity": 0.9598462195642887
         },
         {
           "assumed_unverified_event_rate": 0.2,
-          "sensitivity": 0.06395348837209301,
-          "specificity": 0.9571810883140054
+          "sensitivity": 0.04221635883905014,
+          "specificity": 0.9594843462246777
         }
       ],
-      "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate"
+      "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate"
     }
   },
   "status": "COMPLETED",

@@ -1,19 +1,19 @@
-"""Pydantic schemas for Risk Inference, Trajectory, and Triage Queue."""
+"""Pydantic schemas for lab submission, abstention, trajectory, and triage."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
-class RiskInferenceResponse(BaseModel):
-    id: str
+class LabSubmissionResponse(BaseModel):
+    status: Literal["recorded", "unavailable"]
     patient_id: str
     lab_result_id: str
-    calculated_metastasis_risk: float = Field(..., ge=0.0, le=1.0)
-    triage_flag: bool
-    justification_text: str
-    created_at: datetime
+    message: str
+    outputs_withheld: bool
+    calculated_metastasis_risk: None
+    triage_flag: None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -26,12 +26,12 @@ class TrajectoryPoint(BaseModel):
     creatinine: float
     ca_15_3: float
     wbc_count: float
-    calculated_metastasis_risk: float
-    ci_lower: Optional[float] = 0.0
-    ci_upper: Optional[float] = 1.0
+    calculated_metastasis_risk: float | None
+    ci_lower: float | None
+    ci_upper: float | None
     ca153_velocity_pct: Optional[float] = 0.0
     alt_velocity_pct: Optional[float] = 0.0
-    triage_flag: bool
+    triage_flag: bool | None
     justification_text: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -43,14 +43,14 @@ class TriageQueueItem(BaseModel):
     status: str
     tumor_stage: Optional[int] = None
     subtype: str = "Unknown"
-    latest_risk: float
-    triage_flag: bool
+    latest_risk: float | None
+    triage_flag: bool | None
     latest_justification: str
-    target_organ_susceptibility_vector: Optional[dict[str, float]] = None
+    target_organ_susceptibility_vector: dict[str, float] | None
     last_lab_date: Optional[datetime] = None
     total_labs: int = 0
-    action_urgency: float = 0.0
-    urgency_breakdown: Optional[dict[str, float]] = None
+    action_urgency: float | None
+    urgency_breakdown: dict[str, float] | None
 
 
 class SimulationRequest(BaseModel):
@@ -58,7 +58,9 @@ class SimulationRequest(BaseModel):
 
 
 class SimulationResponse(BaseModel):
-    projected_risk: float
-    triage_flag: bool
+    status: Literal["abstained"]
+    message: str
+    projected_risk: float | None
+    triage_flag: bool | None
     justification_text: str
-    delta_risk: float
+    delta_risk: float | None

@@ -19,7 +19,6 @@ dependencies = [
     "onnxscript>=0.7.2",
     "jax>=0.4.0",
     "numpyro>=0.15.0",
-    "sbi>=0.23.0",
     "ortools>=9.9.0",
 ]
 
@@ -29,4 +28,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["vigil_ml"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"vigil_ml/models/m3_assumptions_v1.json" = "vigil_ml/models/m3_assumptions_v1.json"
+"vigil_ml/models/k2_research_config_v1.json" = "vigil_ml/models/k2_research_config_v1.json"
+"vigil_ml/models/k8_research_config_v1.json" = "vigil_ml/models/k8_research_config_v1.json"
 

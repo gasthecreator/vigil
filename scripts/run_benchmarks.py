@@ -7,7 +7,7 @@ Conforms strictly to docs/MASTER_PLAN.md §14 (WP2.1-WP2.4) and docs/ML_PROGRAM.
 
 Executes:
 1. Study S1 (Longitudinal Visit Sparsity: V in {3, 4, 6, 10, 20})
-2. Study S3 (Partial Verification Bias: Complete-Case vs IPW vs Latent-Class EM)
+2. Study S3 (Partial Verification Bias: Complete-Case vs IPW; retired pseudo-EM)
 3. Study S9 (Cross-Generator Robustness: G1+G2 Train -> G3 Stress Test)
 4. Master Benchmark Report generation with explicit [SYNTHETIC DATASET] labeling and sim-to-real gap analysis
 5. Model regression gating and frozen test set audit logging
@@ -46,7 +46,8 @@ from vigil_eval.audit import FrozenTestAccessLogger
 from vigil_eval.bootstrap import patient_cluster_bootstrap
 from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
-    compute_calibration_curve,
+    compute_ipcw_calibration_curve,
+    compute_ipcw_weights,
     ipcw_brier_score,
     ipcw_time_dependent_roc_auc,
     survival_decision_curve_analysis,
@@ -55,7 +56,6 @@ from vigil_eval.regression_gate import ModelRegressionGate
 from vigil_eval.verification_bias import (
     evaluate_complete_case,
     evaluate_ipw_verification,
-    evaluate_latent_class_em,
 )
 from vigil_ml.baselines import (
     GradientBoostingBaseline,
@@ -67,12 +67,20 @@ from vigil_ml.baselines import (
 from vigil_ml.conformal_k8 import ProductionEnsembleK8
 from vigil_ml.features import WindowedFeatureExtractor
 from vigil_ml.joint_model import FastLandmarkJointModel
-from vigil_ml.k1 import HybridKineticModelK1, K1Observations
-from vigil_ml.sequential_k2 import SequentialDetectorBenchmark
 from vigil_sim.generators import GeneratorType, get_generator
 
 
+def _reject_retired_entrypoint(name: str) -> None:
+    raise RuntimeError(
+        f"Legacy {name} is retired and cannot generate or overwrite benchmark artifacts. "
+        "Its historical outputs are under Q-7 evidence reconciliation; use a current, "
+        "preregistered experiment instead. See "
+        "docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
+    )
+
+
 def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    _reject_retired_entrypoint("S1")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S1: LONGITUDINAL VISIT SPARSITY ANALYSIS")
     print("------------------------------------------------------------")
@@ -101,6 +109,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     X_train_full, y_train_full, t_train_full, d_train_full = extractor.transform_cohort(
         patients_df=train_pts_df, observations_df=train_obs_df, horizon_days=365.0
     )
+    train_weights = compute_ipcw_weights(t_train_full, d_train_full, 365.0)
 
     visit_strata = [3, 4, 6, 10, 20]
     results_by_stratum = {}
@@ -125,33 +134,24 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "B2_Velocity": VelocityBaseline(),
             "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=0.5),
             "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
-            "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
-            "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
+            "K3_JointModel": FastLandmarkJointModel(),
         }
 
         stratum_res = {}
         for name, m in models.items():
-            m.fit(X_train_full, y_train_full)
-            if name == "K1_Kinetic":
-                obs_list = []
-                for _, row in X_test.iterrows():
-                    pid = row["patient_id"]
-                    eval_d = row.get("eval_day", 730.0)
-                    p_obs = test_obs_sliced[
-                        (test_obs_sliced["patient_id"] == pid)
-                        & (test_obs_sliced["day"] <= eval_d)
-                        & (test_obs_sliced["ca_15_3"].notna())
-                    ]
-                    days = p_obs["day"].to_numpy(dtype=float)
-                    ca_vals = p_obs["ca_15_3"].to_numpy(dtype=float)
-                    obs_list.append(K1Observations(days=days, values={"ca153": ca_vals}))
-                preds = m.predict_risk(obs_list)
+            if isinstance(m, (PrevalenceBaseline, SingleThresholdBaseline, VelocityBaseline,
+                              RegularizedCoxHazardBaseline, GradientBoostingBaseline,
+                              FastLandmarkJointModel)):
+                m.fit(X_train_full, y_train_full, sample_weight=train_weights)
             else:
-                preds = m.predict_risk(X_test)
+                m.fit(X_train_full, y_train_full)
+            preds = m.predict_risk(X_test)
 
             auc_val = ipcw_time_dependent_roc_auc(preds, t_test, d_test, horizon_time=365.0)
             brier_val = ipcw_brier_score(preds, t_test, d_test, horizon_time=365.0)
-            cal_report = compute_calibration_curve(preds, y_test.values, n_bins=10)
+            cal_report = compute_ipcw_calibration_curve(
+                preds, t_test, d_test, horizon_time=365.0, n_bins=10
+            )
             dca_report = survival_decision_curve_analysis(
                 preds, t_test, d_test, horizon_time=365.0, thresholds=np.array([0.15])
             )
@@ -179,7 +179,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             auc_boot = boot_res["auc"]
 
             # Latency benchmark (p50, p95, p99 over >= 1000 single calls on CPU, Condition P7-C)
-            sample_input = obs_list[0] if name == "K1_Kinetic" else X_test.iloc[[0]]
+            sample_input = X_test.iloc[[0]]
             lat_times = []
             for _ in range(1000):
                 t0 = time.perf_counter()
@@ -234,6 +234,7 @@ def run_study_s1(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s1_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S1 renderer")
     lines = [
         "# Study S1 Report: Longitudinal Visit Sparsity Analysis",
         "",
@@ -275,6 +276,11 @@ def render_s1_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    raise RuntimeError(
+        "Legacy S3 is retracted: its binary label and verification analysis do not follow the registered "
+        "time-to-event/partial-verification contract. See reports/ml/S3_VERIFICATION_BIAS/RETRACTION.md."
+    )
+
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S3: PARTIAL VERIFICATION BIAS CORRECTION")
     print("------------------------------------------------------------")
@@ -342,9 +348,6 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
     cc_res = evaluate_complete_case(scores, y_obs, v_verified, cutoff=threshold)
     # 2. IPW
     ipw_res = evaluate_ipw_verification(scores, y_obs, v_verified, covariates, cutoff=threshold)
-    # 3. Latent-Class EM
-    lc_res = evaluate_latent_class_em(scores, y_obs, v_verified, covariates, cutoff=threshold)
-
     results = {
         "oracle_ground_truth": {
             "sensitivity": round(float(sens_oracle), 4),
@@ -365,10 +368,8 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
             "bias_specificity": round(float(ipw_res.empirical_specificity - spec_oracle), 4),
         },
         "latent_class_em_estimator": {
-            "sensitivity": round(lc_res.empirical_sensitivity, 4),
-            "specificity": round(lc_res.empirical_specificity, 4),
-            "bias_sensitivity": round(float(lc_res.empirical_sensitivity - sens_oracle), 4),
-            "bias_specificity": round(float(lc_res.empirical_specificity - spec_oracle), 4),
+            "status": "not_run",
+            "reason": "The former pseudo-label routine was not an identifiable latent-class EM estimator and has been retired.",
         },
     }
 
@@ -383,6 +384,7 @@ def run_study_s3(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S3 renderer")
     lines = [
         "# Study S3 Report: Partial Verification Bias Correction",
         "",
@@ -394,8 +396,9 @@ def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
         "",
         "## 1. Executive Summary & Findings",
         f"- **Verification Rate:** In the simulated cohort, {results['oracle_ground_truth']['verification_rate'] * 100:.1f}% of patients underwent confirmatory imaging.",
-        f"- **Complete-Case Distortion:** Naive complete-case evaluation severely distorted specificity (bias: {results['complete_case_estimator']['bias_specificity'] * 100:+.2f} percentage points), because unverified disease-free individuals were omitted.",
-        f"- **IPW Recovery:** Inverse Probability Weighting (IPW) successfully recovered true population specificity with small residual bias ({results['ipw_estimator']['bias_specificity'] * 100:+.2f} pp).",
+        f"- **Complete-case estimate:** Sensitivity bias was {results['complete_case_estimator']['bias_sensitivity'] * 100:+.2f} pp and specificity bias was {results['complete_case_estimator']['bias_specificity'] * 100:+.2f} pp in this synthetic cohort. A single cohort does not establish the general direction or size of selection bias.",
+        f"- **IPW Estimate:** Inverse Probability Weighting (IPW) specificity bias was {results['ipw_estimator']['bias_specificity'] * 100:+.2f} percentage points in this synthetic run. This single run does not establish estimator recovery.",
+        "- **Latent-class EM:** Not run. The former pseudo-label implementation was not a latent-class EM estimator and has been retired pending a registered, identifiable method.",
         "",
         "## 2. Comparative Estimator Benchmark",
         "",
@@ -404,163 +407,30 @@ def render_s3_markdown(results: Dict[str, Any], path: Path) -> None:
         f"| **Oracle Ground Truth** | {results['oracle_ground_truth']['sensitivity']:.4f} | 0.0000 | {results['oracle_ground_truth']['specificity']:.4f} | 0.0000 |",
         f"| `Complete-Case (Naive)` | {results['complete_case_estimator']['sensitivity']:.4f} | {results['complete_case_estimator']['bias_sensitivity']:+.4f} | {results['complete_case_estimator']['specificity']:.4f} | {results['complete_case_estimator']['bias_specificity']:+.4f} |",
         f"| `IPW (Propensity Adjusted)` | {results['ipw_estimator']['sensitivity']:.4f} | {results['ipw_estimator']['bias_sensitivity']:+.4f} | {results['ipw_estimator']['specificity']:.4f} | {results['ipw_estimator']['bias_specificity']:+.4f} |",
-        f"| `Latent-Class EM` | {results['latent_class_em_estimator']['sensitivity']:.4f} | {results['latent_class_em_estimator']['bias_sensitivity']:+.4f} | {results['latent_class_em_estimator']['specificity']:.4f} | {results['latent_class_em_estimator']['bias_specificity']:+.4f} |",
+        "| `Latent-Class EM` | Not run | Not run | Not run | Not run |",
         "",
         "## 3. Decision Record",
-        "- **Adopt IPW as Default Evaluation Harness:** `vigil-eval` incorporates IPW adjustment when evaluating retrospective hospital datasets (T-R tier) where imaging is selective.",
+        "- **No estimator adopted:** This run cannot establish the assumptions or external validity needed to select a verification-bias estimator.",
     ]
     path.write_text("\n".join(lines))
 
 
 def run_study_s2(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
-    print("\n------------------------------------------------------------")
-    print("🔬 RUNNING STUDY S2: ANYTIME-VALID SEQUENTIAL DETECTION & STRESS SUITE")
-    print("------------------------------------------------------------")
-
-    audit_logger.log_access(
-        dataset_name="SYNTHETIC-NULL-STRESS-SUITE-S2",
-        access_type="benchmark_evaluation",
-        caller="scripts/run_benchmarks.py",
-        purpose="Evaluate K2 e-processes vs CUSUM, Shiryaev-Roberts and static rules across 5 null stress scenarios",
-        num_samples=1000,
+    """Legacy S2 is retired; see the corrected-protocol audit before replication."""
+    raise RuntimeError(
+        "Legacy S2 is retracted: its clipped prototype cannot establish Ville validity. "
+        "See docs/audits/QUALITY-RERUN-2026-10.md before any new preregistered S2 run."
     )
-
-    bench = SequentialDetectorBenchmark(alpha_pt=0.05)
-    stress_results = bench.run_stress_suite(n_patients=200, n_visits=15)
-
-    rng = np.random.default_rng(2026)
-    n_pts = 200
-    delays = {"M_Static": [], "M_CUSUM": [], "M_Shiryaev": [], "K2_EProcess": []}
-    alarms_null = {"M_Static": 0, "M_CUSUM": 0, "M_Shiryaev": 0, "K2_EProcess": 0}
-
-    for _ in range(n_pts):
-        base = rng.normal(20.0, 4.0)
-        v_null = []
-        cur_day = 0.0
-        for _ in range(15):
-            cur_day += rng.uniform(70.0, 110.0)
-            obs = max(5.0, base + rng.normal(0, 2.5))
-            v_null.append({"day": cur_day, "ca15_3": obs})
-
-        if any(v["ca15_3"] >= 30.0 for v in v_null):
-            alarms_null["M_Static"] += 1
-        seq_res = bench.detector.evaluate_trajectory(v_null)
-        if any(r.cusum_stat >= 4.0 for r in seq_res):
-            alarms_null["M_CUSUM"] += 1
-        if any(r.shiryaev_stat >= 50.0 for r in seq_res):
-            alarms_null["M_Shiryaev"] += 1
-        if any(r.e_value >= 20.0 for r in seq_res):
-            alarms_null["K2_EProcess"] += 1
-
-    for _ in range(n_pts):
-        base = rng.normal(20.0, 4.0)
-        recur_day = 180.0
-        cur_day = 0.0
-        v_rec = []
-        d_static, d_cusum, d_shiryaev, d_k2 = None, None, None, None
-        for _ in range(15):
-            cur_day += 90.0
-            growth = 0.0
-            if cur_day > recur_day:
-                growth = base * (np.exp(0.007 * (cur_day - recur_day)) - 1.0)
-            obs = max(5.0, base + growth + rng.normal(0, 2.5))
-            v_rec.append({"day": cur_day, "ca15_3": obs})
-
-            if obs >= 30.0 and d_static is None and cur_day > recur_day:
-                d_static = cur_day - recur_day
-
-        seq_res = bench.detector.evaluate_trajectory(v_rec)
-        for r, v in zip(seq_res, v_rec):
-            day = v["day"]
-            if day > recur_day:
-                if r.cusum_stat >= 4.0 and d_cusum is None:
-                    d_cusum = day - recur_day
-                if r.shiryaev_stat >= 50.0 and d_shiryaev is None:
-                    d_shiryaev = day - recur_day
-                if r.e_value >= 20.0 and d_k2 is None:
-                    d_k2 = day - recur_day
-
-        delays["M_Static"].append(d_static if d_static is not None else 365.0)
-        delays["M_CUSUM"].append(d_cusum if d_cusum is not None else 365.0)
-        delays["M_Shiryaev"].append(d_shiryaev if d_shiryaev is not None else 365.0)
-        delays["K2_EProcess"].append(d_k2 if d_k2 is not None else 365.0)
-
-    s2_results = {
-        "null_stress_suite": stress_results,
-        "comparative_detection": {
-            "M_Static": {
-                "patient_level_null_far": round(alarms_null["M_Static"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_Static"])), 1),
-            },
-            "M_CUSUM": {
-                "patient_level_null_far": round(alarms_null["M_CUSUM"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_CUSUM"])), 1),
-            },
-            "M_Shiryaev": {
-                "patient_level_null_far": round(alarms_null["M_Shiryaev"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["M_Shiryaev"])), 1),
-            },
-            "K2_EProcess": {
-                "patient_level_null_far": round(alarms_null["K2_EProcess"] / n_pts, 4),
-                "expected_detection_delay_days": round(float(np.mean(delays["K2_EProcess"])), 1),
-            },
-        },
-    }
-    s2_dir = ROOT / "reports" / "ml" / "S2_SEQUENTIAL"
-    s2_dir.mkdir(parents=True, exist_ok=True)
-    with open(s2_dir / "results.json", "w") as f:
-        json.dump(s2_results, f, indent=2)
-
-    render_s2_markdown(s2_results, s2_dir / "REPORT.md")
-    print("✅ Study S2 Complete. Results saved to reports/ml/S2_SEQUENTIAL/")
-    return s2_results
 
 
 def render_s2_markdown(results: Dict[str, Any], path: Path) -> None:
-    comp = results["comparative_detection"]
-    stress = results["null_stress_suite"]
-    lines = [
-        "# Study S2 Report: Anytime-Valid Sequential Detection Under Repeated Looks",
-        "",
-        "> **Notice:** All analyses performed on **SYNTHETIC TIER G1** data. Results establish algorithmic properties and method ranking, not clinical efficacy.",
-        "",
-        "**Study ID:** S2_SEQUENTIAL  ",
-        f"**Date Executed:** {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}  ",
-        "**Pre-Registration Reference:** [`PREREG.md`](./PREREG.md)  ",
-        "",
-        "## 1. Executive Summary & Pre-Registered Hypothesis Testing",
-        f"- **H1 (Cumulative Error Inflation):** CONFIRMED. Static threshold rules exhibited an unacceptable patient-level false alarm rate of {comp['M_Static']['patient_level_null_far'] * 100:.1f}% across 15 serial looks, severely violating the 5% error budget.",
-        f"- **H2 (Supermartingale Guarantee):** CONFIRMED. K2 Anytime-Valid e-processes strictly bounded the patient-level false alarm rate to {comp['K2_EProcess']['patient_level_null_far'] * 100:.1f}% under Ville's inequality (nominal alpha = 5.0%), passing all 5 null stress scenarios.",
-        f"- **H3 (Detection Delay Advantage):** CONFIRMED. K2 achieved an Expected Detection Delay of {comp['K2_EProcess']['expected_detection_delay_days']:.1f} days, reducing detection delay by {comp['M_Static']['expected_detection_delay_days'] - comp['K2_EProcess']['expected_detection_delay_days']:.1f} days relative to static cutoffs.",
-        "",
-        "## 2. Comparative Detection Performance across Serial Follow-Up",
-        "",
-        "| Detector | Patient-Level Null FAR (K=15) | Nominal Alpha | Expected Detection Delay (Days) | Error Bound Status |",
-        "|---|---|---|---|---|",
-        f"| `M_Static (Threshold 30 U/mL)` | {comp['M_Static']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_Static']['expected_detection_delay_days']:.1f} days | **VIOLATED (Inflated)** |",
-        f"| `M_CUSUM (k=0.5, h=4.0)` | {comp['M_CUSUM']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_CUSUM']['expected_detection_delay_days']:.1f} days | Asymptotic Only |",
-        f"| `M_Shiryaev (Shiryaev-Roberts)` | {comp['M_Shiryaev']['patient_level_null_far']:.4f} | 0.0500 | {comp['M_Shiryaev']['expected_detection_delay_days']:.1f} days | Asymptotic Only |",
-        f"| `K2_EProcess (Mixture e-Process)` | {comp['K2_EProcess']['patient_level_null_far']:.4f} | 0.0500 | {comp['K2_EProcess']['expected_detection_delay_days']:.1f} days | **GUARANTEED (Ville)** |",
-        "",
-        "## 3. Five-Scenario Null Stress Suite",
-        "",
-        "| Scenario | Description | Empirical FAR | Target Bound | Status |",
-        "|---|---|---|---|---|",
-    ]
-    for sc_name, sc_data in stress["scenarios"].items():
-        st = "PASSED" if sc_data["passed"] else "FAILED"
-        lines.append(
-            f"| `{sc_name}` | {sc_name.replace('null_', '').replace('_', ' ').title()} | {sc_data['empirical_patient_level_far']:.4f} | <= {sc_data['nominal_alpha'] + 0.02:.4f} | **{st}** |"
-        )
-    lines.extend(
-        [
-            "",
-            "## 4. Decision Record",
-            "- **Adopt K2 E-Process for Sequential Alerting:** Static single-visit thresholds are clinically disqualified for serial surveillance due to uncontrolled multi-testing error inflation.",
-            "- **Deploy Calibrated Alert Tiers:** Watch (alpha=0.20), Review (alpha=0.05), and Urgent (alpha=0.01) based on exact Ville thresholding.",
-        ]
+    """Write a retraction notice instead of regenerating the invalid legacy report."""
+    path.write_text(
+        "# Study S2: retracted\n\n"
+        "The legacy benchmark used a clipped prototype and its five empirical "
+        "scenarios do not establish Ville validity. Do not use its results. "
+        "See [`QUALITY-RERUN-2026-10.md`](../../../docs/audits/QUALITY-RERUN-2026-10.md).\n"
     )
-    path.write_text("\n".join(lines))
 
 
 def run_study_s4(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
@@ -599,6 +469,7 @@ def render_s10_markdown(results: Dict[str, Any], path: Path) -> None:
 
 
 def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
+    _reject_retired_entrypoint("S9")
     print("\n------------------------------------------------------------")
     print("🔬 RUNNING STUDY S9: CROSS-GENERATOR ROBUSTNESS & SIM-TO-REAL STRESS")
     print("------------------------------------------------------------")
@@ -669,8 +540,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
         "B2_Velocity": VelocityBaseline(),
         "B3_RegularizedHazard": RegularizedCoxHazardBaseline(C=1.0),
         "B4_GradientBoosting": GradientBoostingBaseline(max_depth=3, n_estimators=100),
-        "K3_JointModel": FastLandmarkJointModel(horizon_days=365.0),
-        "K1_Kinetic": HybridKineticModelK1(horizon_days=365.0),
+        "K3_JointModel": FastLandmarkJointModel(),
         "K8_ProductionEnsemble": ProductionEnsembleK8(),
     }
 
@@ -678,57 +548,27 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
     for name, m in models.items():
         print(f"  Training and stress-testing {name}...")
-        m.fit(X_train, y_train)
+        train_weights = compute_ipcw_weights(t_train, d_train, 365.0)
+        if isinstance(m, (SingleThresholdBaseline, VelocityBaseline, RegularizedCoxHazardBaseline,
+                          GradientBoostingBaseline, FastLandmarkJointModel)):
+            m.fit(X_train, y_train, sample_weight=train_weights)
+        else:
+            m.fit(X_train, y_train)
 
         # In-dist evaluation
-        if name == "K1_Kinetic":
-            obs_list_in = []
-            for _, row in X_test_in.iterrows():
-                pid = row["patient_id"]
-                eval_d = row.get("eval_day", 730.0)
-                p_obs = test_in_obs[
-                    (test_in_obs["patient_id"] == pid)
-                    & (test_in_obs["day"] <= eval_d)
-                    & (test_in_obs["ca_15_3"].notna())
-                ]
-                obs_list_in.append(
-                    K1Observations(
-                        days=p_obs["day"].to_numpy(float),
-                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
-                    )
-                )
-            preds_in = m.predict_risk(obs_list_in)
-
-            obs_list_g3 = []
-            for _, row in X_test_g3.iterrows():
-                pid = row["patient_id"]
-                eval_d = row.get("eval_day", 730.0)
-                p_obs = test_g3_obs[
-                    (test_g3_obs["patient_id"] == pid)
-                    & (test_g3_obs["day"] <= eval_d)
-                    & (test_g3_obs["ca_15_3"].notna())
-                ]
-                obs_list_g3.append(
-                    K1Observations(
-                        days=p_obs["day"].to_numpy(float),
-                        values={"ca153": p_obs["ca_15_3"].to_numpy(float)},
-                    )
-                )
-            preds_g3 = m.predict_risk(obs_list_g3)
-        else:
-            preds_in = m.predict_risk(X_test_in)
-            preds_g3 = m.predict_risk(X_test_g3)
+        preds_in = m.predict_risk(X_test_in)
+        preds_g3 = m.predict_risk(X_test_g3)
 
         auc_in = ipcw_time_dependent_roc_auc(preds_in, t_test_in, d_test_in, horizon_time=365.0)
         brier_in = ipcw_brier_score(preds_in, t_test_in, d_test_in, horizon_time=365.0)
-        ece_in = compute_calibration_curve(
-            preds_in, y_test_in.values, n_bins=10
+        ece_in = compute_ipcw_calibration_curve(
+            preds_in, t_test_in, d_test_in, horizon_time=365.0, n_bins=10
         ).expected_calibration_error
 
         auc_g3 = ipcw_time_dependent_roc_auc(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
         brier_g3 = ipcw_brier_score(preds_g3, t_test_g3, d_test_g3, horizon_time=365.0)
-        ece_g3 = compute_calibration_curve(
-            preds_g3, y_test_g3.values, n_bins=10
+        ece_g3 = compute_ipcw_calibration_curve(
+            preds_g3, t_test_g3, d_test_g3, horizon_time=365.0, n_bins=10
         ).expected_calibration_error
 
         delta_auc = auc_in - auc_g3
@@ -762,6 +602,7 @@ def run_study_s9(audit_logger: FrozenTestAccessLogger) -> Dict[str, Any]:
 
 
 def render_s9_markdown(results: Dict[str, Any], path: Path) -> None:
+    _reject_retired_entrypoint("S9 renderer")
     lines = [
         "# Study S9 Report: Cross-Generator Robustness & Sim-to-Real Stress Testing",
         "",
@@ -808,6 +649,7 @@ def render_master_benchmark_report(
     s9_res: Dict[str, Any],
     path: Path,
 ) -> None:
+    _reject_retired_entrypoint("master benchmark renderer")
     lines = [
         "# VigilBench Phase 2 & 3: Longitudinal Surveillance & Advanced Modeling Benchmark",
         "",
@@ -835,7 +677,6 @@ def render_master_benchmark_report(
         ("B3_RegularizedHazard", "B3_REGULARIZED_HAZARD", "Discrete Survival"),
         ("B4_GradientBoosting", "B4_GRADIENT_BOOSTING", "Non-linear Tree"),
         ("K3_JointModel", "K3_FAST_LANDMARK", "Bayesian Joint"),
-        ("K1_Kinetic", "K1_KINETIC", "Mechanistic State-Space"),
     ]
 
     leaderboard_dict = {}
@@ -861,24 +702,24 @@ def render_master_benchmark_report(
             "",
             "## 2. Integrity and Anti-Degeneracy Audit",
             "Per `docs/ML_PROGRAM.md` §10 (Stop-and-Think Triggers):",
-            "- **Zero AUC ~ 1.0 Claims:** All IPCW AUC values fall in the realistic range [0.50, 0.85]. No model exhibits trivial separability or target leakage.",
-            "- **No Unverified Claims:** All numbers are computed from deterministic simulation pipelines with recorded seeds.",
+            "- **No AUC range is described as realistic or valid without an applicable registered criterion.** AUC values below are synthetic benchmark outputs, not clinical performance evidence.",
+            "- **Synthetic provenance:** Consult each study's committed protocol and run metadata for its seed and data-generating assumptions; this summary alone does not establish reproducibility.",
             "",
             "---",
             "",
             "## 3. Sim-to-Real Gap Analysis (MASTER_PLAN §14 WP2.4)",
             "The primary vulnerability of algorithms developed in simulation is that synthetic mathematical noise underestimates real clinical entropy. Specifically:",
             "1. **Pre-Analytical Errors (Hypothesis):** In vitro haemolysis and IV fluid dilution create spike artifacts that non-mechanistic decision trees misinterpret as disease acceleration.",
-            "2. **Inter-Laboratory Calibration Drifts (Hypothesis):** Facilities using different analyzer platforms (e.g. Roche Cobas vs Abbott Architect) exhibit systematic 5-15% offsets that invalidate unadjusted static cutoffs. Mitigated by Model K5 (Hierarchical Lab Harmonisation).",
-            "3. **Verification Bias (Supported by Study S3 Results):** Confirmatory imaging is ordered selectively for patients with symptoms or rising markers. In Study S3, naive complete-case evaluation severely overestimates sensitivity by +16.8 percentage points (0.880 complete-case vs 0.712 true IPW) because disease-free unverified patients are excluded, while specificity changes by only ~0.2 percentage points (0.912 vs 0.914).",
+            "2. **Inter-Laboratory Calibration Drifts (Hypothesis):** Analyzer platforms and sites may differ. Their magnitude, direction, and consequences require sourced specifications or measured validation data; the historical benchmark does not quantify them.",
+            "3. **Verification Bias (synthetic method demonstration only):** Confirmatory imaging may be selectively ordered. Historical Study S3 numbers are not current evidence: the propensity estimator's identification assumptions were not validated, and the reported latent-class EM was a pseudo-label routine that has been retired. See the S3 audit before interpreting or reusing those results.",
             "",
-            "These gaps will be directly addressed in Phase 3 (conformal risk control), Phase 4 (M3 Plausibility Adjudicator), and Phase 9 (retrospective validation on real hospital cohorts).",
+            "These are validation questions, not demonstrated mitigations or scheduled outcomes of this benchmark.",
             "",
             "---",
             "",
             "## 4. Pre-Registered Study Summaries",
             "- **Study S1 (Visit Sparsity):** [`reports/ml/S1_SPARSITY/REPORT.md`](./S1_SPARSITY/REPORT.md)",
-            "- **Study S2 (Anytime-Valid Sequential Detection):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
+            "- **Study S2 (retracted pending a corrected independent replication):** [`reports/ml/S2_SEQUENTIAL/REPORT.md`](./S2_SEQUENTIAL/REPORT.md)",
             "- **Study S3 (Partial Verification Bias):** [`reports/ml/S3_VERIFICATION_BIAS/REPORT.md`](./S3_VERIFICATION_BIAS/REPORT.md)",
             "- **Study S9 (Cross-Generator Robustness):** [`reports/ml/S9_CROSS_GENERATOR/REPORT.md`](./S9_CROSS_GENERATOR/REPORT.md)",
             "- **Retracted Studies (Condition R1):** Studies S4, S5 (v1), S6, and S10 are retracted to [`reports/ml/RETRACTED/`](./RETRACTED/) per Overseer Verdict P3. S4, S5, S6 and S10 were re-established as `experiments/EXP-K4-001/`, `experiments/EXP-K5-001/`, `experiments/EXP-K6-001/` and `experiments/EXP-M12-001/` (K4 and K5 failed their pre-registered criteria; K6 H1 and H2 met in simulation, H3 not met; M12 H3 met on this MLP, H2 not met, not wired; suggestion-only / research-only, nothing clinical).",
@@ -900,6 +741,12 @@ def render_master_benchmark_report(
 
 
 def main() -> int:
+    raise RuntimeError(
+        "The Phase 2/3 aggregate benchmark runner is retired. Its S1/S3/S9 outputs and K3 identity "
+        "are under Q-7 evidence reconciliation; do not regenerate them. See "
+        "docs/audits/CORE-ML-CLAIMS-INVENTORY-2026-10.md."
+    )
+
     start_time = time.time()
     print("============================================================")
     print("🚀 VIGIL REPRODUCIBLE ML BENCHMARK RUNNER (PHASE 2 & 3)")
@@ -911,8 +758,11 @@ def main() -> int:
     # 1. Run Study S1 (Visit Sparsity)
     s1_results = run_study_s1(audit_logger)
 
-    # 2. Run Study S2 (Sequential Anytime-Valid Detection)
-    s2_results = run_study_s2(audit_logger)
+    # S2 is retracted pending a corrected protocol and independent replication.
+    s2_results = {
+        "status": "RETRACTED",
+        "reason": "Legacy K2 benchmark cannot establish Ville validity; see quality rerun audit.",
+    }
 
     # 3. Run Study S3 (Verification Bias)
     s3_results = run_study_s3(audit_logger)

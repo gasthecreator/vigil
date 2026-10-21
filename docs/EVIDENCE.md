@@ -48,11 +48,11 @@
   2. Ricós C, Alvarez V, Cava F, et al. "Current databases on biological variation: pros, cons and progress." *Scand J Clin Lab Invest*. 1999;59(7):491–500. doi:[10.1080/00365519950185229](https://doi.org/10.1080/00365519950185229). PMID:[10667686](https://pubmed.ncbi.nlm.nih.gov/10667686/).
   3. Fraser CG. *Biological Variation: From Principles to Practice*. Washington, DC: AACC Press; 2001. ISBN: 978-1890883492.
   4. Westgard QC Desirable Biological Variation Database specifications (Ricós et al.). URL: https://www.westgard.com/biodatabase1.htm. Saved Excerpt: [`docs/evidence/excerpts/E9_westgard_ricos_biodatabase.md`](evidence/excerpts/E9_westgard_ricos_biodatabase.md).
-* **Verified Formulations & Parameters:**
+* **Reported Formulations & Parameters (secondary-source values):**
   - Reference Change Value: $\text{RCV} = 2^{1/2} \times Z \times \sqrt{CV_a^2 + CV_i^2}$.
   - Index of Individuality: $\text{II} = CV_i / CV_g$. For CA 15-3, $CV_i = 6.1\%$, $CV_g = 62.9\%$, yielding $\text{II} = 0.10$. Because $\text{II} < 0.6$, conventional population reference intervals have low sensitivity for detecting personal pathological changes.
   - CEA: $CV_i = 12.7\%$, $CV_g = 55.6\%$, $\text{II} = 0.23$.
-* **Used by:** Analyte registry (`packages/vigil-core/vigil_core/analytes.py`), Plausibility Adjudicator (Module M3).
+* **Used by:** Analyte registry (`packages/vigil-core/vigil_core/analytes.py`) and M3's synthetic research assumptions. These values do not establish analyzer-specific precision, clinical calibration, or patient-level validity.
 
 ### E12 — Metastatic Site Tropism by Subtype — `SECONDARY` (downgraded by overseer 2026-10-17: saved 'verbatim' excerpt contains numbers absent from the retrievable source; see scripts/audit_excerpts.py and docs/progress/VERDICT-P5A.md)
 * **Dossier:** [`docs/evidence/E12.md`](evidence/E12.md)

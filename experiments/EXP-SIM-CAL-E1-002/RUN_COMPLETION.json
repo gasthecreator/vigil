@@ -1,0 +1,8 @@
+{
+  "access_log_sha256": "6e4a13c53119d156edd38f378ec4fd16bccc97752cd3bc54d5f4913dc3f800c3",
+  "completed_utc": "2026-10-20T17:46:14.603639+00:00",
+  "experiment_id": "EXP-SIM-CAL-E1-002",
+  "report_sha256": "5fb3489950cb7ea143ebc7fd91d5cdca07fb97ebca6439a95cc1b776e8f1e8b8",
+  "results_sha256": "116dd3a93e1f7b51f16c99c4e00c178471b98f508c79aa356fbaeb3c5984939e",
+  "source_commit": "81164e2281fdee36f7d39905dd7ff2be975ce4d6"
+}

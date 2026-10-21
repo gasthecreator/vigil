@@ -22,14 +22,13 @@ from vigil_ml.features import TRACKED_ANALYTES, WindowedFeatureExtractor
 from vigil_ml.harmonisation_k5 import HierarchicalLabHarmoniserK5, LabHarmonisationProfile
 from vigil_ml.joint_model import (
     BayesianJointModelK3,
-    ConvergenceDiagnostics,
     FastLandmarkJointModel,
-    PosteriorPredictiveResult,
+    LandmarkLogisticResearchBaseline,
 )
+from vigil_ml.k1 import HybridKineticModelK1
 from vigil_ml.k2 import SequentialDetector
 from vigil_ml.k8 import AdaptiveConformal, ConformalRiskController, OODGate
-from vigil_ml.kinetic_k1 import HybridKineticModelK1, UnscentedKalmanFilterK1
-from vigil_ml.m3 import adjudicate, rcv
+from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, M3Assumptions, adjudicate, load_m3_assumptions, rcv
 from vigil_ml.m5 import (
     compute_flesch_kincaid_grade_level,
     generate_worked_journey,
@@ -64,15 +63,13 @@ __all__ = [
     # K3 Joint model
     "BayesianJointModelK3",
     "FastLandmarkJointModel",
-    "ConvergenceDiagnostics",
-    "PosteriorPredictiveResult",
+    "LandmarkLogisticResearchBaseline",
     # M1 Organ susceptibility
     "TARGET_ORGANS",
     "BaselineOrganSusceptibilityModelM1",
     "OrganSusceptibilityPrediction",
     # K1 Kinetic SDE/ODE
     "HybridKineticModelK1",
-    "UnscentedKalmanFilterK1",
     # K2 Sequential detection
     "SequentialDetector",
     "SequentialEProcessK2",
@@ -91,6 +88,9 @@ __all__ = [
     "ProductionEnsembleK8",
     "AbstentionReason",
     # M3 Plausibility Adjudicator
+    "M3Assumptions",
+    "DEFAULT_M3_ASSUMPTIONS",
+    "load_m3_assumptions",
     "rcv",
     "adjudicate",
     # M5 Verified Narrative

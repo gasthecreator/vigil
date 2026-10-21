@@ -1,12 +1,15 @@
-"""M12 invariants (experiments/EXP-M12-001/PREREG.md section 8), tested before the frozen run."""
+"""M12 training invariants and regression checks for its synthetic runner."""
 
 from __future__ import annotations
 
 import ast
+import importlib.util
 import inspect
+import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.metrics import roc_auc_score
 from vigil_ml import m12
@@ -14,6 +17,11 @@ from vigil_ml import m12
 ROOT = Path(__file__).resolve().parents[3]
 M12_SRC = ROOT / "packages" / "vigil-ml" / "vigil_ml" / "m12.py"
 RUNNER = ROOT / "experiments" / "EXP-M12-001" / "run.py"
+RUNNER_SPEC = importlib.util.spec_from_file_location("exp_m12_runner", RUNNER)
+assert RUNNER_SPEC is not None and RUNNER_SPEC.loader is not None
+M12_RUNNER = importlib.util.module_from_spec(RUNNER_SPEC)
+sys.modules[RUNNER_SPEC.name] = M12_RUNNER
+RUNNER_SPEC.loader.exec_module(M12_RUNNER)
 
 
 def _norm(tensors) -> float:
@@ -32,6 +40,22 @@ def test_fedavg_identity_n_weighted_mean():
     from_server = m12.server_aggregate(masked, counts)
     for a, b in zip(unmasked_mean, from_server):
         assert np.max(np.abs(a - b)) < 1e-6
+
+
+def test_m12_site_missingness_keeps_observation_masks_consistent():
+    observations = pd.DataFrame({
+        "ca_15_3": [10.0, np.nan, 15.0],
+        "observed_ca_15_3": [True, False, True],
+        "cea": [2.0, 3.0, np.nan],
+        "observed_cea": [True, True, False],
+    })
+    changed = M12_RUNNER.apply_site(
+        observations, beta=0.0, p_miss=1.0, rng=np.random.default_rng(22)
+    )
+    assert changed["ca_15_3"].isna().all()
+    assert changed["cea"].isna().all()
+    assert not changed["observed_ca_15_3"].any()
+    assert not changed["observed_cea"].any()
 
 
 def test_secure_aggregation_masks_and_server_blindness():
@@ -123,12 +147,84 @@ def test_determinism_central_and_masked_fedavg():
         assert np.array_equal(a, b)
 
 
+@pytest.mark.parametrize("train", [m12.train_sgd, m12.train_dp_sgd])
+def test_trainers_reject_unknown_censoring_labels(train):
+    init = m12.init_mlp(2, np.random.default_rng(20))
+    x = np.ones((3, 2), dtype=np.float32)
+    y = np.array([0.0, 1.0, np.nan], dtype=np.float32)
+    with pytest.raises(ValueError, match="known, finite horizon labels"):
+        if train is m12.train_sgd:
+            train(init, x, y, 1, 2, 0.05, np.random.default_rng(21))
+        else:
+            train(init, x, y, 1, 2, 0.05, 1.0, 1.0, np.random.default_rng(21))
+
+
+def test_fedavg_rejects_empty_or_unknown_label_sites():
+    init = m12.init_mlp(2, np.random.default_rng(22))
+    x = np.ones((2, 2), dtype=np.float32)
+    y = np.array([0.0, 1.0], dtype=np.float32)
+    with pytest.raises(ValueError, match="at least one known training row"):
+        m12.fedavg_train(
+            [x, np.empty((0, 2), dtype=np.float32)], [y, np.empty(0, dtype=np.float32)],
+            init, 1, 1, 2, 0.05, np.random.default_rng(23), np.random.default_rng(24),
+        )
+    with pytest.raises(ValueError, match="known, finite horizon labels"):
+        m12.fedavg_train(
+            [x], [np.array([0.0, np.nan], dtype=np.float32)], init, 1, 1, 2, 0.05,
+            np.random.default_rng(23), np.random.default_rng(24),
+        )
+
+
+def test_score_pack_fails_closed_on_empty_or_unknown_outcomes():
+    with pytest.raises(ValueError, match="empty evaluation cohort"):
+        M12_RUNNER.score_pack(
+            np.array([]), np.array([]), np.array([]), np.array([])
+        )
+    with pytest.raises(ValueError, match="known binary horizon labels"):
+        M12_RUNNER.score_pack(
+            np.array([0.2, 0.8]), np.array([0.0, np.nan]),
+            np.array([365.0, 365.0]), np.array([0, 1]),
+        )
+
+
+def test_m12_frozen_runner_refuses_to_repeat_existing_access():
+    with pytest.raises(RuntimeError, match="frozen run is retired"):
+        M12_RUNNER.assert_frozen_run_not_retired()
+
+
+def test_m12_frozen_runner_fails_closed_when_disposition_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(M12_RUNNER, "OUT", tmp_path)
+    with pytest.raises(RuntimeError, match="missing disposition record"):
+        M12_RUNNER.assert_frozen_run_not_retired()
+
+
+@pytest.mark.parametrize("contents", ["not-json", "[]", '{"status":"active"}'])
+def test_m12_frozen_runner_fails_closed_on_invalid_disposition(
+    tmp_path, monkeypatch, contents
+):
+    (tmp_path / "FROZEN-RUN-DISPOSITION.json").write_text(contents, encoding="utf-8")
+    monkeypatch.setattr(M12_RUNNER, "OUT", tmp_path)
+    with pytest.raises(RuntimeError, match="invalid disposition|not retired"):
+        M12_RUNNER.assert_frozen_run_not_retired()
+
+
+def test_m12_rerender_refuses_to_overwrite_historical_report(monkeypatch):
+    report = RUNNER.parent / "REPORT.md"
+    before = report.read_bytes()
+    monkeypatch.setattr(sys, "argv", [str(RUNNER), "--rerender"])
+    with pytest.raises(RuntimeError, match="refusing to overwrite historical evidence"):
+        M12_RUNNER.main()
+    assert report.read_bytes() == before
+
+
 def test_causality_latent_columns_do_not_change_weights():
     from vigil_ml.features import WindowedFeatureExtractor
     from vigil_sim.generators import GeneratorType, get_generator
 
     def landmarks_from(obs, pts):
-        X, y, times, events = WindowedFeatureExtractor().transform_cohort(pts, obs, 365.0)
+        X, y, times, events = WindowedFeatureExtractor().transform_cohort(
+            pts, obs, 365.0, synthetic_only=True
+        )
         keep = []
         for _pid, grp in X.groupby("patient_id", sort=False):
             ok = grp[(grp["eval_day"] >= 90.0) & (grp["eval_day"] <= 365.0)]
@@ -142,11 +238,12 @@ def test_causality_latent_columns_do_not_change_weights():
 
     cohort = get_generator(GeneratorType.G1_SMOOTH, seed=3).generate_cohort(40, 730.0, 90.0)
     obs = cohort.to_observations_dataframe()
+    assert not any(col.startswith("latent_") for col in obs.columns)
     pts = cohort.to_patients_dataframe()
     x1, y1 = landmarks_from(obs, pts)
     obs2 = obs.copy()
-    for col in [c for c in obs2.columns if c.startswith("latent_")]:
-        obs2[col] = np.random.default_rng(0).permutation(obs2[col].to_numpy())
+    marker = obs2["ca_15_3"].to_numpy()
+    obs2["latent_ca_15_3"] = np.random.default_rng(0).permutation(marker)
     x2, y2 = landmarks_from(obs2, pts)
     assert np.array_equal(x1, x2)
     assert np.array_equal(y1, y2)

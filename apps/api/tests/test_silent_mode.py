@@ -234,7 +234,9 @@ def test_detector_state_lives_in_the_shadow_store_only(api_env, monkeypatch):
         assert session.get(Patient, pid).detector_state is None
     with shadow_store.get_store(env.shadow_url).session() as session:
         state = session.get(ShadowDetectorState, pid)
-        assert state is not None and len(state.state["history"]) == len(SERIES)
+        assert state is not None
+        assert set(state.state["analytes"]) == {"ca_15_3"}
+        assert len(state.state["analytes"]["ca_15_3"]["history"]) == len(SERIES)
 
 
 # --- 2. forged requests cannot switch it off --------------------------------------------------------------
@@ -295,7 +297,11 @@ def test_no_get_route_returns_a_shadow_value_as_any_role(api_env, monkeypatch):
         obs_id = session.execute(select(Observation.id).limit(1)).scalar_one()
 
     markers = {r.id for r in rows}
-    markers |= {f"{r.score!r}"[:10] for r in rows if r.score > 1e-3}  # score digits (skip tiny values)
+    markers |= {
+        f"{r.score!r}"[:10]
+        for r in rows
+        if r.score is not None and r.score > 1e-3
+    }  # non-null score digits (skip tiny values)
     markers |= {"biomarker_spike", "lab_error_repeat", "sequential_divergence", "critical_panic_boundary"}
 
     get_paths = [p for p, ops in app.openapi()["paths"].items() if "get" in ops]

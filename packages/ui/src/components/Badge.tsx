@@ -5,6 +5,7 @@ import { clsx } from "../utils";
 import { colors } from "../tokens";
 
 export type BadgeVariant =
+  | "abstain"
   | "escalate"
   | "needs_repeat"
   | "explained"
@@ -37,6 +38,7 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles: Record<BadgeVariant, string> = {
+    abstain: "bg-slate-100 text-slate-800 border-slate-300",
     escalate: colors.plausibility.escalate.badge,
     needs_repeat: colors.plausibility.needs_repeat.badge,
     explained: colors.plausibility.explained.badge,

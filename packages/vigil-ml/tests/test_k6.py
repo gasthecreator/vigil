@@ -104,6 +104,37 @@ def test_hazard_output_is_in_unit_interval_and_non_decreasing_in_horizon():
     assert (np.diff(G, axis=1) >= -1e-12).all()
 
 
+@pytest.mark.parametrize(
+    ("labels", "groups", "message"),
+    [
+        (np.zeros((4, len(k6.HORIZONS) - 1)), np.array([0, 0, 1, 1]), "labels must have shape"),
+        (np.zeros((3, len(k6.HORIZONS))), np.array([0, 0, 1, 1]), "labels must have shape"),
+        (np.full((4, len(k6.HORIZONS)), 0.5), np.array([0, 0, 1, 1]), "binary values"),
+        (np.full((4, len(k6.HORIZONS)), np.nan), np.array([0, 0, 1, 1]), "finite numeric"),
+        (np.zeros((4, len(k6.HORIZONS))), np.array([0, 0, 0, 0]), "at least two patient groups"),
+        (np.zeros((4, len(k6.HORIZONS))), np.array([[0], [0], [1], [1]]), "one-dimensional vector"),
+    ],
+)
+def test_hazard_fit_rejects_invalid_target_or_group_contract(labels, groups, message):
+    X = np.zeros((4, k6.N_FEATURES))
+    with pytest.raises(ValueError, match=message):
+        k6.HazardModel().fit(X, labels, groups, seed=1)
+
+
+def test_hazard_fit_rejects_infinite_features_but_allows_missing_features():
+    X, labels, groups = _toy_hazard_data(n=4)
+    X[0, 0] = np.nan
+    X[1, 0] = np.inf
+    with pytest.raises(ValueError, match="must not contain infinity"):
+        k6.HazardModel().fit(X, labels, groups, seed=1)
+
+
+@pytest.mark.parametrize("columns", [(), (0.5,), (True,), (0, 0)])
+def test_hazard_model_rejects_malformed_feature_column_selection(columns):
+    with pytest.raises(ValueError, match="columns"):
+        k6.HazardModel(columns=columns)
+
+
 def test_hazard_model_round_trips_through_text_with_identical_output_and_no_binary_object_format():
     X, labels, groups = _toy_hazard_data(seed=3)
     m = k6.HazardModel().fit(X, labels, groups, seed=2)
@@ -268,6 +299,30 @@ def test_evaluation_only_arrays_do_not_change_any_decision_or_cost():
         assert np.array_equal(r.visited, b.visited), p.name
         assert np.array_equal(r.vcost, b.vcost), p.name
         assert np.array_equal(r.screen_idx, b.screen_idx), p.name
+
+
+@pytest.mark.parametrize("stage", [float("nan"), 0.0, 5.0, 2.5])
+def test_stage_heuristic_rejects_missing_or_unsupported_stage(stage):
+    features = np.zeros((1, k6.N_FEATURES), dtype=float)
+    features[0, 0] = stage
+    with pytest.raises(ValueError, match="stage heuristic"):
+        k6.StageHeuristicPolicy().decide(features, 1, 0.0)
+
+
+def test_stage_heuristic_requires_correct_feature_shape():
+    with pytest.raises(ValueError, match="features must have shape"):
+        k6.StageHeuristicPolicy().decide(np.zeros((1, 1)), 1, 0.0)
+
+
+@pytest.mark.parametrize(
+    ("stage", "expected_days"), [(1.0, 364), (2.0, 182), (3.0, 91), (4.0, 91)]
+)
+def test_stage_heuristic_preserves_registered_interval_for_valid_stage(stage, expected_days):
+    features = np.zeros((1, k6.N_FEATURES), dtype=float)
+    features[0, 0] = stage
+    intervals, panels = k6.StageHeuristicPolicy().decide(features, 1, 0.0)
+    assert intervals.tolist() == [expected_days]
+    assert panels.tolist() == [k6.PANELS.index("P2")]
 
 
 def test_policy_code_never_names_a_truth_column():

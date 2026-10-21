@@ -1,0 +1,321 @@
+{
+  "profile_id": "balanced_synthetic_core_v4",
+  "interpretation": "Synthetic core-engine stress assumptions with explicit first-order G1 secretion/clearance and G2 Poisson shot-noise mechanisms. Not a Nigerian population estimate and not calibrated for clinical prediction.",
+  "age_years": {
+    "minimum": 24.0,
+    "maximum": 82.0,
+    "distribution": "uniform"
+  },
+  "stage_probabilities": [
+    0.25,
+    0.25,
+    0.25,
+    0.25
+  ],
+  "subtype_probabilities": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333334
+  ],
+  "receptor_probabilities": {
+    "hr_positive_her2_negative_pr_positive": 0.85,
+    "her2_positive_er_positive": 0.5,
+    "her2_positive_pr_positive": 0.4
+  },
+  "recurrence_probability_by_stage": [
+    0.15,
+    0.3,
+    0.55,
+    0.85
+  ],
+  "recurrence_multiplier_by_subtype": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "recurrence_cap_by_subtype": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "recurrence_time_gamma_by_subtype": [
+    {
+      "shape": 2.5,
+      "scale_days": 150.0,
+      "offset_days": 60.0
+    },
+    {
+      "shape": 3.5,
+      "scale_days": 180.0,
+      "offset_days": 90.0
+    },
+    {
+      "shape": 3.5,
+      "scale_days": 180.0,
+      "offset_days": 90.0
+    }
+  ],
+  "recurrence_day_cap": 1825.0,
+  "indolent_probability": 0.08,
+  "site_probabilities_by_subtype": [
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ]
+  ],
+  "competing_event_probabilities": {
+    "cardiovascular_event": 0.05,
+    "lost_to_follow_up": 0.04
+  },
+  "competing_event_time_days": {
+    "cardiovascular_event": [
+      120.0,
+      1800.0
+    ],
+    "lost_to_follow_up": [
+      180.0,
+      1400.0
+    ]
+  },
+  "facility_lab_effects": {
+    "mode": "shared_by_facility",
+    "facility_count": 6,
+    "offset_sd": 0.06,
+    "scale_min": 0.94,
+    "scale_max": 1.06,
+    "assignment": "one seeded effect per facility and analyte, shared by patients in that facility"
+  },
+  "baseline_analyte_sampling": {
+    "between_patient_cv_cap": 0.22,
+    "reference_low_fraction": 0.8,
+    "reference_high_fraction": 0.95,
+    "provenance": "Legacy synthetic baseline distribution settings transcribed from source; not clinically calibrated."
+  },
+  "verification": {
+    "result_model": "imperfect_test_characteristics",
+    "provenance": "Explicit uncalibrated synthetic stress assumptions; inherited values are transcribed from prior source defaults, not clinical estimates.",
+    "visible_burden_threshold": 12.0,
+    "sensitivity": 0.9,
+    "specificity": 0.99,
+    "routine_imaging_probability": 0.08,
+    "symptom_grade_thresholds": [
+      2,
+      3
+    ],
+    "symptom_probability_increments": [
+      0.4,
+      0.7
+    ],
+    "marker_thresholds": [
+      35.0,
+      75.0
+    ],
+    "marker_probability_increments": [
+      0.3,
+      0.65
+    ],
+    "maximum_imaging_probability": 0.95,
+    "result_semantics": "positive/negative only when imaging is performed; otherwise unknown"
+  },
+  "measurement_missingness": {
+    "high_cost_analytes": [
+      "ca_15_3",
+      "ca_27_29",
+      "cea"
+    ],
+    "high_cost_skip_probability_per_cost_factor": 0.12,
+    "base_skip_probability_by_generator": {
+      "g1_smooth_kinetics": 0.03,
+      "g2_shedding_bursts": 0.05,
+      "g3_heavy_tailed_noise": 0.06
+    },
+    "interpretation": "G1 high-cost analytes have cost-dependent missingness; other profiles use generator-specific skip rates."
+  },
+  "baseline_symptom_probabilities": {
+    "fatigue_weight_loss": 0.08,
+    "bone_pain": 0.04
+  },
+  "symptom_mechanics": {
+    "provenance": "Explicit synthetic symptom stress mapping transcribed from prior generator logic; not clinically calibrated.",
+    "maximum_grade": 4,
+    "baseline_grade": 1,
+    "burden_rules": {
+      "bone_pain": {"trigger_state": "b_bone", "trigger_threshold": 5.0, "grade_state": "b_bone", "grade_threshold": 5.0, "grade_offset": 1, "grade_scale": 15.0},
+      "jaundice": {"trigger_state": "b_liver", "trigger_threshold": 5.0, "grade_state": "o_liver", "grade_threshold": 25.0, "grade_offset": 0, "grade_scale": 20.0},
+      "ruq_pain": {"trigger_state": "b_liver", "trigger_threshold": 5.0, "grade_state": "b_liver", "grade_threshold": 5.0, "grade_offset": 1, "grade_scale": 15.0},
+      "cough_dyspnea": {"trigger_state": "b_lung", "trigger_threshold": 8.0, "grade_state": "b_lung", "grade_threshold": 8.0, "grade_offset": 1, "grade_scale": 18.0},
+      "headache_neuro": {"trigger_state": "b_brain", "trigger_threshold": 3.0, "grade_state": "b_brain", "grade_threshold": 3.0, "grade_offset": 1, "grade_scale": 10.0},
+      "fatigue_weight_loss": {"trigger_state": "total_burden", "trigger_threshold": 20.0, "grade_state": "total_burden", "grade_threshold": 20.0, "grade_offset": 2, "grade_scale": 30.0}
+    }
+  },
+  "out_of_pocket_delay_factor_range": [
+    1.0,
+    2.4
+  ],
+  "visit_interval_gamma": {
+    "shape": 4.0,
+    "scale": 0.25
+  },
+  "generator_mechanics": {
+    "provenance": "Existing population values are transcribed from legacy generator code. G1/G2 kinetic coefficients and event-process parameters below are explicit synthetic stress assumptions, not sourced patient estimates and not clinically calibrated.",
+    "g1": {
+      "lead_time_normal_days": [
+        126.0,
+        30.0
+      ],
+      "lead_time_clip_days": [
+        55.0,
+        210.0
+      ],
+      "seed_offset_days": 65.0,
+      "growth_rate_by_group": {
+        "indolent": [
+          0.002,
+          0.005
+        ],
+        "tnbc": [
+          0.025,
+          0.035
+        ],
+        "other": [
+          0.02,
+          0.03
+        ]
+      },
+      "burden": {
+        "exponent_cap": 10.0,
+        "mass_scale": 100.0,
+        "saturation_scale": 50.0
+      },
+      "secondary_compartment_fraction": {
+        "bone_to_locoregional": 0.1,
+        "liver_to_bone": 0.15
+      },
+      "marker_coupling": {
+        "ca153_site_multiplier": {
+          "liver": 1.25,
+          "bone": 1.1,
+          "other": 0.65
+        }
+      },
+      "organ_damage": {
+        "liver_per_liver_burden": 2.5,
+        "bone_per_bone_burden": 3.2
+      },
+      "chemotherapy": {
+        "eligible_stages": [
+          "Stage II",
+          "Stage III"
+        ],
+        "assignment_probability": 0.85,
+        "active_days": [
+          30.0,
+          180.0
+        ],
+        "liver_stress": [
+          8.0,
+          20.0
+        ],
+        "myelosuppression_multiplier": [
+          0.65,
+          0.85
+        ],
+        "hemoglobin_reduction": [
+          1.0,
+          2.5
+        ]
+      },
+      "enzyme_coupling": {
+        "alt_ast_per_liver_damage": 2.2,
+        "alp_ggt_per_liver_damage": 2.8,
+        "alp_ggt_per_bone_damage": 3.5,
+        "bilirubin_liver_damage_threshold": 30.0,
+        "bilirubin_per_excess_liver_damage": 0.08,
+        "calcium_bone_damage_threshold": 25.0,
+        "calcium_per_excess_bone_damage": 0.04
+      },
+      "marker_kinetics": {
+        "integration_step_days": 1.0,
+        "ca153_secretion_per_burden_day": 0.03,
+        "ca153_clearance_rate_per_day": 0.023104906018664842,
+        "cea_secretion_per_burden_day": 0.015,
+        "cea_clearance_rate_per_day": 0.046209812037329684
+      }
+    },
+    "g2": {
+      "apply_facility_lab_effects": true,
+      "ca153_per_burden": 3.5,
+      "cea_per_burden": 0.6,
+      "liver_damage_per_liver_burden": 2.0,
+      "bone_damage_per_bone_burden": 2.5,
+      "liver_enzyme_per_damage": 2.5,
+      "alp_per_bone_damage": 3.0,
+      "shot_noise": {
+        "event_rate_per_day": 0.02,
+        "burden_amplitude_mean": 15.0,
+        "burden_amplitude_coefficient_of_variation": 0.5,
+        "ca153_clearance_rate_per_day": 0.023104906018664842,
+        "cea_clearance_rate_per_day": 0.046209812037329684
+      }
+    },
+    "g3": {
+      "apply_facility_lab_effects": true,
+      "saturate_signal": true,
+      "haemolysis_probability": 0.04,
+      "sample_dilution_probability": 0.02,
+      "active_signal_days": 126.0,
+      "burden_at_full_signal": 50.0,
+      "ca153_per_burden": 3.0,
+      "cea_per_burden": 0.5,
+      "liver_damage_per_liver_burden": 2.0,
+      "bone_damage_per_bone_burden": 2.0,
+      "student_t_degrees_freedom": 3.0,
+      "student_t_noise_scale": 0.7,
+      "ca153_signal_increment": 55.0,
+      "alt_liver_signal_increment": 110.0,
+      "alp_bone_signal_increment": 160.0,
+      "haemolysis_ast_multiplier": [
+        2.5,
+        4.5
+      ],
+      "haemolysis_ldh_multiplier": [
+        3.0,
+        5.0
+      ],
+      "sample_dilution_multiplier": [
+        0.6,
+        0.75
+      ]
+    }
+  },
+  "cohort_schedule": {
+    "initial_visit_day_range": [
+      0.0,
+      15.0
+    ],
+    "nominal_interval_days": 90.0,
+    "post_confirmation_followup_days": 90.0,
+    "visit_interval_gamma": {
+      "shape": 4.0,
+      "scale": 0.25
+    },
+    "default_num_patients": 100,
+    "default_duration_days": 730.0,
+    "start_datetime": "2024-01-01T08:00:00+00:00",
+    "provenance": "Historical synthetic scheduling values transcribed from generator defaults; not calibrated."
+  }
+}

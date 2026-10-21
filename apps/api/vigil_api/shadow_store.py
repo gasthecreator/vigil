@@ -56,7 +56,7 @@ class ShadowPrediction(ShadowBase):
     canonical_value = Column(Float, nullable=False)
     # The quantity the monitor treats as the model's risk score. For the M3/K2 pipeline this is M3's
     # probability that the change is real (not a recurrence-risk probability); score_kind says so.
-    score = Column(Float, nullable=False)
+    score = Column(Float, nullable=True)
     score_kind = Column(String(50), nullable=False)
     p_error = Column(Float, nullable=True)
     p_stable = Column(Float, nullable=True)

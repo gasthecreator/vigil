@@ -30,6 +30,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .baselines import TrainingTargetContract
+
 ANALYTES: Tuple[str, ...] = (
     "ca_15_3",
     "cea",
@@ -65,9 +67,31 @@ ABS_SCALE = 365.0
 # ---------------------------------------------------------------------------------------------------------
 # Data containers
 # ---------------------------------------------------------------------------------------------------------
+def _validated_target_contract(value: Optional[TrainingTargetContract]) -> TrainingTargetContract:
+    if not isinstance(value, TrainingTargetContract):
+        raise ValueError("labelled sequences require an explicit target contract (TrainingTargetContract)")
+    if not isinstance(value.estimand, str) or not value.estimand.strip():
+        raise ValueError("target estimand must be a non-empty string")
+    if isinstance(value.horizon_days, (bool, np.bool_)) or not np.isscalar(value.horizon_days):
+        raise ValueError("target horizon_days must be finite and positive, not boolean")
+    try:
+        horizon_days = float(value.horizon_days)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("target horizon_days must be finite and positive") from exc
+    if not np.isfinite(horizon_days) or horizon_days <= 0.0:
+        raise ValueError("target horizon_days must be finite and positive")
+    if value.synthetic_only is not None and not isinstance(value.synthetic_only, (bool, np.bool_)):
+        raise ValueError("synthetic_only target metadata must be boolean when supplied")
+    return TrainingTargetContract(
+        estimand=value.estimand.strip(),
+        horizon_days=horizon_days,
+        synthetic_only=None if value.synthetic_only is None else bool(value.synthetic_only),
+    )
+
+
 @dataclass
 class SequenceSet:
-    """Padded sequences. Shapes: x, m [P, T, A]; t, valid [P, T]; s [P, S]. Optional labels y, row_mask [P, T]."""
+    """Padded sequences and, when labelled, their explicit target contract."""
 
     patient_ids: List[str]
     x: np.ndarray
@@ -77,6 +101,77 @@ class SequenceSet:
     valid: np.ndarray
     y: Optional[np.ndarray] = None
     row_mask: Optional[np.ndarray] = None
+    target_contract: Optional[TrainingTargetContract] = None
+
+    def __post_init__(self) -> None:
+        ids = list(self.patient_ids)
+        if any(not isinstance(pid, str) or not pid.strip() for pid in ids):
+            raise ValueError("patient_ids must contain non-empty strings")
+        if len(ids) != len(set(ids)):
+            raise ValueError("patient_ids must be unique within a SequenceSet")
+        x, m = np.asarray(self.x), np.asarray(self.m)
+        t, s, valid = np.asarray(self.t), np.asarray(self.s), np.asarray(self.valid)
+        if x.ndim != 3 or x.shape[0] != len(ids) or x.shape[1] < 1 or x.shape[2] != N_CHANNELS:
+            raise ValueError(f"x must have shape [patients, steps, {N_CHANNELS}]")
+        if m.shape != x.shape:
+            raise ValueError("m must have the same shape as x")
+        if t.shape != x.shape[:2] or valid.shape != x.shape[:2]:
+            raise ValueError("t and valid must have shape [patients, steps]")
+        if s.shape != (len(ids), N_STATIC):
+            raise ValueError(f"s must have shape [patients, {N_STATIC}]")
+        for name, values in (("x", x), ("t", t), ("s", s)):
+            if values.dtype.kind not in "iuf" or not np.isfinite(values).all():
+                raise ValueError(f"{name} must contain finite numeric values")
+        for name, values in (("m", m), ("valid", valid)):
+            if values.dtype.kind not in "biuf" or not np.isin(values, (0, 1)).all():
+                raise ValueError(f"{name} must contain only boolean or 0/1 values")
+        valid_bool = valid.astype(bool)
+        mask_bool = m.astype(bool)
+        lengths = valid_bool.sum(axis=1)
+        expected_valid = np.arange(x.shape[1])[None, :] < lengths[:, None]
+        if not np.array_equal(valid_bool, expected_valid):
+            raise ValueError("valid visits must form a contiguous prefix before padding")
+        if np.any(mask_bool & ~valid_bool[:, :, None]):
+            raise ValueError("padded visits cannot contain observed channels")
+        if np.any(x[~mask_bool] != 0.0):
+            raise ValueError("unobserved and padded channel values must be zero")
+        if np.any(t < 0.0):
+            raise ValueError("visit days must be non-negative")
+        for i, length in enumerate(lengths):
+            if length and np.any(np.diff(t[i, :length]) <= 0.0):
+                raise ValueError(f"visit days must be strictly increasing for patient {ids[i]}")
+        if (self.y is None) != (self.row_mask is None):
+            raise ValueError("y and row_mask must either both be provided or both be omitted")
+        if self.y is None and self.target_contract is not None:
+            raise ValueError("an unlabelled SequenceSet cannot carry a target contract")
+        target_contract = None
+        if self.y is not None and self.row_mask is not None:
+            target_contract = _validated_target_contract(self.target_contract)
+            y, row_mask = np.asarray(self.y), np.asarray(self.row_mask)
+            if y.shape != x.shape[:2] or row_mask.shape != x.shape[:2]:
+                raise ValueError("y and row_mask must have shape [patients, steps]")
+            if y.dtype.kind not in "biuf" or not np.isfinite(y).all():
+                raise ValueError("y must contain finite numeric labels")
+            if row_mask.dtype.kind not in "biuf" or not np.isin(row_mask, (0, 1)).all():
+                raise ValueError("row_mask must contain only boolean or 0/1 values")
+            row_mask_bool = row_mask.astype(bool)
+            if np.any(row_mask_bool & ~valid_bool):
+                raise ValueError("labels cannot be attached to padded visits")
+            if np.any(~np.isin(y[row_mask_bool], (0, 1))):
+                raise ValueError("scored labels must be binary")
+        x32, t32, s32 = x.astype(np.float32), t.astype(np.float32), s.astype(np.float32)
+        if not np.isfinite(x32).all() or not np.isfinite(t32).all() or not np.isfinite(s32).all():
+            raise ValueError("x, t, and s must remain finite when represented as float32")
+        for i, length in enumerate(lengths):
+            if length and np.any(np.diff(t32[i, :length]) <= 0.0):
+                raise ValueError(f"visit days lose strict ordering at float32 precision for patient {ids[i]}")
+        self.patient_ids = ids
+        self.x, self.m, self.t, self.s = x32, mask_bool.astype(np.float32), t32, s32
+        self.valid = valid_bool
+        if self.y is not None and self.row_mask is not None:
+            self.y = np.asarray(self.y, dtype=np.float32)
+            self.row_mask = np.asarray(self.row_mask, dtype=bool)
+        self.target_contract = target_contract
 
     def __len__(self) -> int:
         return len(self.patient_ids)
@@ -96,14 +191,23 @@ class SequenceSet:
             self.valid[idx],
             None if self.y is None else self.y[idx],
             None if self.row_mask is None else self.row_mask[idx],
+            self.target_contract,
         )
 
 
 def log_reference(value: np.ndarray, reference_mid: np.ndarray) -> np.ndarray:
     """The fixed input scaling: clip(log(value / reference midpoint), -5, 5). Never fitted."""
+    raw_value, raw_reference = np.asarray(value), np.asarray(reference_mid)
+    if raw_value.dtype.kind not in "iuf" or raw_reference.dtype.kind not in "iuf":
+        raise ValueError("values and reference midpoints must be numeric, not boolean or object")
+    values, reference = raw_value.astype(float), raw_reference.astype(float)
+    if reference.ndim != 1 or reference.size == 0 or not np.isfinite(reference).all() or np.any(reference <= 0):
+        raise ValueError("reference midpoints must be a non-empty finite positive vector")
+    if np.isinf(values).any() or np.any(values[np.isfinite(values)] <= 0.0):
+        raise ValueError("observed laboratory values must be finite and positive; use NaN for missing")
     with np.errstate(divide="ignore", invalid="ignore"):
-        z = np.log(np.asarray(value, dtype=float) / reference_mid)
-    return np.clip(np.nan_to_num(z, nan=0.0, posinf=5.0, neginf=-5.0), -5.0, 5.0)
+        z = np.log(values / reference)
+    return np.clip(np.where(np.isnan(z), 0.0, z), -5.0, 5.0)
 
 
 def build_sequences(
@@ -120,15 +224,59 @@ def build_sequences(
     any further columns (symptom grades) are used as given. A patient with more than `max_steps` visits raises (the
     study never truncates silently).
     """
-    P, n_lab = len(patient_ids), len(reference_mid)
-    C = np.asarray(values[0]).shape[-1] if P else n_lab
+    P = len(patient_ids)
+    if P == 0:
+        raise ValueError("at least one patient is required to build sequences")
+    if len(days) != P or len(values) != P:
+        raise ValueError("patient_ids, days, and values must have the same number of patients")
+    if isinstance(max_steps, (bool, np.bool_)) or not isinstance(max_steps, (int, np.integer)):
+        raise ValueError("max_steps must be an integer")
+    if not 1 <= max_steps <= MAX_STEPS:
+        raise ValueError(f"max_steps must be between 1 and {MAX_STEPS}")
+    reference_mid = np.asarray(reference_mid)
+    if (
+        reference_mid.shape != (N_LAB,)
+        or reference_mid.dtype.kind not in "iuf"
+        or not np.isfinite(reference_mid).all()
+        or np.any(reference_mid <= 0.0)
+    ):
+        raise ValueError(f"reference_mid must contain {N_LAB} finite positive laboratory midpoints")
+    reference_mid = reference_mid.astype(float)
+    n_lab = N_LAB
+    static_values = np.asarray(statics)
+    if (
+        static_values.shape != (P, N_STATIC)
+        or static_values.dtype.kind not in "iuf"
+        or not np.isfinite(static_values).all()
+    ):
+        raise ValueError(f"statics must have shape [patients, {N_STATIC}] with finite numeric values")
+    ids = list(patient_ids)
+    if any(not isinstance(pid, str) or not pid.strip() for pid in ids) or len(ids) != len(set(ids)):
+        raise ValueError("patient_ids must be unique non-empty strings")
+    C = N_CHANNELS
     x = np.zeros((P, max_steps, C), dtype=np.float32)
     m = np.zeros((P, max_steps, C), dtype=np.float32)
     t = np.zeros((P, max_steps), dtype=np.float32)
     valid = np.zeros((P, max_steps), dtype=bool)
     for i in range(P):
-        d = np.asarray(days[i], dtype=float)
-        v = np.asarray(values[i], dtype=float).reshape(len(d), C)
+        raw_days, raw_values = np.asarray(days[i]), np.asarray(values[i])
+        if raw_days.dtype.kind not in "iuf" or raw_days.ndim != 1:
+            raise ValueError(f"days for patient {ids[i]} must be a numeric vector")
+        if raw_values.dtype.kind not in "iuf" or raw_values.ndim != 2:
+            raise ValueError(f"values for patient {ids[i]} must be a numeric matrix")
+        d = raw_days.astype(float)
+        v = raw_values.astype(float)
+        if v.shape != (len(d), C):
+            raise ValueError(f"values for patient {ids[i]} must have shape [{len(d)}, {C}]")
+        if not np.isfinite(d).all() or np.any(d < 0.0):
+            raise ValueError(f"days for patient {ids[i]} must be finite and non-negative")
+        if len(np.unique(d)) != len(d):
+            raise ValueError(f"days for patient {ids[i]} must be unique")
+        if np.isinf(v).any():
+            raise ValueError(f"values for patient {ids[i]} must be finite or NaN when missing")
+        laboratory_values = v[:, :n_lab]
+        if np.any(laboratory_values[np.isfinite(laboratory_values)] <= 0.0):
+            raise ValueError(f"observed laboratory values for patient {ids[i]} must be positive")
         if len(d) > max_steps:
             raise ValueError(f"patient {patient_ids[i]} has {len(d)} visits; max_steps is {max_steps}")
         order = np.argsort(d, kind="stable")
@@ -143,11 +291,42 @@ def build_sequences(
         if n:
             t[i, n:] = d[-1]
         valid[i, :n] = True
-    return SequenceSet(list(patient_ids), x, m, t, np.asarray(statics, dtype=np.float32), valid)
+    return SequenceSet(ids, x, m, t, static_values.astype(np.float32), valid)
 
 
-def attach_labels(ds: SequenceSet, rows: Dict[Tuple[str, float], float]) -> SequenceSet:
+def attach_labels(
+    ds: SequenceSet,
+    rows: Dict[Tuple[str, float], float],
+    *,
+    target_contract: TrainingTargetContract,
+) -> SequenceSet:
     """Attach landmark labels: `rows[(patient_id, visit_day)] = y`. Only visits that have a row are scored."""
+    contract = _validated_target_contract(target_contract)
+    valid_keys = {
+        (pid, float(ds.t[i, j]))
+        for i, pid in enumerate(ds.patient_ids)
+        for j in range(int(ds.valid[i].sum()))
+    }
+    for key, value in rows.items():
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise ValueError("label keys must be (patient_id, visit_day) pairs")
+        pid, day = key
+        if (
+            not isinstance(pid, str)
+            or isinstance(day, (bool, np.bool_))
+            or not isinstance(day, (int, float, np.integer, np.floating))
+            or isinstance(value, (bool, np.bool_))
+            or not isinstance(value, (int, float, np.integer, np.floating))
+        ):
+            raise ValueError("label keys require a string patient_id, and keys/labels must be numeric")
+        try:
+            numeric_day, numeric_value = float(day), float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("label visit days and values must be numeric") from exc
+        if not np.isfinite(numeric_day) or not np.isfinite(numeric_value) or numeric_value not in (0.0, 1.0):
+            raise ValueError("label visit days must be finite and labels must be binary")
+        if (pid, numeric_day) not in valid_keys:
+            raise ValueError(f"label row does not match a known patient visit: {(pid, numeric_day)!r}")
     y = np.zeros(ds.valid.shape, dtype=np.float32)
     mask = np.zeros(ds.valid.shape, dtype=bool)
     for i, pid in enumerate(ds.patient_ids):
@@ -157,7 +336,7 @@ def attach_labels(ds: SequenceSet, rows: Dict[Tuple[str, float], float]) -> Sequ
             if key in rows:
                 y[i, j] = rows[key]
                 mask[i, j] = True
-    return SequenceSet(ds.patient_ids, ds.x, ds.m, ds.t, ds.s, ds.valid, y, mask)
+    return SequenceSet(ds.patient_ids, ds.x, ds.m, ds.t, ds.s, ds.valid, y, mask, contract)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -459,6 +638,7 @@ class FitConfig:
 class FitResult:
     network: K4Network
     best_epoch: int
+    target_contract: TrainingTargetContract
     val_curve: List[float] = field(default_factory=list)
     train_seconds: float = 0.0
 
@@ -526,6 +706,8 @@ def fit_risk_model(
     """Early-stopped fit on a held-out part of `ds`, then a refit on all of `ds` for the selected epoch count."""
     if ds.y is None or ds.row_mask is None:
         raise ValueError("fit_risk_model needs labels: call attach_labels first")
+    if ds.target_contract is None:
+        raise ValueError("fit_risk_model requires explicit target estimand, horizon, and provenance metadata")
     t0 = time.time()
     P = len(ds)
     rng = np.random.default_rng(seed)
@@ -545,12 +727,19 @@ def fit_risk_model(
     final = fresh()
     _train_epochs(final, ds, np.arange(P), cfg, best_epoch, np.random.default_rng(seed + 2))
     final.eval()
-    return FitResult(final, best_epoch, curve, time.time() - t0)
+    final.target_contract_ = ds.target_contract
+    return FitResult(final, best_epoch, ds.target_contract, curve, time.time() - t0)
 
 
 @torch.no_grad()
 def predict_probabilities(net: K4Network, ds: SequenceSet, batch: int = 256) -> np.ndarray:
     """Risk probabilities [P, T] (meaningful where `ds.valid`)."""
+    if ds.target_contract is not None:
+        model_contract = getattr(net, "target_contract_", None)
+        if model_contract is None:
+            raise ValueError("cannot score labelled sequences with a model lacking a target contract")
+        if model_contract != ds.target_contract:
+            raise ValueError("model and evaluation target contracts do not match")
     net.eval()
     out = np.zeros(ds.valid.shape, dtype=np.float32)
     for k in range(0, len(ds), batch):
@@ -656,7 +845,21 @@ def save_safetensors(net: K4Network, path: Path, extra: Optional[Dict[str, str]]
         "analytes": json.dumps(list(ANALYTES)),
         "symptoms": json.dumps(list(SYMPTOMS)),
     }
-    meta.update({str(k): str(v) for k, v in (extra or {}).items()})
+    if getattr(net, "target_contract_", None) is not None:
+        contract = _validated_target_contract(net.target_contract_)
+        meta["target_contract"] = json.dumps(
+            {
+                "estimand": contract.estimand,
+                "horizon_days": contract.horizon_days,
+                "synthetic_only": contract.synthetic_only,
+            },
+            sort_keys=True,
+        )
+    extra_meta = {str(k): str(v) for k, v in (extra or {}).items()}
+    collisions = (meta.keys() | {"target_contract"}) & extra_meta.keys()
+    if collisions:
+        raise ValueError(f"extra metadata cannot override reserved model metadata: {sorted(collisions)}")
+    meta.update(extra_meta)
     save_file({k: v.contiguous() for k, v in net.state_dict().items()}, str(path), metadata=meta)
 
 
@@ -670,6 +873,13 @@ def load_safetensors(path: Path) -> K4Network:
         raise ValueError(f"not a {FORMAT} file")
     net = K4Network(meta["family"], int(meta["hidden"]), int(meta["n_analytes"]), int(meta["n_static"]))
     net.load_state_dict(load_file(str(path)))
+    if "target_contract" in meta:
+        try:
+            contract_data = json.loads(meta["target_contract"])
+            contract = TrainingTargetContract(**contract_data)
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ValueError("invalid target contract in safetensors metadata") from exc
+        net.target_contract_ = _validated_target_contract(contract)
     net.eval()
     return net
 
@@ -704,6 +914,22 @@ def export_onnx(net: K4Network, path: Path, max_steps: int = MAX_STEPS) -> None:
         opset_version=17,
         dynamo=False,
     )
+    if getattr(net, "target_contract_", None) is not None:
+        import onnx
+
+        contract = _validated_target_contract(net.target_contract_)
+        model = onnx.load(str(path))
+        prop = model.metadata_props.add()
+        prop.key = "vigil.target_contract"
+        prop.value = json.dumps(
+            {
+                "estimand": contract.estimand,
+                "horizon_days": contract.horizon_days,
+                "synthetic_only": contract.synthetic_only,
+            },
+            sort_keys=True,
+        )
+        onnx.save(model, str(path))
 
 
 # ---------------------------------------------------------------------------------------------------------

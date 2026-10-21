@@ -1,0 +1,339 @@
+{
+  "design": {
+    "base_seed": 20270101,
+    "duration_days": 730.0,
+    "holm_family_alpha": 0.01,
+    "patient_stream_names": {
+      "event_amplitudes": "g2-event-amplitudes",
+      "event_times": "g2-event-times"
+    },
+    "patients_per_generator_per_replicate": 1000,
+    "replicate_seed_increment": 20000,
+    "replicates": 5,
+    "stream_offsets": {
+      "G1": 310000,
+      "G2": 420000,
+      "G3": 530000
+    }
+  },
+  "experiment_id": "EXP-CORE-ML-013",
+  "profile_id": "balanced_synthetic_core_v4",
+  "replicates": [
+    {
+      "cohort_contract": {
+        "G1": {
+          "n_generated": 1000,
+          "n_true_recurrent": 465
+        },
+        "G2": {
+          "n_generated": 1000,
+          "n_true_recurrent": 481
+        },
+        "G3": {
+          "n_generated": 1000,
+          "n_true_recurrent": 453
+        }
+      },
+      "cohort_seeds": {
+        "G1": 20580101,
+        "G2": 20690101,
+        "G3": 20800101
+      },
+      "duration_days": 730.0,
+      "g1_recurrence_count": 465,
+      "g1_recurrence_free_control_count": 535,
+      "g2": {
+        "amplitude_coefficient_of_variation": 0.49662027617995935,
+        "amplitude_mean": 14.977453243970876,
+        "amplitude_standardized_lognormal_ks_statistic": 0.009281981868604738,
+        "conditional_event_time_uniform_ks_statistic": 0.008791026277222475,
+        "diagnostic_p_values": {
+          "amplitude_lognormality": 0.7942962254207444,
+          "event_time_uniformity": 0.8447379110032452,
+          "poisson_count": 0.06885172792597774
+        },
+        "eligible_recurrence_person_time_days": 236026.5650051043,
+        "event_count_mean_per_eligible_recurrent_patient": 10.074844074844075,
+        "event_count_variance_per_eligible_recurrent_patient": 20.977720027720025,
+        "exclusions": {
+          "missing_recurrence_day": 0,
+          "not_true_recurrence": 519,
+          "zero_exposure": 0
+        },
+        "holm_adjusted_p_values": {
+          "amplitude_lognormality": 1.0,
+          "event_time_uniformity": 1.0,
+          "poisson_count": 0.20655518377793322
+        },
+        "holm_alpha": 0.01,
+        "holm_reject": {
+          "amplitude_lognormality": false,
+          "event_time_uniformity": false,
+          "poisson_count": false
+        },
+        "n_amplitudes_for_distribution_checks": 4846,
+        "n_eligible_recurrent": 481,
+        "n_event_times_for_distribution_checks": 4846,
+        "n_excluded_true_recurrent": 0,
+        "n_true_recurrent": 481,
+        "poisson_expected_count": 4720.531300102086,
+        "production_event_count_total": 4846
+      },
+      "g3_role": "comparison_contract_control_only_no_mechanism_or_performance_claim",
+      "replicate": 0
+    },
+    {
+      "cohort_contract": {
+        "G1": {
+          "n_generated": 1000,
+          "n_true_recurrent": 471
+        },
+        "G2": {
+          "n_generated": 1000,
+          "n_true_recurrent": 461
+        },
+        "G3": {
+          "n_generated": 1000,
+          "n_true_recurrent": 442
+        }
+      },
+      "cohort_seeds": {
+        "G1": 20600101,
+        "G2": 20710101,
+        "G3": 20820101
+      },
+      "duration_days": 730.0,
+      "g1_recurrence_count": 471,
+      "g1_recurrence_free_control_count": 529,
+      "g2": {
+        "amplitude_coefficient_of_variation": 0.4963810357005573,
+        "amplitude_mean": 14.865716621665456,
+        "amplitude_standardized_lognormal_ks_statistic": 0.01853386776791688,
+        "conditional_event_time_uniform_ks_statistic": 0.015113830463080458,
+        "diagnostic_p_values": {
+          "amplitude_lognormality": 0.08869086217991573,
+          "event_time_uniformity": 0.2509412171426011,
+          "poisson_count": 0.2238238110223382
+        },
+        "eligible_recurrence_person_time_days": 229989.17453555934,
+        "event_count_mean_per_eligible_recurrent_patient": 9.79826464208243,
+        "event_count_variance_per_eligible_recurrent_patient": 20.100518721116668,
+        "exclusions": {
+          "missing_recurrence_day": 0,
+          "not_true_recurrence": 539,
+          "zero_exposure": 0
+        },
+        "holm_adjusted_p_values": {
+          "amplitude_lognormality": 0.2660725865397472,
+          "event_time_uniformity": 0.4476476220446764,
+          "poisson_count": 0.4476476220446764
+        },
+        "holm_alpha": 0.01,
+        "holm_reject": {
+          "amplitude_lognormality": false,
+          "event_time_uniformity": false,
+          "poisson_count": false
+        },
+        "n_amplitudes_for_distribution_checks": 4517,
+        "n_eligible_recurrent": 461,
+        "n_event_times_for_distribution_checks": 4517,
+        "n_excluded_true_recurrent": 0,
+        "n_true_recurrent": 461,
+        "poisson_expected_count": 4599.783490711187,
+        "production_event_count_total": 4517
+      },
+      "g3_role": "comparison_contract_control_only_no_mechanism_or_performance_claim",
+      "replicate": 1
+    },
+    {
+      "cohort_contract": {
+        "G1": {
+          "n_generated": 1000,
+          "n_true_recurrent": 472
+        },
+        "G2": {
+          "n_generated": 1000,
+          "n_true_recurrent": 470
+        },
+        "G3": {
+          "n_generated": 1000,
+          "n_true_recurrent": 476
+        }
+      },
+      "cohort_seeds": {
+        "G1": 20620101,
+        "G2": 20730101,
+        "G3": 20840101
+      },
+      "duration_days": 730.0,
+      "g1_recurrence_count": 472,
+      "g1_recurrence_free_control_count": 528,
+      "g2": {
+        "amplitude_coefficient_of_variation": 0.48838608052222987,
+        "amplitude_mean": 14.956577548635417,
+        "amplitude_standardized_lognormal_ks_statistic": 0.012458646687945496,
+        "conditional_event_time_uniform_ks_statistic": 0.01149768183915234,
+        "diagnostic_p_values": {
+          "amplitude_lognormality": 0.48972309835806216,
+          "event_time_uniformity": 0.5936461875779575,
+          "poisson_count": 0.05398612450975953
+        },
+        "eligible_recurrence_person_time_days": 229337.45291831697,
+        "event_count_mean_per_eligible_recurrent_patient": 9.480851063829787,
+        "event_count_variance_per_eligible_recurrent_patient": 19.88769223789865,
+        "exclusions": {
+          "missing_recurrence_day": 0,
+          "not_true_recurrence": 530,
+          "zero_exposure": 0
+        },
+        "holm_adjusted_p_values": {
+          "amplitude_lognormality": 0.9794461967161243,
+          "event_time_uniformity": 0.9794461967161243,
+          "poisson_count": 0.16195837352927858
+        },
+        "holm_alpha": 0.01,
+        "holm_reject": {
+          "amplitude_lognormality": false,
+          "event_time_uniformity": false,
+          "poisson_count": false
+        },
+        "n_amplitudes_for_distribution_checks": 4456,
+        "n_eligible_recurrent": 470,
+        "n_event_times_for_distribution_checks": 4456,
+        "n_excluded_true_recurrent": 0,
+        "n_true_recurrent": 470,
+        "poisson_expected_count": 4586.749058366339,
+        "production_event_count_total": 4456
+      },
+      "g3_role": "comparison_contract_control_only_no_mechanism_or_performance_claim",
+      "replicate": 2
+    },
+    {
+      "cohort_contract": {
+        "G1": {
+          "n_generated": 1000,
+          "n_true_recurrent": 466
+        },
+        "G2": {
+          "n_generated": 1000,
+          "n_true_recurrent": 456
+        },
+        "G3": {
+          "n_generated": 1000,
+          "n_true_recurrent": 463
+        }
+      },
+      "cohort_seeds": {
+        "G1": 20640101,
+        "G2": 20750101,
+        "G3": 20860101
+      },
+      "duration_days": 730.0,
+      "g1_recurrence_count": 466,
+      "g1_recurrence_free_control_count": 534,
+      "g2": {
+        "amplitude_coefficient_of_variation": 0.5243481075014989,
+        "amplitude_mean": 15.04425896782195,
+        "amplitude_standardized_lognormal_ks_statistic": 0.010235028150481273,
+        "conditional_event_time_uniform_ks_statistic": 0.007244129730502258,
+        "diagnostic_p_values": {
+          "amplitude_lognormality": 0.7468215885278867,
+          "event_time_uniformity": 0.9748768497381224,
+          "poisson_count": 0.33228577036983087
+        },
+        "eligible_recurrence_person_time_days": 221302.47032112678,
+        "event_count_mean_per_eligible_recurrent_patient": 9.56359649122807,
+        "event_count_variance_per_eligible_recurrent_patient": 20.91902352033931,
+        "exclusions": {
+          "missing_recurrence_day": 0,
+          "not_true_recurrence": 544,
+          "zero_exposure": 0
+        },
+        "holm_adjusted_p_values": {
+          "amplitude_lognormality": 1.0,
+          "event_time_uniformity": 1.0,
+          "poisson_count": 0.9968573111094926
+        },
+        "holm_alpha": 0.01,
+        "holm_reject": {
+          "amplitude_lognormality": false,
+          "event_time_uniformity": false,
+          "poisson_count": false
+        },
+        "n_amplitudes_for_distribution_checks": 4361,
+        "n_eligible_recurrent": 456,
+        "n_event_times_for_distribution_checks": 4361,
+        "n_excluded_true_recurrent": 0,
+        "n_true_recurrent": 456,
+        "poisson_expected_count": 4426.049406422536,
+        "production_event_count_total": 4361
+      },
+      "g3_role": "comparison_contract_control_only_no_mechanism_or_performance_claim",
+      "replicate": 3
+    },
+    {
+      "cohort_contract": {
+        "G1": {
+          "n_generated": 1000,
+          "n_true_recurrent": 467
+        },
+        "G2": {
+          "n_generated": 1000,
+          "n_true_recurrent": 512
+        },
+        "G3": {
+          "n_generated": 1000,
+          "n_true_recurrent": 465
+        }
+      },
+      "cohort_seeds": {
+        "G1": 20660101,
+        "G2": 20770101,
+        "G3": 20880101
+      },
+      "duration_days": 730.0,
+      "g1_recurrence_count": 467,
+      "g1_recurrence_free_control_count": 533,
+      "g2": {
+        "amplitude_coefficient_of_variation": 0.5022244696528406,
+        "amplitude_mean": 15.189853147077617,
+        "amplitude_standardized_lognormal_ks_statistic": 0.016574415678465848,
+        "conditional_event_time_uniform_ks_statistic": 0.011505292969257036,
+        "diagnostic_p_values": {
+          "amplitude_lognormality": 0.11359276120165474,
+          "event_time_uniformity": 0.49312548498607245,
+          "poisson_count": 0.08819667646041282
+        },
+        "eligible_recurrence_person_time_days": 253917.11381577663,
+        "event_count_mean_per_eligible_recurrent_patient": 10.15625,
+        "event_count_variance_per_eligible_recurrent_patient": 21.267123287671232,
+        "exclusions": {
+          "missing_recurrence_day": 0,
+          "not_true_recurrence": 488,
+          "zero_exposure": 0
+        },
+        "holm_adjusted_p_values": {
+          "amplitude_lognormality": 0.26459002938123843,
+          "event_time_uniformity": 0.49312548498607245,
+          "poisson_count": 0.26459002938123843
+        },
+        "holm_alpha": 0.01,
+        "holm_reject": {
+          "amplitude_lognormality": false,
+          "event_time_uniformity": false,
+          "poisson_count": false
+        },
+        "n_amplitudes_for_distribution_checks": 5200,
+        "n_eligible_recurrent": 512,
+        "n_event_times_for_distribution_checks": 5200,
+        "n_excluded_true_recurrent": 0,
+        "n_true_recurrent": 512,
+        "poisson_expected_count": 5078.342276315532,
+        "production_event_count_total": 5200
+      },
+      "g3_role": "comparison_contract_control_only_no_mechanism_or_performance_claim",
+      "replicate": 4
+    }
+  ],
+  "source_commit": "87ba7ad8e9094bb1057b65ad77b5ed757f3089fe"
+}

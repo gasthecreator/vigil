@@ -356,33 +356,9 @@ def prior_from_m1(
     organ: str,
     p_any_metastasis: Union[Number, Tuple[Number, Number]],
 ) -> Prior:
-    """Build an organ prior from an M1 prediction and a probability of any metastasis.
-
-    M1 gives the *share* of metastases that go to each organ (a distribution over sites). The
-    probability that an organ is involved is therefore approximated as share x P(any
-    metastasis). This is an approximation: it ignores multi-site disease, and the share is
-    defined among patients who do have a metastasis. The caller owns ``p_any_metastasis``
-    (for example from M2); M4 does not invent it.
-    """
-    if organ not in ORGANS:
-        raise ValueError(f"unknown organ {organ!r}")
-    if isinstance(p_any_metastasis, tuple):
-        p_lo, p_hi = float(p_any_metastasis[0]), float(p_any_metastasis[1])
-        p_mid = (p_lo + p_hi) / 2.0
-    else:
-        p_lo = p_hi = p_mid = float(p_any_metastasis)
-    share = float(m1_prediction.probabilities[organ])
-    s_lo, s_hi = (float(x) for x in m1_prediction.credible_intervals_95[organ])
-    return Prior(
-        value=share * p_mid,
-        lo=s_lo * p_lo,
-        hi=s_hi * p_hi,
-        provenance=(
-            f"M1 organ share ({share:.3f}, 95% interval {s_lo:.3f} to {s_hi:.3f}) multiplied by a "
-            f"caller-supplied probability of any metastasis ({p_lo:.3f} to {p_hi:.3f}); "
-            "approximation, see prior_from_m1 docstring"
-        ),
-    )
+    """Fail closed: the legacy M1 output used to construct this prior is quarantined."""
+    del m1_prediction, organ, p_any_metastasis
+    raise RuntimeError("M4 cannot derive a prior from quarantined M1 output (ADR-0051).")
 
 
 # --------------------------------------------------------------------------------------------

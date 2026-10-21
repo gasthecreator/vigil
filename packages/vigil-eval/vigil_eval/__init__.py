@@ -33,10 +33,12 @@ from vigil_eval.metrics import (
     DecisionCurveResult,
     KaplanMeierEstimate,
     compute_calibration_curve,
+    compute_ipcw_calibration_curve,
     compute_ipcw_weights,
     compute_kaplan_meier,
     ipcw_brier_score,
     ipcw_time_dependent_roc_auc,
+    patient_landmark_ipcw_weights,
     survival_decision_curve_analysis,
 )
 from vigil_eval.regression_gate import (
@@ -82,6 +84,8 @@ __all__ = [
     "survival_decision_curve_analysis",
     "CalibrationReport",
     "compute_calibration_curve",
+    "compute_ipcw_calibration_curve",
+    "patient_landmark_ipcw_weights",
     # Bootstrap
     "BootstrapMetricSummary",
     "patient_cluster_bootstrap",

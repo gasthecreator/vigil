@@ -21,12 +21,12 @@ OUT = (
     / "m5_golden.json"
 )
 JOURNEYS = ("j2_surprising_repeat", "false_alarm_explained", "real_progression_escalate")
-VERDICTS = ("explained", "needs_repeat", "escalate")
+VERDICTS = ("abstain", "explained", "needs_repeat", "escalate")
 
 
 def build() -> dict:
     return {
-        "explainer": {v: render_plain_language_explainer(v) for v in VERDICTS},
+        "explainer": {v: render_plain_language_explainer(v, synthetic=True) for v in VERDICTS},
         "journeys": {j: generate_worked_journey(j) for j in JOURNEYS},
     }
 

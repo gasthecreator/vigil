@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    "k1_amortized_weights.safetensors": {
+      "estimator": "amortized",
+      "metadata": {
+        "estimator": "amortized",
+        "experiment_id": "EXP-K1-004",
+        "protocol_version": "1.10",
+        "selected_training_seed": "41002",
+        "selection_metric": "validation_negative_log_likelihood",
+        "validation_seed": "42002"
+      },
+      "sha256": "8f0787460d493796ae9163160519a0f498762ed89fdcca43244ea337eb69a443"
+    },
+    "k1_npe_weights.safetensors": {
+      "estimator": "npe",
+      "metadata": {
+        "estimator": "npe",
+        "experiment_id": "EXP-K1-004",
+        "protocol_version": "1.10",
+        "selected_training_seed": "41002",
+        "selection_metric": "validation_negative_log_likelihood",
+        "validation_seed": "42002"
+      },
+      "sha256": "93f4894f7545b6fc45e5b219c8ce2e31f27420f7ec69365c9a73c155bbc33cf3"
+    }
+  },
+  "assumptions_sha256": "5d8f15d4f244fd8bed65946ecd4d114f522bab1555046033566bff4fc69e3c69",
+  "schema_version": 1
+}

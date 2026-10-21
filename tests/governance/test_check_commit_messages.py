@@ -12,6 +12,7 @@ GOOD = [
     "fix!: reject forged consent bodies on sibling routes",
     "docs: correct phase 8b report",
     "chore(ci): pin setup-uv by commit SHA",
+    "results: record synthetic observation audit",
     "Merge branch 'main' into feat/x",
 ]
 BAD = ["wip", "fix", "update stuff", "Feat: capitalised type", "feat(api) missing colon here", "fix: short", "added things to the repo"]

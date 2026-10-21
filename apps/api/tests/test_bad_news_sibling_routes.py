@@ -12,6 +12,8 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy.orm import Session
+from vigil_api.models.patient import RiskInference
 
 ESCALATE_MARKERS = ("escalate", "biomarker_spike", "high")
 
@@ -42,7 +44,20 @@ def _escalated_patient(env, mrn: str, legacy: bool = False) -> str:
             headers=clin,
         )
         assert res.status_code == 200, res.text
-        assert res.json()["triage_flag"] is True
+        assert res.json()["triage_flag"] is None
+        # Seed a pre-quarantine row to verify it remains a conservative
+        # disclosure hold while never being returned as a validated score.
+        with Session(env.engine) as session:
+            session.add(
+                RiskInference(
+                    patient_id=pid,
+                    lab_result_id=res.json()["lab_result_id"],
+                    calculated_metastasis_risk=0.99,
+                    triage_flag=True,
+                    justification_text="historical quarantined output",
+                )
+            )
+            session.commit()
     return pid
 
 

@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "design": {
+    "base_seed": 20270101,
+    "duration_days": 730.0,
+    "holm_family_alpha": 0.01,
+    "patient_stream_names": {
+      "event_amplitudes": "g2-event-amplitudes",
+      "event_times": "g2-event-times"
+    },
+    "patients_per_generator_per_replicate": 1000,
+    "replicate_seed_increment": 20000,
+    "replicates": 5,
+    "stream_offsets": {
+      "G1": 310000,
+      "G2": 420000,
+      "G3": 530000
+    }
+  },
+  "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "experiment_id": "EXP-CORE-ML-013",
+  "generator_source_sha256": "38d4a3fe08eac1d7c926efd75f3f61c6df5ba798649ea3f549d8017744b18a01",
+  "mechanisms_source_sha256": "8852a700291ce98885eea4a8aa15b60adef9e8f4710923f620b0d27c9bb06639",
+  "numpy_version": "2.5.4",
+  "preregistration_sha256": "a4b2b28875a98d18c5ffba3bbf637f870065ca4b007917b9e3a4c6e7b5b3b7c3",
+  "profile_sha256": "d4e29b2b4bb5b51a04487b73c38dd3b48b4ac2d161bfaa2dc28757693210aa57",
+  "python_version": "3.12.15",
+  "report_sha256": "123ae55911496b951864a8f6a2192b23174eae5e93d4836fedb6b6817bb98530",
+  "results_sha256": "280e7070d98969c8a192ed0f945c019280374351e1ea372808eb40abbd7bc48a",
+  "runner_sha256": "44f3b9ba043701757afef296bd049facb1e4f4f72177519f95f4a5ffdee70fc5",
+  "scipy_version": "1.18.1",
+  "simulator_pyproject_sha256": "741fae49b9445d1c2d36075ee0fb06196be7f309e91ea4e42939d642b6a10dbd",
+  "source_commit": "87ba7ad8e9094bb1057b65ad77b5ed757f3089fe"
+}

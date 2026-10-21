@@ -84,7 +84,7 @@ def build_world(generator: GeneratorType | str, seed: int, n_generated: int) -> 
     has_rec, t_rec, comp_day, ids = [], [], [], []
     n_comp, n_early = 0, 0
     for i in range(1, n_generated + 1):
-        pt = gen.sample_nigerian_baseline(i)
+        pt = gen.sample_baseline(i)
         cd = float(pt.competing_event_day) if pt.competing_event_day is not None else float("inf")
         if cd < GRID_START:
             n_comp += 1
@@ -119,7 +119,11 @@ def build_world(generator: GeneratorType | str, seed: int, n_generated: int) -> 
         )
         rec = bool(pt.true_recurrence_event and pt.true_recurrence_day is not None)
         has_rec.append(rec)
-        t_rec.append(float(pt.true_recurrence_day) if rec else float("nan"))
+        t_rec.append(
+            float(pt.true_recurrence_day)
+            if rec and pt.true_recurrence_day is not None
+            else float("nan")
+        )
         comp_day.append(cd)
         ids.append(pt.patient_id)
     burden_a = np.array(burden)

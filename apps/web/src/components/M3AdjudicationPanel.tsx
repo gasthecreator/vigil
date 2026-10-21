@@ -35,13 +35,15 @@ export const M3AdjudicationPanel: React.FC<M3AdjudicationPanelProps> = ({
   // Derive adjudication facts
   // In Vigil v2, quality_flags or metadata may store M3 result
   const rawQc = (observation.quality_flags as Record<string, unknown>) || {};
-  const action = (rawQc.action as "escalate" | "needs_repeat" | "explained") || "explained";
-  const pReal = typeof rawQc.p_real === "number" ? rawQc.p_real : 0.05;
-  const pError = typeof rawQc.p_error === "number" ? rawQc.p_error : 0.02;
-  const pStable = typeof rawQc.p_stable === "number" ? rawQc.p_stable : 0.93;
+  const action = (rawQc.action as "abstain" | "escalate" | "needs_repeat" | "explained" | "unavailable") || "unavailable";
+  const probabilities = [rawQc.p_real, rawQc.p_error, rawQc.p_stable];
+  const hasProbabilities = probabilities.every(
+    (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1
+  ) && Math.abs((probabilities as number[]).reduce((sum, value) => sum + value, 0) - 1) < 1e-6;
+  const [pReal, pError, pStable] = hasProbabilities ? probabilities as number[] : [null, null, null];
   const narrative =
     (rawQc.narrative as string) ||
-    `Observation ${observation.analyte_code.toUpperCase()} = ${observation.value} ${observation.unit} evaluated. Classified as ${action}.`;
+    "No saved M3 rationale is available for this observation.";
 
   const handleOrderRepeat = async () => {
     setIsSubmitting(true);
@@ -103,7 +105,7 @@ export const M3AdjudicationPanel: React.FC<M3AdjudicationPanelProps> = ({
             <ShieldAlert className="w-5 h-5 text-emerald-700" />
             {t.adjudication.panelTitle}
           </CardTitle>
-          <Badge variant={action}>
+          <Badge variant={action === "unavailable" ? "default" : action}>
             {action === "needs_repeat" ? "NEEDS CONFIRMATION (needs_repeat)" : action.toUpperCase()}
           </Badge>
         </div>
@@ -129,22 +131,24 @@ export const M3AdjudicationPanel: React.FC<M3AdjudicationPanelProps> = ({
         {/* 3-Way Bayesian Mixture Probabilities */}
         <div>
           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-            Bayesian Mixture Decomposition
+            M3 model output (not clinically calibrated)
           </h4>
-          <div className="grid grid-cols-3 gap-2">
+          {hasProbabilities ? <div className="grid grid-cols-3 gap-2">
             <div className="p-2.5 rounded-lg border border-red-200 bg-red-50/50">
-              <span className="text-[11px] font-semibold text-red-900 block">Real Disease Progression</span>
-              <span className="text-base font-bold text-red-700">{(pReal * 100).toFixed(1)}%</span>
+              <span className="text-[11px] font-semibold text-red-900 block">Real-change model component</span>
+              <span className="text-base font-bold text-red-700">{(pReal! * 100).toFixed(1)}%</span>
             </div>
             <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50/50">
-              <span className="text-[11px] font-semibold text-amber-900 block">Analytical/Pre-Analytical Error</span>
-              <span className="text-base font-bold text-amber-700">{(pError * 100).toFixed(1)}%</span>
+              <span className="text-[11px] font-semibold text-amber-900 block">Gross-error model component</span>
+              <span className="text-base font-bold text-amber-700">{(pError! * 100).toFixed(1)}%</span>
             </div>
             <div className="p-2.5 rounded-lg border border-sky-200 bg-sky-50/50">
-              <span className="text-[11px] font-semibold text-sky-900 block">Baseline Noise</span>
-              <span className="text-base font-bold text-sky-700">{(pStable * 100).toFixed(1)}%</span>
+              <span className="text-[11px] font-semibold text-sky-900 block">Stable model component</span>
+              <span className="text-base font-bold text-sky-700">{(pStable! * 100).toFixed(1)}%</span>
             </div>
-          </div>
+          </div> : <p className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            No probabilities are available for this observation. {typeof rawQc.abstention_reason === "string" ? rawQc.abstention_reason.replaceAll("_", " ") : "The saved record has no validated M3 output."}
+          </p>}
         </div>
 
         {/* M5 Provenance-Bound Verified Narrative */}

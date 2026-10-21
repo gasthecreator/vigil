@@ -65,21 +65,21 @@ def render_clinician_note(facts: List[Dict[str, Any]]) -> str:
     if "p_real" in f_map:
         val = float(f_map["p_real"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        sentences.append(f"The calculated probability of true progression is {pct}%.")
+        sentences.append(f"Under the model assumptions, the real-change probability is {pct}%.")
 
     # 2. Gross error probability
     if "p_error" in f_map:
         val = float(f_map["p_error"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
         sentences.append(
-            f"The calculated probability of analytical or pre-analytical error is {pct}%."
+            f"Under the model assumptions, the gross-error probability is {pct}%."
         )
 
     # 3. Biological stability probability
     if "p_stable" in f_map:
         val = float(f_map["p_stable"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        sentences.append(f"The calculated probability of baseline biological stability is {pct}%.")
+        sentences.append(f"Under the model assumptions, the stable-component probability is {pct}%.")
 
     # 4. Reference change value threshold
     if "rcv" in f_map:
@@ -122,19 +122,19 @@ def get_derivable_sentences(facts: List[Dict[str, Any]]) -> Set[str]:
     if "p_real" in f_map:
         val = float(f_map["p_real"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        derivable.add(f"The calculated probability of true progression is {pct}%.")
+        derivable.add(f"Under the model assumptions, the real-change probability is {pct}%.")
 
     if "p_error" in f_map:
         val = float(f_map["p_error"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
         derivable.add(
-            f"The calculated probability of analytical or pre-analytical error is {pct}%."
+            f"Under the model assumptions, the gross-error probability is {pct}%."
         )
 
     if "p_stable" in f_map:
         val = float(f_map["p_stable"])
         pct = int(round(val * 100)) if val <= 1.0 else int(round(val))
-        derivable.add(f"The calculated probability of baseline biological stability is {pct}%.")
+        derivable.add(f"Under the model assumptions, the stable-component probability is {pct}%.")
 
     if "rcv" in f_map:
         pct = int(round(float(f_map["rcv"]) * 100))
@@ -197,62 +197,89 @@ def verify_narrative(text: str, facts: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def generate_worked_journey(journey_id: str) -> Dict[str, Any]:
-    """Generate one of three worked clinical journeys per Phase 4a requirements.
+    """Generate one of three illustrative synthetic M3/M5 scenarios.
 
     Journeys:
-      - 'j2_surprising_repeat': Surprising 10x spike (specimen error) -> adjudicate -> needs_repeat.
-      - 'false_alarm_explained': Minor 1.15x fluctuation within biological RCV -> adjudicate -> explained.
-      - 'real_progression_escalate': Persistent 2.5x surge above RCV -> adjudicate -> escalate.
+      - 'j2_surprising_repeat': Synthetic 10x marker change -> model output needs_repeat.
+      - 'false_alarm_explained': Synthetic 1.15x marker change -> model output explained.
+      - 'real_progression_escalate': Synthetic 2.5x marker change -> model output escalate.
+
+    Scenario labels describe generated inputs only. They are not clinical truth or
+    evidence that M3 can identify analytical error, benign variation, or recurrence.
     """
-    from vigil_ml.m3 import adjudicate
+    from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, adjudicate
 
     if journey_id == "j2_surprising_repeat":
-        # Journey J2: Surprising result (decimal shift x10 transcription error)
+        # Synthetic scenario: 10x change; generated inputs do not establish its cause.
         # Baseline ~18.0 U/mL (4 historical draws)
         history = [(30.0, 17.5), (90.0, 18.2), (180.0, 17.8), (270.0, 18.5)]
         new_day = 360.0
         new_val = 180.0  # 10x shift error
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "Journey J2: Surprising Marker Spike (Analytical Error) Adjudicated to Repeat",
-            "clinical_context": "Patient on surveillance with stable CA 15-3 (~18 U/mL). Day 360 shows sudden jump to 180 U/mL.",
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
+            "title": "Synthetic scenario: 10x marker change; model output is needs_repeat",
+            "clinical_context": "Illustrative generated values only: prior CA 15-3 values are near 18 U/mL; the current generated value is 180 U/mL.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,
         }
 
     elif journey_id == "false_alarm_explained":
-        # Benign biological fluctuation within RCV (1.15x increase, RCV is ~31%)
+        # Synthetic scenario: 1.15x change; generated inputs do not establish benignity.
         history = [(30.0, 19.5), (90.0, 20.2), (180.0, 19.8), (270.0, 20.5)]
         new_day = 360.0
         new_val = 23.0  # 1.15x ratio
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "Benign Fluctuation: Biological Noise Within RCV Adjudicated as Explained",
-            "clinical_context": "Patient on surveillance. CA 15-3 increases from 20 to 23 U/mL (1.15x), below RCV threshold.",
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
+            "title": "Synthetic scenario: 1.15x marker change; model output is explained",
+            "clinical_context": "Illustrative generated values only: CA 15-3 changes from 20 to 23 U/mL; this scenario does not establish the cause or clinical significance of the change.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,
         }
 
     elif journey_id == "real_progression_escalate":
-        # True disease recurrence (2.5x increase, well above RCV)
+        # Synthetic scenario: 2.5x change; generated inputs do not establish recurrence.
         history = [(30.0, 14.8), (90.0, 15.2), (180.0, 15.0), (270.0, 15.4)]
         new_day = 360.0
         new_val = 37.8  # 2.5x ratio
-        adjudication = adjudicate(history, new_day, new_val, cv_analytical=0.05, cv_within=0.10)
+        adjudication = adjudicate(
+            history,
+            new_day,
+            new_val,
+            cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+            cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
+        )
         note = render_clinician_note(adjudication["rationale_facts"])
         verification = verify_narrative(note, adjudication["rationale_facts"])
         return {
             "journey_id": journey_id,
-            "title": "True Recurrence: Biomarker Elevation Exceeding RCV Adjudicated to Escalate",
-            "clinical_context": "Patient on surveillance. CA 15-3 surges from 15 to 37.8 U/mL (2.5x), exceeding RCV.",
+            "synthetic": True,
+            "evidence_status": "illustrative_only",
+            "title": "Synthetic scenario: 2.5x marker change; model output is escalate",
+            "clinical_context": "Illustrative generated values only: CA 15-3 changes from 15 to 37.8 U/mL; this scenario does not establish recurrence or its cause.",
             "adjudication": adjudication,
             "narrative": note,
             "verification": verification,
@@ -295,13 +322,14 @@ def compute_flesch_kincaid_grade_level(text: str) -> float:
 
 def render_plain_language_explainer(
     verdict: str,
+    synthetic: bool,
     facts: Optional[List[Dict[str, Any]]] = None,
     analyte_code: str = "CA 15-3",
 ) -> Dict[str, Any]:
     """Generates a plain-language result explainer for patients and family caregivers.
 
     Complies with Master Plan §6.5, §6.8, and Phase 6b:
-    - Driven exclusively by M3 verdicts ('explained', 'needs_repeat', 'escalate') and verified facts.
+    - Driven exclusively by M3 verdicts ('abstain', 'explained', 'needs_repeat', 'escalate') and verified facts.
     - Reading level strictly enforced to Flesch-Kincaid Grade Level <= 8.0.
     - Concise word count (<= 120 words).
     - Verbal uncertainty bands instead of raw percentages.
@@ -309,48 +337,64 @@ def render_plain_language_explainer(
     - Safety backstop: strictly rejects forbidden claims ('you have cancer', etc.).
     """
     verdict_clean = verdict.strip().lower()
-    if verdict_clean not in {"explained", "needs_repeat", "escalate"}:
+    if not isinstance(synthetic, bool):
+        raise ValueError("synthetic provenance must be explicitly true or false")
+    if verdict_clean not in {"abstain", "explained", "needs_repeat", "escalate"}:
         raise ValueError(
-            f"Invalid M3 verdict for explainer: '{verdict}'. Must be 'explained', 'needs_repeat', or 'escalate'."
+            f"Invalid M3 verdict for explainer: '{verdict}'. Must be 'abstain', 'explained', 'needs_repeat', or 'escalate'."
         )
 
-    if verdict_clean == "explained":
-        headline = "This test result looks stable."
-        verbal_band = "Normal biological fluctuation (routine monitoring)"
+    if verdict_clean == "abstain":
+        headline = "There is not enough history to compare this result."
+        verbal_band = "No model estimate available"
         what_this_means = (
-            "Small day-to-day changes in your body are normal and expected. "
-            "This result stays within the expected range for your routine surveillance. "
-            "Your oncology team will continue your regular monitoring plan."
+            "This tool needs an earlier result to compare changes over time. "
+            "That information is not in the record yet. "
+            "Your care team can review this result and decide what to do next."
         )
-        recommended_action = "Continue routine surveillance as scheduled."
+        recommended_action = "Ask your care team to review this result."
+        questions = [
+            "Can this result be compared with an earlier test?",
+            "When should I have my next blood test?",
+            "Who should I contact if I have questions before then?",
+        ]
+    elif verdict_clean == "explained":
+        headline = "This tool did not flag a large change."
+        verbal_band = "Model output found no large change"
+        what_this_means = (
+            "This tool compares this result with earlier recorded tests. "
+            "It cannot confirm or rule out a health problem. "
+            "Your care team can review this result with your full history."
+        )
+        recommended_action = "Ask your care team if your monitoring plan is unchanged."
         questions = [
             "Does my routine monitoring schedule stay the same?",
             "Are there any new symptoms I should report before my next visit?",
             "When is my next scheduled blood test or clinic appointment?",
         ]
     elif verdict_clean == "needs_repeat":
-        headline = "This result needs a quick repeat test."
-        verbal_band = "Analytical uncertainty (suspected lab or specimen variation)"
+        headline = "Your care team should review this result."
+        verbal_band = "Model output asks for more review"
         what_this_means = (
-            "A sudden shift in a lab number often comes from lab equipment variation rather than a true change in your body. "
-            "A single high result is not a diagnosis. "
-            "Repeating the blood test gives your doctor an accurate and reliable picture."
+            "This tool found a pattern that needs more review. "
+            "It cannot tell why the number changed or if it is a lab issue. "
+            "Your care team can decide if another blood test is right."
         )
-        recommended_action = "Repeat blood test within 7 to 14 days at your local laboratory."
+        recommended_action = "Ask your care team whether another blood test is needed."
         questions = [
             "When and where should I repeat this blood test?",
             "Are there any special instructions before my next blood draw?",
             "What specific symptoms should I watch for while waiting for the repeat test?",
         ]
     else:  # escalate
-        headline = "This test shows a noticeable change."
-        verbal_band = "Elevated signal (clinical team review recommended)"
+        headline = "Your care team should review this change."
+        verbal_band = "Model output flagged a change"
         what_this_means = (
-            "This blood test is higher than your usual personal range. "
-            "A rise can happen for different health reasons. "
-            "Your cancer care team will check your results and talk with you about next steps."
+            "This tool found a change from earlier recorded tests. "
+            "It cannot tell why the number changed or diagnose a health problem. "
+            "Your care team can review this result with other tests and your full history."
         )
-        recommended_action = "Contact your clinic to schedule a review and follow-up scan."
+        recommended_action = "Ask your care team to review this result."
         questions = [
             "What follow-up test or scan do you recommend to check this result?",
             "Could another health issue or medicine cause this change?",
@@ -384,5 +428,5 @@ def render_plain_language_explainer(
         "flesch_kincaid_grade_level": fkgl,
         "word_count": word_count,
         "verified": True,
-        "synthetic": True,
+        "synthetic": synthetic,
     }

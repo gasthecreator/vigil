@@ -1,0 +1,26 @@
+{
+  "completed": false,
+  "environment": {
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.15",
+    "scikit_learn": "1.9.1"
+  },
+  "error_message": "Observed value must be positive, got 0.0",
+  "error_type": "ValueError",
+  "protocol_version": "1.0",
+  "provenance": {
+    "analyte_registry_sha256": "4566174aaa94980a338fd6920430e5a19114859ac6574cc6fee5569214c8fe6b",
+    "configuration_sha256": "caad8f79e318e4cf6521e9bc76b9681109c556045d6e189c2b3c3a697e7732ea",
+    "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+    "m3_source_sha256": "e285fa7f65f0b1a4b3cd16a2048947cc772d875410d21daefc5acefd7f15fb9c",
+    "preregistration_sha256": "8942fd269e4bbb7044145eb9f4654c6ab0941cc26c08a632815841dfa413aa5a",
+    "renderer_sha256": "0c47c53d1a99cd7dd107fcb792ccd6eb82e4eecf7be1bd215ab18f5b6b0968f2",
+    "runner_sha256": "5454cee4b3b0d63d292ed718c2f05146d43de342808fe97fff38dcf7eb253ea7",
+    "simulator_package_sha256": "2c7836fa147e36c348a76a00a18aa2ea99212dea1b24e6974fa491c467d79301",
+    "simulator_profile_sha256": "dd38047b067943ee201cfe426e7438df3678442cf9dd46e9defe1ead5df8e143",
+    "source_commit": "720232a5948c29a92979daf2da3f8ba47fadc345"
+  },
+  "study_id": "EXP-M3-001"
+}

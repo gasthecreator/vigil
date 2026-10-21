@@ -75,6 +75,8 @@ CONFIG: Dict[str, Any] = {
         "dev": {"base": 100, "step": 10},
         "calibration": {"base": 500000, "step": 10},
         "frozen": {"base": 20261101, "step": 10},
+        "smoke_calibration": {"base": 900000, "step": 10},
+        "smoke": {"base": 910000, "step": 10},
     },
     "control_noise_sd": 0.08,
     "control_slope_sd_per_day": 0.0005,
@@ -271,7 +273,9 @@ def chart_alarms(x: np.ndarray, slack: float, h_star: float) -> List[int]:
     return alarms
 
 
-def calibrate_detector(n_rep: int, kind: str = "calibration") -> Dict[str, float]:
+def calibrate_detector(
+    n_rep: int, kind: str = "calibration", *, smoke: bool = False
+) -> Dict[str, float]:
     tau, sw = CONFIG["detector_cell"]["tau"], CONFIG["detector_cell"]["switch_fraction"]
     resid: List[np.ndarray] = []
     per_stream: List[np.ndarray] = []
@@ -279,8 +283,10 @@ def calibrate_detector(n_rep: int, kind: str = "calibration") -> Dict[str, float
     for r in range(n_rep):
         s_tr, s_ev, s_lab = seeds_for(kind, r)
         beta = draw_true_beta(s_lab, tau, 6)
-        tr_obs, tr_pts = clinical_cohort(s_tr, CONFIG["n_patients_train"])
-        ev_obs, ev_pts = clinical_cohort(s_ev, CONFIG["n_patients_eval"])
+        n_train = 150 if smoke else CONFIG["n_patients_train"]
+        n_eval = 150 if smoke else CONFIG["n_patients_eval"]
+        tr_obs, tr_pts = clinical_cohort(s_tr, n_train)
+        ev_obs, ev_pts = clinical_cohort(s_ev, n_eval)
         train = apply_multilab(tr_obs, tr_pts, MultiLabConfig(tau, sw, s_lab + 1_000_000), beta)
         ev = apply_multilab(ev_obs, ev_pts, MultiLabConfig(tau, sw, s_lab + 2_000_000), beta)
         harm = k5.LabHarmoniserK5().fit(*fit_inputs(train))
@@ -467,9 +473,14 @@ def boot_ci(values_fn, n_rep: int, B: int, seed: int, level: float) -> Tuple[flo
     return float(np.quantile(stats, a)), float(np.quantile(stats, 1 - a))
 
 
-def aggregate(reps: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate(
+    reps: List[Dict[str, Any]], bootstrap_replicates: Optional[int] = None
+) -> Dict[str, Any]:
     n = len(reps)
-    B, seed = CONFIG["bootstrap_B"], CONFIG["bootstrap_seed"]
+    B = CONFIG["bootstrap_B"] if bootstrap_replicates is None else bootstrap_replicates
+    if B < 1:
+        raise ValueError("bootstrap_replicates must be at least one")
+    seed = CONFIG["bootstrap_seed"]
     lvl_family = 1 - 0.05 / CONFIG["bonferroni_m"]
     agg: Dict[str, Any] = {"n_replications": n, "cells": {}, "new_site": {}}
 
@@ -707,6 +718,20 @@ def run(kind: str, n_rep: int, det: Optional[Dict[str, float]], workers: int, sm
     return [replication(j) for j in jobs]
 
 
+def refuse_existing_evidence(mode: str) -> None:
+    outputs = {
+        "dev": (OUT / "dev_results.json",),
+        "frozen": (OUT / "results.json", OUT / "REPORT.md"),
+    }
+    if mode not in outputs:
+        raise ValueError(f"unknown persistent K5 mode: {mode}")
+    existing = [path.name for path in outputs[mode] if path.exists()]
+    if existing:
+        raise RuntimeError(
+            f"EXP-K5-001 {mode} mode refuses to overwrite existing evidence: {', '.join(existing)}"
+        )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -717,15 +742,14 @@ def main() -> int:
     args = ap.parse_args()
     t0 = time.time()
     if args.smoke:
-        det = {"sigma_r": 0.2, "h_star": 6.0, "n_streams": 1, "n_residuals": 1, "target_alarms_per_1000": 0.67,
-               "achieved_alarms_per_1000_at_h_star": 0.0, "target_attained": True,
-               "diagnostic_alarm_rate_vs_threshold": {"2": {"all_per_1000": 1.0, "non_recurrent_per_1000": 1.0}}}
-        reps = run("dev", 2, det, 1, smoke=True)
-        agg = aggregate(reps)
+        det = calibrate_detector(1, kind="smoke_calibration", smoke=True)
+        reps = run("smoke", 2, det, 1, smoke=True)
+        agg = aggregate(reps, bootstrap_replicates=len(reps))
         report = render_report({"aggregate": agg}, det, 0.0)
         print(json.dumps({"ok": "H1" in report and "Control" in report, "cells": list(agg["cells"])}))
         return 0
     if args.dev:
+        refuse_existing_evidence("dev")
         det = calibrate_detector(CONFIG["n_calibration"], kind="calibration")
         reps = run("dev", CONFIG["n_dev"], det, args.workers)
         agg = aggregate(reps)
@@ -733,6 +757,7 @@ def main() -> int:
         (OUT / "dev_results.json").write_text(json.dumps(out, indent=2))
         print(f"wrote dev_results.json in {time.time() - t0:.0f}s")
         return 0
+    refuse_existing_evidence("frozen")
     det = calibrate_detector(CONFIG["n_calibration"], kind="calibration")
     reps = run("frozen", CONFIG["n_frozen"], det, args.workers)
     agg = aggregate(reps)

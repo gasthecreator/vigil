@@ -35,12 +35,18 @@ for _pkg in ("vigil-sim", "vigil-ml", "vigil-core", "vigil-eval"):
 import torch  # noqa: E402
 import xgboost  # noqa: E402,F401  (must be imported before torch: the two OpenMP runtimes clash on macOS)
 from vigil_core.analytes import ANALYTE_REGISTRY  # noqa: E402
-from vigil_eval import compute_calibration_curve, ipcw_brier_score, ipcw_time_dependent_roc_auc  # noqa: E402
+from vigil_eval import (  # noqa: E402
+    compute_ipcw_calibration_curve,
+    compute_ipcw_weights,
+    ipcw_brier_score,
+    ipcw_time_dependent_roc_auc,
+)
 from vigil_ml import k4  # noqa: E402
 from vigil_ml.baselines import (  # noqa: E402
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
     SingleThresholdBaseline,
+    TrainingTargetContract,
     VelocityBaseline,
 )
 from vigil_ml.features import WindowedFeatureExtractor  # noqa: E402
@@ -98,6 +104,7 @@ CONFIG: Dict[str, Any] = {
     "baselines": ["B1_SingleThreshold", "B2_Velocity", "B3_RegularizedHazard", "B4_GradientBoosting", "K3_JointModel"],
 }
 SMOKE_CONFIG: Dict[str, Any] = {
+    "n_replications": 2,
     "n_pool": 60,
     "n_test": 40,
     "n_corpus_per_source": 60,
@@ -129,6 +136,7 @@ def design(scope: str) -> Dict[str, Any]:
                 cfg["fit"]["max_epochs"] = v
             else:
                 cfg[k] = v
+        cfg["bootstrap_seed"] = base_seed("smoke", SMOKE_CONFIG["n_replications"])
     return cfg
 
 
@@ -140,7 +148,10 @@ def code_hash() -> str:
 
 
 def base_seed(kind: str, r: int) -> int:
-    s = CONFIG["seeds"]["frozen" if kind in ("frozen", "smoke") else "dev"]
+    if kind == "smoke":
+        development = CONFIG["seeds"]["dev"]
+        return int(development["base"] + development["step"] * (development["n"] + r))
+    s = CONFIG["seeds"]["frozen" if kind == "frozen" else "dev"]
     return int(s["base"] + s["step"] * r)
 
 
@@ -233,9 +244,17 @@ class LabelledCohort:
         self.ds = make_sequences(self.ids, days, values, statics)
         obs = cohort.to_observations_dataframe()
         pts = cohort.to_patients_dataframe()
-        self.X, y, self.t, self.d = extractor.transform_cohort(pts, obs, horizon_days=horizon)
+        self.X, y, self.t, self.d = extractor.transform_cohort(
+            pts, obs, horizon_days=horizon, synthetic_only=True
+        )
+        self.target_contract = TrainingTargetContract(
+            estimand=y.attrs["target_estimand"],
+            horizon_days=y.attrs["horizon_days"],
+            synthetic_only=y.attrs["synthetic_only"],
+        )
         self.X = self.X.reset_index(drop=True)
         self.y = pd.Series(np.asarray(y, dtype=float))
+        self.y.attrs.update(y.attrs)
         pid_index = {p: i for i, p in enumerate(self.ids)}
         visit_index: Dict[Tuple[str, float], int] = {}
         for i, pid in enumerate(self.ids):
@@ -250,7 +269,7 @@ class LabelledCohort:
                 raise ValueError(f"duplicate landmark row {key}")
             rows[key] = float(self.y.iloc[k])
             self.pos_i[k], self.pos_j[k] = pid_index[pid], visit_index[key]
-        self.ds = k4.attach_labels(self.ds, rows)
+        self.ds = k4.attach_labels(self.ds, rows, target_contract=self.target_contract)
         self.t = np.asarray(self.t, dtype=float)
         self.d = np.asarray(self.d, dtype=float)
 
@@ -322,10 +341,13 @@ def replication(kind: str, r: int, scope: str, with_corpus: bool) -> Replication
 # ---------------------------------------------------------------------------------------------------------
 def score_rows(preds: np.ndarray, lc: LabelledCohort, horizon: float) -> Dict[str, float]:
     preds = np.asarray(preds, dtype=float)
+    calibration = compute_ipcw_calibration_curve(
+        preds, lc.t, lc.d, horizon_time=horizon, n_bins=10
+    )
     return {
         "auc": float(ipcw_time_dependent_roc_auc(preds, lc.t, lc.d, horizon_time=horizon)),
         "brier": float(ipcw_brier_score(preds, lc.t, lc.d, horizon_time=horizon)),
-        "ece": float(compute_calibration_curve(preds, lc.y.values, n_bins=10).expected_calibration_error),
+        "ece": float(calibration.expected_calibration_error),
     }
 
 
@@ -359,7 +381,17 @@ def train_set(rep: Replication, n: int, permute_seed: Optional[int] = None) -> k
         rows = ds.row_mask
         vals = y[rows]
         y[rows] = vals[np.random.default_rng(permute_seed).permutation(len(vals))]
-        ds = k4.SequenceSet(ds.patient_ids, ds.x, ds.m, ds.t, ds.s, ds.valid, y, rows)
+        ds = k4.SequenceSet(
+            ds.patient_ids,
+            ds.x,
+            ds.m,
+            ds.t,
+            ds.s,
+            ds.valid,
+            y,
+            rows,
+            ds.target_contract,
+        )
     return ds
 
 
@@ -499,7 +531,7 @@ def make_baseline(name: str):
         "B2_Velocity": lambda: VelocityBaseline(),
         "B3_RegularizedHazard": lambda: RegularizedCoxHazardBaseline(C=1.0),
         "B4_GradientBoosting": lambda: GradientBoostingBaseline(max_depth=3, n_estimators=100),
-        "K3_JointModel": lambda: FastLandmarkJointModel(horizon_days=365.0),
+        "K3_JointModel": lambda: FastLandmarkJointModel(),
     }[name]()
 
 
@@ -509,20 +541,31 @@ def unit_baselines(kind: str, r: int, scope: str) -> Dict[str, Any]:
     for n in rep.cfg["n_grid"]:
         keep = rep.pool.rows_of_first(n)
         X, y = rep.pool.X[keep], rep.pool.y[keep]
+        weights = compute_ipcw_weights(rep.pool.t, rep.pool.d, rep.cfg["horizon_days"])[keep]
         for name in rep.cfg["baselines"]:
-            failed = False
             t0 = time.time()
             model = make_baseline(name)
-            try:
-                model.fit(X, y)
-            except Exception:  # a one-class or degenerate set: recorded, constant prediction used
-                failed = True  # recorded in the record as fit_failed
+            observed = np.isfinite(y.to_numpy(dtype=float)) & (weights > 0)
+            fit_error = None
+            if np.unique(y.to_numpy(dtype=float)[observed]).size < 2:
+                fit_error = "fewer than two determinable weighted outcome classes"
+            else:
+                try:
+                    model.fit(X, y, sample_weight=weights)
+                except ValueError as exc:
+                    fit_error = str(exc)
             rec = {"kind": kind, "rep": r, "family": name, "arm": "classical", "size": "-", "N": n, "lr": None,
-                   "n_rows": int(len(y)), "n_events": int(y.sum()), "fit_failed": failed,
+                   "n_rows": int(len(y)), "n_events": int(y.sum()), "fit_failed": fit_error is not None,
+                   "fit_error": fit_error,
                    "train_seconds": round(time.time() - t0, 2)}
             for g, lc in rep.tests.items():
-                preds = np.full(len(lc.X), float(y.mean() if len(y) else 0.0)) if failed else np.asarray(model.predict_risk(lc.X), dtype=float)
-                for k, v in score_rows(preds, lc, rep.cfg["horizon_days"]).items():
+                scores = (
+                    {"auc": float("nan"), "brier": float("nan"), "ece": float("nan")}
+                    if fit_error is not None
+                    else score_rows(np.asarray(model.predict_risk(lc.X), dtype=float), lc,
+                                    rep.cfg["horizon_days"])
+                )
+                for k, v in scores.items():
                     rec[f"{k}_{g}"] = v
             recs.append(rec)
     return {"records": recs, "pretrain": [], "exports": [], "cost": []}
@@ -989,7 +1032,9 @@ def mode_smoke(workers: int) -> Dict[str, Any]:
         cfg["lr_selection_n"] = cfg["n_scale"]
         hp = select_hyperparameters(dev, cfg)
         hp["designated_family"] = "grud"
-        res = build_results("smoke", [0, 1], hp, "smoke", workers, "smoke")
+        res = build_results(
+            "smoke", list(range(SMOKE_CONFIG["n_replications"])), hp, "smoke", workers, "smoke"
+        )
         render_report(res)
         return res
 
@@ -1000,6 +1045,25 @@ def mode_rerender() -> None:
     (OUT / "REPORT.md").write_text(render_report(res))
 
 
+def assert_mode_outputs_absent(mode: str) -> None:
+    """Prevent a replay or rerender from overwriting committed study evidence."""
+    output_names = {
+        "dev": ("hyperparameters.json", "dev_grid.json"),
+        "dev-pipeline": ("dev_results.json",),
+        "frozen": ("results.json", "REPORT.md"),
+        "rerender": ("REPORT.md",),
+    }
+    existing = [OUT / name for name in output_names.get(mode, ()) if (OUT / name).exists()]
+    if mode in ("frozen", "rerender") and (OUT / "FROZEN-SEEDS-SPENT.md").exists():
+        existing.append(OUT / "FROZEN-SEEDS-SPENT.md")
+    if existing:
+        names = ", ".join(path.name for path in existing)
+        raise RuntimeError(
+            f"EXP-K4-001 {mode} mode refuses to overwrite existing evidence ({names}); "
+            "use a newly preregistered experiment directory and fresh seeds."
+        )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
@@ -1007,6 +1071,11 @@ def main() -> int:
         g.add_argument(f"--{k}", action="store_true")
     ap.add_argument("--workers", type=int, default=8)
     a = ap.parse_args()
+    mode = next(
+        name for name in ("dev", "dev-pipeline", "frozen", "smoke", "rerender")
+        if getattr(a, name.replace("-", "_"))
+    )
+    assert_mode_outputs_absent(mode)
     if a.dev:
         mode_dev(a.workers)
     elif a.dev_pipeline:

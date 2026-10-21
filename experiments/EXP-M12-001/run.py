@@ -114,12 +114,24 @@ def apply_site(obs: pd.DataFrame, beta: float, p_miss: float, rng: np.random.Gen
         if col not in o.columns:
             continue
         vals = np.array(o[col].to_numpy(dtype=float), copy=True)
+        if np.isinf(vals).any():
+            raise ValueError(f"{col} values must be finite or missing before site transformation")
         seen = ~np.isnan(vals)
+        mask_column = f"observed_{col}"
+        if mask_column in o.columns:
+            raw_mask = o[mask_column].to_numpy()
+            valid = np.isin(raw_mask, (False, True, 0, 1))
+            if not valid.all() or not np.array_equal(raw_mask.astype(bool), seen):
+                raise ValueError(f"{mask_column} must agree with {col} value presence before site missingness")
+            seen = raw_mask.astype(bool)
         vals[seen] = vals[seen] * scale
         if p_miss > 0.0:
             drop = seen & (rng.random(len(vals)) < p_miss)
             vals[drop] = np.nan
+            seen[drop] = False
         o[col] = vals
+        if mask_column in o.columns:
+            o[mask_column] = seen
     return o
 
 
@@ -179,7 +191,13 @@ def score_pack(
     prob: np.ndarray, y: np.ndarray, times: np.ndarray, events: np.ndarray
 ) -> Dict[str, float]:
     if len(prob) == 0:
-        return {"auc": 0.5, "brier": 0.0, "ece": 0.0, "nb": 0.0}
+        raise ValueError("cannot score an empty evaluation cohort")
+    if not (len(prob) == len(y) == len(times) == len(events)):
+        raise ValueError("probabilities, labels, follow-up, and events must have equal lengths")
+    if not np.isfinite(prob).all() or np.any((prob < 0.0) | (prob > 1.0)):
+        raise ValueError("probabilities must be finite and within [0, 1]")
+    if not np.isfinite(y).all() or not np.isin(y, (0.0, 1.0)).all():
+        raise ValueError("calibration requires known binary horizon labels for every row")
     auc = float(ipcw_time_dependent_roc_auc(prob, times, events, HORIZON))
     brier = float(ipcw_brier_score(prob, times, events, HORIZON))
     ece = float(
@@ -480,6 +498,29 @@ def run(kind: str, n_rep: int, workers: int, smoke: bool = False) -> List[Dict[s
     return [replication(j) for j in jobs]
 
 
+def assert_frozen_run_not_retired() -> None:
+    disposition = OUT / "FROZEN-RUN-DISPOSITION.json"
+    if not disposition.is_file():
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: missing disposition record; "
+            "create a new preregistered experiment instead"
+        )
+    try:
+        record = json.loads(disposition.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: invalid disposition record"
+        ) from exc
+    if not isinstance(record, dict) or record.get("status") != "retired":
+        raise RuntimeError(
+            "EXP-M12-001 frozen run is disabled: disposition is not retired; "
+            "create a new preregistered experiment instead"
+        )
+    raise RuntimeError(
+        "EXP-M12-001 frozen run is retired; create a new preregistered experiment instead"
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -491,9 +532,12 @@ def main() -> int:
     args = ap.parse_args()
     t0 = time.time()
     if args.rerender:
+        report_path = OUT / "REPORT.md"
+        if report_path.exists():
+            raise RuntimeError("EXP-M12-001 REPORT.md already exists; refusing to overwrite historical evidence")
         stored = json.loads((OUT / "results.json").read_text())
         elapsed = float(stored.get("elapsed_s") or 0.0)
-        (OUT / "REPORT.md").write_text(render_report(stored, elapsed))
+        report_path.write_text(render_report(stored, elapsed))
         print("rewrote REPORT.md from results.json")
         return 0
     if args.smoke:
@@ -503,12 +547,15 @@ def main() -> int:
         print(json.dumps({"ok": "H3" in report and "B4" in report, "void": agg["void"]}))
         return 0
     if args.dev:
+        if (OUT / "dev_results.json").exists():
+            raise RuntimeError("EXP-M12-001 development output already exists; refusing overwrite")
         reps = run("dev", CONFIG["n_dev"], args.workers)
         agg = aggregate(reps)
         out = {"config": CONFIG, "kind": "development", "aggregate": agg, "replications": reps}
         (OUT / "dev_results.json").write_text(json.dumps(out, indent=2))
         print(f"wrote dev_results.json in {time.time() - t0:.0f}s")
         return 0
+    assert_frozen_run_not_retired()
     reps = run("frozen", CONFIG["n_frozen"], args.workers)
     elapsed = time.time() - t0
     agg = aggregate(reps)

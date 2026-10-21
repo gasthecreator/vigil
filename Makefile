@@ -1,7 +1,7 @@
 # Vigil Precision Oncology Platform Makefile
 # Reference: docs/MASTER_PLAN.md §9.1, §12, §14
 
-.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
+.PHONY: help setup fmt lint test verify-phase reproduce reproduce-ml reproduce-ml-core reproduce-ml-core-cross-generator reproduce-ml-core-feature-rerun reproduce-ml-core-complete-rerun run-k7-002 verify-k7-002 run-k7-003 verify-k7-003 audit-k7-003 run-k7-004 verify-k7-004 audit-k7-004 typecheck coverage-ratchet import-lint docs-build docs-check api-dev web-dev demo status clean
 
 PYTHON ?= python3
 UV ?= uv
@@ -16,8 +16,18 @@ help:
 	@echo "make coverage-ratchet   Measure core+eval coverage and enforce floor"
 	@echo "make test               Run unit, property, and integration tests"
 	@echo "make verify-phase       Verify phase exit gates (e.g. make verify-phase PHASE=0)"
-	@echo "make reproduce          Regenerate/verify committed cheap study reports (G-11)"
+	@echo "make reproduce          Verify study evidence, derived reports, and supply-chain outputs (G-11)"
 	@echo "make reproduce-ml       Reproduce Phase 2 ML benchmarks (studies S1, S3, S9)"
+	@echo "make reproduce-ml-core  Run preregistered single-generator core model tuning study"
+	@echo "make reproduce-ml-core-cross-generator  Run preregistered G1/G2 to G3 robustness study"
+	@echo "make reproduce-ml-core-feature-rerun  Run corrected-feature baseline re-evaluation"
+	@echo "make reproduce-ml-core-complete-rerun  Run full preregistered baseline contrasts"
+	@echo "make run-k7-003        Execute the one-time preregistered K7 synthetic study"
+	@echo "make verify-k7-003     Verify committed K7 replacement artifacts without cohort regeneration"
+	@echo "make audit-k7-003      Recompute saved-result aggregates and E-values without cohort generation"
+	@echo "make run-k7-004        Execute the one-time preregistered grouped-fold K7 synthetic study"
+	@echo "make verify-k7-004     Verify K7-004 artifacts without regenerating cohorts"
+	@echo "make audit-k7-004      Recompute K7-004 saved-result aggregates without cohort generation"
 	@echo "make docs-build         Build MkDocs Material site into site/"
 	@echo "make docs-check         Build docs + check_docs_links + README version claims"
 	@echo "make api-dev            Run FastAPI backend in reload mode"
@@ -94,6 +104,47 @@ reproduce:
 reproduce-ml:
 	@echo "==> Reproducing VigilBench Phase 2 Classical Core Benchmarks..."
 	$(UV) run python scripts/run_benchmarks.py
+
+reproduce-ml-core:
+	@echo "==> EXP-CORE-ML-003 is historical and stale; its runner fails closed."
+	$(UV) run python experiments/EXP-CORE-ML-003/run.py
+
+reproduce-ml-core-cross-generator:
+	@echo "==> EXP-CORE-ML-004 is historical and stale; its runner fails closed."
+	$(UV) run python experiments/EXP-CORE-ML-004/run.py
+
+reproduce-ml-core-feature-rerun:
+	@echo "==> EXP-CORE-ML-007 is exploratory and already ran; its runner fails closed on replay."
+	$(UV) run python experiments/EXP-CORE-ML-007/run.py
+
+reproduce-ml-core-complete-rerun:
+	@echo "==> Running preregistered complete paired-contrast core-model evaluation..."
+	$(UV) run python experiments/EXP-CORE-ML-008/run.py
+
+run-k7-002:
+	@echo "EXP-S8-K7-002 failed after consuming its registered seeds; use its failure record and do not replay."
+	@false
+
+verify-k7-002:
+	python3 experiments/EXP-S8-K7-002/verify_failed_run.py
+
+run-k7-003:
+	$(UV) run python experiments/EXP-S8-K7-003/run.py
+
+verify-k7-003:
+	$(UV) run python experiments/EXP-S8-K7-003/verify.py
+
+audit-k7-003:
+	$(UV) run python experiments/EXP-S8-K7-003/audit_saved_results.py
+
+run-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/run.py
+
+verify-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/verify.py
+
+audit-k7-004:
+	$(UV) run python experiments/EXP-S8-K7-004/audit_saved_results.py
 
 api-dev:
 	$(UV) run uvicorn vigil_api.main:app --host 0.0.0.0 --port 8000 --reload

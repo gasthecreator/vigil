@@ -18,9 +18,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
 from vigil_eval.metrics import (
-    compute_calibration_curve,
+    compute_ipcw_calibration_curve,
     compute_ipcw_weights,
     ipcw_time_dependent_roc_auc,
     survival_decision_curve_analysis,
@@ -30,17 +29,31 @@ from vigil_ml.baselines import (
     GradientBoostingBaseline,
     RegularizedCoxHazardBaseline,
     SingleThresholdBaseline,
+    TrainingTargetContract,
     VelocityBaseline,
 )
 from vigil_ml.features import TRACKED_ANALYTES, WindowedFeatureExtractor
 
 HORIZON = 365.0
+TARGET_ESTIMAND = "observed_recurrence_before_competing_death"
 DAYS_PER_MONTH = 30.4375
 NON_FEATURES = ("patient_id", "eval_day")  # eval_day is bookkeeping, never a model input
 
 
 class InsufficientData(Exception):
     """A step cannot be done honestly with the data at hand; the message says why."""
+
+
+def _validated_horizon(horizon: float) -> float:
+    if isinstance(horizon, (bool, np.bool_)) or not np.isscalar(horizon):
+        raise ValueError("horizon_days must be a finite positive number, not boolean")
+    try:
+        horizon_days = float(horizon)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("horizon_days must be finite and positive") from exc
+    if not np.isfinite(horizon_days) or horizon_days <= 0.0:
+        raise ValueError("horizon_days must be finite and positive")
+    return horizon_days
 
 
 # ----------------------------------------------------------------------------------------------- partition
@@ -59,15 +72,30 @@ def assign_split(patient_id: str, key: bytes) -> str:
 @dataclass
 class Landmarks:
     X: pd.DataFrame  # one row per landmark; includes patient_id and eval_day
-    y: np.ndarray  # recurrence within HORIZON of the landmark (1) else 0
-    T: np.ndarray  # time from landmark to recurrence or censoring
-    E: np.ndarray  # 1 if recurrence observed at T
+    y: np.ndarray  # recurrence before competing death within HORIZON; NaN if censored before HORIZON
+    T: np.ndarray  # time from landmark to recurrence, competing death, or censoring
+    E: np.ndarray  # 0=censoring, 1=recurrence, 2=competing death
     first: np.ndarray  # True for the first landmark of each patient (used for C1 and C2)
     end_day: Dict[
         str, float
-    ]  # per patient: end of surveillance at risk (min(recurrence, follow-up))
+    ]  # per patient: end of surveillance at risk (min(recurrence, death, follow-up))
     patients: pd.DataFrame
+    horizon_days: float
+    target_estimand: str
     counts: Dict[str, int] = field(default_factory=dict)
+    synthetic_only: bool | None = None
+
+    def __post_init__(self) -> None:
+        self.horizon_days = _validated_horizon(self.horizon_days)
+        if self.target_estimand != TARGET_ESTIMAND:
+            raise ValueError(f"unsupported landmark target estimand: {self.target_estimand!r}")
+        if self.synthetic_only is not None and not isinstance(
+            self.synthetic_only, (bool, np.bool_)
+        ):
+            raise ValueError("synthetic_only must be boolean when supplied")
+        self.synthetic_only = (
+            None if self.synthetic_only is None else bool(self.synthetic_only)
+        )
 
     def subset(self, patient_ids: Sequence[str]) -> "Landmarks":
         keep = self.X["patient_id"].isin(set(patient_ids)).to_numpy()
@@ -81,13 +109,21 @@ class Landmarks:
             self.patients[self.patients["patient_id"].isin(set(patient_ids))].reset_index(
                 drop=True
             ),
+            self.horizon_days,
+            self.target_estimand,
             dict(self.counts),
+            self.synthetic_only,
         )
 
 
 def _stage(s: str) -> str:
-    s = str(s)
-    return "STAGE III" if s.startswith("III") else ("STAGE II" if s.startswith("II") else "STAGE I")
+    # Keep this boundary strict even though normal callers pass contract-clean
+    # rows: an unvalidated value must never silently become Stage I.
+    value = str(s).strip().upper()
+    stages = {"I": "I", "IIA": "II", "IIB": "II", "IIIA": "III", "IIIB": "III", "IIIC": "III"}
+    if value not in stages:
+        raise ValueError(f"unsupported AJCC stage_ajcc value: {s!r}")
+    return f"STAGE {stages[value]}"
 
 
 def _subtype(er: str, pr: str, her2: str) -> str:
@@ -98,6 +134,17 @@ def _subtype(er: str, pr: str, her2: str) -> str:
     if er == "NEGATIVE" and pr == "NEGATIVE" and her2 == "NEGATIVE":
         return "TNBC"
     return "UNCLASSIFIED"
+
+
+def _status_flag(status: str) -> float:
+    """Encode known receptor results without converting equivocal/unknown to negative."""
+    if status == "POSITIVE":
+        return 1.0
+    if status == "NEGATIVE":
+        return 0.0
+    if status in {"EQUIVOCAL", "UNKNOWN"}:
+        return float("nan")
+    raise ValueError(f"unsupported receptor status: {status!r}")
 
 
 def to_vigil_frames(
@@ -111,6 +158,17 @@ def to_vigil_frames(
     rows = []
     for pid in sorted(pat):
         p, b, o = pat[pid], base[pid], out[pid]
+        deceased = p["vital_status"] in {"DEAD_DISEASE", "DEAD_OTHER"}
+        death_day = p.get("days_to_death")
+        if deceased:
+            if death_day is None or pd.isna(death_day):
+                raise ValueError(f"explicit days_to_death is required for deceased patient {pid}")
+            death_day = float(death_day)
+            if not float(p["index_day"]) <= death_day <= float(p["days_to_last_followup"]):
+                raise ValueError(f"days_to_death is outside follow-up for patient {pid}")
+        elif death_day is not None and not pd.isna(death_day):
+            raise ValueError(f"days_to_death supplied for non-deceased patient {pid}")
+        death_day_value = float(death_day) if deceased and death_day is not None else np.nan
         rec = (
             bool(o["recurrence_confirmed"])
             and o["recurrence_day"] is not None
@@ -120,16 +178,19 @@ def to_vigil_frames(
             {
                 "patient_id": pid,
                 "age": float(p["age_at_diagnosis"]),
-                "er_status": b["er_status"] == "POSITIVE",
-                "pr_status": b["pr_status"] == "POSITIVE",
-                "her2_status": b["her2_status"] == "POSITIVE",
+                "er_status": _status_flag(b["er_status"]),
+                "pr_status": _status_flag(b["pr_status"]),
+                "her2_status": _status_flag(b["her2_status"]),
                 "stage": _stage(b["stage_ajcc"]),
                 "subtype": _subtype(b["er_status"], b["pr_status"], b["her2_status"]),
+                "chemotherapy_given": b.get("chemotherapy_given"),
+                "endocrine_therapy": b.get("endocrine_therapy"),
+                "radiotherapy_given": b.get("radiotherapy_given"),
                 "observed_recurrence_event": rec,
                 "observed_recurrence_day": float(o["recurrence_day"]) if rec else np.nan,
-                "competing_event_day": float(p["days_to_last_followup"])
-                if p["vital_status"] == "DEAD_OTHER"
-                else np.nan,
+                "competing_event": "death" if deceased else None,
+                "competing_event_day": death_day_value,
+                "administrative_censor_day": float(p["days_to_last_followup"]),
                 "days_to_last_followup": float(p["days_to_last_followup"]),
                 "index_day": float(p["index_day"]),
                 "restaging_imaging_done": o.get("restaging_imaging_done"),
@@ -148,49 +209,119 @@ def to_vigil_frames(
         )
         if r["analyte"] in TRACKED_ANALYTES:
             cell[r["analyte"]] = float(r["value_canonical"])
-    observations_df = pd.DataFrame(sorted(obs.values(), key=lambda d: (d["patient_id"], d["day"])))
+    observation_rows: List[Dict[str, Any]] = list(obs.values())
+    observation_rows.sort(key=lambda row: (row["patient_id"], row["day"]))
+    observations_df = pd.DataFrame(observation_rows)
     return patients_df, observations_df
 
 
 def build_landmarks(
-    tables: Dict[str, List[Dict[str, Any]]], cohort_ids: Sequence[str], horizon: float = HORIZON
+    tables: Dict[str, List[Dict[str, Any]]],
+    cohort_ids: Sequence[str],
+    horizon: float = HORIZON,
+    *,
+    synthetic_only: bool | None = None,
 ) -> Landmarks:
+    horizon = _validated_horizon(horizon)
     patients_df, obs_df = to_vigil_frames(tables, cohort_ids)
     counts = {"cohort_complete_case": len(patients_df)}
     if obs_df.empty:
         raise InsufficientData("no post-index laboratory draws in the complete-case cohort")
-    X, _y, _T, _E = WindowedFeatureExtractor().transform_cohort(
-        patients_df, obs_df, horizon_days=horizon
+    X, y_source, _T, _E = WindowedFeatureExtractor().transform_cohort(
+        patients_df, obs_df, horizon_days=horizon, synthetic_only=synthetic_only
     )
+    # The extractor's outcome is observed diagnosis. This adapter intentionally
+    # derives a different recurrence-before-competing-death target below; only
+    # shared horizon and explicit source provenance are inherited here.
+    if y_source.attrs.get("horizon_days") != horizon or (
+        synthetic_only is not None
+        and y_source.attrs.get("synthetic_only") != bool(synthetic_only)
+    ):
+        raise RuntimeError("shared extractor horizon/provenance metadata disagrees with landmark inputs")
     p = patients_df.set_index("patient_id")
-    # The extractor censors at the last laboratory day; the partner provides follow-up, so recompute time and event.
+    # The extractor censors at the last laboratory day; partner follow-up and
+    # vital status define the event/censor time for this fixed-horizon estimand.
     follow = X["patient_id"].map(p["days_to_last_followup"]).to_numpy()
     rec_day = X["patient_id"].map(p["observed_recurrence_day"]).to_numpy()
     rec = X["patient_id"].map(p["observed_recurrence_event"]).to_numpy().astype(bool)
+    comp_type = X["patient_id"].map(p["competing_event"]).to_numpy()
+    comp_day = X["patient_id"].map(p["competing_event_day"]).to_numpy(dtype=float)
     eval_day = X["eval_day"].to_numpy()
+    competing = np.array(
+        [kind is not None and not pd.isna(kind) and kind != "lost_to_follow_up" for kind in comp_type],
+        dtype=bool,
+    ) & np.isfinite(comp_day) & (comp_day <= follow)
+    # Recurrence is observed only if it occurs before death. Equal-day events
+    # are rejected by WindowedFeatureExtractor as order-ambiguous.
+    recurrence = rec & (~competing | (rec_day < comp_day))
+    death = competing & (~recurrence)
     keep = (
-        (X["history_length"].to_numpy() >= 2) & ~(rec & (eval_day >= rec_day)) & (eval_day < follow)
+        (X["history_length"].to_numpy() >= 2)
+        & ~(recurrence & (eval_day >= rec_day))
+        & ~(death & (eval_day >= comp_day))
+        & (eval_day < follow)
     )
-    X, follow, rec_day, rec, eval_day = (
+    X, follow, rec_day, recurrence, death, comp_day, eval_day = (
         X[keep].reset_index(drop=True),
         follow[keep],
         rec_day[keep],
-        rec[keep],
+        recurrence[keep],
+        death[keep],
+        comp_day[keep],
         eval_day[keep],
     )
-    E = rec.astype(int)
-    end = np.where(rec, rec_day, follow)
+    E = np.where(recurrence, 1, np.where(death, 2, 0)).astype(int)
+    end = np.where(recurrence, rec_day, np.where(death, comp_day, follow))
     T = np.maximum(1.0, end - eval_day)
-    y = ((E == 1) & (T <= horizon)).astype(int)
+    # By the horizon, recurrence and competing death are known non-censored
+    # outcomes; recurrence is the positive class, death the competing control.
+    # A patient censored before the horizon has unknown status (NaN).
+    y = np.full(len(E), np.nan, dtype=float)
+    known = (T <= horizon) & np.isin(E, [1, 2]) | (T >= horizon)
+    y[known] = ((E[known] == 1) & (T[known] <= horizon)).astype(float)
     first = ~X["patient_id"].duplicated().to_numpy()
     end_day = {pid: float(e) for pid, e in zip(X["patient_id"], end)}
     counts.update(
         patients_with_a_landmark=int(first.sum()),
-        patients_excluded_fewer_than_two_post_index_draws_or_recurred_first=len(patients_df)
+        patients_excluded_fewer_than_two_post_index_draws_or_terminal_event_before_second_draw=len(patients_df)
         - int(first.sum()),
         landmarks=len(X),
     )
-    return Landmarks(X, y, T, E, first, end_day, patients_df, counts)
+    return Landmarks(
+        X,
+        y,
+        T,
+        E,
+        first,
+        end_day,
+        patients_df,
+        horizon,
+        TARGET_ESTIMAND,
+        counts,
+        synthetic_only,
+    )
+
+
+def _require_landmark_horizon(landmarks: Landmarks, horizon: float) -> float:
+    horizon_days = _validated_horizon(horizon)
+    if landmarks.horizon_days != horizon_days:
+        raise ValueError(
+            f"landmark target horizon ({landmarks.horizon_days:g}d) does not match requested horizon ({horizon_days:g}d)"
+        )
+    if landmarks.target_estimand != TARGET_ESTIMAND:
+        raise ValueError("landmark target estimand does not match partner model estimand")
+    return horizon_days
+
+
+def _require_plan_target_horizon(plan: FittedPlan, horizon: float) -> float:
+    horizon_days = _validated_horizon(horizon)
+    for name, model in (("candidate", plan.candidate), ("comparator", plan.comparator)):
+        contract = getattr(model, "target_contract_", None)
+        if not isinstance(contract, TrainingTargetContract):
+            raise ValueError(f"fitted {name} model lacks target-contract metadata")
+        if contract.estimand != TARGET_ESTIMAND or contract.horizon_days != horizon_days:
+            raise ValueError(f"fitted {name} target contract does not match evaluation horizon/estimand")
+    return horizon_days
 
 
 # ----------------------------------------------------------------------------------------------- metrics
@@ -200,7 +331,7 @@ def ipcw_auc(score: np.ndarray, T: np.ndarray, E: np.ndarray, horizon: float = H
 
 def _logit(p: np.ndarray) -> np.ndarray:
     p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
-    return np.log(p / (1 - p))
+    return np.asarray(np.log(p / (1 - p)), dtype=float)
 
 
 def weighted_calibration_fit(
@@ -242,7 +373,10 @@ def alert_burden(
     df = pd.DataFrame(
         {"pid": patient_ids, "day": eval_day, "a": np.asarray(p) >= threshold}
     ).sort_values(["pid", "day"])
-    for pid, g in df.groupby("pid", sort=True):
+    for raw_pid, g in df.groupby("pid", sort=True):
+        if not isinstance(raw_pid, str):
+            raise ValueError("patient_ids must contain strings")
+        pid = raw_pid
         alerts[pid] = int(g["a"].sum())
         months[pid] = max(0.0, (end_day[pid] - float(g["day"].iloc[0])) / DAYS_PER_MONTH)
     return alerts, months
@@ -260,7 +394,7 @@ def rate_per_100_months(
 COMPARATORS = {
     "B1_SINGLE_THRESHOLD": lambda: SingleThresholdBaseline(),
     "B2_VELOCITY_RULE": lambda: VelocityBaseline(),
-    "B3_REGULARIZED_COX_HAZARD": lambda: RegularizedCoxHazardBaseline(),
+    "B3_REGULARIZED_LOGISTIC_HORIZON": lambda: RegularizedCoxHazardBaseline(),
 }
 
 
@@ -275,40 +409,149 @@ class FittedPlan:
     dev_auc: Dict[str, float]
     dev_alert_rate: float
     notes: List[str] = field(default_factory=list)
+    verification_propensity_model: Optional[LogisticRegression] = None
+    verification_propensity_medians: Optional[np.ndarray] = None
 
     def candidate_risk(self, X: pd.DataFrame) -> np.ndarray:
         raw = self.candidate.predict_risk(_model_view(X))
         return 1.0 / (1.0 + np.exp(-(self.recal_intercept + self.recal_slope * _logit(raw))))
 
     def comparator_risk(self, X: pd.DataFrame) -> np.ndarray:
-        return self.comparator.predict_risk(_model_view(X))
+        return np.asarray(self.comparator.predict_risk(_model_view(X)), dtype=float)
+
+
+VERIFICATION_FEATURE_COLUMNS = ("age", "ca_15_3_curr", "history_length")
+
+
+def _verification_feature_matrix(
+    X: pd.DataFrame, medians: Optional[np.ndarray] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Impute verification covariates from development medians and preserve missingness indicators."""
+    raw = np.column_stack(
+        [
+            pd.to_numeric(X[column], errors="coerce").to_numpy(dtype=float)
+            if column in X
+            else np.full(len(X), np.nan, dtype=float)
+            for column in VERIFICATION_FEATURE_COLUMNS
+        ]
+    )
+    missing = ~np.isfinite(raw)
+    if medians is None:
+        fitted_medians = np.nanmedian(np.where(np.isfinite(raw), raw, np.nan), axis=0)
+        if not np.isfinite(fitted_medians).all():
+            raise InsufficientData(
+                "verification propensity cannot be fit: a development covariate is entirely missing"
+            )
+    else:
+        fitted_medians = np.asarray(medians, dtype=float)
+        if (
+            fitted_medians.shape != (len(VERIFICATION_FEATURE_COLUMNS),)
+            or not np.isfinite(fitted_medians).all()
+        ):
+            raise ValueError("verification propensity medians are malformed")
+    imputed = np.where(missing, fitted_medians, raw)
+    return np.column_stack((imputed, missing.astype(float))), fitted_medians
+
+
+def _fit_verification_propensity(
+    dev: Landmarks,
+) -> Tuple[Optional[LogisticRegression], Optional[np.ndarray], Optional[str]]:
+    """Fit the verification mechanism only on development patients, never the test cohort."""
+    if "restaging_imaging_done" not in dev.patients:
+        return None, None, "development cohort lacks restaging_imaging_done"
+    first = dev.X.loc[dev.first].reset_index(drop=True)
+    patients = dev.patients.set_index("patient_id")
+    verified = first["patient_id"].map(patients["restaging_imaging_done"])
+    numeric = pd.to_numeric(verified, errors="coerce").to_numpy(dtype=float)
+    if not np.isfinite(numeric).all() or np.any((numeric != 0.0) & (numeric != 1.0)):
+        return None, None, "development verification status is incomplete or non-binary"
+    if np.unique(numeric).size < 2:
+        return None, None, "development verification status has no variation"
+    try:
+        features, medians = _verification_feature_matrix(first)
+    except InsufficientData as exc:
+        return None, None, str(exc)
+    model = LogisticRegression(max_iter=500)
+    model.fit(features, numeric.astype(int))
+    return model, medians, None
+
+
+def _predict_verification_propensity(plan: FittedPlan, X: pd.DataFrame) -> Optional[np.ndarray]:
+    if plan.verification_propensity_model is None or plan.verification_propensity_medians is None:
+        return None
+    features, _ = _verification_feature_matrix(X, plan.verification_propensity_medians)
+    return np.asarray(plan.verification_propensity_model.predict_proba(features)[:, 1], dtype=float)
 
 
 def _model_view(X: pd.DataFrame) -> pd.DataFrame:
     return X.drop(columns=[c for c in ("eval_day",) if c in X.columns])
 
 
-def _out_of_fold(dev: Landmarks, horizon: float, folds: int = 5) -> Tuple[np.ndarray, np.ndarray]:
-    """Out-of-fold raw predictions (candidate, B3) for every development landmark, cross-fitted by patient."""
+def _target_series(
+    values: np.ndarray, horizon: float, synthetic_only: bool | None
+) -> pd.Series:
+    """Attach the partner fixed-horizon estimand before fitting a surveillance model."""
+    horizon_days = _validated_horizon(horizon)
+    if synthetic_only is not None and not isinstance(synthetic_only, (bool, np.bool_)):
+        raise ValueError("synthetic_only must be boolean when supplied")
+    labels = pd.Series(
+        np.asarray(values, dtype=float),
+        name=f"observed_recurrence_before_competing_death_within_{horizon_days:g}d",
+    )
+    labels.attrs["target_estimand"] = TARGET_ESTIMAND
+    labels.attrs["horizon_days"] = horizon_days
+    if synthetic_only is not None:
+        labels.attrs["synthetic_only"] = synthetic_only
+    return labels
+
+
+def _out_of_fold(
+    dev: Landmarks, horizon: float, folds: int = 5
+) -> Dict[str, np.ndarray]:
+    """Patient-cross-fitted raw predictions for every model used in development selection."""
+    horizon = _require_landmark_horizon(dev, horizon)
     from sklearn.model_selection import GroupKFold
 
-    w = compute_ipcw_weights(dev.T, dev.E, horizon)
-    det = w > 0
     n = len(dev.X)
-    cand, cox = np.full(n, np.nan), np.full(n, np.nan)
+    predictions = {
+        name: np.full(n, np.nan)
+        for name in (
+            "B1_SINGLE_THRESHOLD",
+            "B2_VELOCITY_RULE",
+            "B3_REGULARIZED_LOGISTIC_HORIZON",
+            "B4_GRADIENT_BOOSTING_HORIZON",
+        )
+    }
     groups = dev.X["patient_id"].to_numpy()
     for tr, te in GroupKFold(n_splits=folds).split(dev.X, groups=groups):
-        trd = tr[det[tr]]
-        ytr = pd.Series(dev.y[trd])
+        # The censoring distribution is a fitted nuisance component. Estimate
+        # it inside each training fold so held-out patient outcomes cannot
+        # influence training weights or the corresponding out-of-fold score.
+        train_weights_all = compute_ipcw_weights(dev.T[tr], dev.E[tr], horizon)
+        det_train = train_weights_all > 0
+        trd = tr[det_train]
+        ytr = _target_series(dev.y[trd], horizon, dev.synthetic_only)
         if ytr.nunique() < 2:
             raise InsufficientData(
                 "a cross-fitting fold has a single outcome class in its training part"
             )
         Xtr = _model_view(dev.X.iloc[trd])
         Xte = _model_view(dev.X.iloc[te])
-        cand[te] = GradientBoostingBaseline().fit(Xtr, ytr).predict_risk(Xte)
-        cox[te] = RegularizedCoxHazardBaseline().fit(Xtr, ytr).predict_risk(Xte)
-    return cand, cox
+        train_weights = train_weights_all[det_train]
+        fold_models = {
+            "B1_SINGLE_THRESHOLD": SingleThresholdBaseline(),
+            "B2_VELOCITY_RULE": VelocityBaseline(),
+            "B3_REGULARIZED_LOGISTIC_HORIZON": RegularizedCoxHazardBaseline(),
+            "B4_GRADIENT_BOOSTING_HORIZON": GradientBoostingBaseline(),
+        }
+        for name, model in fold_models.items():
+            model.fit(Xtr, ytr, sample_weight=train_weights)
+            predictions[name][te] = model.predict_risk(Xte)
+    if any(not np.isfinite(scores).all() for scores in predictions.values()):
+        raise RuntimeError(
+            "patient-grouped cross-fitting did not produce finite scores for every landmark"
+        )
+    return predictions
 
 
 def fit_on_development(
@@ -319,31 +562,56 @@ def fit_on_development(
     Selection, recalibration and the threshold use out-of-fold predictions (cross-fitted by patient), so none of
     them is tuned on predictions the model made for its own training rows.
     """
+    horizon = _require_landmark_horizon(dev, horizon)
     n_events = int(((dev.E == 1) & (dev.T <= horizon) & dev.first).sum())
     if n_events < min_events:
         raise InsufficientData(
             f"{n_events} development-split events at the first landmark; at least {min_events} are needed to fit and select"
         )
-    oof_cand, oof_cox = _out_of_fold(dev, horizon)
+    oof = _out_of_fold(dev, horizon)
     first = dev.first
-    Xf, Tf, Ef = dev.X[first], dev.T[first], dev.E[first]
+    Tf, Ef = dev.T[first], dev.E[first]
+    det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
+    Xtr, ytr = _model_view(dev.X[det]), _target_series(
+        dev.y[det], horizon, dev.synthetic_only
+    )
+    train_weights = compute_ipcw_weights(dev.T, dev.E, horizon)[det]
+    b1 = SingleThresholdBaseline().fit(Xtr, ytr, sample_weight=train_weights)
+    b2 = VelocityBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     rule_scores = {
-        "B1_SINGLE_THRESHOLD": SingleThresholdBaseline().predict_risk(_model_view(Xf)),
-        "B2_VELOCITY_RULE": VelocityBaseline().predict_risk(_model_view(Xf)),
-        "B3_REGULARIZED_COX_HAZARD": oof_cox[first],
+        "B1_SINGLE_THRESHOLD": oof["B1_SINGLE_THRESHOLD"][first],
+        "B2_VELOCITY_RULE": oof["B2_VELOCITY_RULE"][first],
+        "B3_REGULARIZED_LOGISTIC_HORIZON": oof[
+            "B3_REGULARIZED_LOGISTIC_HORIZON"
+        ][first],
     }
     auc = {k: ipcw_auc(v, Tf, Ef, horizon) for k, v in rule_scores.items()}
     best = max(auc, key=lambda k: (auc[k], -list(auc).index(k)))
-    a, b = weighted_calibration_fit(oof_cand[first], Tf, Ef, horizon)
-    det = compute_ipcw_weights(dev.T, dev.E, horizon) > 0
-    Xtr, ytr = _model_view(dev.X[det]), pd.Series(dev.y[det])
-    candidate = GradientBoostingBaseline().fit(Xtr, ytr)
+    a, b = weighted_calibration_fit(
+        oof["B4_GRADIENT_BOOSTING_HORIZON"][first], Tf, Ef, horizon
+    )
+    candidate = GradientBoostingBaseline().fit(Xtr, ytr, sample_weight=train_weights)
     comparator = {
-        "B1_SINGLE_THRESHOLD": SingleThresholdBaseline(),
-        "B2_VELOCITY_RULE": VelocityBaseline(),
-    }.get(best) or RegularizedCoxHazardBaseline().fit(Xtr, ytr)
-    plan = FittedPlan(best, comparator, candidate, a, b, 1.0, auc, float("nan"))
-    p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_cand))))
+        "B1_SINGLE_THRESHOLD": b1,
+        "B2_VELOCITY_RULE": b2,
+    }.get(best) or RegularizedCoxHazardBaseline().fit(Xtr, ytr, sample_weight=train_weights)
+    verification_model, verification_medians, verification_issue = _fit_verification_propensity(dev)
+    plan = FittedPlan(
+        best,
+        comparator,
+        candidate,
+        a,
+        b,
+        1.0,
+        auc,
+        float("nan"),
+        verification_propensity_model=verification_model,
+        verification_propensity_medians=verification_medians,
+    )
+    if verification_issue:
+        plan.notes.append(f"verification-bias analysis unavailable: {verification_issue}")
+    oof_candidate = oof["B4_GRADIENT_BOOSTING_HORIZON"]
+    p_all = 1.0 / (1.0 + np.exp(-(a + b * _logit(oof_candidate))))
     grid = np.unique(np.quantile(p_all, np.linspace(0.0, 1.0, 201)))
     pids, days = dev.X["patient_id"].to_numpy(), dev.X["eval_day"].to_numpy()
     chosen, rate = float(grid[-1]) + 1e-9, 0.0
@@ -386,6 +654,8 @@ def confirmatory(
     horizon: float = HORIZON,
 ) -> Dict[str, Any]:
     """C1, C2 and C3 of the pre-registration. ``params`` holds PR-01..PR-04 as floats."""
+    horizon = _require_landmark_horizon(test, horizon)
+    _require_plan_target_horizon(plan, horizon)
     f = test.first
     Xf, Tf, Ef = test.X[f], test.T[f], test.E[f]
     p_cand = plan.candidate_risk(Xf)
@@ -411,7 +681,9 @@ def confirmatory(
     d_auc = ipcw_auc(p_cand, Tf, Ef, horizon) - ipcw_auc(s_comp, Tf, Ef, horizon)
     rate = 100.0 * a_vec.sum() / m_vec.sum() if m_vec.sum() > 0 else float("nan")
     rng = np.random.default_rng(seed)
-    slopes, diffs, rates = [], [], []
+    slopes: list[float] = []
+    diffs: list[float] = []
+    rates: list[float] = []
     for _ in range(n_boot):
         i = _boot_indices(n, rng)
         mm = m_vec[i].sum()
@@ -425,7 +697,10 @@ def confirmatory(
             )
         except InsufficientData:
             continue
-    ci = lambda v: (float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5)))  # noqa: E731
+
+    def ci(values: Sequence[float]) -> Tuple[float, float]:
+        return float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))
+
     sl, dl, rl = ci(slopes), ci(diffs), ci(rates)
     lo, hi, margin, budget = params["PR-01"], params["PR-02"], params["PR-03"], params["PR-04"]
     floor = 1.0 / (len(slopes) + 1)
@@ -513,7 +788,10 @@ def secondary(
     n_boot: int,
     seed: int,
     horizon: float = HORIZON,
+    dca_thresholds: Optional[Sequence[float]] = None,
 ) -> Dict[str, Any]:
+    horizon = _require_landmark_horizon(test, horizon)
+    _require_plan_target_horizon(plan, horizon)
     f = test.first
     Xf, Tf, Ef, yf = test.X[f].reset_index(drop=True), test.T[f], test.E[f], test.y[f]
     p = plan.candidate_risk(Xf)
@@ -521,23 +799,34 @@ def secondary(
     w = compute_ipcw_weights(Tf, Ef, horizon)
     ok = w > 0
     if ok.sum() and len(np.unique(yf[ok])) > 1:
-        cal = compute_calibration_curve(
-            plan.candidate.predict_risk(_model_view(Xf))[ok], yf[ok], n_bins=5
+        cal = compute_ipcw_calibration_curve(
+            plan.candidate.predict_risk(_model_view(Xf)),
+            Tf,
+            Ef,
+            horizon_time=horizon,
+            n_bins=5,
+            weights=w,
         )
         out["calibration_before_recalibration"] = {
             "ece": float(cal.expected_calibration_error),
             "mean_predicted": float(
                 np.average(plan.candidate.predict_risk(_model_view(Xf)), weights=np.where(ok, w, 0))
             ),
-            "observed_ipcw": float(np.average(yf, weights=np.where(ok, w, 0))),
-            "note": "ECE is unweighted and on determinable outcomes only; the IPCW means are the calibration-in-the-large inputs",
+            "observed_ipcw": float(np.average((Tf <= horizon) & (Ef == 1), weights=w)),
+            "note": "ECE and calibration-in-the-large means use IPCW weights on determinable outcomes",
         }
-    dca = survival_decision_curve_analysis(p, Tf, Ef, horizon)
-    out["decision_curve"] = {
-        "thresholds": [float(x) for x in dca.thresholds[::7]],
-        "net_benefit_model": [float(x) for x in dca.net_benefit_model[::7]],
-        "net_benefit_all": [float(x) for x in dca.net_benefit_all[::7]],
-    }
+    if dca_thresholds is None:
+        out["decision_curve"] = {
+            "not_run": "no clinically ratified PR-10 threshold grid is present in the frozen protocol"
+        }
+    else:
+        threshold_array = np.asarray(dca_thresholds, dtype=float)
+        dca = survival_decision_curve_analysis(p, Tf, Ef, horizon, thresholds=threshold_array)
+        out["decision_curve"] = {
+            "thresholds": [float(x) for x in dca.thresholds],
+            "net_benefit_model": [float(x) for x in dca.net_benefit_model],
+            "net_benefit_all": [float(x) for x in dca.net_benefit_all],
+        }
     # Subgroups
     pt = test.patients.set_index("patient_id")
     ids = Xf["patient_id"]
@@ -580,30 +869,16 @@ def secondary(
         "worst_group": min(scored, key=lambda kv: kv[1]) if scored else None,
         "facility": "single-site extraction: not applicable",
     }
-    # Lead time and overdetection at the operating point (all landmarks)
-    p_all = plan.candidate_risk(test.X)
-    pdf = test.patients
-    patient_df = pd.DataFrame(
-        {
-            "patient_id": pdf["patient_id"],
-            "true_recurrence_event": pdf["observed_recurrence_event"],
-            "true_recurrence_day": pdf["observed_recurrence_day"],
-            "is_indolent": False,
-        }
-    )
-    obs_df = pd.DataFrame(
-        {
-            "patient_id": test.X["patient_id"],
-            "day": test.X["eval_day"],
-            "alert_triggered": (p_all >= plan.threshold).astype(int),
-        }
-    )
-    try:
-        out["lead_time"] = evaluate_lead_time_and_overdetection(patient_df, obs_df).to_dict() | {
-            "caveat": "relative to the confirming test date; length bias and overdetection apply (ML_PROGRAM 4.5); no survival benefit is implied"
-        }
-    except Exception as exc:  # reported, never hidden
-        out["lead_time"] = {"not_computed": f"{type(exc).__name__}"}
+    # The shared legacy evaluator assumes fully observed recurrence status and
+    # complete patient truth. Partner records are right-censored and include a
+    # competing-death process, so do not reinterpret “no confirmed recurrence”
+    # as disease-free or emit an unadjusted lead-time/over-detection estimate.
+    out["lead_time"] = {
+        "not_computed": (
+            "No censoring- and competing-risk-aware lead-time/over-detection estimand "
+            "is registered for partner follow-up."
+        )
+    }
     # Missed-signal audit, aggregate only
     dismissed = int(pt.loc[ids, "dismissed_prior_signal"].sum())
     out["m10_aggregate"] = {
@@ -617,19 +892,44 @@ def secondary(
             "not_run": "restaging_imaging_done is missing for at least one test patient (optional column of the data dictionary)"
         }
     else:
-        v = vr.astype(bool).to_numpy() & ok
-        feats = (
-            Xf[[c for c in ("age", "ca_15_3_curr", "history_length") if c in Xf.columns]]
-            .fillna(0.0)
-            .to_numpy()
-        )
-        if v.sum() < 10 or len(np.unique(yf[v])) < 2:
+        verification_numeric = pd.to_numeric(vr, errors="coerce").to_numpy(dtype=float)
+        if not np.isfinite(verification_numeric).all() or np.any(
+            (verification_numeric != 0.0) & (verification_numeric != 1.0)
+        ):
             out["verification_bias"] = {
-                "not_run": "fewer than ten verified patients or only one outcome class among them"
+                "not_run": "restaging_imaging_done must contain known binary values for every test patient"
+            }
+        elif plan.verification_propensity_model is None:
+            out["verification_bias"] = {
+                "not_run": "no valid verification propensity model was fit on development patients"
             }
         else:
+            v = verification_numeric.astype(bool) & ok
+            props = _predict_verification_propensity(plan, Xf)
+            if props is None:
+                out["verification_bias"] = {
+                    "not_run": "development verification propensity model or imputation state is unavailable"
+                }
+                return out
+            if v.sum() < 10 or len(np.unique(yf[v])) < 2:
+                out["verification_bias"] = {
+                    "not_run": "fewer than ten verified determinable patients or only one outcome class among them"
+                }
+                return out
             cc = evaluate_complete_case(p, yf, v, plan.threshold)
-            ipw = evaluate_ipw_verification(p, yf, v, feats, plan.threshold)
+            ipw = evaluate_ipw_verification(
+                p,
+                yf,
+                v,
+                verification_features=None,
+                cutoff=plan.threshold,
+                verification_propensities=props,
+            )
+            if not ipw.details.get("metrics_defined", False):
+                out["verification_bias"] = {
+                    "not_run": f"development-fit propensity unsupported on test patients: {ipw.details.get('reason', 'undefined metrics')}"
+                }
+                return out
             out["verification_bias"] = {
                 "complete_case": {
                     "sensitivity": cc.empirical_sensitivity,
@@ -638,10 +938,13 @@ def secondary(
                 "ipw": {
                     "sensitivity": ipw.empirical_sensitivity,
                     "specificity": ipw.empirical_specificity,
+                    "minimum_verified_propensity": ipw.details["minimum_verified_propensity"],
+                    "maximum_inverse_weight": ipw.details["maximum_verified_inverse_weight"],
+                    "effective_sample_size": ipw.details["effective_sample_size"],
                 },
                 "sensitivity_analysis": begg_greenes_sensitivity(
                     p, yf, v, plan.threshold, (0.0, 0.05, 0.10, 0.20)
                 ),
-                "note": "complete-case estimates are biased by selective verification; the sensitivity analysis varies an assumed event rate among unverified patients and is not an estimate",
+                "note": "the propensity model is fitted on development patients only and applied to test patients; verified-outcome metrics still require conditional exchangeability and positivity. The complete-case estimate is descriptive, and the assumed-rate sensitivity analysis is not an estimate",
             }
     return out

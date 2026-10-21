@@ -1,20 +1,20 @@
 """
 packages/vigil-ml/vigil_ml/k1.py
 
-Model K1: Hybrid Kinetic State-Space Model and Inference Runtime.
+Model K1: synthetic kinetic parameter-inference research module.
 Implements the K1 Acceptance Contract specified in docs/ml/K1-CONTRACT.md.
 
 Inference routes:
 - amortized: trained neural recognition network (no per-patient optimization at inference)
-- ukf: sequential particle filter over visit schedules
-- nuts: reference gold-standard MCMC (NumPyro NUTS) on the exact observation likelihood
-- npe: neural posterior estimation (sbi normalizing flow trained on simulator prior)
+- ukf: contract compatibility key for a sequential particle filter
+- nuts: NumPyro NUTS on the shared observation likelihood
+- npe: conditional Gaussian-mixture density estimator trained on simulator pairs
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Sequence
@@ -26,26 +26,85 @@ import numpyro
 import numpyro.distributions as dist
 import torch
 import torch.nn as nn
+from numpyro.diagnostics import summary as mcmc_summary
 from numpyro.infer import MCMC, NUTS
+from safetensors import safe_open
 from safetensors.torch import load_file
-from sbi.inference import NPE_C
-from sbi.utils import BoxUniform
+from scipy.special import expit, logit
 
 # Single-threaded configuration for numerical stability on macOS Apple Silicon
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
 torch.set_num_threads(1)
 
-ROOT = Path(__file__).resolve().parents[3]
 MODELS_DIR = Path(__file__).resolve().parent / "models"
 AMORTIZED_WEIGHTS_PATH = MODELS_DIR / "k1_amortized_weights.safetensors"
+NPE_WEIGHTS_PATH = MODELS_DIR / "k1_npe_weights.safetensors"
+ASSUMPTIONS_PATH = MODELS_DIR / "k1_assumptions.json"
+ARTIFACT_MANIFEST_PATH = MODELS_DIR / "k1_artifact_manifest.json"
+ASSUMPTIONS = json.loads(ASSUMPTIONS_PATH.read_text(encoding="utf-8"))
+if ASSUMPTIONS.get("status") != "synthetic_research_assumptions":
+    raise ValueError("K1 assumptions must explicitly remain research-only synthetic assumptions")
+if ASSUMPTIONS.get("time_unit") != "day":
+    raise ValueError("K1 assumptions must express time in days")
 
-SCHEDULE = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0])
-
-LO_BOUNDS = np.array([40.0, 0.05, 0.05, 30.0])
-HI_BOUNDS = np.array([160.0, 0.35, 0.20, 240.0])
+PARAM_CONFIG = ASSUMPTIONS["parameters"]
+INFERENCE_CONFIG = ASSUMPTIONS["inference"]
+TRAINING_CONFIG = ASSUMPTIONS["training"]
+LO_BOUNDS = np.array([PARAM_CONFIG[name]["lower"] for name in (
+    "doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"
+)])
+HI_BOUNDS = np.array([PARAM_CONFIG[name]["upper"] for name in (
+    "doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"
+)])
+OBS_CONFIG = ASSUMPTIONS["analytes"]["ca153"]
+BASELINE_CA153 = float(OBS_CONFIG["baseline"])
+OBSERVATION_SD = float(OBS_CONFIG["measurement_noise"]["standard_deviation"])
+BURDEN_AT_ONSET = float(ASSUMPTIONS["dynamics"]["burden_at_onset"])
+SCHEDULE = np.asarray(ASSUMPTIONS["reference_schedule_days"], dtype=np.float64)
+REFERENCE_PARAMS = np.asarray(ASSUMPTIONS["identifiability_reference_parameters"], dtype=np.float64)
 MID_BOUNDS = 0.5 * (LO_BOUNDS + HI_BOUNDS)
 SPAN_BOUNDS = 0.5 * (HI_BOUNDS - LO_BOUNDS)
+AMORTIZED_LOG_SCALE_BOUNDS = tuple(INFERENCE_CONFIG["amortized_log_scale_bounds"])
+NPE_LOG_SCALE_BOUNDS = tuple(INFERENCE_CONFIG["npe_log_scale_bounds"])
+if (
+    not np.all(np.isfinite(LO_BOUNDS))
+    or not np.all(np.isfinite(HI_BOUNDS))
+    or np.any(LO_BOUNDS >= HI_BOUNDS)
+    or not np.all(np.isfinite(SCHEDULE))
+    or np.any(np.diff(SCHEDULE) <= 0)
+    or len(SCHEDULE) != TRAINING_CONFIG["time_bin_count"]
+    or REFERENCE_PARAMS.shape != LO_BOUNDS.shape
+    or np.any(REFERENCE_PARAMS < LO_BOUNDS)
+    or np.any(REFERENCE_PARAMS > HI_BOUNDS)
+    or not np.isfinite(BASELINE_CA153)
+    or not np.isfinite(OBSERVATION_SD)
+    or OBSERVATION_SD <= 0
+    or not np.isfinite(BURDEN_AT_ONSET)
+    or BURDEN_AT_ONSET <= 0
+    or INFERENCE_CONFIG["default_posterior_draws"] <= 0
+    or TRAINING_CONFIG["default_validation_seed_offset"] <= 0
+    or any(
+        TRAINING_CONFIG[name] <= 0
+        for name in (
+            "default_amortized_simulations",
+            "default_amortized_epochs",
+            "default_npe_simulations",
+            "default_npe_epochs",
+        )
+    )
+    or not 0 < INFERENCE_CONFIG["unconstrained_logit_clip_epsilon"] < 0.5
+    or INFERENCE_CONFIG["identifiability_finite_difference_fraction_of_half_range"] <= 0
+    or any(
+        len(bounds) != 2
+        or not np.all(np.isfinite(bounds))
+        or bounds[0] >= bounds[1]
+        for bounds in (AMORTIZED_LOG_SCALE_BOUNDS, NPE_LOG_SCALE_BOUNDS)
+    )
+    or any(PARAM_CONFIG[name].get("prior") != "uniform" for name in (
+        "doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"
+    ))
+    or OBS_CONFIG["measurement_noise"].get("distribution") != "normal"
+):
+    raise ValueError("K1 synthetic assumptions configuration is invalid or internally inconsistent")
 
 
 @dataclass(frozen=True)
@@ -67,12 +126,12 @@ PARAM_NAMES: tuple[str, ...] = (
 
 
 def sample_prior(rng: np.random.Generator) -> K1Params:
-    """Draw a parameter configuration from the physiological prior distribution."""
+    """Draw from the explicitly synthetic, versioned research prior."""
     return K1Params(
-        doubling_time_days=float(rng.uniform(40.0, 160.0)),
-        shedding_ca153=float(rng.uniform(0.05, 0.35)),
-        clearance_ca153=float(rng.uniform(0.05, 0.20)),
-        onset_day=float(rng.uniform(30.0, 240.0)),
+        **{
+            name: float(rng.uniform(LO_BOUNDS[i], HI_BOUNDS[i]))
+            for i, name in enumerate(PARAM_NAMES)
+        }
     )
 
 
@@ -83,42 +142,122 @@ class K1Observations:
     days: np.ndarray
     values: dict[str, np.ndarray]
 
+    def __post_init__(self) -> None:
+        raw_days = np.asarray(self.days, dtype=object)
+        if any(isinstance(day, (bool, np.bool_)) for day in raw_days.reshape(-1)):
+            raise ValueError("observation days must be numeric, not boolean")
+        days = np.asarray(self.days, dtype=np.float64)
+        if days.ndim != 1 or not np.all(np.isfinite(days)):
+            raise ValueError("observation days must be a finite one-dimensional array")
+        if np.any(np.diff(days) <= 0):
+            raise ValueError("observation days must be strictly increasing")
+        normalized: dict[str, np.ndarray] = {}
+        for analyte, raw in self.values.items():
+            raw_values = np.asarray(raw, dtype=object)
+            if any(isinstance(value, (bool, np.bool_)) for value in raw_values.reshape(-1)):
+                raise ValueError(f"{analyte} values must be numeric, not boolean")
+            values = np.asarray(raw, dtype=np.float64)
+            if values.ndim != 1 or len(values) != len(days):
+                raise ValueError(f"{analyte} values must be one-dimensional and align with days")
+            if np.any(np.isinf(values)):
+                raise ValueError(f"{analyte} values may be finite or NaN, never infinite")
+            normalized[analyte] = values
+        self.days = days
+        self.values = normalized
+
 
 def simulate_patient(
     params: K1Params,
     schedule_days: Sequence[float],
     rng: np.random.Generator,
+    measurement_noise_sd: float | None = None,
 ) -> K1Observations:
     """
     Forward-simulate observed analytes with measurement noise using the SAME dynamics
     the inference routes assume (the model's continuous ODE + observation model).
 
-    Observation model:
-        Healthy baseline CA 15-3 = 18.0 U/mL.
-        Measurement noise: additive Gaussian epsilon ~ Normal(0, sigma_obs^2) with sigma_obs = 1.5 U/mL.
+    The numerical assumptions are loaded from `models/k1_assumptions.json`; they are
+    synthetic research assumptions, not clinically calibrated values.
     """
-    days = np.array(schedule_days, dtype=float)
+    raw_days = np.asarray(schedule_days, dtype=object)
+    if raw_days.ndim != 1 or any(
+        isinstance(day, (bool, np.bool_)) for day in raw_days.reshape(-1)
+    ):
+        raise ValueError("schedule_days must be a one-dimensional numeric sequence, not boolean")
+    days = np.asarray(schedule_days, dtype=np.float64)
+    if not np.all(np.isfinite(days)) or np.any(np.diff(days) <= 0):
+        raise ValueError("schedule_days must be finite and strictly increasing")
+    raw_parameters = [getattr(params, name) for name in PARAM_NAMES]
+    if any(isinstance(value, (bool, np.bool_)) for value in raw_parameters):
+        raise ValueError("K1 parameters must be numeric, not boolean")
+    parameter_values = np.asarray(raw_parameters, dtype=np.float64)
+    if (
+        not np.all(np.isfinite(parameter_values))
+        or np.any(parameter_values < LO_BOUNDS)
+        or np.any(parameter_values > HI_BOUNDS)
+    ):
+        raise ValueError("K1 parameters must be finite and within configured synthetic prior bounds")
     T_d = params.doubling_time_days
     s = params.shedding_ca153
     c = params.clearance_ca153
     t_onset = params.onset_day
 
-    g = np.log(2.0) / max(T_d, 1e-3)
+    g = np.log(2.0) / T_d
     dt = np.maximum(0.0, days - t_onset)
     elev = np.where(
         days >= t_onset,
-        (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)),
+        s * BURDEN_AT_ONSET / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)),
         0.0,
     )
-    mu = 18.0 + elev
-    ca153 = mu + rng.normal(0.0, 1.5, size=len(days))
+    mu = BASELINE_CA153 + elev
+    if isinstance(measurement_noise_sd, (bool, np.bool_)):
+        raise ValueError("measurement_noise_sd must be numeric, not boolean")
+    noise_sd = OBSERVATION_SD if measurement_noise_sd is None else float(measurement_noise_sd)
+    if not np.isfinite(noise_sd) or noise_sd <= 0:
+        raise ValueError("measurement_noise_sd must be finite and positive")
+    ca153 = mu + rng.normal(0.0, noise_sd, size=len(days))
     return K1Observations(days=days, values={"ca153": ca153})
 
 
-def _reflect(val: np.ndarray, lo: float, hi: float) -> np.ndarray:
-    val = np.where(val < lo, 2.0 * lo - val, val)
-    val = np.where(val > hi, 2.0 * hi - val, val)
-    return np.clip(val, lo, hi)
+def _expected_ca153(params: K1Params, days: np.ndarray) -> np.ndarray:
+    growth = np.log(2.0) / params.doubling_time_days
+    elapsed = np.maximum(0.0, days - params.onset_day)
+    excess = params.shedding_ca153 * BURDEN_AT_ONSET / (growth + params.clearance_ca153) * (
+        np.exp(growth * elapsed) - np.exp(-params.clearance_ca153 * elapsed)
+    )
+    return BASELINE_CA153 + np.where(days >= params.onset_day, excess, 0.0)
+
+
+def _expected_ca153_samples(samples: dict[str, np.ndarray], days: np.ndarray) -> np.ndarray:
+    """Evaluate the shared mechanistic mean for posterior draws at arbitrary days."""
+    matrix = np.column_stack([np.asarray(samples[name], dtype=np.float64) for name in PARAM_NAMES])
+    days = np.asarray(days, dtype=np.float64)
+    if matrix.ndim != 2 or len(matrix) == 0 or days.ndim != 1:
+        raise ValueError("posterior parameters and prediction days must be non-empty vectors")
+    if not np.all(np.isfinite(matrix)) or not np.all(np.isfinite(days)):
+        raise ValueError("posterior parameters and prediction days must be finite")
+    growth = np.log(2.0) / matrix[:, 0, None]
+    elapsed = np.maximum(0.0, days[None, :] - matrix[:, 3, None])
+    excess = matrix[:, 1, None] * BURDEN_AT_ONSET / (growth + matrix[:, 2, None]) * (
+        np.exp(growth * elapsed) - np.exp(-matrix[:, 2, None] * elapsed)
+    )
+    return BASELINE_CA153 + np.where(days[None, :] >= matrix[:, 3, None], excess, 0.0)
+
+
+def _observed_ca153(obs: K1Observations) -> tuple[np.ndarray, np.ndarray]:
+    if "ca153" not in obs.values:
+        raise ValueError("K1 observations require the ca153 analyte key")
+    values = np.asarray(obs.values["ca153"], dtype=np.float64)
+    measured = np.isfinite(values)
+    return obs.days[measured], values[measured]
+
+
+def _log_likelihood(params: K1Params, obs: K1Observations) -> float:
+    days, values = _observed_ca153(obs)
+    if len(days) == 0:
+        return 0.0
+    residual = (values - _expected_ca153(params, days)) / OBSERVATION_SD
+    return float(-0.5 * np.sum(residual**2 + np.log(2.0 * np.pi * OBSERVATION_SD**2)))
 
 
 # ---------------------------------------------------------------------------
@@ -130,72 +269,79 @@ class SequentialParticleFilter:
     across discrete visit days, performing sequential likelihood updates over the parameter prior.
     """
 
-    def __init__(self, n_particles: int = 5000) -> None:
-        self.n_particles = n_particles
+    def __init__(self, n_particles: int | None = None) -> None:
+        self.n_particles = (
+            INFERENCE_CONFIG["particle_count"] if n_particles is None else int(n_particles)
+        )
 
     def filter(
         self,
         obs: K1Observations,
         rng: np.random.Generator,
-        n_draws: int = 400,
+        n_draws: int | None = None,
     ) -> dict[str, np.ndarray]:
-        days = np.array(obs.days, dtype=float)
-        ca153 = np.array(obs.values["ca153"], dtype=float)
-        valid = np.isfinite(ca153)
-        days = days[valid]
-        ca153 = ca153[valid]
-
-        P = self.n_particles
-        T_d = rng.uniform(40.0, 160.0, size=P)
-        s = rng.uniform(0.05, 0.35, size=P)
-        c = rng.uniform(0.05, 0.20, size=P)
-        t_onset = rng.uniform(30.0, 240.0, size=P)
-
+        n_draws = INFERENCE_CONFIG["default_posterior_draws"] if n_draws is None else n_draws
+        if n_draws <= 0 or self.n_particles <= 0:
+            raise ValueError("particle and posterior draw counts must be positive")
+        days, values = _observed_ca153(obs)
+        particles = rng.uniform(LO_BOUNDS, HI_BOUNDS, size=(self.n_particles, len(PARAM_NAMES)))
         if len(days) == 0:
-            idx = rng.choice(P, size=n_draws, replace=True)
-            return {
-                "doubling_time_days": np.clip(T_d[idx], 40.0, 160.0),
-                "shedding_ca153": np.clip(s[idx], 0.05, 0.35),
-                "clearance_ca153": np.clip(c[idx], 0.05, 0.20),
-                "onset_day": np.clip(t_onset[idx], 30.0, 240.0),
+            idx = rng.integers(self.n_particles, size=n_draws)
+            return {name: particles[idx, i] for i, name in enumerate(PARAM_NAMES)} | {
                 "prior_only": True,
+                "diagnostics": {
+                    "ess_fraction_min": None,
+                    "ess_fraction_median": None,
+                    "resampling_count": 0,
+                    "unique_particles_final": self.n_particles,
+                },
             }
 
-        g = np.log(2.0) / T_d
-        dt = np.maximum(0.0, days[None, :] - t_onset[:, None])
-        mask = days[None, :] >= t_onset[:, None]
-        elev = np.where(
-            mask,
-            (s[:, None] * 1.0)
-            / (g[:, None] + c[:, None])
-            * (np.exp(g[:, None] * dt) - np.exp(-c[:, None] * dt)),
-            0.0,
-        )
-        mu = 18.0 + elev
+        log_weights = np.full(self.n_particles, -np.log(self.n_particles))
+        ess_fractions: list[float] = []
+        resampling_count = 0
+        for day, value in zip(days, values, strict=True):
+            theta = particles
+            growth = np.log(2.0) / theta[:, 0]
+            elapsed = np.maximum(0.0, day - theta[:, 3])
+            excess = theta[:, 1] * BURDEN_AT_ONSET / (growth + theta[:, 2]) * (
+                np.exp(growth * elapsed) - np.exp(-theta[:, 2] * elapsed)
+            )
+            mean = BASELINE_CA153 + np.where(day >= theta[:, 3], excess, 0.0)
+            residual = (value - mean) / OBSERVATION_SD
+            log_weights += -0.5 * (residual**2 + np.log(2.0 * np.pi * OBSERVATION_SD**2))
+            log_weights -= np.max(log_weights)
+            weights = np.exp(log_weights)
+            total = weights.sum()
+            if not np.isfinite(total) or total <= 0:
+                raise FloatingPointError("particle likelihood collapsed to non-finite weights")
+            weights /= total
+            ess = 1.0 / np.sum(weights**2)
+            ess_fractions.append(float(ess / self.n_particles))
+            if ess < self.n_particles * INFERENCE_CONFIG["particle_resampling_ess_fraction"]:
+                selected = rng.choice(self.n_particles, size=self.n_particles, p=weights)
+                particles = particles[selected]
+                log_weights.fill(-np.log(self.n_particles))
+                resampling_count += 1
 
-        diff = ca153[None, :] - mu
-        log_w = -0.5 * np.sum((diff / 1.5) ** 2, axis=1)
-        max_log_w = np.max(log_w)
-        weights = np.exp(log_w - max_log_w)
-        weights_sum = np.sum(weights)
-        if weights_sum <= 0.0 or not np.isfinite(weights_sum):
-            weights = np.ones(P) / P
-        else:
-            weights /= weights_sum
-
-        idx = rng.choice(P, size=n_draws, p=weights, replace=True)
-        return {
-            "doubling_time_days": np.clip(T_d[idx] + rng.normal(0, 0.8, size=n_draws), 40.0, 160.0),
-            "shedding_ca153": np.clip(s[idx] + rng.normal(0, 0.004, size=n_draws), 0.05, 0.35),
-            "clearance_ca153": np.clip(c[idx] + rng.normal(0, 0.002, size=n_draws), 0.05, 0.20),
-            "onset_day": np.clip(t_onset[idx] + rng.normal(0, 1.5, size=n_draws), 30.0, 240.0),
+        weights = np.exp(log_weights - np.max(log_weights))
+        weights /= weights.sum()
+        idx = rng.choice(self.n_particles, size=n_draws, p=weights)
+        return {name: particles[idx, i] for i, name in enumerate(PARAM_NAMES)} | {
+            "diagnostics": {
+                "ess_fraction_min": float(np.min(ess_fractions)),
+                "ess_fraction_median": float(np.median(ess_fractions)),
+                "resampling_count": resampling_count,
+                "unique_particles_final": int(np.unique(particles, axis=0).shape[0]),
+            },
         }
 
 
 def _route_ukf(
-    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+    obs: K1Observations, rng: np.random.Generator, n_draws: int | None = None
 ) -> dict[str, np.ndarray]:
-    pf = SequentialParticleFilter(n_particles=5000)
+    n_draws = INFERENCE_CONFIG["default_posterior_draws"] if n_draws is None else n_draws
+    pf = SequentialParticleFilter(n_particles=INFERENCE_CONFIG["particle_count"])
     return pf.filter(obs, rng, n_draws=n_draws)
 
 
@@ -203,54 +349,71 @@ def _route_ukf(
 # Route: Reference Gold-Standard NUTS (NumPyro NUTS)
 # ---------------------------------------------------------------------------
 def _numpyro_k1_model(days: jnp.ndarray, y_obs: jnp.ndarray | None = None) -> None:
-    T_d = numpyro.sample("doubling_time_days", dist.Uniform(40.0, 160.0))
-    s = numpyro.sample("shedding_ca153", dist.Uniform(0.05, 0.35))
-    c = numpyro.sample("clearance_ca153", dist.Uniform(0.05, 0.20))
-    t_onset = numpyro.sample("onset_day", dist.Uniform(30.0, 240.0))
+    T_d = numpyro.sample("doubling_time_days", dist.Uniform(LO_BOUNDS[0], HI_BOUNDS[0]))
+    s = numpyro.sample("shedding_ca153", dist.Uniform(LO_BOUNDS[1], HI_BOUNDS[1]))
+    c = numpyro.sample("clearance_ca153", dist.Uniform(LO_BOUNDS[2], HI_BOUNDS[2]))
+    t_onset = numpyro.sample("onset_day", dist.Uniform(LO_BOUNDS[3], HI_BOUNDS[3]))
 
     g = jnp.log(2.0) / T_d
     dt = jnp.maximum(0.0, days - t_onset)
     elev = jnp.where(
         days >= t_onset,
-        (s * 1.0) / (g + c) * (jnp.exp(g * dt) - jnp.exp(-c * dt)),
+        (s * BURDEN_AT_ONSET) / (g + c) * (jnp.exp(g * dt) - jnp.exp(-c * dt)),
         0.0,
     )
-    mu = 18.0 + elev
-    numpyro.sample("y", dist.Normal(mu, 1.5), obs=y_obs)
+    mu = BASELINE_CA153 + elev
+    numpyro.sample("y", dist.Normal(mu, OBSERVATION_SD), obs=y_obs)
 
 
-_NUTS_KERNEL = NUTS(_numpyro_k1_model, target_accept_prob=0.85)
+_NUTS_KERNEL = NUTS(
+    _numpyro_k1_model,
+    target_accept_prob=INFERENCE_CONFIG["nuts_target_accept_probability"],
+)
 
 
 def _route_nuts(
-    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+    obs: K1Observations, rng: np.random.Generator, n_draws: int | None = None
 ) -> dict[str, np.ndarray]:
-    if len(obs.days) == 0 or len(obs.values["ca153"]) == 0:
+    n_draws = INFERENCE_CONFIG["default_posterior_draws"] if n_draws is None else n_draws
+    if n_draws <= 0:
+        raise ValueError("n_draws must be positive")
+    days_np, values_np = _observed_ca153(obs)
+    if len(days_np) == 0:
         return {
-            "doubling_time_days": rng.uniform(40.0, 160.0, size=n_draws),
-            "shedding_ca153": rng.uniform(0.05, 0.35, size=n_draws),
-            "clearance_ca153": rng.uniform(0.05, 0.20, size=n_draws),
-            "onset_day": rng.uniform(30.0, 240.0, size=n_draws),
+            name: rng.uniform(LO_BOUNDS[i], HI_BOUNDS[i], size=n_draws)
+            for i, name in enumerate(PARAM_NAMES)
+        } | {
             "prior_only": True,
         }
 
-    days = jnp.array(obs.days)
-    ca153 = jnp.array(obs.values["ca153"])
+    days = jnp.asarray(days_np)
+    ca153 = jnp.asarray(values_np)
     seed = int(rng.integers(0, 2**31 - 1))
+    samples_per_chain = int(np.ceil(n_draws / INFERENCE_CONFIG["nuts_chains"]))
     mcmc = MCMC(
         _NUTS_KERNEL,
-        num_warmup=100,
-        num_samples=n_draws,
-        num_chains=1,
+        num_warmup=INFERENCE_CONFIG["nuts_warmup"],
+        num_samples=samples_per_chain,
+        num_chains=INFERENCE_CONFIG["nuts_chains"],
         progress_bar=False,
     )
     mcmc.run(jax.random.PRNGKey(seed), days=days, y_obs=ca153)
     raw = mcmc.get_samples()
+    grouped = mcmc.get_samples(group_by_chain=True)
+    diagnostics = mcmc_summary(grouped)
+    extra = mcmc.get_extra_fields(group_by_chain=True)
     return {
-        "doubling_time_days": np.array(raw["doubling_time_days"]),
-        "shedding_ca153": np.array(raw["shedding_ca153"]),
-        "clearance_ca153": np.array(raw["clearance_ca153"]),
-        "onset_day": np.array(raw["onset_day"]),
+        **{name: np.asarray(raw[name])[:n_draws] for name in PARAM_NAMES},
+        "diagnostics": {
+            "r_hat": {name: float(diagnostics[name]["r_hat"]) for name in PARAM_NAMES},
+            "effective_sample_size": {
+                name: float(diagnostics[name]["n_eff"]) for name in PARAM_NAMES
+            },
+            "divergences": int(np.sum(extra.get("diverging", 0))),
+            "chains": INFERENCE_CONFIG["nuts_chains"],
+            "warmup_per_chain": INFERENCE_CONFIG["nuts_warmup"],
+            "samples_per_chain": samples_per_chain,
+        },
     }
 
 
@@ -266,18 +429,26 @@ class AmortizedRecognitionNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(7, 64),
+            nn.Linear(2 * len(SCHEDULE), INFERENCE_CONFIG["neural_hidden_dimensions"][0]),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(
+                INFERENCE_CONFIG["neural_hidden_dimensions"][0],
+                INFERENCE_CONFIG["neural_hidden_dimensions"][1],
+            ),
             nn.Tanh(),
-            nn.Linear(64, 4),
+            nn.Linear(INFERENCE_CONFIG["neural_hidden_dimensions"][1], 2 * len(PARAM_NAMES)),
         )
         nn.init.zeros_(self.net[-1].weight)
         nn.init.zeros_(self.net[-1].bias)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         out = self.net(x)
-        return out, out
+        mean, log_scale = out.chunk(2, dim=-1)
+        return mean, torch.clamp(
+            log_scale,
+            min=AMORTIZED_LOG_SCALE_BOUNDS[0],
+            max=AMORTIZED_LOG_SCALE_BOUNDS[1],
+        )
 
 
 _AMORTIZED_MODEL: AmortizedRecognitionNet | None = None
@@ -288,278 +459,379 @@ def _get_or_load_amortized_model() -> AmortizedRecognitionNet:
     if _AMORTIZED_MODEL is not None:
         return _AMORTIZED_MODEL
 
+    if not AMORTIZED_WEIGHTS_PATH.exists():
+        raise RuntimeError("K1 amortized weights are absent; run the registered training script first")
     model = AmortizedRecognitionNet()
-    if AMORTIZED_WEIGHTS_PATH.exists():
-        state_dict = load_file(str(AMORTIZED_WEIGHTS_PATH))
-        model.load_state_dict(state_dict)
+    state_dict = _load_registered_state_dict(AMORTIZED_WEIGHTS_PATH, "amortized")
+    model.load_state_dict(state_dict, strict=True)
     model.eval()
     _AMORTIZED_MODEL = model
     return _AMORTIZED_MODEL
 
 
-AMORTIZED_CENTER = np.array([100.0, 0.20, 0.125, 135.0])
-AMORTIZED_SCALE = np.array([35.0, 0.08, 0.04, 60.0])
+AMORTIZED_CENTER = MID_BOUNDS.copy()
+AMORTIZED_SCALE = SPAN_BOUNDS.copy()
+
+
+def _to_unconstrained(parameters: np.ndarray) -> np.ndarray:
+    unit = (parameters - LO_BOUNDS) / (HI_BOUNDS - LO_BOUNDS)
+    epsilon = INFERENCE_CONFIG["unconstrained_logit_clip_epsilon"]
+    return logit(np.clip(unit, epsilon, 1.0 - epsilon))
+
+
+def _from_unconstrained(values: np.ndarray) -> np.ndarray:
+    return LO_BOUNDS + (HI_BOUNDS - LO_BOUNDS) * expit(values)
+
+
+def _summarize_observations(obs: K1Observations) -> np.ndarray:
+    """Return one observed-value mean and an explicit count indicator per time bin."""
+    days, values = _observed_ca153(obs)
+    if len(days) == 0:
+        return np.zeros(2 * len(SCHEDULE), dtype=np.float32)
+    edges = np.concatenate(([-np.inf], (SCHEDULE[:-1] + SCHEDULE[1:]) / 2, [np.inf]))
+    binned = np.zeros(len(SCHEDULE), dtype=np.float32)
+    measured = np.zeros(len(SCHEDULE), dtype=np.float32)
+    for index in range(len(SCHEDULE)):
+        in_bin = (days >= edges[index]) & (days < edges[index + 1])
+        if in_bin.any():
+            binned[index] = float(np.mean(values[in_bin]) - BASELINE_CA153) / OBSERVATION_SD
+            measured[index] = 1.0
+    return np.concatenate((binned, measured))
 
 
 def train_amortized(
-    n_sims: int = 1500,
-    seed: int = 0,
+    n_sims: int | None = None,
+    seed: int | None = None,
     shuffle_pairs: bool = False,
-    epochs: int = 8,
+    epochs: int | None = None,
+    validation_seed: int | None = None,
 ) -> dict[str, Any]:
     """
     Train amortized recognition network on simulator draws via genuine gradient descent.
-    Validates learning: validation loss decreases by >=0.2 when shuffle_pairs=False,
-    and shows <0.05 improvement under the shuffled control. Returns losses and trained model (RR13).
+    Returns real posterior-mean MSE and optimized Gaussian NLL histories on independent
+    validation simulations, plus the trained model.
     """
+    n_sims = TRAINING_CONFIG["default_amortized_simulations"] if n_sims is None else n_sims
+    seed = INFERENCE_CONFIG["default_random_seed"] if seed is None else seed
+    epochs = TRAINING_CONFIG["default_amortized_epochs"] if epochs is None else epochs
+    if n_sims < 10 or epochs < 1:
+        raise ValueError("n_sims must be at least 10 and epochs must be positive")
     rng = np.random.default_rng(seed)
-    torch.manual_seed(seed)
-
-    T_d = rng.uniform(LO_BOUNDS[0], HI_BOUNDS[0], size=n_sims)
-    s = rng.uniform(LO_BOUNDS[1], HI_BOUNDS[1], size=n_sims)
-    c = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_sims)
-    t_onset = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_sims)
-
-    theta = np.column_stack(
-        [
-            (T_d - AMORTIZED_CENTER[0]) / AMORTIZED_SCALE[0],
-            (s - AMORTIZED_CENTER[1]) / AMORTIZED_SCALE[1],
-            (c - AMORTIZED_CENTER[2]) / AMORTIZED_SCALE[2],
-            (t_onset - AMORTIZED_CENTER[3]) / AMORTIZED_SCALE[3],
-        ]
+    val_rng = np.random.default_rng(
+        seed + TRAINING_CONFIG["default_validation_seed_offset"]
+        if validation_seed is None
+        else validation_seed
     )
+    torch.manual_seed(seed)
+    def generate(rng_local: np.random.Generator, count: int) -> tuple[np.ndarray, np.ndarray]:
+        theta_values = rng_local.uniform(LO_BOUNDS, HI_BOUNDS, size=(count, len(PARAM_NAMES)))
+        features = np.zeros((count, 2 * len(SCHEDULE)), dtype=np.float32)
+        for row_index, row in enumerate(theta_values):
+            schedule = SCHEDULE + rng_local.uniform(
+                -TRAINING_CONFIG["schedule_jitter_days"],
+                TRAINING_CONFIG["schedule_jitter_days"],
+                size=len(SCHEDULE),
+            )
+            schedule[0] = 0.0
+            params = K1Params(**dict(zip(PARAM_NAMES, row, strict=True)))
+            observation = simulate_patient(params, schedule, rng_local)
+            keep = rng_local.random(len(schedule)) >= TRAINING_CONFIG["missing_visit_probability"]
+            keep[0] = True
+            features[row_index] = _summarize_observations(
+                K1Observations(
+                    days=schedule,
+                    values={"ca153": np.where(keep, observation.values["ca153"], np.nan)},
+                )
+            )
+        return features, _to_unconstrained(theta_values).astype(np.float32)
 
-    sch = np.array([0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0])
-    X = np.zeros((n_sims, 7))
-    for i in range(n_sims):
-        g = np.log(2.0) / T_d[i]
-        dt = np.maximum(0.0, sch - t_onset[i])
-        elev = np.where(
-            sch >= t_onset[i],
-            (s[i] * 1.0) / (g + c[i]) * (np.exp(g * dt) - np.exp(-c[i] * dt)),
-            0.0,
-        )
-        X[i] = (18.0 + elev + rng.normal(0, 1.5, size=7) - 18.0) / 5.0
-
+    X, theta = generate(rng, n_sims)
+    X_val_raw, theta_val_raw = generate(val_rng, max(1, n_sims // 4))
     if shuffle_pairs:
+        # Break the simulator's feature/parameter correspondence. Applying the
+        # same permutation to both arrays only reorders intact pairs and leaves
+        # the negative control equivalent to the real training run.
         perm = rng.permutation(n_sims)
-        X = X[perm]
-
-    split = int(0.8 * n_sims)
-    X_train = torch.tensor(X[:split], dtype=torch.float32)
-    y_train = torch.tensor(theta[:split], dtype=torch.float32)
-    X_val = torch.tensor(X[split:], dtype=torch.float32)
-    y_val = torch.tensor(theta[split:], dtype=torch.float32)
+        theta = theta[perm]
+    X_train = torch.tensor(X, dtype=torch.float32)
+    y_train = torch.tensor(theta, dtype=torch.float32)
+    X_val = torch.tensor(X_val_raw, dtype=torch.float32)
+    y_val = torch.tensor(theta_val_raw, dtype=torch.float32)
 
     model = AmortizedRecognitionNet()
-    lr = 8e-3 if epochs > 15 else 1.2e-2
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
-    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=TRAINING_CONFIG["amortized_learning_rate"],
+        weight_decay=TRAINING_CONFIG["weight_decay"],
+    )
+    criterion = nn.GaussianNLLLoss()
+    batch_size = min(TRAINING_CONFIG["batch_size"], len(X_train))
 
     train_losses: list[float] = []
     val_losses: list[float] = []
+    train_nll: list[float] = []
+    val_nll: list[float] = []
+    best_state: dict[str, torch.Tensor] | None = None
+    best_val_nll = float("inf")
+    best_epoch = 0
 
     for _ in range(epochs):
         model.train()
-        optimizer.zero_grad()
-        pred, _ = model(X_train)
-        loss = criterion(pred, y_train)
-        loss.backward()
-        optimizer.step()
+        order = rng.permutation(len(X_train))
+        for start in range(0, len(order), batch_size):
+            batch = torch.as_tensor(order[start : start + batch_size], dtype=torch.long)
+            optimizer.zero_grad()
+            pred, log_scale = model(X_train[batch])
+            loss = criterion(pred, y_train[batch], torch.exp(2.0 * log_scale))
+            loss.backward()
+            optimizer.step()
 
         model.eval()
         with torch.no_grad():
-            vpred, _ = model(X_val)
-            vloss = criterion(vpred, y_val)
-        train_losses.append(float(loss.item()))
-        val_losses.append(float(vloss.item()))
+            train_pred, train_log_scale = model(X_train)
+            vpred, vlog_scale = model(X_val)
+            train_losses.append(float(torch.mean((train_pred - y_train) ** 2)))
+            val_losses.append(float(torch.mean((vpred - y_val) ** 2)))
+            train_nll.append(
+                float(criterion(train_pred, y_train, torch.exp(2.0 * train_log_scale)))
+            )
+            current_val_nll = float(criterion(vpred, y_val, torch.exp(2.0 * vlog_scale)))
+            val_nll.append(current_val_nll)
+            if current_val_nll < best_val_nll:
+                best_val_nll = current_val_nll
+                best_epoch = len(val_nll)
+                best_state = {name: value.detach().clone() for name, value in model.state_dict().items()}
 
-    return {"train_loss": train_losses, "val_loss": val_losses, "model": model}
+    if best_state is None:
+        raise RuntimeError("amortized training produced no validation checkpoint")
+    model.load_state_dict(best_state)
 
-
-# Parameters fitted on separate calibration split (seed 999, N=500 patients) via scripts/calibrate_k1.py per RR11/RR13:
-# Residual standard deviations for the 4 latent kinetic parameters:
-#   Index 0: doubling_time_days = 25.27 days
-#   Index 1: shedding_ca153     = 0.074 U/mL per unit tumor burden per day
-#   Index 2: clearance_ca153    = 0.040 day^-1
-#   Index 3: onset_day          = 42.62 days post-surgery
-# (Note: These are kinetic ODE parameters, NOT multi-analyte measurement noise).
-CALIBRATION_FILE = Path(__file__).parent / "models" / "k1_calibration.json"
-if CALIBRATION_FILE.exists():
-    try:
-        _calib_data = json.loads(CALIBRATION_FILE.read_text())
-        CALIBRATED_RESIDUAL_SD = np.array(_calib_data["residual_sd"], dtype=np.float64)
-    except Exception:
-        CALIBRATED_RESIDUAL_SD = np.array([25.27, 0.074, 0.040, 42.62])
-else:
-    CALIBRATED_RESIDUAL_SD = np.array([25.27, 0.074, 0.040, 42.62])
-
-CLEARANCE_PRIOR_WEIGHT = 0.70
-ONSET_SNR_THRESHOLD = 3.0
+    return {
+        "train_loss": train_losses,
+        "val_loss": val_losses,
+        "train_nll": train_nll,
+        "val_nll": val_nll,
+        "selected_epoch": best_epoch,
+        "model": model,
+    }
 
 
 def _route_amortized(
-    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+    obs: K1Observations, rng: np.random.Generator, n_draws: int | None = None
 ) -> dict[str, np.ndarray]:
     """
     Amortized recognition route evaluating posterior draws in O(1) time.
     Distinct from other routes; does not alias other estimators.
     """
-    vals_arr = np.array(obs.values["ca153"], dtype=float)
-    days_arr = np.array(obs.days, dtype=float)
-
+    n_draws = INFERENCE_CONFIG["default_posterior_draws"] if n_draws is None else n_draws
+    if n_draws <= 0:
+        raise ValueError("n_draws must be positive")
+    days_arr, vals_arr = _observed_ca153(obs)
     if len(vals_arr) == 0:
-        # Condition P8-D: Sample directly from prior distributions without synthesizing fake 18.0 observations
-        draws = np.zeros((n_draws, 4))
-        draws[:, 0] = rng.uniform(LO_BOUNDS[0], HI_BOUNDS[0], size=n_draws)
-        draws[:, 1] = rng.uniform(LO_BOUNDS[1], HI_BOUNDS[1], size=n_draws)
-        draws[:, 2] = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_draws)
-        draws[:, 3] = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_draws)
-        return {
-            "doubling_time_days": draws[:, 0],
-            "shedding_ca153": draws[:, 1],
-            "clearance_ca153": draws[:, 2],
-            "onset_day": draws[:, 3],
-            "prior_only": True,
-        }
+        # With no measurements, preserve the prior instead of inventing observations.
+        draws = rng.uniform(LO_BOUNDS, HI_BOUNDS, size=(n_draws, len(PARAM_NAMES)))
+        return {name: draws[:, i] for i, name in enumerate(PARAM_NAMES)} | {"prior_only": True}
 
     net = _get_or_load_amortized_model()
-    if len(vals_arr) == len(SCHEDULE):
-        y_vec = vals_arr
-    else:
-        y_vec = np.interp(SCHEDULE, days_arr, vals_arr)
-
-    x_in = torch.tensor((y_vec - 18.0) / 5.0, dtype=torch.float32).unsqueeze(0)
+    x_in = torch.tensor(_summarize_observations(obs), dtype=torch.float32).unsqueeze(0)
     with torch.no_grad():
-        mu_t, _ = net(x_in)
-        mu_val = mu_t.numpy()[0] * AMORTIZED_SCALE + AMORTIZED_CENTER
-
-    draws = np.zeros((n_draws, 4))
-    draws[:, 0] = rng.normal(mu_val[0], CALIBRATED_RESIDUAL_SD[0], size=n_draws)
-
-    elev_max = max(0.0, float(np.max(y_vec) - 18.0))
-    w_info = float(np.clip((elev_max - 2.0) / 12.0, 0.0, 1.0))
-
-    draws[:, 1] = w_info * rng.normal(mu_val[1], CALIBRATED_RESIDUAL_SD[1], size=n_draws) + (
-        1.0 - w_info
-    ) * rng.uniform(LO_BOUNDS[1], HI_BOUNDS[1], size=n_draws)
-
-    c_prior = rng.uniform(LO_BOUNDS[2], HI_BOUNDS[2], size=n_draws)
-    draws[:, 2] = (1.0 - CLEARANCE_PRIOR_WEIGHT) * rng.normal(
-        mu_val[2], CALIBRATED_RESIDUAL_SD[2], size=n_draws
-    ) + CLEARANCE_PRIOR_WEIGHT * c_prior
-
-    onset_prior = rng.uniform(LO_BOUNDS[3], HI_BOUNDS[3], size=n_draws)
-    draws[:, 3] = w_info * rng.normal(mu_val[3], CALIBRATED_RESIDUAL_SD[3], size=n_draws) + (
-        1.0 - w_info
-    ) * onset_prior
-
-    for k in range(4):
-        draws[:, k] = _reflect(draws[:, k], LO_BOUNDS[k], HI_BOUNDS[k])
-
-    return {
-        "doubling_time_days": draws[:, 0],
-        "shedding_ca153": draws[:, 1],
-        "clearance_ca153": draws[:, 2],
-        "onset_day": draws[:, 3],
-    }
+        mean, log_scale = net(x_in)
+        means = mean.numpy()[0]
+        scales = np.exp(log_scale.numpy()[0])
+    unconstrained = rng.normal(means, scales, size=(n_draws, len(PARAM_NAMES)))
+    draws = _from_unconstrained(unconstrained)
+    return {name: draws[:, i] for i, name in enumerate(PARAM_NAMES)}
 
 
 # ---------------------------------------------------------------------------
-# Route: Neural Posterior Estimation (NPE)
+# Route: Neural Posterior Estimation (conditional Gaussian mixture)
 # ---------------------------------------------------------------------------
-_NPE_POSTERIOR: Any = None
+class NeuralPosteriorEstimator(nn.Module):
+    """Conditional density estimator q(theta | summary), trained by simulation pairs."""
+
+    def __init__(self, components: int | None = None) -> None:
+        super().__init__()
+        self.components = (
+            INFERENCE_CONFIG["npe_mixture_components"] if components is None else components
+        )
+        hidden = INFERENCE_CONFIG["neural_hidden_dimensions"]
+        self.encoder = nn.Sequential(
+            nn.Linear(2 * len(SCHEDULE), hidden[0]), nn.Tanh(), nn.Linear(hidden[0], hidden[1]), nn.Tanh()
+        )
+        self.mixture = nn.Linear(
+            hidden[1], self.components * (1 + 2 * len(PARAM_NAMES))
+        )
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        raw = self.mixture(self.encoder(x)).view(-1, self.components, 1 + 2 * len(PARAM_NAMES))
+        logits = raw[:, :, 0]
+        means = raw[:, :, 1 : 1 + len(PARAM_NAMES)]
+        log_scales = torch.clamp(
+            raw[:, :, 1 + len(PARAM_NAMES) :],
+            min=NPE_LOG_SCALE_BOUNDS[0],
+            max=NPE_LOG_SCALE_BOUNDS[1],
+        )
+        return logits, means, log_scales
 
 
-def _get_or_load_npe_posterior() -> Any:
-    global _NPE_POSTERIOR
-    if _NPE_POSTERIOR is not None:
-        return _NPE_POSTERIOR
+_NPE_MODEL: NeuralPosteriorEstimator | None = None
 
-    prior_min = torch.tensor([40.0, 0.05, 0.05, 30.0])
-    prior_max = torch.tensor([160.0, 0.35, 0.20, 240.0])
-    prior = BoxUniform(low=prior_min, high=prior_max)
 
-    torch.manual_seed(42)
-    rng_sim = np.random.default_rng(42)
+def _get_or_load_npe_model() -> NeuralPosteriorEstimator:
+    global _NPE_MODEL
+    if _NPE_MODEL is not None:
+        return _NPE_MODEL
+    if not NPE_WEIGHTS_PATH.exists():
+        raise RuntimeError("K1 NPE weights are absent; run the registered training script first")
+    model = NeuralPosteriorEstimator()
+    model.load_state_dict(_load_registered_state_dict(NPE_WEIGHTS_PATH, "npe"), strict=True)
+    model.eval()
+    _NPE_MODEL = model
+    return model
 
-    def _sim(theta: torch.Tensor) -> torch.Tensor:
-        N = theta.shape[0]
-        out = np.zeros((N, len(SCHEDULE)))
-        for i in range(N):
-            T_d = float(theta[i, 0])
-            s = float(theta[i, 1])
-            c = float(theta[i, 2])
-            t_onset = float(theta[i, 3])
-            g = np.log(2.0) / T_d
-            dt = np.maximum(0.0, SCHEDULE - t_onset)
-            elev = np.where(
-                SCHEDULE >= t_onset,
-                (s * 1.0) / (g + c) * (np.exp(g * dt) - np.exp(-c * dt)),
-                0.0,
+
+def _load_registered_state_dict(path: Path, estimator: str) -> dict[str, torch.Tensor]:
+    """Load only finite weights matching the committed K1 artifact manifest."""
+    manifest = json.loads(ARTIFACT_MANIFEST_PATH.read_text(encoding="utf-8"))
+    entry = manifest.get("artifacts", {}).get(path.name)
+    if not isinstance(entry, dict) or entry.get("estimator") != estimator:
+        raise ValueError(f"K1 {estimator} artifact is absent from its committed manifest")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != entry.get("sha256"):
+        raise ValueError(f"K1 {estimator} artifact does not match its committed manifest digest")
+    with safe_open(str(path), framework="pt", device="cpu") as artifact:
+        metadata = artifact.metadata() or {}
+    if metadata != entry.get("metadata"):
+        raise ValueError(f"K1 {estimator} artifact metadata does not match its committed manifest")
+    if manifest.get("assumptions_sha256") != hashlib.sha256(ASSUMPTIONS_PATH.read_bytes()).hexdigest():
+        raise ValueError("K1 artifact manifest does not match the active synthetic assumptions")
+    state_dict = load_file(str(path), device="cpu")
+    if not state_dict or any(not torch.isfinite(tensor).all() for tensor in state_dict.values()):
+        raise ValueError(f"K1 {estimator} artifact must contain finite model weights")
+    return state_dict
+
+
+def train_npe(
+    n_sims: int | None = None,
+    seed: int | None = None,
+    epochs: int | None = None,
+    validation_seed: int | None = None,
+) -> dict[str, Any]:
+    """Train a conditional mixture density on independent prior-predictive pairs."""
+    n_sims = TRAINING_CONFIG["default_npe_simulations"] if n_sims is None else n_sims
+    seed = INFERENCE_CONFIG["default_random_seed"] if seed is None else seed
+    epochs = TRAINING_CONFIG["default_npe_epochs"] if epochs is None else epochs
+    if n_sims < 10 or epochs < 1:
+        raise ValueError("n_sims must be at least 10 and epochs must be positive")
+    rng = np.random.default_rng(seed)
+    val_rng = np.random.default_rng(
+        seed + TRAINING_CONFIG["default_validation_seed_offset"]
+        if validation_seed is None
+        else validation_seed
+    )
+    torch.manual_seed(seed)
+    def generate(rng_local: np.random.Generator, count: int) -> tuple[np.ndarray, np.ndarray]:
+        theta_values = rng_local.uniform(LO_BOUNDS, HI_BOUNDS, size=(count, len(PARAM_NAMES)))
+        features = np.empty((count, 2 * len(SCHEDULE)), dtype=np.float32)
+        for i, row in enumerate(theta_values):
+            schedule = SCHEDULE + rng_local.uniform(
+                -TRAINING_CONFIG["schedule_jitter_days"],
+                TRAINING_CONFIG["schedule_jitter_days"],
+                size=len(SCHEDULE),
             )
-            mu = 18.0 + elev
-            out[i] = mu + rng_sim.normal(0, 1.5, size=len(SCHEDULE))
-        return torch.tensor(out, dtype=torch.float32)
-
-    theta_train = prior.sample((3000,))
-    x_train = _sim(theta_train)
-    inf = NPE_C(prior=prior)
-    inf.append_simulations(theta_train, x_train)
-    est = inf.train(training_batch_size=128, max_num_epochs=40, show_train_summary=False)
-    if hasattr(inf, "_tracker") and hasattr(inf._tracker, "_writer"):
-        try:
-            inf._tracker._writer.close()
-        except Exception:
-            pass
-
-    _NPE_POSTERIOR = inf.build_posterior(est)
-    return _NPE_POSTERIOR
+            schedule[0] = 0.0
+            params = K1Params(**dict(zip(PARAM_NAMES, row, strict=True)))
+            simulated = simulate_patient(params, schedule, rng_local)
+            mask = rng_local.random(len(schedule)) >= TRAINING_CONFIG["missing_visit_probability"]
+            mask[0] = True
+            features[i] = _summarize_observations(
+                K1Observations(
+                    days=schedule,
+                    values={"ca153": np.where(mask, simulated.values["ca153"], np.nan)},
+                )
+            )
+        return features, _to_unconstrained(theta_values).astype(np.float32)
+    x, theta = generate(rng, n_sims)
+    xv, yv = generate(val_rng, max(1, n_sims // 4))
+    xt, yt = torch.as_tensor(x), torch.as_tensor(theta)
+    xv, yv = torch.as_tensor(xv), torch.as_tensor(yv)
+    model = NeuralPosteriorEstimator()
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=TRAINING_CONFIG["npe_learning_rate"],
+        weight_decay=TRAINING_CONFIG["weight_decay"],
+    )
+    train_loss: list[float] = []
+    val_loss: list[float] = []
+    best_state: dict[str, torch.Tensor] | None = None
+    best_val_nll = float("inf")
+    best_epoch = 0
+    batch_size = min(TRAINING_CONFIG["batch_size"], len(xt))
+    for _ in range(epochs):
+        model.train()
+        order = rng.permutation(len(xt))
+        epoch_loss = 0.0
+        for start in range(0, len(order), batch_size):
+            batch = torch.as_tensor(order[start : start + batch_size], dtype=torch.long)
+            logits, means, log_scales = model(xt[batch])
+            standardized = -0.5 * ((yt[batch, None, :] - means) / log_scales.exp()) ** 2
+            component_log_prob = (
+                torch.log_softmax(logits, dim=-1)
+                + (-log_scales - 0.5 * np.log(2.0 * np.pi) + standardized).sum(dim=-1)
+            )
+            loss = -torch.logsumexp(component_log_prob, dim=-1).mean()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            epoch_loss += float(loss.detach()) * len(batch) / len(order)
+        train_loss.append(epoch_loss)
+        model.eval()
+        with torch.no_grad():
+            logits, means, log_scales = model(xv)
+            component_log_prob = torch.log_softmax(logits, dim=-1) + (
+                -log_scales
+                - 0.5 * np.log(2.0 * np.pi)
+                - 0.5 * ((yv[:, None, :] - means) / log_scales.exp()) ** 2
+            ).sum(dim=-1)
+            current_val_nll = float(-torch.logsumexp(component_log_prob, dim=-1).mean())
+            val_loss.append(current_val_nll)
+            if current_val_nll < best_val_nll:
+                best_val_nll = current_val_nll
+                best_epoch = len(val_loss)
+                best_state = {name: value.detach().clone() for name, value in model.state_dict().items()}
+    if best_state is None:
+        raise RuntimeError("NPE training produced no validation checkpoint")
+    model.load_state_dict(best_state)
+    return {
+        "train_loss": train_loss,
+        "val_loss": val_loss,
+        "val_nll": val_loss,
+        "selected_epoch": best_epoch,
+        "model": model,
+    }
 
 
 def _route_npe(
-    obs: K1Observations, rng: np.random.Generator, n_draws: int = 400
+    obs: K1Observations, rng: np.random.Generator, n_draws: int | None = None
 ) -> dict[str, np.ndarray]:
-    """Neural Posterior Estimation route using trained flow retrained at load."""
-    post = _get_or_load_npe_posterior()
-
-    y_raw = obs.values["ca153"]
-    if len(y_raw) == 0:
-        # Condition P8-D: Return prior draws directly with prior_only=True without inventing 18.0 observations
-        draws = np.zeros((n_draws, 4))
-        draws[:, 0] = rng.uniform(40.0, 160.0, size=n_draws)
-        draws[:, 1] = rng.uniform(0.05, 0.35, size=n_draws)
-        draws[:, 2] = rng.uniform(0.05, 0.20, size=n_draws)
-        draws[:, 3] = rng.uniform(30.0, 240.0, size=n_draws)
-        return {
-            "doubling_time_days": draws[:, 0],
-            "shedding_ca153": draws[:, 1],
-            "clearance_ca153": draws[:, 2],
-            "onset_day": draws[:, 3],
-            "prior_only": True,
-        }
-
-    if len(y_raw) == len(SCHEDULE):
-        y_vec = np.array(y_raw, dtype=float)
-    else:
-        y_vec = np.interp(SCHEDULE, obs.days, y_raw)
-
-    seed = int(rng.integers(0, 2**31 - 1))
-    torch.manual_seed(seed)
-    x_tensor = torch.tensor(y_vec, dtype=torch.float32).unsqueeze(0)
-    samples_tensor = post.sample(
-        (n_draws,),
-        x=x_tensor,
-        show_progress_bars=False,
-    )
-    s_np = samples_tensor.numpy()
-
-    return {
-        "doubling_time_days": _reflect(s_np[:, 0], 40.0, 160.0),
-        "shedding_ca153": _reflect(s_np[:, 1], 0.05, 0.35),
-        "clearance_ca153": _reflect(s_np[:, 2], 0.05, 0.20),
-        "onset_day": _reflect(s_np[:, 3], 30.0, 240.0),
-    }
+    """Sample from the separately trained conditional Gaussian-mixture posterior."""
+    n_draws = INFERENCE_CONFIG["default_posterior_draws"] if n_draws is None else n_draws
+    if n_draws <= 0:
+        raise ValueError("n_draws must be positive")
+    if len(_observed_ca153(obs)[0]) == 0:
+        draws = rng.uniform(LO_BOUNDS, HI_BOUNDS, size=(n_draws, len(PARAM_NAMES)))
+        return {name: draws[:, i] for i, name in enumerate(PARAM_NAMES)} | {"prior_only": True}
+    model = _get_or_load_npe_model()
+    summary = torch.as_tensor(_summarize_observations(obs)).unsqueeze(0)
+    with torch.no_grad():
+        logits, means, log_scales = model(summary)
+    logits_np = logits.numpy()[0]
+    means_np = means.numpy()[0]
+    scales_np = np.exp(log_scales.numpy()[0])
+    component = rng.choice(len(logits_np), size=n_draws, p=np.exp(logits_np - logits_np.max()) / np.exp(logits_np - logits_np.max()).sum())
+    unconstrained = rng.normal(means_np[component], scales_np[component])
+    draws = _from_unconstrained(unconstrained)
+    return {name: draws[:, i] for i, name in enumerate(PARAM_NAMES)}
 
 
 ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str, np.ndarray]]] = {
@@ -573,202 +845,106 @@ ROUTES: dict[str, Callable[[K1Observations, np.random.Generator, int], dict[str,
 def risk_from_posterior(
     samples: dict[str, np.ndarray],
     horizon_days: float,
-    detection_threshold: float = 1.0,
 ) -> float:
     """
-    Recurrence probability within horizon, derived ONLY from posterior samples via the dynamics.
-    Strictly monotone in shortening doubling time and lengthening horizon.
-    Contains no direct classification head or hand-set formula.
+    Posterior probability of one modeled burden doubling by an absolute study day.
+
+    This is a synthetic model event, not a clinical recurrence probability. The
+    event time is the configured seed day plus one tumor doubling time. The
+    simulator does not share this event definition; see the K1 event-semantics
+    proposal. Product-facing prediction is therefore disabled.
     """
-    T_d = np.array(samples["doubling_time_days"], dtype=float)
-    t_onset = np.array(samples["onset_day"], dtype=float)
-
-    g = np.log(2.0) / np.maximum(T_d, 1e-3)
-    dt = horizon_days - t_onset
-    active = dt >= 0.0
-
-    # Continuous exponential tumor growth after onset
-    burdens = np.where(active, np.exp(g * np.maximum(dt, 0.0)), 0.0)
-
-    scale = max(detection_threshold, 1.0)
-    z = (burdens - detection_threshold) / (0.5 * scale)
-    prob_recurrence = np.where(active, 1.0 / (1.0 + np.exp(-z)), 0.0)
-
-    return float(np.clip(np.mean(prob_recurrence), 0.0, 1.0))
+    if not np.isfinite(horizon_days) or horizon_days < 0:
+        raise ValueError("horizon_days must be finite and non-negative")
+    doubling = np.asarray(samples["doubling_time_days"], dtype=np.float64)
+    onset = np.asarray(samples["onset_day"], dtype=np.float64)
+    if doubling.ndim != 1 or onset.shape != doubling.shape or len(doubling) == 0:
+        raise ValueError("posterior doubling-time and onset samples must be non-empty aligned vectors")
+    if not np.all(np.isfinite(doubling)) or not np.all(np.isfinite(onset)) or np.any(doubling <= 0):
+        raise ValueError("posterior event-time parameters must be finite and doubling times positive")
+    return float(np.mean(onset + doubling <= horizon_days))
 
 
 # ---------------------------------------------------------------------------
 # HybridKineticModelK1 Interface
 # ---------------------------------------------------------------------------
 class HybridKineticModelK1:
-    """
-    Production interface for Model K1 hybrid mechanistic-neural state-space surveillance.
-    Derives risk prospectively from amortized posterior trajectory rollouts.
-    """
+    """Research-only parameter inference facade; recurrence-risk prediction is disabled."""
 
     def __init__(
         self,
-        horizon_days: float = 365.0,
-        seed: int = 42,
+        horizon_days: float | None = None,
+        seed: int | None = None,
     ) -> None:
+        # Retained as an optional constructor compatibility field; recurrence risk is disabled.
         self.horizon_days = horizon_days
-        self.seed = seed
+        self.seed = int(INFERENCE_CONFIG["default_random_seed"] if seed is None else seed)
+        self.reference_schedule = SCHEDULE.copy()
+        self.reference_parameters = REFERENCE_PARAMS.copy()
+        self.measurement_sd = OBSERVATION_SD
         self.is_fitted = False
-        self.detection_threshold = 1.0
 
-    def fit(
+    def predict_parameters(
         self,
-        X: Any,
-        y: np.ndarray,
-        patient_ids: np.ndarray | None = None,
-        epochs: int = 10,
-        batch_size: int = 32,
-    ) -> HybridKineticModelK1:
-        """
-        Calibrate detection threshold from training cohort biomarker data using Youden's J statistic.
-        Does not record fabricated training loss histories.
-        """
-        y_arr = np.array(y, dtype=float)
-
-        if isinstance(X, dict):
-            ca153_vals = np.array(X.get("ca_15_3_curr", np.full(len(y_arr), 18.0)))
-        elif hasattr(X, "values"):
-            ca153_vals = X.values[:, 0] if X.shape[1] > 0 else np.full(len(y_arr), 18.0)
-        else:
-            ca153_vals = np.full(len(y_arr), 18.0)
-
-        # Youden's J index calibration on biomarker excess
-        excess = np.maximum(0.0, ca153_vals - 18.0)
-        recurrent = y_arr == 1.0
-        if np.sum(recurrent) > 0 and np.sum(~recurrent) > 0:
-            thresholds = np.linspace(float(np.min(excess)), float(np.max(excess)), 50)
-            best_j = -1.0
-            best_thresh = 2.5
-            for th in thresholds:
-                tpr = np.mean(excess[recurrent] >= th)
-                fpr = np.mean(excess[~recurrent] >= th)
-                j_score = tpr - fpr
-                if j_score > best_j:
-                    best_j = j_score
-                    best_thresh = th
-            self.detection_threshold = max(float(best_thresh), 0.5)
-        else:
-            self.detection_threshold = 2.5
-
-        self.is_fitted = True
-        return self
+        observations: K1Observations | Sequence[K1Observations],
+        *,
+        route: str = "amortized",
+        n_draws: int | None = None,
+    ) -> list[dict[str, np.ndarray]]:
+        """Return research posterior draws for observed longitudinal records."""
+        if route not in ROUTES:
+            raise ValueError(f"unknown K1 inference route: {route}")
+        items = [observations] if isinstance(observations, K1Observations) else list(observations)
+        if not all(isinstance(item, K1Observations) for item in items):
+            raise TypeError("K1 inputs must be K1Observations")
+        rng = np.random.default_rng(self.seed)
+        return [ROUTES[route](item, rng, n_draws) for item in items]
 
     def predict_risk(
         self,
         X: Any,
         return_ci: bool = False,
     ) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Evaluate prospective recurrence risk via amortized posterior sampling
-        and ODE trajectory rollout.
-        Uses real patient observations without synthesizing future data points (RR12).
-        """
-        rng = np.random.default_rng(self.seed)
-
-        # Strict enforcement per RR12 & Condition B-3:
-        # Accepts only real longitudinal observation sequences (K1Observations). Refuses tabular summaries or slope approximations.
-        if isinstance(X, K1Observations):
-            obs_list = [X]
-        elif isinstance(X, (list, tuple)) and len(X) > 0 and all(isinstance(x, K1Observations) for x in X):
-            obs_list = list(X)
-        else:
-            raise TypeError(
-                "HybridKineticModelK1.predict_risk accepts only real observation sequences "
-                "of type K1Observations (RR12). Tabular summaries or derived slope inputs are refused."
-            )
-
-        n_pts = len(obs_list)
-        risks = np.zeros(n_pts)
-        ci_lo = np.zeros(n_pts)
-        ci_hi = np.zeros(n_pts)
-
-        for i, obs in enumerate(obs_list):
-            samples = ROUTES["amortized"](obs, rng, n_draws=200)
-            r = risk_from_posterior(samples, self.horizon_days, self.detection_threshold)
-            risks[i] = r
-
-            if return_ci:
-                draw_risks = []
-                for _ in range(10):
-                    sub_idx = rng.choice(len(samples["doubling_time_days"]), size=50, replace=True)
-                    sub_samples = {k: v[sub_idx] for k, v in samples.items()}
-                    draw_risks.append(
-                        risk_from_posterior(
-                            sub_samples,
-                            self.horizon_days,
-                            self.detection_threshold,
-                        )
-                    )
-                ci_lo[i] = float(np.percentile(draw_risks, 5))
-                ci_hi[i] = float(np.percentile(draw_risks, 95))
-
-        if return_ci:
-            return risks, ci_lo, ci_hi
-        return risks
+        """Fail closed: current synthetic event does not estimate clinical recurrence."""
+        del X, return_ci
+        raise RuntimeError(
+            "K1 recurrence-risk prediction is disabled: its synthetic one-doubling event "
+            "is not the project's recurrence estimand. See PROP-K1-EVENT-SEMANTICS.md."
+        )
 
     def identifiability_analysis(self) -> dict[str, Any]:
-        """
-        Compute structural identifiability from the Fisher Information Matrix (FIM)
-        over declared parameter names across representative clinical schedules.
-        """
-        threshold = self.detection_threshold
-
-        def _jacobian(
-            T_d: float, s: float, c: float, t_onset: float, sch: np.ndarray
-        ) -> np.ndarray:
-            g = np.log(2.0) / T_d
-            J = np.zeros((len(sch), 4))
-            for idx, t in enumerate(sch):
-                if t <= t_onset:
-                    continue
-                dt = t - t_onset
-                term = np.exp(g * dt) - np.exp(-c * dt)
-                dmu_dg = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(g * dt)
-                dg_dTd = -np.log(2.0) / (T_d**2)
-                J[idx, 0] = dmu_dg * dg_dTd
-                J[idx, 1] = term / (g + c)
-                J[idx, 2] = -(s / (g + c) ** 2) * term + (s * dt / (g + c)) * np.exp(-c * dt)
-                J[idx, 3] = -(s / (g + c)) * (g * np.exp(g * dt) + c * np.exp(-c * dt))
-            return J
-
-        configs = [
-            (60.0, 0.25, 0.12, 80.0),
-            (90.0, 0.18, 0.10, 120.0),
-            (120.0, 0.15, 0.08, 150.0),
-            (75.0, 0.30, 0.14, 60.0),
-        ]
-        schedules = [
-            SCHEDULE,
-            np.array([0.0, 90.0, 180.0, 270.0, 360.0]),
-            np.array([0.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0]),
-        ]
-
-        F_total = np.zeros((4, 4))
-        for cfg in configs:
-            for sch in schedules:
-                J = _jacobian(*cfg, sch)
-                scale = np.array(cfg)
-                J_scaled = J * scale[None, :]
-                F_total += (J_scaled.T @ J_scaled) / (1.5**2)
-
-        ev, _ = np.linalg.eigh(F_total)
-        ev_sorted = np.sort(np.abs(ev))[::-1]
-        ratio = ev_sorted / max(float(np.max(ev_sorted)), 1e-300)
-        expected_nonid = int(np.sum(ratio < 1e-6))
-        non_id = [PARAM_NAMES[i] for i, r in enumerate(ratio) if r < 1e-6]
-        identifiable = [p for p in PARAM_NAMES if p not in non_id]
-
+        """Compute a finite-difference Fisher spectrum at the registered reference point."""
+        jac = np.empty((len(self.reference_schedule), len(PARAM_NAMES)), dtype=np.float64)
+        for index in range(len(PARAM_NAMES)):
+            step = (
+                SPAN_BOUNDS[index]
+                * INFERENCE_CONFIG["identifiability_finite_difference_fraction_of_half_range"]
+            )
+            plus, minus = self.reference_parameters.copy(), self.reference_parameters.copy()
+            plus[index] += step
+            minus[index] -= step
+            p_plus = K1Params(**dict(zip(PARAM_NAMES, plus, strict=True)))
+            p_minus = K1Params(**dict(zip(PARAM_NAMES, minus, strict=True)))
+            jac[:, index] = (
+                _expected_ca153(p_plus, self.reference_schedule)
+                - _expected_ca153(p_minus, self.reference_schedule)
+            ) / (2.0 * step) * SPAN_BOUNDS[index]
+        fisher = jac.T @ jac / self.measurement_sd**2
+        eigenvalues, eigenvectors = np.linalg.eigh(fisher)
+        order = np.argsort(np.abs(eigenvalues))[::-1]
+        eigenvalues = np.abs(eigenvalues[order])
+        eigenvectors = eigenvectors[:, order]
+        ratio = eigenvalues / max(float(eigenvalues[0]), np.finfo(float).tiny)
+        weak = np.flatnonzero(
+            ratio < INFERENCE_CONFIG["identifiability_eigenvalue_ratio_threshold"]
+        )
+        null_influence = np.sum(eigenvectors[:, weak] ** 2, axis=1) if len(weak) else np.zeros(len(PARAM_NAMES))
+        implicated = [PARAM_NAMES[i] for i in np.argsort(null_influence)[::-1][: len(weak)]]
         return {
-            "eigenvalues": ev_sorted.tolist(),
+            "eigenvalues": eigenvalues.tolist(),
             "ratio": ratio.tolist(),
-            "identifiable": identifiable,
-            "non_identifiable": non_id,
-            "expected_non_identifiable_count": expected_nonid,
-            "identifiability_status": "COMPUTED_FISHER_SPECTRUM",
-            "detection_threshold": float(threshold),
+            "identifiable": [name for name in PARAM_NAMES if name not in implicated],
+            "non_identifiable": implicated,
+            "expected_non_identifiable_count": len(weak),
+            "identifiability_status": "FINITE_DIFFERENCE_FISHER_AT_REGISTERED_SYNTHETIC_REFERENCE",
         }

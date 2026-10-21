@@ -36,29 +36,30 @@ class CausalCohort:
     unmeasured_u: Optional[np.ndarray] = None
 
 
-def compute_e_value(rr: float, rr_ci_lower: Optional[float] = None) -> Dict[str, float]:
-    """Computes VanderWeele & Ding (2017) E-value for Risk Ratio point estimate and 95% CI bound."""
-    if math.isnan(rr) or rr <= 0.0:
-        return {"e_value_estimate": 1.0, "e_value_ci_lower": 1.0}
+def compute_e_value(
+    rr: float, rr_ci: Optional[Tuple[float, float]] = None
+) -> Dict[str, float]:
+    """Compute the E-value for an RR and the confidence limit nearest the null.
+
+    For harmful effects this is the lower limit; for protective effects it is
+    the upper limit. A confidence interval that includes 1 has a CI E-value of 1.
+    """
+    if not math.isfinite(rr) or rr <= 0.0:
+        raise ValueError("rr must be a finite positive risk ratio")
 
     # If RR < 1.0, invert to RR* = 1 / RR
     eff_rr = rr if rr >= 1.0 else (1.0 / rr)
     e_val_est = eff_rr + math.sqrt(eff_rr * (eff_rr - 1.0))
 
     e_val_ci = 1.0
-    if rr_ci_lower is not None and not math.isnan(rr_ci_lower) and rr_ci_lower > 0.0:
-        if rr >= 1.0:
-            if rr_ci_lower > 1.0:
-                e_val_ci = rr_ci_lower + math.sqrt(rr_ci_lower * (rr_ci_lower - 1.0))
-            else:
-                e_val_ci = 1.0
-        else:
-            # Protective effect
-            if rr_ci_lower < 1.0:
-                inv_ci = 1.0 / rr_ci_lower
-                e_val_ci = inv_ci + math.sqrt(inv_ci * (inv_ci - 1.0))
-            else:
-                e_val_ci = 1.0
+    if rr_ci is not None:
+        ci_low, ci_high = rr_ci
+        if not (math.isfinite(ci_low) and math.isfinite(ci_high)) or ci_low <= 0 or ci_high < ci_low:
+            raise ValueError("rr_ci must be an ordered pair of finite positive risk ratios")
+        ci_rr = ci_low if rr >= 1.0 else ci_high
+        if (rr >= 1.0 and ci_rr > 1.0) or (rr < 1.0 and ci_rr < 1.0):
+            eff_ci = ci_rr if ci_rr >= 1.0 else 1.0 / ci_rr
+            e_val_ci = eff_ci + math.sqrt(eff_ci * (eff_ci - 1.0))
 
     return {
         "e_value_estimate": round(float(e_val_est), 4),
@@ -68,22 +69,35 @@ def compute_e_value(rr: float, rr_ci_lower: Optional[float] = None) -> Dict[str,
 
 def compute_smd(x: np.ndarray, a: np.ndarray, weights: Optional[np.ndarray] = None) -> float:
     """Computes absolute Standardized Mean Difference (SMD) for a single covariate."""
+    x = np.asarray(x, dtype=float)
+    a = np.asarray(a)
+    if x.ndim != 1 or a.ndim != 1 or len(x) != len(a):
+        raise ValueError("x and treatment must be one-dimensional arrays of equal length")
+    if not np.all(np.isin(a, [0, 1])):
+        raise ValueError("treatment must contain only 0 and 1")
+    if not np.all(np.isfinite(x)):
+        raise ValueError("x must contain only finite values")
+    if not np.any(a == 0) or not np.any(a == 1):
+        raise ValueError("SMD is undefined unless both treatment groups are represented")
     if weights is None:
         x1 = x[a == 1]
         x0 = x[a == 0]
-        if len(x1) == 0 or len(x0) == 0:
-            return 0.0
         mean1 = float(np.mean(x1))
         mean0 = float(np.mean(x0))
         var1 = float(np.var(x1, ddof=1)) if len(x1) > 1 else 0.0
         var0 = float(np.var(x0, ddof=1)) if len(x0) > 1 else 0.0
     else:
+        weights = np.asarray(weights, dtype=float)
+        if weights.ndim != 1 or len(weights) != len(a):
+            raise ValueError("weights must be one-dimensional and match x")
+        if not np.all(np.isfinite(weights)) or np.any(weights < 0):
+            raise ValueError("weights must be finite and non-negative")
         w1 = weights[a == 1]
         w0 = weights[a == 0]
         x1 = x[a == 1]
         x0 = x[a == 0]
         if np.sum(w1) == 0 or np.sum(w0) == 0:
-            return 0.0
+            raise ValueError("SMD is undefined when either group has zero total weight")
         mean1 = float(np.average(x1, weights=w1))
         mean0 = float(np.average(x0, weights=w0))
         var1 = float(np.average((x1 - mean1) ** 2, weights=w1))
@@ -226,7 +240,7 @@ class TargetTrialEmulation:
         ci_gcomp = _ci(boot_rr_gcomp)
 
         # Sensitivity Analysis (E-values) based on AIPW point estimate and CI lower bound
-        e_vals = compute_e_value(ci_aipw[0], ci_aipw[1])
+        e_vals = compute_e_value(ci_aipw[0], (ci_aipw[1], ci_aipw[2]))
 
         return {
             "bootstrap_replications": n_boot,

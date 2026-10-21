@@ -33,19 +33,19 @@ def test_m5_worked_journeys():
     j2 = generate_worked_journey("j2_surprising_repeat")
     assert j2["adjudication"]["action"] == "needs_repeat"
     assert j2["verification"]["ok"] is True
-    assert "analytical or pre-analytical error" in j2["narrative"]
+    assert "gross-error probability" in j2["narrative"]
 
     # Journey: False alarm / benign biological fluctuation
     fa = generate_worked_journey("false_alarm_explained")
     assert fa["adjudication"]["action"] == "explained"
     assert fa["verification"]["ok"] is True
-    assert "baseline biological stability" in fa["narrative"]
+    assert "stable-component probability" in fa["narrative"]
 
     # Journey: Real progression
     rp = generate_worked_journey("real_progression_escalate")
     assert rp["adjudication"]["action"] == "escalate"
     assert rp["verification"]["ok"] is True
-    assert "true progression" in rp["narrative"]
+    assert "real-change probability" in rp["narrative"]
 
 
 def test_m5_forbidden_claims_enforcement():

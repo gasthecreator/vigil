@@ -205,11 +205,14 @@ def evaluate_shadow(
         "candidate_alert_series": candidate_alerts,
         "baseline_alert_rate": baseline_rate,
         "candidate_alert_rate": candidate_rate,
+        "series_sha256": _sha(_canonical(series)),
+        "promotion_eligible": False,
         "candidate_code_sha256": code_sha256,
         "registry_sha256": hashes,
-        "evaluation_data_provenance": monitor_report.get("data", {}).get(
-            "provenance", "monitor does not label synthetic versus real records; patient-level outputs are not retained"
-        ),
+        "evaluation_data_provenance": {
+            "monitor_report": monitor_report.get("data", {}).get("provenance", "unlabeled"),
+            "series": "caller_supplied_not_bound_to_attested_monitor_report",
+        },
     }
     _append(db, "shadow_evaluated", actor_id, payload)
     return {**payload, "clinician_routes_unchanged": True, "patient_level_outputs_stored": False}
@@ -221,6 +224,10 @@ def approve(db: Session, actor_id: str, evaluation_id: str) -> dict[str, Any]:
     evaluation = evaluations.get(evaluation_id)
     if evaluation is None:
         raise GovernanceError("Unknown evaluation")
+    if not evaluation.get("promotion_eligible", False):
+        raise GovernanceError(
+            "Evaluation series is not bound to the attested shadow report; approval is unavailable"
+        )
     if actor_id == evaluation["evaluator"]:
         raise GovernanceError("Human approval must come from a different administrator")
     if not evaluation["predeclared_criterion"]["met"]:
@@ -237,6 +244,8 @@ def promote(db: Session, actor_id: str, evaluation_id: str) -> dict[str, Any]:
     evaluation = evaluations.get(evaluation_id)
     if evaluation is None or evaluation["approval"] is None:
         raise GovernanceError("Promotion requires a recorded human approval")
+    if not evaluation.get("promotion_eligible", False):
+        raise GovernanceError("Evaluation data provenance does not permit promotion")
     if not evaluation["predeclared_criterion"]["met"]:
         raise GovernanceError("Promotion criterion was not met")
     if any(r.event_type == "promoted" and r.payload.get("evaluation_id") == evaluation_id for r in records):

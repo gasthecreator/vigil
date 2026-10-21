@@ -4,15 +4,16 @@ This policy applies to M5 patient/family explainers and all companion copy. It i
 
 ## Uncertainty bands and numeric decision boundaries
 
-M5 receives the M3 action and does not expose the component probabilities to patients or caregivers. M3 currently chooses `needs_repeat` when the model's gross-error posterior is at least 0.30, chooses `escalate` when the progression posterior is at least 0.60, and chooses `explained` only when the stability posterior is at least 0.90. Because `needs_repeat` is also the conservative fallback when neither other rule is met, these boundaries are not a calibrated recurrence-risk scale and must not be rendered as personal cancer probabilities.
+M5 receives the M3 action and does not expose component probabilities to patients or caregivers. The M3 component values and decision thresholds are assumptions in a synthetic model, not calibrated clinical probabilities. `p_real` means the model's real-change component; it is not a recurrence probability. M3 chooses `needs_repeat` when the assumed gross-error posterior is at least 0.30, chooses `escalate` when the assumed real-change posterior is at least 0.60, and chooses `explained` only when the assumed stable-component posterior is at least 0.90. `needs_repeat` is also the conservative fallback when neither other rule is met.
 
 | M3 output | Internal numeric condition | M5 verbal band | Required next step |
 |---|---|---|---|
-| `explained` | stability posterior ≥ 0.90, after earlier rules | “Normal biological fluctuation (routine monitoring)” | Continue the existing schedule; report new symptoms |
-| `needs_repeat` | gross-error posterior ≥ 0.30, or conservative fallback | “Analytical uncertainty (suspected lab or specimen variation)” | Repeat or review with the care team; a single result is not a diagnosis |
-| `escalate` | progression posterior ≥ 0.60, unless the earlier error rule applies | “Elevated signal (clinical team review recommended)” | Contact the clinic for clinician review and the next step |
+| `abstain` | no earlier valid observation is available | “No model estimate available” | Ask the care team to review the result |
+| `explained` | assumed stable-component posterior ≥ 0.90, after earlier rules | “Model output found no large change” | Ask the care team whether the monitoring plan is unchanged |
+| `needs_repeat` | assumed gross-error posterior ≥ 0.30, or conservative fallback | “Model output asks for more review” | Ask the care team whether another blood test is needed |
+| `escalate` | assumed real-change posterior ≥ 0.60, unless the earlier error rule applies | “Model output flagged a change” | Ask the care team to review the result |
 
-These are implementation thresholds in M3, not a clinical risk scale. No percentage, confidence interval, or frequency statement is shown to families unless a separately validated communication study and explicit product approval support it. The word “normal” is only permitted inside the exact M5 band above; never call a patient, scan, test, or cancer status normal.
+These implementation thresholds are not a clinical risk scale. No percentage, confidence interval, or frequency statement is shown to families unless separately validated and explicitly approved. The current text changes are drafts pending clinical review. Do not call a patient, scan, test, or cancer status normal.
 
 ## Forbidden wording
 

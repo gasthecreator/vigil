@@ -28,6 +28,7 @@ PCOLS = [
     "menopausal_status",
     "vital_status",
     "days_to_last_followup",
+    "days_to_death",
     "index_day",
 ]
 BCOLS = [
@@ -83,15 +84,19 @@ def build(rng: random.Random):
     for i in range(N):
         pid = f"PTR-{i + 1:03d}"
         follow = rng.randint(400, 3000)
+        age = rng.randint(28, 78)
+        menopausal_status = rng.choice(["PRE", "PERI", "POST", "UNKNOWN"])
+        vital_status = rng.choice(
+            ["ALIVE", "ALIVE", "ALIVE", "DEAD_DISEASE", "DEAD_OTHER", "LOST_TO_FOLLOWUP"]
+        )
         pts.append(
             {
                 "patient_id": pid,
-                "age_at_diagnosis": rng.randint(28, 78),
-                "menopausal_status": rng.choice(["PRE", "PERI", "POST", "UNKNOWN"]),
-                "vital_status": rng.choice(
-                    ["ALIVE", "ALIVE", "ALIVE", "DEAD_DISEASE", "DEAD_OTHER", "LOST_TO_FOLLOWUP"]
-                ),
+                "age_at_diagnosis": age,
+                "menopausal_status": menopausal_status,
+                "vital_status": vital_status,
                 "days_to_last_followup": follow,
+                "days_to_death": follow if vital_status in {"DEAD_DISEASE", "DEAD_OTHER"} else "",
                 "index_day": rng.randint(60, 300),
             }
         )

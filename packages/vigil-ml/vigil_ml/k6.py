@@ -131,7 +131,8 @@ def alert_flags(
     ok = np.isfinite(z) & np.asarray(panel_mask, dtype=bool)
     with np.errstate(invalid="ignore"):
         hit = ok & (np.nan_to_num(z, nan=-np.inf) >= theta[None, :])
-    return hit.any(axis=1) | (np.asarray(max_symptom) >= SYMPTOM_ALERT_GRADE)
+    symptoms = np.asarray(max_symptom, dtype=float)
+    return np.asarray(np.logical_or(hit.any(axis=1), symptoms >= SYMPTOM_ALERT_GRADE), dtype=bool)
 
 
 def panel_mask(panel: str) -> np.ndarray:
@@ -255,7 +256,20 @@ class HazardModel:
     ``HORIZONS``, non-decreasing and in [0, 1]."""
 
     def __init__(self, columns: Optional[Sequence[int]] = None):
-        self.columns: Tuple[int, ...] = tuple(range(N_FEATURES)) if columns is None else tuple(int(c) for c in columns)
+        if columns is None:
+            selected_columns = tuple(range(N_FEATURES))
+        else:
+            raw_columns = tuple(columns)
+            if not raw_columns or any(
+                isinstance(column, (bool, np.bool_))
+                or not isinstance(column, (int, np.integer))
+                for column in raw_columns
+            ):
+                raise ValueError("columns must be a non-empty sequence of integer feature indices")
+            selected_columns = tuple(int(column) for column in raw_columns)
+            if len(set(selected_columns)) != len(selected_columns):
+                raise ValueError("columns must not contain duplicate feature indices")
+        self.columns: Tuple[int, ...] = selected_columns
         self._boosters: List[Optional[xgb.Booster]] = []
         self._raw_json: List[Optional[str]] = []
         self._const: List[Optional[float]] = []
@@ -264,9 +278,31 @@ class HazardModel:
 
     # -- fitting -------------------------------------------------------------------------------
     def fit(self, X: np.ndarray, labels: np.ndarray, groups: np.ndarray, seed: int) -> "HazardModel":
-        X = np.asarray(X, dtype=float)[:, list(self.columns)]
-        labels = np.asarray(labels).astype(int)
+        X = np.asarray(X, dtype=float)
+        if X.ndim != 2:
+            raise ValueError("X must be a two-dimensional feature matrix")
+        if not self.columns or any(c < 0 or c >= X.shape[1] for c in self.columns):
+            raise ValueError("columns must select existing feature indices")
+        X = X[:, list(self.columns)]
+        if np.isinf(X).any():
+            raise ValueError("X may contain NaN for missing features but must not contain infinity")
+        labels = np.asarray(labels)
+        if labels.ndim != 2 or labels.shape != (X.shape[0], len(HORIZONS)):
+            raise ValueError(
+                f"labels must have shape (n_rows, {len(HORIZONS)}) matching X and HORIZONS"
+            )
+        if labels.dtype.kind not in "biuf" or not np.isfinite(labels).all():
+            raise ValueError("labels must contain finite numeric binary targets")
+        if not np.isin(labels, [0, 1]).all():
+            raise ValueError("labels must contain only binary values 0 and 1")
+        labels = labels.astype(np.uint8, copy=False)
         groups = np.asarray(groups)
+        if groups.ndim != 1 or groups.shape[0] != X.shape[0]:
+            raise ValueError("groups must be a one-dimensional vector aligned with X rows")
+        if groups.dtype.kind in "iufc" and not np.isfinite(groups).all():
+            raise ValueError("groups must contain finite patient identifiers")
+        if np.unique(groups).size < 2:
+            raise ValueError("at least two patient groups are required for grouped train/calibration split")
         rng = np.random.default_rng(seed)
         uniq = rng.permutation(np.unique(groups))
         n_cal = max(1, int(round(0.25 * len(uniq))))
@@ -321,8 +357,12 @@ class HazardModel:
                 continue
             if dm is None:
                 dm = xgb.DMatrix(X)
-            raw = self._boosters[h].predict(dm)
-            xs, ys = self._iso[h]
+            booster = self._boosters[h]
+            calibration = self._iso[h]
+            if booster is None or calibration is None:
+                raise RuntimeError(f"hazard horizon {HORIZONS[h]} has incomplete fitted state")
+            raw = booster.predict(dm)
+            xs, ys = calibration
             cols.append(np.interp(raw, xs, ys))
         G = np.column_stack(cols)
         return _enforce(G) if horizons is None else np.clip(G, 0.0, 1.0)
@@ -334,8 +374,12 @@ class HazardModel:
             if self._const[h] is not None:
                 models.append({"kind": "constant", "p": self._const[h]})
             else:
-                xs, ys = self._iso[h]
-                models.append({"kind": "xgboost_json", "model": self._raw_json[h], "iso_x": xs.tolist(), "iso_y": ys.tolist()})
+                calibration = self._iso[h]
+                model_json = self._raw_json[h]
+                if calibration is None or model_json is None:
+                    raise RuntimeError(f"hazard horizon {HORIZONS[h]} has incomplete fitted state")
+                xs, ys = calibration
+                models.append({"kind": "xgboost_json", "model": model_json, "iso_x": xs.tolist(), "iso_y": ys.tolist()})
         return {"schema": "vigil.k6.hazard.v1", "horizons": list(HORIZONS), "columns": list(self.columns), "models": models}
 
     @classmethod
@@ -418,9 +462,14 @@ def plan(
         b = w * D[None, :] * wait[:, None]
         J[:, :, pi] = a + b
     flat = J.reshape(n, -1)
-    k = np.argmin(flat, axis=1)
-    di, pi = np.divmod(k, len(PANELS))
-    return Decision(delta_days=D[di].astype(int), panel_index=pi.astype(int), objective=flat[np.arange(n), k])
+    k = np.asarray(np.argmin(flat, axis=1), dtype=int)
+    di = k // len(PANELS)
+    panel_indices = k % len(PANELS)
+    return Decision(
+        delta_days=D[di].astype(int),
+        panel_index=panel_indices.astype(int),
+        objective=flat[np.arange(n), k],
+    )
 
 
 # ------------------------------------------------------------------------------------------------
@@ -441,7 +490,9 @@ class FixedPolicy(Policy):
         self.delta, self.panel = int(delta), panel
         self.name = f"fixed_{delta}_{panel}"
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
         return np.full(n, self.delta, dtype=int), np.full(n, PANELS.index(self.panel), dtype=int)
 
 
@@ -452,8 +503,20 @@ class StageHeuristicPolicy(Policy):
     name = "heuristic_stage"
     INTERVAL = {1: 364, 2: 182, 3: 91, 4: 91}
 
-    def decide(self, features, n, day):
-        stage = np.clip(np.nan_to_num(features[:, 0], nan=3.0).astype(int), 1, 4)
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if features is None:
+            raise ValueError("stage heuristic requires observed stage features")
+        features = np.asarray(features, dtype=float)
+        if features.ndim != 2 or features.shape != (n, N_FEATURES):
+            raise ValueError(f"features must have shape ({n}, {N_FEATURES})")
+        stage_values = features[:, 0]
+        if not np.isfinite(stage_values).all():
+            raise ValueError("stage heuristic requires a recorded stage for every patient")
+        if not np.isin(stage_values, tuple(self.INTERVAL)).all():
+            raise ValueError("stage heuristic requires integer stage values from 1 through 4")
+        stage = stage_values.astype(int)
         delta = np.array([self.INTERVAL[int(s)] for s in stage], dtype=int)
         return delta, np.full(n, PANELS.index("P2"), dtype=int)
 
@@ -467,7 +530,11 @@ class RiskTriggeredPolicy(Policy):
         self.hazard, self.long, self.short, self.theta = hazard, int(long), int(short), float(theta)
         self.name = f"risk_triggered_{long}_{short}_{theta:g}"
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if features is None:
+            raise ValueError("risk-triggered policy requires observed features")
         g182 = self.hazard.predict_cdf(features, horizons=(182,))[:, 0]
         delta = np.where(g182 >= self.theta, self.short, self.long).astype(int)
         return delta, np.full(n, PANELS.index("P2"), dtype=int)
@@ -492,7 +559,11 @@ class K6Policy(Policy):
         self.name = f"{label}_w{w:g}"
         self.trace: Optional[List[np.ndarray]] = [] if trace else None
 
-    def decide(self, features, n, day):
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if features is None:
+            raise ValueError("K6 policy requires observed features")
         G = self.hazard.predict_cdf(features)
         if self.trace is not None:
             self.trace.append(G.copy())
@@ -517,7 +588,9 @@ class TrainingSchedulePolicy(Policy):
         panel = self.rng.integers(0, len(PANELS), size=rows.size)
         return delta, panel
 
-    def decide(self, features, n, day):  # pragma: no cover - the engine calls decide_rows
+    def decide(
+        self, features: Optional[np.ndarray], n: int, day: float
+    ) -> Tuple[np.ndarray, np.ndarray]:  # pragma: no cover - the engine calls decide_rows
         raise NotImplementedError
 
 

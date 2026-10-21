@@ -1,0 +1,35 @@
+{
+  "aggregate_and_e_value_parity": true,
+  "audit_after_saved_run": true,
+  "audit_script_sha256": "48409dbdfaa112d8de3ff8eefd36302be16b3e97a0f10f6ace19a497b784af61",
+  "audit_status": "passed",
+  "cohort_generation_performed": false,
+  "completion_manifest_sha256": "fa9e304037737cb6f73166cb8847a0581a24b33f5c86560841d5fc600273ffb3",
+  "conditions": {
+    "measured_confounding": {
+      "aggregate_parity": true,
+      "e_value_parity": true,
+      "interval_coverage_count": 20,
+      "interval_coverage_denominator": 20,
+      "maximum_stabilized_weight": 4.081333333333333,
+      "mean_aipw_bias": 0.0038069613234161803,
+      "replicate_count": 20,
+      "undefined_aipw_bootstrap_resamples": 0
+    },
+    "unmeasured_confounding": {
+      "aggregate_parity": true,
+      "e_value_parity": true,
+      "interval_coverage_count": 6,
+      "interval_coverage_denominator": 20,
+      "maximum_stabilized_weight": 3.701333333333333,
+      "mean_aipw_bias": 0.17760053535563336,
+      "replicate_count": 20,
+      "undefined_aipw_bootstrap_resamples": 0
+    }
+  },
+  "experiment_id": "EXP-S8-K7-003",
+  "h1_verdict": "MET",
+  "h1_verdict_parity": true,
+  "replayed_seeds": false,
+  "result_sha256": "6dd2be85fe3c7aad39e34c26ae5ec42692e5628b6689125612c9407db573a47f"
+}

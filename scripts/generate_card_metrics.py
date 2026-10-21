@@ -66,16 +66,18 @@ def k7() -> str:
 def m10() -> str:
     d = _load("STUDY_M10_MISSED_SIGNALS.json")
     h, p = d["hypotheses_evaluation"], d["privacy_and_governance"]
-    rows = "\n".join(f"| {k} | {v['status']} |" for k, v in h.items())
+    rows = "\n".join(f"| {k} | historical result: {v['status']} |" for k, v in h.items())
     return (
         f"Source: `reports/ml/STUDY_M10_MISSED_SIGNALS.json` (pre-registered `{d['pre_registration']}`; synthetic "
         "facilities with injected ground truth).\n\n"
-        f"| Hypothesis | Status |\n|---|---|\n{rows}\n\n"
+        "These statuses are preserved as the original script output. Q-6 invalidated K2's anytime-valid guarantee, "
+        "and the M10 facility path used unvalidated M3 inputs; they are not current validation evidence.\n\n"
+        f"| Hypothesis | Historical result |\n|---|---|\n{rows}\n\n"
         f"- Sensitivity {h['H1_sensitivity_precision']['sensitivity_point']:.3f}, precision "
         f"{h['H1_sensitivity_precision']['precision_point']:.3f}; mean delay error "
         f"{h['H2_delay_accuracy']['mean_delay_error_days']:.1f} days.\n"
         f"- Privacy: k-anonymity floor {p['k_anonymity_floor']}, neutral register verified: {p['neutral_register_verified']}.\n"
-        "- These are synthetic-data results with injected signals; they say nothing about real-world performance."
+        "- Facility-derived statistics are disabled by ADR-0054 until the detector and analyte-specific assumptions are validated."
     )
 
 

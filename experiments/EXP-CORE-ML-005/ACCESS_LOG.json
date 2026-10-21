@@ -1,0 +1,24 @@
+{
+  "completed": true,
+  "completed_utc_epoch": 1792447752.387906,
+  "design": {
+    "duration_days": 730.0,
+    "generators": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "patients_per_cell": 2000,
+    "replicates_per_generator": 5,
+    "seed_formula": "910000 + 10000 * generator_index + replicate_index"
+  },
+  "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "experiment_id": "EXP-CORE-ML-005",
+  "profile_sha256": "0d591debdba4c7cedff6692d13e49b35cbb002c099d7aeff49d324d71e9d9c3c",
+  "protocol_version": "1.0",
+  "report_sha256": "bb3c8e4555938c6871ba153b7e99644374b6686b5d6f18f41c00b996bb59e2b1",
+  "results_sha256": "aecc022b5de2f703239b5c9b8cdaeaecc53b4f4221d136a2495348f1695febf0",
+  "runner_sha256": "95ec9e84b5645da46f1d2f2db45c0076abbed756e7c819b9dc4d1a6913379fdd",
+  "source_commit": "ce897a1bb7c6606578f1bad8baaba998c1698fda",
+  "started_utc_epoch": 1792447724.682702
+}

@@ -1,5 +1,5 @@
 {
-  "count": 227,
+  "count": 211,
   "needs_review": [],
   "needs_review_count": 0,
   "packages": [
@@ -43,7 +43,7 @@
       "license": "MPL-2.0",
       "name": "certifi",
       "needs_review": false,
-      "version": "2026.7.22"
+      "version": "2026.10.19"
     },
     {
       "ecosystem": "pip",
@@ -82,13 +82,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "BSD-3-Clause",
-      "name": "contourpy",
-      "needs_review": false,
-      "version": "1.4.0"
-    },
-    {
-      "ecosystem": "pip",
       "license": "Apache-2.0",
       "name": "coverage",
       "needs_review": false,
@@ -124,13 +117,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "BSD-3-Clause",
-      "name": "cycler",
-      "needs_review": false,
-      "version": "0.12.1"
-    },
-    {
-      "ecosystem": "pip",
       "license": "MIT",
       "name": "et_xmlfile",
       "needs_review": false,
@@ -159,24 +145,10 @@
     },
     {
       "ecosystem": "pip",
-      "license": "MIT",
-      "name": "fonttools",
-      "needs_review": false,
-      "version": "4.67.0"
-    },
-    {
-      "ecosystem": "pip",
       "license": "BSD-3-Clause",
       "name": "fsspec",
       "needs_review": false,
       "version": "2026.9.0"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "Apache-2.0",
-      "name": "grpcio",
-      "needs_review": false,
-      "version": "1.84.0"
     },
     {
       "ecosystem": "pip",
@@ -257,13 +229,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "BSD",
-      "name": "kiwisolver",
-      "needs_review": false,
-      "version": "1.5.1"
-    },
-    {
-      "ecosystem": "pip",
       "license": "MIT",
       "name": "Mako",
       "needs_review": false,
@@ -272,23 +237,9 @@
     {
       "ecosystem": "pip",
       "license": "BSD-3-Clause",
-      "name": "Markdown",
-      "needs_review": false,
-      "version": "3.11.1"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "BSD-3-Clause",
       "name": "MarkupSafe",
       "needs_review": false,
       "version": "3.0.4"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "PSF-2.0",
-      "name": "matplotlib",
-      "needs_review": false,
-      "version": "3.11.2"
     },
     {
       "ecosystem": "pip",
@@ -324,13 +275,6 @@
       "name": "networkx",
       "needs_review": false,
       "version": "3.7"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "MIT",
-      "name": "nflows",
-      "needs_review": false,
-      "version": "0.14"
     },
     {
       "ecosystem": "pip",
@@ -547,7 +491,7 @@
       "license": "MIT-CMU",
       "name": "pillow",
       "needs_review": false,
-      "version": "12.3.0"
+      "version": "13.0.0"
     },
     {
       "ecosystem": "pip",
@@ -628,13 +572,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "MIT",
-      "name": "pyparsing",
-      "needs_review": false,
-      "version": "3.3.3"
-    },
-    {
-      "ecosystem": "pip",
       "license": "BSD-3-Clause",
       "name": "pypdf",
       "needs_review": false,
@@ -698,13 +635,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "Apache-2.0",
-      "name": "sbi",
-      "needs_review": false,
-      "version": "0.27.0"
-    },
-    {
-      "ecosystem": "pip",
       "license": "BSD-3-Clause",
       "name": "scikit-learn",
       "needs_review": false,
@@ -733,13 +663,6 @@
     },
     {
       "ecosystem": "pip",
-      "license": "BSD-3-Clause",
-      "name": "skorch",
-      "needs_review": false,
-      "version": "1.4.0"
-    },
-    {
-      "ecosystem": "pip",
       "license": "Apache 2.0",
       "name": "sortedcontainers",
       "needs_review": false,
@@ -765,27 +688,6 @@
       "name": "sympy",
       "needs_review": false,
       "version": "1.14.0"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "MIT",
-      "name": "tabulate",
-      "needs_review": false,
-      "version": "0.10.0"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "Apache 2.0",
-      "name": "tensorboard",
-      "needs_review": false,
-      "version": "2.21.0"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "Apache 2.0",
-      "name": "tensorboard-data-server",
-      "needs_review": false,
-      "version": "0.7.2"
     },
     {
       "ecosystem": "pip",
@@ -859,24 +761,10 @@
     },
     {
       "ecosystem": "pip",
-      "license": "BSD-3-Clause",
-      "name": "Werkzeug",
-      "needs_review": false,
-      "version": "3.1.9"
-    },
-    {
-      "ecosystem": "pip",
       "license": "Apache-2.0",
       "name": "xgboost",
       "needs_review": false,
       "version": "3.4.1"
-    },
-    {
-      "ecosystem": "pip",
-      "license": "MIT",
-      "name": "zuko",
-      "needs_review": false,
-      "version": "1.6.0"
     },
     {
       "ecosystem": "npm",

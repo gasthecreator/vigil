@@ -57,7 +57,7 @@ _REJECT_ROLES = (
 )
 
 
-def _to_response(draft: OcrDraft) -> OcrDraftResponse:
+def _to_response(draft: OcrDraft, *, synthetic: bool) -> OcrDraftResponse:
     suggestion = draft.suggestion or {}
     flags = [
         OcrConfusionFlag(field=f["field"], reason=f["reason"])
@@ -91,7 +91,7 @@ def _to_response(draft: OcrDraft) -> OcrDraftResponse:
         resolved_at=draft.resolved_at,
         resolved_by=draft.resolved_by,
         observation_id=draft.observation_id,
-        synthetic=True,
+        synthetic=synthetic,
     )
 
 
@@ -176,7 +176,7 @@ def create_ocr_draft(
     )
     db.commit()
     db.refresh(draft)
-    return _to_response(draft)
+    return _to_response(draft, synthetic=patient.synthetic)
 
 
 @router.get("/{id}/ocr-drafts", response_model=List[OcrDraftResponse])
@@ -195,7 +195,7 @@ def list_ocr_drafts(
         .scalars()
         .all()
     )
-    return [_to_response(r) for r in rows]
+    return [_to_response(r, synthetic=patient.synthetic) for r in rows]
 
 
 @router.get("/{id}/ocr-drafts/{draft_id}", response_model=OcrDraftResponse)
@@ -206,7 +206,7 @@ def get_ocr_draft(
     current_user: User = Depends(require_roles(*_READ_ROLES)),
 ):
     patient = verify_patient_consent(patient_id=id, db=db, user=current_user)
-    return _to_response(_load_draft(db, patient.id, draft_id))
+    return _to_response(_load_draft(db, patient.id, draft_id), synthetic=patient.synthetic)
 
 
 @router.post(
@@ -314,6 +314,7 @@ def confirm_ocr_draft(
                 adjudicated_action=risk.adjudicated_action,
                 clinical_note=risk.clinical_note,
                 abstention=risk.abstention,
+                abstention_reason=risk.abstention_reason,
             )
             if risk is not None
             else None
@@ -321,7 +322,7 @@ def confirm_ocr_draft(
         alert=alert_summary,
         follow_up_task=follow_up_summary,
         outputs_withheld=risk is None,
-        synthetic=True,
+        synthetic=patient.synthetic,
     )
     return OcrDraftConfirmResponse(
         **created.model_dump(), draft_id=draft.id, draft_status="confirmed"
@@ -356,4 +357,4 @@ def reject_ocr_draft(
     )
     db.commit()
     db.refresh(draft)
-    return _to_response(draft)
+    return _to_response(draft, synthetic=patient.synthetic)

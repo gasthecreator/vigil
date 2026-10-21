@@ -1,5 +1,7 @@
 # Phase 3A Report v3: Model K1 Acceptance Contract Verification (Conditions V1–V6)
 
+> **Retrospective audit correction (2026-10):** The MET claims and empirical conclusions in this historical report are retracted where they concern scientific validity, model performance, or the three EXP-K1 studies. The K1 experiments used boolean measurement masks as numeric CA 15-3 values, and the study interventions did not match their preregistrations. The acceptance suite's toy-world checks do not validate recurrence risk on the product simulator. See [`CORE-ML-AUDIT-2026-10.md`](../audits/CORE-ML-AUDIT-2026-10.md) for evidence and corrected work order. This notice preserves the original report as an audit trail; it does not endorse its original verdict.
+
 ## 1. Verdict Requested
 **Request acceptance of Phase 3A: Model K1 Hybrid Mechanistic–Neural State-Space Model** under `docs/MASTER_PLAN.md` v1.2, `docs/ML_PROGRAM.md` §3.1, `docs/REALITY_RULES.md`, `docs/progress/VERDICT-P3A2.md`, and `docs/ml/K1-CONTRACT.md` (including Contract v2, items 8–11).
 

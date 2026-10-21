@@ -11,6 +11,10 @@ class PatientCreate(BaseModel):
     external_id: Optional[str] = Field(
         None, description="External hospital system identifier (encrypted at rest)"
     )
+    synthetic: bool = Field(
+        False,
+        description="True only for generated or test records; ordinary enrolled patients are non-synthetic.",
+    )
 
 
 class PatientUpdate(BaseModel):
@@ -29,6 +33,7 @@ class PatientResponse(BaseModel):
     status: str
     mrn: Optional[str] = None
     external_id: Optional[str] = None
+    synthetic: bool = False
     is_masked: bool = Field(
         default=False,
         description="True if medical identifiers are redacted due to absence of active consent",

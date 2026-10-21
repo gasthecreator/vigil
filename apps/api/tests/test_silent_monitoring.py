@@ -207,6 +207,20 @@ def test_alarm_counts_one_alert_per_patient_day_not_per_analyte(store):
     assert a["alerts"] == 1 and a["landmarks"] == 2
 
 
+def test_abstentions_are_counted_and_excluded_from_score_calibration(store):
+    with store.session() as session:
+        add_prediction(session, "P-abstain", T0, None)
+        add_outcome(session, "P-abstain", "last_followup", T0 + timedelta(days=500))
+        session.commit()
+
+    report = sm.build_report(store, PARAMS)
+    assert report["data"]["abstentions"] == 1
+    calibration = report["sections"]["calibration_drift"]
+    assert calibration["abstained_landmarks"] == 1
+    assert calibration["determinable_landmarks"] == 0
+    assert calibration["status"] == "INSUFFICIENT"
+
+
 def test_empty_store_reports_without_error(store):
     rep = sm.build_report(store, PARAMS)
     assert rep["breach"] is False

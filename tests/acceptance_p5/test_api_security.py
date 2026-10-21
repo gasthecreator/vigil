@@ -104,7 +104,11 @@ def test_writes_are_audited(tmp_path):
     body = """
     H = {"X-Vigil-Role": "clinician"}
     res = {}
-    pid = c.post("/api/v1/patients/", json={"age": 55, "status": "active"}, headers=H).json()["id"]
+    pid = c.post(
+        "/api/v1/patients/",
+        json={"age": 55, "status": "active", "synthetic": True},
+        headers=H,
+    ).json()["id"]
     res["after_create"] = count("audit_events")
     c.post(f"/api/v1/patients/{pid}/consent", json={"scope": "clinical_care", "granted": True}, headers=H)
     res["after_consent"] = count("audit_events")

@@ -38,7 +38,13 @@ from vigil_api.shadow_store import ShadowStore  # noqa: E402
 def parameters(dry_run: bool, alert_budget: float | None) -> sm.Parameters:
     if dry_run:
         proposed = gate.parameters(gate.PREREG.read_text(encoding="utf-8"))
-        values = {k: evaluation._num(v) for k, v in proposed.items() if k != "PR-04"}
+        # Silent monitoring consumes only these four proposed numeric values;
+        # PR-03/05/06/07 are partner-evaluation settings and PR-04/10 have no
+        # default. Do not parse unrelated or intentionally unratified rows.
+        values = {
+            key: evaluation._num(proposed[key])
+            for key in ("PR-01", "PR-02", "PR-08", "PR-09")
+        }
         provenance = "PROPOSED values of PREREGISTRATION.md (not ratified); rehearsal only"
     else:
         problems = gate.check()

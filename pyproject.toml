@@ -10,7 +10,6 @@ dependencies = [
     "ruff>=0.6.0",
     "numpyro>=0.22.0",
     "jax>=0.10.2",
-    "sbi>=0.27.0",
 ]
 
 [tool.uv.workspace]
@@ -84,7 +83,7 @@ docs = [
     "mkdocs-material>=9.5.0",
 ]
 
-# G-05: strict typing on the packages named in PROMPT-P16 PR2 (see ADR-0030).
+# G-05: strict typing on PROMPT-P16 PR2 modules plus reviewed core-model additions (ADR-0030).
 [tool.mypy]
 python_version = "3.12"
 strict = true
@@ -94,6 +93,8 @@ files = [
     "packages/vigil-core/vigil_core",
     "packages/vigil-eval/vigil_eval",
     "packages/vigil-ml/vigil_ml/m5.py",
+    "packages/vigil-ml/vigil_ml/k6.py",
+    "packages/vigil-ml/vigil_ml/causal_k7_replacement.py",
 ]
 mypy_path = ["packages/vigil-core", "packages/vigil-eval", "packages/vigil-ml"]
 

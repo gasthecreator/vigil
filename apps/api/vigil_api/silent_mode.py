@@ -83,7 +83,7 @@ def record_prediction(
     analyte_code: str,
     specimen_collected_at: datetime,
     canonical_value: float,
-    score: float,
+    score: Optional[float],
     score_kind: str,
     m3_action: str,
     risk_tier: str,

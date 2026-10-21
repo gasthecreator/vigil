@@ -6,25 +6,25 @@
       "table": "patients",
       "source": "patients.csv",
       "rows": 600,
-      "sha256": "acea76928f347a099227390138ca0354ce33bbd7ab252762da43422a12dce3dc"
+      "sha256": "80878f793075c4beb18c36551e6cf8ce0c5ccf6d59ca6bec51b2abe7d6f1c2e6"
     },
     {
       "table": "baseline_profile",
       "source": "baseline_profile.csv",
       "rows": 600,
-      "sha256": "d2b0636b18ef96b8cd633a8bb6a9b15460f01efb518fc6b6df265eacc29fd731"
+      "sha256": "b9bf9f4ff3dd10f1524cd8f7044833bd2441c97a30ddcd7e6f17908b99c6cb7b"
     },
     {
       "table": "lab_observations",
       "source": "lab_observations.csv",
-      "rows": 18885,
-      "sha256": "16f25b98e881853d11374ddd20aa51c6c57c8aeb06a358f90fc33ff4bba3eeaa"
+      "rows": 18390,
+      "sha256": "3019d506c1767e473ad6b222f038f4ce5991a0d7c4f5cd86570f5ae6f1232621"
     },
     {
       "table": "clinical_outcomes",
       "source": "clinical_outcomes.csv",
       "rows": 600,
-      "sha256": "47829ab3fe8f55f8c1b5b3ee05efce8e00f98f2c78266c3a13623ff1ff8461ab"
+      "sha256": "58d73121ef2dd45e6254aa6089c639dbaef329b9e3bd9575c622d5bd7e49074f"
     }
   ],
   "aborted": false,
@@ -45,8 +45,8 @@
       "rows_flagged": 0
     },
     "lab_observations": {
-      "rows_in": 18885,
-      "rows_clean": 18885,
+      "rows_in": 18390,
+      "rows_clean": 18390,
       "rows_rejected": 0,
       "duplicates_dropped": 0,
       "rows_flagged": 0

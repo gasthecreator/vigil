@@ -2,7 +2,7 @@
 
 from vigil_api.schemas.baseline import BaselineCreate, BaselineResponse, TargetOrganVector
 from vigil_api.schemas.inference import (
-    RiskInferenceResponse,
+    LabSubmissionResponse,
     SimulationRequest,
     SimulationResponse,
     TrajectoryPoint,
@@ -19,7 +19,7 @@ __all__ = [
     "TargetOrganVector",
     "LabResultCreate",
     "LabResultResponse",
-    "RiskInferenceResponse",
+    "LabSubmissionResponse",
     "TrajectoryPoint",
     "TriageQueueItem",
     "SimulationRequest",

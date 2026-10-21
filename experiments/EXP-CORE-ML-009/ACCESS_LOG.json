@@ -1,0 +1,27 @@
+{
+  "completed": true,
+  "completed_utc_epoch": 1792466661.160854,
+  "design": {
+    "conditions": {
+      "MAR": 100000,
+      "MCAR": 0,
+      "MNAR": 200000
+    },
+    "n": 2500,
+    "replicates": 100
+  },
+  "environment_lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "estimator_source_sha256": "bfa5bc8024f628e2112e1757751055aba84cc894244d1256baa34d7503678899",
+  "experiment_id": "EXP-CORE-ML-009",
+  "numpy_version": "2.5.4",
+  "preregistration_sha256": "14cd5686c1c98054428e0c2d8750ad012404161e4b9c471fdded307891ab667e",
+  "protocol_version": "1.0",
+  "python_version": "3.12.15",
+  "report_sha256": "c4ca65c88917092a38a4d77720864b8d8ff0e395702079cadf72f29e5928ede7",
+  "results_sha256": "83d4f704db494698ae74373e99a742daed6699b459233afc378d2d0775955858",
+  "runner_sha256": "0f36f8fdf20ff50717c0402af34d263c82c8b81111f6c3996b9a1aac706cd38b",
+  "scikit_learn_version": "1.9.1",
+  "seed_formula": "20261021 + condition_offset + replicate; offsets MCAR=0, MAR=100000, MNAR=200000",
+  "source_commit": "f2a1cf859009cd66b59386e19fca441826f627fc",
+  "started_utc_epoch": 1792466657.9263308
+}

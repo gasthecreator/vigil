@@ -11,8 +11,10 @@ import json
 import sys
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 import pytest
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -26,6 +28,45 @@ import run_partner_evaluation as cli  # noqa: E402
 from contracts.partner import ingest_path  # noqa: E402
 
 KEY = b"unit-test-partition-key-0123456789"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("I", "STAGE I"),
+        ("IIA", "STAGE II"),
+        ("IIB", "STAGE II"),
+        ("IIIA", "STAGE III"),
+        ("IIIB", "STAGE III"),
+        ("IIIC", "STAGE III"),
+    ],
+)
+def test_stage_mapping_preserves_contract_stage_group(raw, expected):
+    assert pa._stage(raw) == expected
+
+
+@pytest.mark.parametrize("raw", ["IV", "Stage IV", "IIX", "", "unknown"])
+def test_stage_mapping_rejects_out_of_contract_values(raw):
+    with pytest.raises(ValueError, match="unsupported AJCC stage_ajcc"):
+        pa._stage(raw)
+
+
+@pytest.mark.parametrize("status", ["EQUIVOCAL", "UNKNOWN"])
+def test_partner_receptor_statuses_do_not_become_negative(status):
+    tables = _tables([{"pid": "A", "follow": 500, "index": 0, "rec_day": None, "labs": [(0, 20.0)]}])
+    baseline = tables["baseline_profile"][0]
+    baseline["er_status"] = status
+    baseline["pr_status"] = status
+    baseline["her2_status"] = status
+    patients_df, _observations_df = pa.to_vigil_frames(tables, ["A"])
+    patient = patients_df.iloc[0]
+    assert np.isnan(patient["er_status"])
+    assert np.isnan(patient["pr_status"])
+    assert np.isnan(patient["her2_status"])
+    assert patient["subtype"] == "UNCLASSIFIED"
+    assert bool(patient["chemotherapy_given"])
+    assert bool(patient["endocrine_therapy"])
+    assert bool(patient["radiotherapy_given"])
 
 
 # ------------------------------------------------------------------------------------------------ partition
@@ -57,6 +98,7 @@ def _tables(patients):
                 "menopausal_status": "POST",
                 "vital_status": p.get("vital", "ALIVE"),
                 "days_to_last_followup": p["follow"],
+                "days_to_death": p.get("death_day"),
                 "index_day": p["index"],
             }
         )
@@ -151,31 +193,96 @@ def test_landmark_times_events_and_exclusions_on_a_hand_worked_cohort():
     )
 
 
-def test_death_from_another_cause_censors_and_is_not_a_recurrence():
+def test_death_from_another_cause_is_a_competing_event_and_known_control():
     labs = [(100, 20.0), (190, 22.0), (280, 25.0)]
     lm = pa.build_landmarks(
         _tables(
             [
                 {
                     "pid": "A",
-                    "follow": 700,
+                    "follow": 300,
                     "index": 90,
                     "rec_day": None,
                     "vital": "DEAD_OTHER",
+                    "death_day": 300,
                     "labs": labs,
                 }
             ]
         ),
         ["A"],
     )
-    assert list(lm.E) == [0, 0] and list(lm.T) == [700 - 190, 700 - 280]
+    assert list(lm.E) == [2, 2] and list(lm.T) == [300 - 190, 300 - 280]
+    assert list(lm.y) == [0.0, 0.0]
+    assert lm.end_day == {"A": 300.0}
+    assert (pa.compute_ipcw_weights(lm.T, lm.E, pa.HORIZON) > 0).all()
+
+
+def test_partner_adapter_refuses_to_infer_death_day_from_last_followup():
+    tables = _tables(
+        [
+            {
+                "pid": "A",
+                "follow": 300,
+                "index": 90,
+                "rec_day": None,
+                "vital": "DEAD_OTHER",
+                "labs": [(100, 20.0), (190, 22.0), (280, 25.0)],
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="explicit days_to_death"):
+        pa.to_vigil_frames(tables, ["A"])
+
+
+def test_administrative_censoring_before_horizon_keeps_outcome_unknown():
+    lm = pa.build_landmarks(
+        _tables(
+            [
+                {
+                    "pid": "A",
+                    "follow": 300,
+                    "index": 90,
+                    "rec_day": None,
+                    "labs": [(100, 20.0), (190, 22.0), (280, 25.0)],
+                }
+            ]
+        ),
+        ["A"],
+    )
+    assert list(lm.E) == [0, 0]
+    assert np.isnan(lm.y).all()
+    assert (pa.compute_ipcw_weights(lm.T, lm.E, pa.HORIZON) == 0).all()
+
+
+def test_recurrence_before_competing_death_remains_the_event_of_interest():
+    labs = [(100, 20.0), (190, 22.0), (280, 25.0)]
+    lm = pa.build_landmarks(
+        _tables(
+            [
+                {
+                    "pid": "A",
+                    "follow": 400,
+                    "index": 90,
+                    "rec_day": 350,
+                    "vital": "DEAD_OTHER",
+                    "death_day": 400,
+                    "labs": labs,
+                }
+            ]
+        ),
+        ["A"],
+    )
+    assert list(lm.E) == [1, 1]
+    assert list(lm.T) == [350 - 190, 350 - 280]
+    assert list(lm.y) == [1.0, 1.0]
+    assert lm.end_day == {"A": 350.0}
 
 
 # ------------------------------------------------------------------------------------------------ leakage attack
 def test_features_at_a_landmark_do_not_change_when_the_future_changes(tmp_path):
     gen.generate(tmp_path, 60, "signal", 7)
     res = ingest_path(tmp_path)
-    base = pa.build_landmarks(res.tables, res.cohort_ids)
+    base = pa.build_landmarks(res.tables, res.cohort_ids, synthetic_only=True)
     pid = base.X["patient_id"].iloc[0]
     days = sorted(
         r["observation_day"] for r in res.tables["lab_observations"] if r["patient_id"] == pid
@@ -185,7 +292,7 @@ def test_features_at_a_landmark_do_not_change_when_the_future_changes(tmp_path):
     for r in attacked["lab_observations"]:
         if r["patient_id"] == pid and r["observation_day"] > cut:
             r["value_canonical"] *= 1000.0  # an enormous fake future
-    atk = pa.build_landmarks(attacked, res.cohort_ids)
+    atk = pa.build_landmarks(attacked, res.cohort_ids, synthetic_only=True)
     cols = [c for c in base.X.columns if c != "patient_id"]
     b = base.X[(base.X.patient_id == pid) & (base.X.eval_day <= cut)][cols].reset_index(drop=True)
     a = atk.X[(atk.X.patient_id == pid) & (atk.X.eval_day <= cut)][cols].reset_index(drop=True)
@@ -294,6 +401,188 @@ def test_begg_greenes_bounds_move_with_the_assumption():
     assert [r["specificity"] for r in rows] == pytest.approx([1 / 4, 1 / 3, 1 / 2])
 
 
+def test_verification_propensity_is_fit_on_development_with_explicit_missingness_features():
+    n = 40
+    patients = pd.DataFrame(
+        {
+            "patient_id": [f"DEV-{i}" for i in range(n)],
+            "restaging_imaging_done": [i % 2 == 0 for i in range(n)],
+        }
+    )
+    X = pd.DataFrame(
+        {
+            "patient_id": patients["patient_id"],
+            "eval_day": np.full(n, 180.0),
+            "age": np.linspace(30.0, 70.0, n),
+            "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            "history_length": np.full(n, 2.0),
+        }
+    )
+    X.loc[[3, 11, 27], "ca_15_3_curr"] = np.nan
+    dev = pa.Landmarks(
+        X=X,
+        y=np.tile([0, 1], n // 2),
+        T=np.full(n, 365.0),
+        E=np.tile([0, 1], n // 2),
+        first=np.ones(n, dtype=bool),
+        end_day={pid: 545.0 for pid in patients["patient_id"]},
+        patients=patients,
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
+    )
+
+    model, medians, issue = pa._fit_verification_propensity(dev)
+    assert issue is None and model is not None and medians is not None
+    assert medians[1] == pytest.approx(float(np.nanmedian(X["ca_15_3_curr"])))
+    matrix, returned_medians = pa._verification_feature_matrix(X, medians)
+    assert matrix.shape == (n, 6)
+    assert matrix[3, 4] == 1.0  # CA 15-3 missingness is explicit, not encoded as zero
+    assert np.array_equal(returned_medians, medians)
+
+    held_out = X.copy()
+    held_out["ca_15_3_curr"] = 1_000_000.0
+    _, held_out_medians = pa._verification_feature_matrix(held_out, medians)
+    assert np.array_equal(held_out_medians, medians)  # test patients cannot refit imputation
+
+
+def test_verification_propensity_fails_closed_without_complete_development_labels():
+    n = 20
+    patients = pd.DataFrame(
+        {
+            "patient_id": [f"DEV-{i}" for i in range(n)],
+            "restaging_imaging_done": [None] * n,
+        }
+    )
+    X = pd.DataFrame(
+        {
+            "patient_id": patients["patient_id"],
+            "age": np.linspace(30.0, 70.0, n),
+            "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            "history_length": np.full(n, 2.0),
+        }
+    )
+    dev = pa.Landmarks(
+        X=X,
+        y=np.tile([0, 1], n // 2),
+        T=np.full(n, 365.0),
+        E=np.tile([0, 1], n // 2),
+        first=np.ones(n, dtype=bool),
+        end_day={pid: 545.0 for pid in patients["patient_id"]},
+        patients=patients,
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
+    )
+    model, medians, issue = pa._fit_verification_propensity(dev)
+    assert model is None and medians is None
+    assert issue == "development verification status is incomplete or non-binary"
+
+
+@pytest.mark.parametrize(
+    "horizon", [True, np.bool_(False), 0.0, -1.0, np.nan, np.inf, np.array([365.0])]
+)
+def test_partner_target_contract_rejects_invalid_horizons(horizon):
+    with pytest.raises(ValueError, match="horizon_days"):
+        pa._target_series(np.array([0.0, 1.0]), horizon, synthetic_only=True)
+
+
+@pytest.mark.parametrize("synthetic_only", [0, 1, "true"])
+def test_partner_target_contract_rejects_non_boolean_provenance(synthetic_only):
+    with pytest.raises(ValueError, match="synthetic_only"):
+        pa._target_series(np.array([0.0, 1.0]), 365.0, synthetic_only=synthetic_only)
+
+
+def test_partner_fit_and_evaluation_reject_horizon_mismatches():
+    landmarks = pa.Landmarks(
+        X=pd.DataFrame(),
+        y=np.array([], dtype=float),
+        T=np.array([], dtype=float),
+        E=np.array([], dtype=int),
+        first=np.array([], dtype=bool),
+        end_day={},
+        patients=pd.DataFrame(),
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
+    )
+    with pytest.raises(ValueError, match="target horizon"):
+        pa.fit_on_development(landmarks, alert_budget=5.0, horizon=180.0)
+    plan = SimpleNamespace(candidate=object(), comparator=object())
+    with pytest.raises(ValueError, match="target horizon"):
+        pa.confirmatory(landmarks, plan, {}, n_boot=0, seed=1, horizon=180.0)
+
+
+def test_partner_evaluation_rejects_models_fitted_to_another_horizon():
+    contract = pa.TrainingTargetContract(pa.TARGET_ESTIMAND, 365.0, True)
+    model = SimpleNamespace(target_contract_=contract)
+    plan = SimpleNamespace(candidate=model, comparator=model)
+    with pytest.raises(ValueError, match="target contract does not match"):
+        pa._require_plan_target_horizon(plan, 180.0)
+
+
+def test_out_of_fold_censoring_weights_are_fit_inside_patient_folds(monkeypatch):
+    n = 10
+    patients = np.array([f"P{i:02d}" for i in range(n)])
+    events = np.tile([1, 2], n // 2)
+    times = np.tile([100.0, 200.0], n // 2)
+    labels = (events == 1).astype(float)
+    dev = pa.Landmarks(
+        X=pd.DataFrame(
+            {
+                "patient_id": patients,
+                "eval_day": np.zeros(n),
+                "ca_15_3_curr": np.linspace(10.0, 80.0, n),
+            }
+        ),
+        y=labels,
+        T=times,
+        E=events,
+        first=np.ones(n, dtype=bool),
+        end_day={patient: 365.0 for patient in patients},
+        patients=pd.DataFrame({"patient_id": patients}),
+        horizon_days=365.0,
+        target_estimand=pa.TARGET_ESTIMAND,
+    )
+    original = pa.compute_ipcw_weights
+    input_sizes = []
+    b1_training_ids = []
+    b2_training_ids = []
+    base_b1, base_b2 = pa.SingleThresholdBaseline, pa.VelocityBaseline
+
+    class SpyB1(base_b1):
+        def fit(self, X, y, sample_weight=None, **kwargs):
+            b1_training_ids.append(set(X["patient_id"]))
+            return super().fit(X, y, sample_weight=sample_weight, **kwargs)
+
+    class SpyB2(base_b2):
+        def fit(self, X, y, sample_weight=None, **kwargs):
+            b2_training_ids.append(set(X["patient_id"]))
+            return super().fit(X, y, sample_weight=sample_weight, **kwargs)
+
+    def record_fold_only_weights(follow_up_times, event_indicators, horizon_time):
+        input_sizes.append(len(follow_up_times))
+        return original(follow_up_times, event_indicators, horizon_time)
+
+    monkeypatch.setattr(pa, "compute_ipcw_weights", record_fold_only_weights)
+    monkeypatch.setattr(pa, "SingleThresholdBaseline", SpyB1)
+    monkeypatch.setattr(pa, "VelocityBaseline", SpyB2)
+    predictions = pa._out_of_fold(dev, horizon=365.0, folds=5)
+
+    assert input_sizes == [8] * 5
+    from sklearn.model_selection import GroupKFold
+
+    expected_training_ids = [
+        set(patients[train])
+        for train, _test in GroupKFold(n_splits=5).split(dev.X, groups=patients)
+    ]
+    assert b1_training_ids == b2_training_ids == expected_training_ids
+    assert set(predictions) == {
+        "B1_SINGLE_THRESHOLD",
+        "B2_VELOCITY_RULE",
+        "B3_REGULARIZED_LOGISTIC_HORIZON",
+        "B4_GRADIENT_BOOSTING_HORIZON",
+    }
+    assert all(np.isfinite(scores).all() for scores in predictions.values())
+
+
 # ------------------------------------------------------------------------------------------------ whole pipeline on synthetic cohorts
 @pytest.fixture(scope="module")
 def runs(tmp_path_factory):
@@ -302,7 +591,7 @@ def runs(tmp_path_factory):
         d = tmp_path_factory.mktemp(mode)
         gen.generate(d, 500, mode, 20261018)
         res = ingest_path(d)
-        lm = pa.build_landmarks(res.tables, res.cohort_ids)
+        lm = pa.build_landmarks(res.tables, res.cohort_ids, synthetic_only=True)
         split = {p: pa.assign_split(p, KEY) for p in lm.patients["patient_id"]}
         dev = lm.subset([p for p, s in split.items() if s == "dev"])
         test = lm.subset([p for p, s in split.items() if s == "test"])
@@ -317,11 +606,16 @@ PARAMS = {"PR-01": 0.8, "PR-02": 1.2, "PR-03": 0.0, "PR-04": 5.0, "PR-05": 20.0,
 def test_dev_and_test_share_no_patient(runs):
     dev, test, _ = runs["signal"]
     assert not (set(dev.X["patient_id"]) & set(test.X["patient_id"]))
+    assert dev.horizon_days == test.horizon_days == pa.HORIZON
+    assert dev.target_estimand == test.target_estimand == pa.TARGET_ESTIMAND
 
 
 def test_the_operating_point_is_chosen_on_development_to_meet_the_budget(runs):
     _, _, plan = runs["signal"]
     assert plan.dev_alert_rate <= PARAMS["PR-04"] + 1e-9 and 0.0 < plan.threshold < 1.0
+    assert plan.candidate.target_contract_.estimand == "observed_recurrence_before_competing_death"
+    assert plan.candidate.target_contract_.horizon_days == pa.HORIZON
+    assert plan.candidate.target_contract_.synthetic_only is True
 
 
 def test_confirmatory_results_are_reproducible_and_null_data_meet_no_criterion(runs):
@@ -358,7 +652,18 @@ def test_secondary_analyses_apply_the_small_cell_and_minimum_event_rules(runs):
     )  # nothing reaches 10 000 events
     assert s["subgroups"]["worst_group"] is None
     assert "verification_bias" in s and "decision_curve" in s and "lead_time" in s
+    assert "not_run" in s["decision_curve"]
+    assert "not_computed" in s["lead_time"]
+    assert "censoring" in s["lead_time"]["not_computed"]
     assert s["m10_aggregate"]["small_cell_threshold"] == 5
+
+
+def test_secondary_uses_only_the_explicit_dca_threshold_grid(runs):
+    _, test, plan = runs["signal"]
+    thresholds = np.asarray([0.1, 0.25, 0.4])
+    s = pa.secondary(test, plan, PARAMS, n_boot=5, seed=7, dca_thresholds=thresholds)
+    assert s["decision_curve"]["thresholds"] == thresholds.tolist()
+    assert len(s["decision_curve"]["net_benefit_model"]) == len(thresholds)
 
 
 def test_too_few_development_events_is_an_explicit_not_run(runs):
@@ -376,7 +681,7 @@ def _write_freeze(tmp_path, monkeypatch, budget="3.0"):
     rat = [
         {
             "id": k,
-            "value": (budget if k == "PR-04" else v),
+            "value": (budget if k == "PR-04" else "[0.05, 0.1, 0.2]" if k == "PR-10" else v),
             "ratifier": "test",
             "date": "2026-01-01",
         }
@@ -481,6 +786,9 @@ def test_real_path_runs_with_ratified_values_the_ratified_seed_and_2000_resample
         and rep["bootstrap_seed"] == 4242
         and rep["partition_key_id"] == "KEY-TEST"
     )
+    assert rep["dca_thresholds"] == [0.05, 0.1, 0.2]
+    if rep["status"] == "COMPLETED":
+        assert rep["secondary"]["decision_curve"]["thresholds"] == rep["dca_thresholds"]
     assert rep["bootstrap_resamples"] == 2000
     if rep["status"] == "COMPLETED":
         assert rep["confirmatory"]["seed"] == 4242
@@ -532,7 +840,9 @@ def test_dry_run_tolerance_accepts_float_drift_but_not_changed_facts(tmp_path):
 
     base = '{"slope": 0.374, "n": 49, "met": false, "name": "C1", "ci": [1.0, 2.0]}'
     assert pair(base, base, ".json")
-    assert pair(base, base.replace("0.374", "0.380"), ".json")  # the drift seen between macOS and Linux
+    assert pair(
+        base, base.replace("0.374", "0.380"), ".json"
+    )  # the drift seen between macOS and Linux
     assert not pair(base, base.replace("0.374", "0.600"), ".json")  # a different number
     assert not pair(base, base.replace("49", "50"), ".json")  # an integer count is exact
     assert not pair(base, base.replace("false", "true"), ".json")  # a verdict is exact

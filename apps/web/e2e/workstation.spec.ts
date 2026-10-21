@@ -11,7 +11,7 @@ test.describe("M9 Clinician Workstation E2E Suite (Real Backend & Seeded SQLite)
     await page.setViewportSize({ width: 1280, height: 1000 });
     // Condition P9-B: Real seeded backend for e2e.
     // No page.route mocks for /api/v1. The suite exercises real FastAPI backend,
-    // real SQLite transactions, real M3 Bayesian mixture, real consent checks,
+    // real SQLite transactions, the M3 adjudication API path, real consent checks,
     // and real Guardian state machine.
   });
 
@@ -104,9 +104,13 @@ test.describe("M9 Clinician Workstation E2E Suite (Real Backend & Seeded SQLite)
     ).toBeVisible();
     await expect(page.getByText("DISMISSED", { exact: true })).not.toBeVisible();
 
-    // Verify 3-way Bayesian mixture decomposition is rendered
-    await expect(page.locator("text=Analytical/Pre-Analytical Error")).toBeVisible();
-    await expect(page.locator("text=Real Disease Progression")).toBeVisible();
+    // The seeded synthetic patient has prior history. Verify model-conditional
+    // components are labelled as such, without clinical event interpretations.
+    await expect(page.getByText("Real-change model component", { exact: true })).toBeVisible();
+    await expect(page.getByText("Gross-error model component", { exact: true })).toBeVisible();
+    await expect(page.getByText("Stable model component", { exact: true })).toBeVisible();
+    await expect(page.getByText("Analytical/Pre-Analytical Error", { exact: true })).not.toBeVisible();
+    await expect(page.getByText("Real Disease Progression", { exact: true })).not.toBeVisible();
 
     // Capture M3 Adjudication Panel screenshot
     await page.screenshot({ path: path.join(SCREENS_DIR, "m9_workstation_m3_adjudication.png") });

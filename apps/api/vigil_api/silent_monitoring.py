@@ -126,7 +126,7 @@ class Landmark:
     patient_id: str
     day: Any  # datetime.date
     time: datetime
-    score: float
+    score: Optional[float]
     alert: bool
     analytes: Tuple[str, ...]
 
@@ -166,7 +166,8 @@ def landmarks_from(preds: List[Dict[str, Any]]) -> List[Landmark]:
     out = [
         Landmark(
             patient_id=pid, day=day, time=min(x["time"] for x in rows),
-            score=max(x["score"] for x in rows), alert=any(x["would_alert"] for x in rows),
+            score=max((x["score"] for x in rows if x["score"] is not None), default=None),
+            alert=any(x["would_alert"] for x in rows),
             analytes=tuple(sorted({x["analyte"] for x in rows})),
         )
         for (pid, day), rows in by_key.items()
@@ -256,9 +257,12 @@ def _determinable(landmarks: List[Landmark], info, horizon_days: int):
 
 
 def calibration_drift(landmarks: List[Landmark], info, params: Parameters) -> Dict[str, Any]:
-    kept, excluded = _determinable(landmarks, info, params.horizon_days)
+    scored = [lm for lm in landmarks if lm.score is not None]
+    abstained = len(landmarks) - len(scored)
+    kept, excluded = _determinable(scored, info, params.horizon_days)
     out: Dict[str, Any] = {
         "determinable_landmarks": len(kept), "excluded_landmarks": excluded,
+        "abstained_landmarks": abstained,
         "acceptable_slope_range": [params.slope_low, params.slope_high], "windows": [],
     }
     windows: List[List[Tuple[Landmark, int]]] = []
@@ -406,6 +410,7 @@ def build_report(store: ShadowStore, params: Parameters, generated_at: Optional[
         },
         "data": {
             "predictions": len(preds), "landmarks": len(landmarks), "patients": len(pred_patients),
+            "abstentions": sum(p["score"] is None for p in preds),
             "outcome_rows": len(outcomes), "patients_with_outcomes": len(info),
             "outcome_patients_without_predictions": len(set(info) - pred_patients),
             "rejections": len(rejections), "score_kinds": sorted({p["score_kind"] for p in preds}),
@@ -439,7 +444,7 @@ def render_markdown(report: Dict[str, Any]) -> str:
         f"**Overall: {'BREACH' if report['breach'] else 'incomplete' if report['incomplete'] else 'no breach'}**"
         + (" (some monitors could not be evaluated)" if report["incomplete"] and not report["breach"] else ""),
         "",
-        f"Data: {d['predictions']} predictions, {d['landmarks']} landmarks, {d['patients']} patients, "
+        f"Data: {d['predictions']} predictions ({d['abstentions']} abstentions), {d['landmarks']} landmarks, {d['patients']} patients, "
         f"{d['outcome_rows']} outcome rows ({d['patients_with_outcomes']} patients), {d['rejections']} refused ingestions. "
         f"Score kind: {', '.join(d['score_kinds']) or 'none'}.",
         "",

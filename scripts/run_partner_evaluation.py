@@ -22,13 +22,14 @@ import re
 import sys
 import warnings
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import check_prereg_freeze as gate  # noqa: E402
 import partner_analysis as pa  # noqa: E402
-from contracts.partner import PartnerIngestAborted, ingest_path, render_markdown  # noqa: E402
+from contracts.partner import PartnerIngestAborted, ingest_path, render_markdown  # type: ignore[import-untyped]  # noqa: E402
 from vigil_eval.audit import FrozenTestAccessLogger  # noqa: E402
 
 DRYRUN_KEY = (
@@ -47,11 +48,11 @@ def _num(cell: str) -> float:
 
 def load_parameters(
     dry_run: bool, alert_budget: float | None
-) -> tuple[dict[str, float], int, str, str]:
-    """Return (parameters, bootstrap seed, partition key identifier, parameter provenance)."""
+) -> tuple[dict[str, float], int, str, str, list[float] | None]:
+    """Return ratified analysis settings, including an explicit DCA grid when frozen."""
     if dry_run:
         proposed = gate.parameters(gate.PREREG.read_text(encoding="utf-8"))
-        params = {k: _num(v) for k, v in proposed.items() if k != "PR-04"}
+        params = {k: _num(v) for k, v in proposed.items() if k not in {"PR-04", "PR-10"}}
         if alert_budget is None:
             raise SystemExit(
                 "--alert-budget is required with --synthetic-dry-run (PR-04 has no proposed default)"
@@ -62,15 +63,19 @@ def load_parameters(
             DRYRUN_SEED,
             "SYNTHETIC-DRYRUN-KEY",
             "PROPOSED values of PREREGISTRATION.md (not ratified); PR-04 supplied on the command line",
+            None,
         )
     gate.require_frozen()
     rec = json.loads(gate.FREEZE.read_text(encoding="utf-8"))
-    params = {r["id"]: _num(str(r["value"])) for r in rec["ratifications"]}
+    params = {r["id"]: _num(str(r["value"])) for r in rec["ratifications"] if r["id"] != "PR-10"}
+    dca_ratification = next(r for r in rec["ratifications"] if r["id"] == "PR-10")
+    dca_thresholds = json.loads(str(dca_ratification["value"]))
     return (
         params,
         int(rec["bootstrap_seed"]),
         str(rec["partition_key_id"]),
         "ratified values in PREREG-FREEZE.json",
+        [float(value) for value in dca_thresholds],
     )
 
 
@@ -116,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 4
     try:
-        params, seed, key_id, provenance = load_parameters(dry, args.alert_budget)
+        params, seed, key_id, provenance, dca_thresholds = load_parameters(dry, args.alert_budget)
     except SystemExit as exc:
         print(exc, file=sys.stderr)
         return 4
@@ -146,10 +151,11 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "ingest_report.json").write_text(
         json.dumps(ing.report, indent=2) + "\n", encoding="utf-8"
     )
-    report: dict = {
+    report: dict[str, Any] = {
         "tier": tier,
         "parameters": params,
         "parameter_provenance": provenance,
+        "dca_thresholds": dca_thresholds,
         "bootstrap_seed": seed,
         "bootstrap_resamples": n_boot,
         "partition_key_id": key_id,
@@ -185,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
             f"rejection rate {ing.report['rejection_rate']:.3f} exceeds PR-07 = {params['PR-07']}; review the extraction with the partner (PREREGISTRATION section 5.6)",
         )
     try:
-        lm = pa.build_landmarks(ing.tables, ing.cohort_ids)
+        lm = pa.build_landmarks(ing.tables, ing.cohort_ids, synthetic_only=dry)
         split = {pid: pa.assign_split(pid, key) for pid in lm.patients["patient_id"]}
         dev = lm.subset([p for p, s in split.items() if s == "dev"])
         test = lm.subset([p for p, s in split.items() if s == "test"])
@@ -246,15 +252,17 @@ def main(argv: list[str] | None = None) -> int:
         report["confirmatory"] = pa.confirmatory(test, plan, params, n_boot, seed)
     except pa.InsufficientData as exc:
         return finish(3, "NOT RUN", str(exc))
-    report["secondary"] = pa.secondary(test, plan, params, n_boot, seed)
+    report["secondary"] = pa.secondary(
+        test, plan, params, n_boot, seed, dca_thresholds=dca_thresholds
+    )
     return finish(0, "COMPLETED")
 
 
-def _fmt(x) -> str:
+def _fmt(x: Any) -> str:
     return f"{x:.3f}" if isinstance(x, float) else str(x)
 
 
-def render_report(r: dict) -> str:
+def render_report(r: dict[str, Any]) -> str:
     L = [
         f"# Partner evaluation report: {r['tier']}",
         "",

@@ -13,12 +13,10 @@ This is not Flower, not Opacus, not secure hardware, and not a legal privacy mec
 ## 2. Intended use
 Research on synthetic data, to measure the utility cost of federated and DP training of *this* MLP against training it centrally. **Not for clinical use.** No claim of clinical validity, regulatory clearance, or NDPA/GDPR compliance.
 
-## 3. What was measured (synthetic data only; `experiments/EXP-M12-001/results.json`, `CONCLUSION.md`)
-- Pre-registered H3 (FedAvg+DP within 3 pp of central on pooled IPCW AUC) was **met** (drop −0.0506; Bonferroni interval [−0.0994, −0.0034]).
-- H2 (FedAvg without DP within 3 pp of central) was **not met** (drop 0.0617; Bonferroni [0.0067, 0.1179]).
-- B4 (gradient boosting, pooled, not federated) had mean pooled AUC 0.8277 against 0.7108 (D), 0.6602 (C) and 0.5985 (F).
-- Mean headline ε̂ at δ = 1/910 was 45.959 (loose). Canary with σ = 100 had mean pooled AUC 0.5237 (not VOID).
-- The kill rule did not fire. Nothing is wired. A pilot is not justified by these numbers (H-116).
+## 3. Historical generated output (synthetic only; not current evidence)
+> Q-7 audit status: the frozen output is preserved but provenance-incomplete and stale under the corrected censoring contract. Its H1–H4 results and privacy ledger must not support current model selection or a privacy claim. See `experiments/EXP-M12-001/PROVENANCE-AND-CONTRACT-AUDIT.md`.
+
+The generated `REPORT.md` records H3 as met, H2 as not met, B4 above the MLP arms, headline ε̂ 45.959, and a canary AUC of 0.5237. These are preserved report contents only; the provenance and censoring defects mean they are not verified study findings. No kill-rule decision or privacy conclusion follows from them. The module remains unwired and the pilot is not justified (H-116).
 
 ## 4. Limits
 Synthetic data; one MLP; F/D take more local epochs than C by design; one-row-per-patient DP; in-process aggregation; no membership inference; no real multi-site data. Site names are labels for the sampling design.

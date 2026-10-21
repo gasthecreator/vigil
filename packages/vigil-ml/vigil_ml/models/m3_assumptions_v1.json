@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "config_id": "m3_synthetic_contract_v1",
+  "status": "synthetic_research_assumptions",
+  "source": "Historical synthetic assumptions in docs/ml/M3-M5-CONTRACT.md and the P4 simulator contract. These values are not learned from, or calibrated to, a clinical cohort.",
+  "units": {
+    "population_error_median": "U/mL CA 15-3 illustrative scale",
+    "log_standard_deviation": "natural-log scale",
+    "inter_lab_cv": "fraction"
+  },
+  "rcv_z": 1.96,
+  "illustrative_marker_cv": {
+    "analytical": 0.05,
+    "within_subject": 0.10
+  },
+  "priors": {
+    "error": 0.03,
+    "real_change": 0.20
+  },
+  "inter_lab_cv": 0.10,
+  "real_change_ratio": {
+    "minimum": 1.4,
+    "maximum": 3.0
+  },
+  "gross_error": {
+    "modes": ["population_draw", "decimal_shift_up", "decimal_shift_down"],
+    "mode_weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "population_log_median": 18.0,
+    "population_log_sd": 0.6,
+    "decimal_shift_factor": 10.0
+  },
+  "action_thresholds": {
+    "error_needs_repeat": 0.30,
+    "real_change_escalate": 0.60,
+    "stable_explained": 0.90
+  }
+}

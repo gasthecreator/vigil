@@ -33,6 +33,11 @@ def generate(out: Path, n: int, mode: str, seed: int) -> None:
         rday = rng.randint(index + 250, max(index + 251, follow)) if recur else None
         if rday is not None and rday > follow:
             recur, rday = False, None
+        death_day = (
+            rng.randint(rday + 1, follow)
+            if recur and rday is not None and rday < follow and rng.random() < 0.3
+            else None
+        )
         rises = recur and mode == "signal" and rng.random() < 0.70
         dismissed = recur and rng.random() < 0.10
         age = rng.randint(30, 80)
@@ -43,8 +48,9 @@ def generate(out: Path, n: int, mode: str, seed: int) -> None:
                 "patient_id": pid,
                 "age_at_diagnosis": age,
                 "menopausal_status": "UNKNOWN",
-                "vital_status": "DEAD_DISEASE" if recur and rng.random() < 0.3 else "ALIVE",
+                "vital_status": "DEAD_DISEASE" if death_day is not None else "ALIVE",
                 "days_to_last_followup": follow,
+                "days_to_death": death_day if death_day is not None else "",
                 "index_day": index,
             }
         )
@@ -68,10 +74,13 @@ def generate(out: Path, n: int, mode: str, seed: int) -> None:
         base_ca = rng.lognormvariate(2.7, 0.3)
         doubling = rng.uniform(60, 120)
         day = index + rng.randint(0, 40)
+        terminal_day = min(
+            value for value in (rday, death_day, follow) if value is not None
+        )
         elevated = False
-        while day < follow:
+        while day < terminal_day:
             ca = base_ca * math.exp(rng.gauss(0, 0.10))
-            if rises and day > rday - 270:
+            if rises and rday is not None and day > rday - 270:
                 ca *= 2 ** ((day - (rday - 270)) / doubling)
             elevated = elevated or ca > 30
             for a, v in (
@@ -92,8 +101,6 @@ def generate(out: Path, n: int, mode: str, seed: int) -> None:
                     }
                 )
             day += int(rng.gauss(90, 15))
-            if recur and day > rday + 30:
-                break
         outs.append(
             {
                 "patient_id": pid,

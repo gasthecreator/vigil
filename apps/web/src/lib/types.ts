@@ -27,7 +27,7 @@ export interface TriagePatientViewModel {
   latestAnalyteCode?: string | null;
   latestAnalyteValue?: number | null;
   latestAnalyteUnit?: string | null;
-  latestM3Action?: "escalate" | "needs_repeat" | "explained" | null;
+  latestM3Action?: "abstain" | "escalate" | "needs_repeat" | "explained" | null;
   latestM5Narrative?: string | null;
   openTasksCount: number;
   openAlertsCount: number;

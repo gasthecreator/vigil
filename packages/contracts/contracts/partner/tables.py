@@ -52,6 +52,7 @@ PATIENTS = Table(
             "vital_status", "enum", enum=("ALIVE", "DEAD_DISEASE", "DEAD_OTHER", "LOST_TO_FOLLOWUP")
         ),
         Col("days_to_last_followup", "int", lo=0),
+        Col("days_to_death", "int", required=False, conditional=True, lo=0),
         Col("index_day", "int", lo=0),
     ),
     key=("patient_id",),

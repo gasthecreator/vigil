@@ -83,13 +83,13 @@ def client(tmp_path):
 
         # Seed patients
         p1 = Patient(
-            id="PAT-CONT-01", biological_sex="female", primary_cancer_type="breast", age=50
+            id="PAT-CONT-01", biological_sex="female", primary_cancer_type="breast", age=50, synthetic=True
         )
         p2 = Patient(
-            id="PAT-CONT-02", biological_sex="female", primary_cancer_type="breast", age=62
+            id="PAT-CONT-02", biological_sex="female", primary_cancer_type="breast", age=62, synthetic=True
         )
         p_unconsented = Patient(
-            id="PAT-NO-CONSENT", biological_sex="female", primary_cancer_type="breast", age=45
+            id="PAT-NO-CONSENT", biological_sex="female", primary_cancer_type="breast", age=45, synthetic=True
         )
         session.add_all([p1, p2, p_unconsented])
 

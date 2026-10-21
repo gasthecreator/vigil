@@ -1,0 +1,16 @@
+{
+  "source_commit": "7bb5533a29df6af8a73d69690065da02d547d992",
+  "runner_sha256": "2a43b038a90669249861b164e8867baeef1ae196c03b1eb2a68e761b198d5b8d",
+  "preregistration_sha256": "9915569769ab91becb2eb9838f44b6b916ee851a705c038a1bc75ad6e0c3a469",
+  "simulator_sha256": "c2c637f13030011d12c99d72791d2881f903cd7943e6e5b072bf8c5defcfefa4",
+  "mechanisms_sha256": "d7d519e146fb720a31051122443d938889529c6c25159d966b1ec700b031ac21",
+  "profile_sha256": "dd38047b067943ee201cfe426e7438df3678442cf9dd46e9defe1ead5df8e143",
+  "lock_sha256": "2337234d520c965c2b3c867a3978c4fbac75751de1a4231f42403c6f35f59e6e",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "profile_id": "balanced_synthetic_core_v4",
+  "status": "PASS",
+  "results_sha256": "c32bc39538981994c7ded8968c144b6e0694309a2fc62795ec52b3d03dfb6649",
+  "report_sha256": "455941a266a778b6e4919e07e9c179ae6421c4e3e4914299e923d9d17707269d"
+}

@@ -1,0 +1,99 @@
+{
+  "experiment_id": "EXP-K1-004",
+  "protocol_version": "1.10",
+  "status": "registered_before_fitting",
+  "code_baseline": "2499752d392f0cf5bc9a40a10a840ed24dfe1477",
+  "purpose": "canonical K1 own-world inference validation and synthetic product-simulator transfer",
+  "seed_plan": {
+    "own_world_train": [41001, 41002, 41003],
+    "own_world_validation": [42001, 42002, 42003],
+    "own_world_final": [43001, 43002, 43003],
+    "product_world_development": [44001, 44002, 44003],
+    "product_world_frozen_transfer": [45001, 45002, 45003],
+    "engineering_smoke": 46001,
+    "acceptance_contract": "fixed by tests/acceptance_k1; run once at final candidate SHA"
+  },
+  "own_world": {
+    "simulations_per_train_seed": 20000,
+    "simulations_per_validation_seed": 5000,
+    "patients_per_final_setting_seed": 1000,
+    "posterior_draws": 2000,
+    "settings": [
+      "declared_model_irregular_visits",
+      "declared_model_sparse_visits_and_missing_analytes",
+      "declared_model_misspecified_noise_and_visit_process"
+    ],
+    "setting_parameters": {
+      "declared_model_irregular_visits": {
+        "schedule_jitter_days": 12,
+        "measurement_noise_sd": 1.5,
+        "measurement_missing_probability": 0.15
+      },
+      "declared_model_sparse_visits_and_missing_analytes": {
+        "schedule_jitter_days": 12,
+        "visit_retention_probability": 0.5,
+        "measurement_missing_probability": 0.25,
+        "measurement_noise_sd": 1.5
+      },
+      "declared_model_misspecified_noise_and_visit_process": {
+        "schedule_jitter_days": 24,
+        "measurement_noise_sd": 3.0,
+        "measurement_missing_probability": 0.3,
+        "inference_uses_registered_base_likelihood": true
+      }
+    },
+    "nuts_patients_per_setting_seed": 30,
+    "coverage_levels": [0.5, 0.8, 0.9, 0.95]
+  },
+  "neural_estimators": {
+    "amortized_family": "diagonal_gaussian_recognition_model",
+    "npe_family": "five_component_conditional_gaussian_mixture",
+    "time_bins": 7,
+    "input_channels": ["within_bin_observed_value_mean", "observed_indicator"],
+    "train_validation_seed_pairs": [[41001, 42001], [41002, 42002], [41003, 42003]],
+    "simulations_per_train_seed": 20000,
+    "simulations_per_validation_seed": 5000,
+    "amortized_max_epochs": 200,
+    "npe_max_epochs": 100,
+    "minibatch_size": 256,
+    "model_selection_metric": "validation_negative_log_likelihood",
+    "tie_break": "lower_training_seed"
+  },
+  "product_world": {
+    "development_generators": ["G1", "G2"],
+    "frozen_transfer_generator": "G3",
+    "patients_per_generator_seed": 1000,
+    "landmark_day": 365,
+    "horizon_days": 730,
+    "low_data_max_pre_landmark_visits": 6,
+    "marker_value_column": "ca_15_3",
+    "measurement_mask_column": "observed_ca_15_3",
+    "bootstrap_replicates": 1000,
+    "comparators": ["last_observation_carry_forward", "pre_landmark_linear_trend"],
+    "metrics": [
+      "patient_level_mae",
+      "patient_level_rmse",
+      "mean_log_predictive_density",
+      "predictive_interval_coverage_90pct",
+      "predictive_interval_width_90pct",
+      "runtime"
+    ]
+  },
+  "resource_budgets": {
+    "amortized_training_epochs_max": 500,
+    "npe_training_epochs_max": 100,
+    "nuts_chains": 4,
+    "nuts_warmup_per_chain": 1000,
+    "nuts_draws_per_chain": 2000,
+    "nuts_route_total_draws": 8000,
+    "particle_filter_particles": 4096,
+    "maximum_product_route_inference_seconds_per_patient": 60
+  },
+  "access_policy": {
+    "historical_exp_k1_001_through_003": "retracted_and_excluded",
+    "acceptance_fixed_seed_cohort": "one final-candidate run; not tuning data",
+    "frozen_transfer_cohort": "one access after candidate and development choices are frozen",
+    "development_test_patient_overlap": false,
+    "post_access_tuning": false
+  }
+}

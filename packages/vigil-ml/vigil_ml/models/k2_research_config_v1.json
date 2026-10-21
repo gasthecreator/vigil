@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "config_id": "k2_historical_research_v1",
+  "status": "unvalidated_research_defaults",
+  "source": "Historical software defaults previously hard-coded in vigil_ml/k2.py; not fitted to or calibrated on a clinical cohort.",
+  "alpha_pt": 0.05,
+  "sigma_log": 0.12,
+  "burn_in": 3,
+  "growth_grid": [0.3, 0.5, 0.7, 1.0],
+  "tier_score_thresholds": {
+    "watch": 5.0,
+    "review": 20.0,
+    "urgent": 100.0
+  }
+}

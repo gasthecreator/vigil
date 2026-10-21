@@ -1,0 +1,3 @@
+# EXP-CORE-ML-002 withdrawn for provenance failure
+
+The generated metrics are retained as an audit record, not as a valid study result. `data/audit/frozen_test_access.jsonl` records the preregistration commit SHA, but the simulator/evaluation changes and runner were uncommitted when the test evaluation began. The recorded SHA therefore cannot reconstruct the evaluated implementation. The held-out cohort seed is retired and must not be reused for model selection. EXP-CORE-ML-003 will commit the runner and shared code first, require a clean working tree before test access, use new seeds, and log the exact code SHA.

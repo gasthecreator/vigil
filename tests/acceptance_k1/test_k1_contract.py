@@ -40,6 +40,16 @@ def _draws(route, obs, rng, n=400):
     return out
 
 
+def _binomial_coverage_interval(covered: list[bool], confidence: float = 0.95):
+    """Exact finite-sample interval for independent simulation coverage indicators."""
+    if not covered:
+        raise ValueError("coverage requires at least one simulation")
+    successes = int(np.count_nonzero(covered))
+    return stats.binomtest(successes, len(covered)).proportion_ci(
+        confidence_level=confidence, method="exact"
+    )
+
+
 def test_param_names_contract():
     assert {"doubling_time_days", "shedding_ca153", "clearance_ca153", "onset_day"} <= set(
         K1.PARAM_NAMES
@@ -59,9 +69,13 @@ def test_route_recovers_truth_with_posterior_intervals(name):
         truth.append(p.doubling_time_days)
         means.append(float(np.mean(s)))
         covered.append(lo <= p.doubling_time_days <= hi)
-    cov = float(np.mean(covered))
+    coverage_interval = _binomial_coverage_interval(covered)
     corr = float(np.corrcoef(truth, means)[0, 1])
-    assert 0.75 <= cov <= 0.97, f"{name}: 90% interval coverage {cov:.2f} outside [0.75, 0.97]"
+    assert coverage_interval.low <= 0.90 <= coverage_interval.high, (
+        f"{name}: nominal 90% coverage is outside the exact 95% interval "
+        f"[{coverage_interval.low:.3f}, {coverage_interval.high:.3f}] "
+        f"from {sum(covered)}/{len(covered)} simulations"
+    )
     assert corr >= 0.6, f"{name}: posterior-mean correlation {corr:.2f} < 0.6"
 
 

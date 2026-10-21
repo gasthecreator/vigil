@@ -84,7 +84,9 @@ export default function PlainLanguageExplainerPage() {
   const getVerdictBadge = (verdict: string) => {
     switch (verdict) {
       case "explained":
-        return <Badge variant="success">Stable Fluctuation (Explained)</Badge>;
+        return <Badge variant="success">No Large Change Flagged</Badge>;
+      case "abstain":
+        return <Badge variant="default">No Model Estimate Available</Badge>;
       case "needs_repeat":
         return <Badge variant="warning">Confirmation Needed (Needs Repeat)</Badge>;
       case "escalate":

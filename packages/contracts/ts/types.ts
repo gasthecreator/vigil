@@ -63,7 +63,7 @@ export interface BaselineResponse {
   patient_id: string;
   pr_status: boolean;
   renal_history: boolean;
-  target_organ_susceptibility_vector: TargetOrganVector;
+  target_organ_susceptibility_vector: TargetOrganVector | null;
   tumor_stage: number;
 }
 
@@ -192,6 +192,14 @@ export interface FollowUpTransitionRequest {
   target_status: string;
 }
 
+export interface GovernanceApprovalRequest {
+  evaluation_id: string;
+}
+
+export interface GovernanceRollbackRequest {
+  reason: string;
+}
+
 export interface HL7ORUImportResponse {
   imported_count: number;
   message_control_id: string;
@@ -234,6 +242,16 @@ export interface LabResultCreate {
   wbc_count: number;
 }
 
+export interface LabSubmissionResponse {
+  calculated_metastasis_risk: null;
+  lab_result_id: string;
+  message: string;
+  outputs_withheld: boolean;
+  patient_id: string;
+  status: "recorded" | "unavailable";
+  triage_flag: null;
+}
+
 export interface LinacMachineResponse {
   created_at: string /* ISO 8601 */;
   daily_slot_capacity: number;
@@ -254,6 +272,15 @@ export interface LinacMachineStatusUpdate {
   reason?: string | null;
   /** Machine status: operational, down, maintenance */
   status: string;
+}
+
+export interface ModelGovernanceObservation {
+  day: number;
+  value?: number | null;
+}
+
+export interface ModelGovernanceSeries {
+  observations: ModelGovernanceObservation[];
 }
 
 export interface ObservationCreateRequest {
@@ -297,7 +324,7 @@ export interface OcrConfusionFlag {
 export interface OcrDraftConfirmRequest {
   analyte_code: string;
   /** Must be true. The server never copies OCR suggestions into an observation. */
-  confirmed: boolean;
+  confirmed: true;
   lab_changed?: boolean;
   laboratory_id?: string | null;
   specimen_collected_at: string /* ISO 8601 */;
@@ -370,6 +397,8 @@ export interface PatientCreate {
   mrn?: string | null;
   /** Clinical surveillance status */
   status?: string;
+  /** True only for generated or test records; ordinary enrolled patients are non-synthetic. */
+  synthetic?: boolean;
 }
 
 export interface PatientDelayNoticeResponse {
@@ -395,6 +424,7 @@ export interface PatientResponse {
   is_masked?: boolean;
   mrn?: string | null;
   status: string;
+  synthetic?: boolean;
 }
 
 export interface PatientUpdate {
@@ -416,10 +446,10 @@ export interface PlainLanguageExplainerResponse {
   patient_id: string;
   questions_to_ask_your_doctor: string[];
   recommended_action: string;
-  synthetic?: boolean;
+  synthetic: boolean;
   verbal_band: string;
   verdict: string;
-  verified?: boolean;
+  verified: boolean;
   what_this_means: string;
   word_count: number;
 }
@@ -446,7 +476,8 @@ export interface QualityAuditResponse {
   subgroup_breakdown: Record<string, StratumAuditMetricResponse>;
   subtype_breakdown: Record<string, StratumAuditMetricResponse>;
   suppressed_strata_count: number;
-  synthetic?: boolean;
+  /** True only when this response was computed from the built-in synthetic benchmark cohort. */
+  synthetic: boolean;
   total_action_not_recorded: number;
   total_action_recorded: number;
   total_patients_audited: number;
@@ -487,6 +518,7 @@ export interface RadiotherapyCourseResponse {
 
 export interface RiskAssessmentSummary {
   abstention?: boolean;
+  abstention_reason?: string | null;
   adjudicated_action: string;
   assessment_date: string /* ISO 8601 */;
   clinical_note?: string | null;
@@ -494,18 +526,8 @@ export interface RiskAssessmentSummary {
   input_hash: string;
   model_versions: Record<string, string>;
   risk_tier: string;
-  score: number;
+  score: number | null;
   uncertainty?: Record<string, unknown> | null;
-}
-
-export interface RiskInferenceResponse {
-  calculated_metastasis_risk: number;
-  created_at: string /* ISO 8601 */;
-  id: string;
-  justification_text: string;
-  lab_result_id: string;
-  patient_id: string;
-  triage_flag: boolean;
 }
 
 export interface RowReport {
@@ -562,7 +584,7 @@ export interface ScheduleSolveRequest {
   fairness_disparity_bound?: number;
   horizon_days?: number;
   max_wait_days?: number;
-  method?: string;
+  method?: "urgency_ranking" | "cpsat_research";
   stability_penalty?: number;
 }
 
@@ -608,15 +630,25 @@ export interface SecondLookResponse {
   value: number;
 }
 
+export interface ShadowEvaluationRequest {
+  candidate_id: string;
+  /** Pre-declared criterion; absolute series rate increase */
+  max_alert_rate_increase: number;
+  monitor_report: Record<string, unknown>;
+  series: ModelGovernanceSeries[];
+}
+
 export interface SimulationRequest {
   hypothetical_lab: Record<string, number>;
 }
 
 export interface SimulationResponse {
-  delta_risk: number;
+  delta_risk: number | null;
   justification_text: string;
-  projected_risk: number;
-  triage_flag: boolean;
+  message: string;
+  projected_risk: number | null;
+  status: "abstained";
+  triage_flag: boolean | null;
 }
 
 export interface StratumAuditMetricResponse {
@@ -707,6 +739,16 @@ export interface TargetOrganVector {
   lung: number;
 }
 
+export interface TestLadderAvailabilityFeedback {
+  available: boolean;
+  facility_id: string;
+  modality: string;
+  price_band: number;
+  source: string;
+  turnaround_days?: number | null;
+  verified_on: string;
+}
+
 export interface TestLadderFacility {
   facility_id: string;
   modalities: TestLadderModalityRow[];
@@ -748,7 +790,7 @@ export interface TestLadderRequest {
   facility_id?: string | null;
   /** Highest price band the patient has agreed to; tests above it are skipped */
   max_price_band?: number | null;
-  organ: string;
+  organ: "bone" | "liver" | "lung" | "brain";
   prior: TestLadderPrior;
 }
 
@@ -761,7 +803,7 @@ export interface TestLadderResponse {
   negative_result_statement: string;
   notes: string[];
   organ: string;
-  outcome: string;
+  outcome: "ladder" | "refer" | "no_sourced_option";
   prior: Record<string, unknown>;
   referrals: Record<string, unknown>[];
   rungs: Record<string, unknown>[];
@@ -775,31 +817,31 @@ export interface TrajectoryPoint {
   ast_level: number;
   ca153_velocity_pct?: number | null;
   ca_15_3: number;
-  calculated_metastasis_risk: number;
-  ci_lower?: number | null;
-  ci_upper?: number | null;
+  calculated_metastasis_risk: number | null;
+  ci_lower: number | null;
+  ci_upper: number | null;
   creatinine: number;
   date_drawn: string /* ISO 8601 */;
   justification_text: string;
   lab_id: string;
-  triage_flag: boolean;
+  triage_flag: boolean | null;
   wbc_count: number;
 }
 
 export interface TriageQueueItem {
-  action_urgency?: number;
+  action_urgency: number | null;
   age: number;
   last_lab_date?: string /* ISO 8601 */ | null;
   latest_justification: string;
-  latest_risk: number;
+  latest_risk: number | null;
   patient_id: string;
   status: string;
   subtype?: string;
-  target_organ_susceptibility_vector?: Record<string, number> | null;
+  target_organ_susceptibility_vector: Record<string, number> | null;
   total_labs?: number;
-  triage_flag: boolean;
+  triage_flag: boolean | null;
   tumor_stage?: number | null;
-  urgency_breakdown?: Record<string, number> | null;
+  urgency_breakdown: Record<string, number> | null;
 }
 
 export interface ValidationError {

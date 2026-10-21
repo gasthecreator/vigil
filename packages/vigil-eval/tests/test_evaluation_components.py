@@ -2,7 +2,7 @@
 Tests for vigil_eval evaluation components:
 - Clustered patient-level bootstrap
 - Subgroup analysis with Empirical Bayes shrinkage
-- Verification bias estimators (Complete-case, IPW, Latent-Class EM)
+- Verification bias estimators (Complete-case, IPW; retired pseudo-label routine)
 - Preclinical lead-time and overdetection analysis
 - Frozen test set access audit logger
 - Model regression gate
@@ -14,8 +14,8 @@ import pytest
 from vigil_eval.audit import FrozenTestAccessLogger
 from vigil_eval.bootstrap import patient_cluster_bootstrap
 from vigil_eval.lead_time import evaluate_lead_time_and_overdetection
-from vigil_eval.regression_gate import ModelRegressionGate
-from vigil_eval.subgroups import empirical_bayes_shrinkage
+from vigil_eval.regression_gate import ModelRegressionGate, render_benchmark_table_markdown
+from vigil_eval.subgroups import empirical_bayes_shrinkage, evaluate_subgroups_with_shrinkage
 from vigil_eval.verification_bias import (
     evaluate_complete_case,
     evaluate_ipw_verification,
@@ -76,6 +76,21 @@ def test_empirical_bayes_shrinkage_analytical():
     assert abs(shrunk[1] - grand_mean) < abs(estimates[1] - grand_mean)
 
 
+def test_subgroup_analysis_keeps_undefined_metrics_undefined():
+    data = pd.DataFrame({"patient_id": ["p1", "p2"], "site": ["A", "B"]})
+    result = evaluate_subgroups_with_shrinkage(
+        data,
+        patient_col="patient_id",
+        subgroup_col="site",
+        metric_fn=lambda _: {"other_metric": 0.8},
+        target_metric="roc_auc",
+        n_bootstraps=10,
+    )
+    assert len(result) == 2
+    assert all(np.isnan(item.raw_estimate) and np.isnan(item.shrunk_estimate) for item in result)
+    assert all(np.isnan(item.raw_ci_lower) and np.isnan(item.shrunk_ci_upper) for item in result)
+
+
 def test_verification_bias_corrections():
     """
     Verifies verification bias correction:
@@ -97,16 +112,128 @@ def test_verification_bias_corrections():
     obs_y = np.where(v_mask, true_y, 0)
     features = marker.reshape(-1, 1)
 
-    cc_rep = evaluate_complete_case(scores, obs_y, v_mask)
-    ipw_rep = evaluate_ipw_verification(scores, obs_y, v_mask, features)
-    em_rep = evaluate_latent_class_em(scores, obs_y, v_mask, features)
+    cc_rep = evaluate_complete_case(scores, obs_y, v_mask, cutoff=0.5)
+    ipw_rep = evaluate_ipw_verification(scores, obs_y, v_mask, features, cutoff=0.5)
 
     assert cc_rep.empirical_sensitivity > 0.0
     assert ipw_rep.empirical_sensitivity > 0.0
-    assert em_rep.empirical_sensitivity > 0.0
     # Complete case evaluates fewer patients
     assert cc_rep.details["n_verified"] < n
     assert ipw_rep.details["n_total"] == n
+    with pytest.raises(NotImplementedError, match="not latent-class EM"):
+        evaluate_latent_class_em(
+            scores, obs_y, v_mask, features, max_iter=50, tol=1e-4, cutoff=0.5
+        )
+
+
+def test_verification_metrics_are_undefined_when_no_outcomes_are_verified():
+    scores = np.array([0.2, 0.8])
+    labels = np.array([np.nan, np.nan])
+    verified = np.array([False, False])
+    report = evaluate_complete_case(scores, labels, verified, cutoff=0.5)
+    assert not report.details["metrics_defined"]
+    assert np.isnan(report.empirical_sensitivity)
+    assert np.isnan(report.empirical_specificity)
+    assert np.isnan(report.apparent_prevalence)
+    assert np.isnan(report.brier_score)
+    assert np.isnan(report.roc_auc)
+
+
+def test_single_outcome_class_does_not_receive_plausible_sensitivity_or_auc():
+    report = evaluate_complete_case(
+        risk_scores=np.array([0.2, 0.8]),
+        observed_verified_labels=np.array([1, 1]),
+        verification_mask=np.array([True, True]),
+        cutoff=0.5,
+    )
+    assert not report.details["metrics_defined"]
+    assert np.isnan(report.empirical_specificity)
+    assert np.isnan(report.roc_auc)
+
+
+def test_verification_ipw_requires_finite_declared_features():
+    with pytest.raises(ValueError, match="verification_features must be finite"):
+        evaluate_ipw_verification(
+            risk_scores=np.array([0.2, 0.8]),
+            observed_verified_labels=np.array([0, 1]),
+            verification_mask=np.array([True, False]),
+            verification_features=np.array([[0.0], [np.nan]]),
+            cutoff=0.5,
+        )
+
+
+def test_verification_ipw_accepts_propensities_fitted_on_an_independent_split():
+    scores = np.array([0.1, 0.3, 0.7, 0.9])
+    labels = np.array([0.0, np.nan, 1.0, 1.0])
+    verified = np.array([True, False, True, True])
+    propensities = np.array([0.4, 0.5, 0.6, 0.8])
+    report = evaluate_ipw_verification(
+        scores,
+        labels,
+        verified,
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=propensities,
+    )
+    assert report.details["metrics_defined"]
+    assert report.details["minimum_verified_propensity"] == pytest.approx(0.4)
+    assert report.details["maximum_verified_inverse_weight"] == pytest.approx(2.5)
+
+
+def test_verification_ipw_accepts_probability_one_for_verified_rows():
+    report = evaluate_ipw_verification(
+        risk_scores=np.array([0.1, 0.8, 0.4, 0.9]),
+        observed_verified_labels=np.array([0.0, 1.0, np.nan, 1.0]),
+        verification_mask=np.array([True, True, False, True]),
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=np.array([1.0, 0.5, 0.25, 1.0]),
+    )
+    assert report.details["metrics_defined"]
+    assert report.details["minimum_verified_propensity"] == pytest.approx(0.5)
+    assert report.details["maximum_verified_inverse_weight"] == pytest.approx(2.0)
+
+
+def test_verification_ipw_rejects_probability_one_for_unverified_rows():
+    report = evaluate_ipw_verification(
+        risk_scores=np.array([0.1, 0.8, 0.4]),
+        observed_verified_labels=np.array([0.0, 1.0, np.nan]),
+        verification_mask=np.array([True, True, False]),
+        verification_features=None,
+        cutoff=0.5,
+        verification_propensities=np.array([1.0, 0.5, 1.0]),
+    )
+    assert not report.details["metrics_defined"]
+    assert "conflicts with observed verification" in report.details["reason"]
+
+
+def test_verification_ipw_rejects_misaligned_or_invalid_supplied_propensities():
+    scores = np.array([0.1, 0.9])
+    labels = np.array([0.0, 1.0])
+    verified = np.array([True, False])
+    with pytest.raises(ValueError, match="aligned with rows"):
+        evaluate_ipw_verification(
+            scores, labels, verified, None, 0.5, verification_propensities=np.array([0.5])
+        )
+    with pytest.raises(ValueError, match="finite probabilities"):
+        evaluate_ipw_verification(
+            scores,
+            labels,
+            verified,
+            None,
+            0.5,
+            verification_propensities=np.array([np.nan, 0.5]),
+        )
+
+
+def test_verification_mask_rejects_unknown_values_instead_of_treating_them_as_verified():
+    with pytest.raises(ValueError, match="verification_mask must contain only known 0/1"):
+        evaluate_complete_case(
+            risk_scores=np.array([0.2, 0.8]),
+            observed_verified_labels=np.array([0, 1]),
+            verification_mask=np.array([0.0, np.nan]),
+            cutoff=0.5,
+        )
 
 
 def test_lead_time_and_overdetection():
@@ -154,6 +281,81 @@ def test_lead_time_and_overdetection():
     assert rep.overdetection_rate > 0.0
 
 
+def test_lead_time_reports_undefined_denominators_and_uses_observed_person_time():
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": False, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [
+            {"patient_id": "p1", "day": 5.0, "alert_triggered": 0},
+            {"patient_id": "p1", "day": 15.0, "alert_triggered": 0},
+        ]
+    )
+    report = evaluate_lead_time_and_overdetection(patients, observations)
+    assert np.isnan(report.conditional_mean_days)
+    assert np.isnan(report.unconditional_mean_days)
+    assert np.isnan(report.recurrence_detection_rate)
+    assert np.isnan(report.overdetection_rate)
+    assert report.alert_burden_per_100_pt_years == 0.0
+    assert report.details["total_surveillance_patient_years"] == round(10.0 / 365.25, 2)
+    assert not report.details["metrics_defined"]
+
+
+@pytest.mark.parametrize("event", [None, np.nan, pd.NA, "unknown"])
+def test_lead_time_rejects_unknown_recurrence_status(event):
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": event, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="true_recurrence_event"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
+def test_lead_time_rejects_recurrence_without_event_day():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "p1",
+            "true_recurrence_event": True,
+            "true_recurrence_day": np.nan,
+            "is_indolent": False,
+        }]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="recurrence day"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
+def test_lead_time_rejects_recurrence_day_for_non_recurrent_patient():
+    patients = pd.DataFrame(
+        [{
+            "patient_id": "p1",
+            "true_recurrence_event": False,
+            "true_recurrence_day": 30.0,
+            "is_indolent": False,
+        }]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "p1", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="marked as non-recurrent"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
+def test_lead_time_rejects_observations_for_unmatched_patients():
+    patients = pd.DataFrame(
+        [{"patient_id": "p1", "true_recurrence_event": False, "is_indolent": False}]
+    )
+    observations = pd.DataFrame(
+        [{"patient_id": "unknown", "day": 5.0, "alert_triggered": 0}]
+    )
+    with pytest.raises(ValueError, match="unknown patients"):
+        evaluate_lead_time_and_overdetection(patients, observations)
+
+
 def test_frozen_test_access_logger(tmp_path):
     """Verifies append-only frozen test set audit log."""
     log_file = tmp_path / "test_access.jsonl"
@@ -190,3 +392,17 @@ def test_model_regression_gate():
     res_leaked = gate.evaluate({"roc_auc": 0.99, "brier_score": 0.02, "ece": 0.01})
     assert not res_leaked.passed
     assert any("STOP-AND-THINK TRIGGER" in f for f in res_leaked.failures)
+
+
+def test_regression_gate_rejects_missing_candidate_and_baseline_metrics():
+    gate = ModelRegressionGate()
+    result = gate.evaluate({"roc_auc": 0.8}, baseline_metrics={"roc_auc": 0.7})
+    assert not result.passed
+    assert any("Candidate brier_score is missing" in failure for failure in result.failures)
+    assert any("Baseline brier_score is missing" in failure for failure in result.failures)
+
+
+def test_benchmark_table_marks_missing_metrics_as_unavailable():
+    table = render_benchmark_table_markdown([{"model_id": "partial"}])
+    assert "N/A" in table
+    assert "0.0000" not in table

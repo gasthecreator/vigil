@@ -113,8 +113,8 @@ jobs:
           if uv run python scripts/reproduce.py --seed-fail >/dev/null 2>&1; then
             echo "::error::reproduce --seed-fail unexpectedly passed"; exit 1
           fi
-          # make reproduce = study regeneration + bit-diff (verify_study_reproducibility.py), STATUS freshness,
-          # SBOM regeneration diff, release manifest verify. Absorbed the former reproduce-smoke job.
+          # make reproduce = study artifact integrity/derived reports, STATUS freshness,
+          # SBOM regeneration diff, and release manifest verification. K4/K5/K6/M7/M12 frozen cohorts are not replayed.
           make reproduce
           echo "Clean-clone reproducibility OK at ${GITHUB_SHA}"
 
@@ -285,7 +285,7 @@ jobs:
       - name: Run Playwright E2E integration tests (Workstation & Companion)
         run: npm --workspace=@vigil/web run test:e2e
       - name: Enforce Lighthouse performance and accessibility budgets
-        run: node scripts/run_lighthouse.mjs
+        run: CHROME_PATH="$(node -p 'require("@playwright/test").chromium.executablePath()')" node scripts/run_lighthouse.mjs
 
   commit-messages:
     if: github.event_name == 'pull_request'

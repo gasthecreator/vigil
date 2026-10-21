@@ -11,7 +11,7 @@ Core Principles:
 2. No clinician identifiers or patient re-identifying information.
 3. Small-cell suppression ($k \ge 5$): any cell with $1 \le n < 5$ is suppressed to prevent re-identification.
 4. Independent Injected Truth: Trajectory generator is decoupled from detection.
-5. Dynamic Algorithmic Detection: Evaluated using Model K2 anytime-valid e-process
+5. Dynamic Algorithmic Detection: Evaluated using the research-only K2 sequential score
    and Model M3 plausibility adjudication, never reading pre-labelled alert strings.
 6. Clinician Action Attribution: action_recorded requires clinician-attributable events,
    never automated pipeline task creation.
@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from vigil_ml.k2 import AlertTier, SequentialDetector
-from vigil_ml.m3 import adjudicate
+from vigil_ml.m3 import DEFAULT_M3_ASSUMPTIONS, adjudicate
 
 FORBIDDEN_PUNITIVE_TERMS = [
     r"\bnegligen(ce|t)\b",
@@ -98,7 +98,7 @@ def verify_neutral_register(text: str) -> bool:
 
 
 class MissedSignalAuditEngine:
-    """Retrospective clinical quality audit engine with k >= 5 small-cell suppression."""
+    """Research audit engine with k >= 5 suppression; facility scoring is disabled."""
 
     K_ANONYMITY_FLOOR: int = 5
     ACTION_GRACE_WINDOW_DAYS: int = 30
@@ -106,7 +106,7 @@ class MissedSignalAuditEngine:
     def evaluate_trajectory(self, trajectory: AuditTrajectory) -> Dict[str, Any]:
         """Evaluates whether an individual trajectory exhibited a signal and whether action was recorded.
 
-        Executes Model K2 anytime-valid sequential detection (alpha_pt=0.05, burn_in=2)
+        Executes the unvalidated K2 sequential score (threshold setting 0.05, burn_in=2)
         and Model M3 plausibility adjudication over raw (day, marker_value) series.
         Strictly independent of any alert_level strings.
         """
@@ -136,11 +136,11 @@ class MissedSignalAuditEngine:
                     history=history,
                     new_day=d_float,
                     new_value=val_float,
-                    cv_analytical=0.05,
-                    cv_within=0.10,
+                    cv_analytical=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_analytical,
+                    cv_within=DEFAULT_M3_ASSUMPTIONS.illustrative_cv_within,
                 )
-                # Confirmed progression: anytime-valid evidence (alert or review/urgent tier)
-                # AND plausibility adjudicates escalation above biological RCV
+                # Synthetic research signal: a K2 score tier plus M3
+                # escalation under illustrative assumptions.
                 if (
                     detector.alert or detector.tier in (AlertTier.REVIEW, AlertTier.URGENT)
                 ) and adj["action"] == "escalate":
