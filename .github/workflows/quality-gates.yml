@@ -97,7 +97,7 @@ jobs:
             -q
       - name: Coverage ratchet vs floor
         run: uv run python scripts/check_coverage_ratchet.py --coverage-json reports/quality/coverage-run.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: coverage-run-json
@@ -193,7 +193,7 @@ jobs:
       - name: Dependency review (requires Dependency graph / GHAS on private repos)
         id: dep_review
         continue-on-error: true
-        uses: actions/dependency-review-action@da24556b548a50705dd671f47852072ea4c105d9 # v4.7.1
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
       - name: Record outcome (owner-gated feature must not silently block)
